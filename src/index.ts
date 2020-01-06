@@ -97,7 +97,7 @@ const runJobs = async () => {
         const promises: Array<Promise<any>> = [];
 
         if (jobList.length === 0) {
-            console.log(`========> ${c.yellow(`${stageName}`)} has no jobs`);
+            console.log(`=> ${c.yellow(`${stageName}`)} has no jobs`);
             console.log("");
             continue;
         }
@@ -107,7 +107,7 @@ const runJobs = async () => {
         }
 
         const jobNames = `${jobList.join(" ")}`;
-        console.log(`========> ${c.yellow(`${stageName}`)} ${c.blueBright(`${jobNames}`)} ${c.magentaBright(`starting`)}...`);
+        console.log(`=> ${c.yellow(`${stageName}`)} > ${c.blueBright(`${jobNames}`)} ${c.magentaBright(`starting`)}...`);
         for (const job of jobList) {
             const jobPromise = job.start();
             promises.push(jobPromise);
