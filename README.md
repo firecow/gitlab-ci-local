@@ -3,17 +3,25 @@ Are you tired of pushing to test your .gitlab-ci.yml?
 
 Then this is the tool for you.
 
-# Installation
+### Installation
 TODO: Make this.
 
-## Dev script
+### Requirements
+- bash (linux, macos)
+- gitbash (windows)
+
+# Development
+### Scripts
+
     $ npm run build
     $ node -r source-map-support/register dist/index.js --cwd /home/user/workspace/project-folder/
 
-## Build binaries
+### Build binaries
     $ npm run build-linux
     $ npm run build-win
     $ npm run build-macos
+
+# TODO
 
 ### Missing local overrides
 None

@@ -1,5 +1,6 @@
 import c = require("ansi-colors");
 import * as dotProp from "dot-prop";
+import prettyHrtime = require("pretty-hrtime");
 import * as shelljs from "shelljs";
 import {IKeyValue} from "./index";
 
@@ -56,12 +57,19 @@ export class Job {
                 process.exit(1);
             }
 
+            const time = process.hrtime();
             const prescripts = this.beforeScripts.concat(this.scripts);
 
             try {
-                this.exec(prescripts.join(" && "), resolve, reject);
+                this.exec(prescripts.join(" && "), () => {
+                    const endTime = process.hrtime(time);
+                    const timeStr = prettyHrtime(endTime);
+                    console.log(`${c.blueBright(`${this.name}`)} ${c.magentaBright(`finished`)} in ${c.magenta(`${timeStr}`)}`);
+                    resolve();
+                }, reject);
+
             } catch (e) {
-                console.error(e);
+                console.error(`${c.blueBright(`${this.name}`)} ${c.red(`${e}`)}`);
                 reject(e);
             }
         });
@@ -90,13 +98,19 @@ export class Job {
 
         if (child.stdout) {
             child.stdout.on("data", (buf) => {
-                process.stdout.write(`${c.blueBright(`${this.name}`)}: ${buf}`);
+                const lines = `${buf}`.split(/\r?\n/);
+                lines.forEach((l) => {
+                    if (l) { process.stdout.write(`${c.blueBright(`${this.name}`)} ${c.greenBright(`>`)} ${c.green(`${l}`)}\n`); }
+                });
             });
         }
 
         if (child.stderr) {
             child.stderr.on("data", (buf) => {
-                process.stderr.write(`${c.blueBright(`${this.name}`)}: ${c.red(`${buf}`)}`);
+                const lines = `${buf}`.split(/\r?\n/);
+                lines.forEach((l) => {
+                    if (l) { process.stderr.write(`${c.blueBright(`${this.name}`)} ${c.redBright(`>`)} ${c.red(`${l}`)}\n`); }
+                });
             });
         }
 
@@ -106,7 +120,6 @@ export class Job {
                 reject(`${this.name} exited with code ${code}`);
                 return;
             }
-            console.log(`Finished ${c.blueBright(`${this.name}`)}`);
             resolve(true);
         });
     }
