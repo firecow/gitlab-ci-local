@@ -3,9 +3,19 @@ import * as dotProp from "dot-prop";
 import * as shelljs from "shelljs";
 import {IKeyValue} from "./index";
 
-const shell = process.env.EXEPATH ? `${process.env.EXEPATH}/bash.exe` : "/usr/bin/bash";
+const shell = process.env.EXEPATH ? `${process.env.EXEPATH}/bash.exe` : "/bin/bash";
 
 export class Job {
+
+    private static getScriptLikeFromData(jobData: any, keyname: string): string[] {
+        const sc = dotProp.get<string | string[] | undefined>(jobData, keyname);
+        if (sc) {
+            let scripts: string[] = [];
+            scripts = scripts.concat(sc);
+            return scripts;
+        }
+        return [];
+    }
 
     public readonly stage: string;
     public readonly name: string;
@@ -25,25 +35,35 @@ export class Job {
         this.globalVariables = globalVariables;
         this.stage = dotProp.get<string>(jobData, "stage") || ".pre";
 
-        this.scripts = this.getScriptsFromData(jobData);
-
-        const beforeS = dotProp.get<string | string[] | undefined>(jobData, "before_script");
-        const beforeSL = dotProp.get<string | string[] | undefined>(jobData, "before_script_local");
-        if (beforeS) { this.beforeScripts = this.beforeScripts.concat(beforeS); }
-        if (beforeSL) { this.beforeScripts = this.beforeScripts.concat(beforeSL); }
+        this.scripts = Job.getScriptLikeFromData(jobData, "script");
+        this.beforeScripts = Job.getScriptLikeFromData(jobData, "before_script");
 
         this.variables = dotProp.get<IKeyValue>(jobData, "variables") || {};
     }
 
     public override(jobData: any): void {
-        this.scripts = this.getScriptsFromData(jobData);
+        const scripts = Job.getScriptLikeFromData(jobData, "script");
+        this.scripts = scripts.length > 0 ? scripts : this.scripts;
+        const beforeScripts = Job.getScriptLikeFromData(jobData, "before_script");
+        this.beforeScripts = beforeScripts.length > 0 ? beforeScripts : this.beforeScripts;
         this.variablesLocal = dotProp.get<IKeyValue>(jobData, "variables") || {};
     }
 
     public start(): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
+            if (this.scripts.length === 0) {
+                console.error(`${c.blueBright(`${this.name}`)} ${c.red(`must have script specified`)}`);
+                process.exit(1);
+            }
+
             const prescripts = this.beforeScripts.concat(this.scripts);
-            this.exec(prescripts.join(" && "), resolve, reject);
+
+            try {
+                this.exec(prescripts.join(" && "), resolve, reject);
+            } catch (e) {
+                console.error(e);
+                reject(e);
+            }
         });
     }
 
@@ -55,19 +75,7 @@ export class Job {
         return {...this.globalVariables, ...this.variables, ...this.variablesLocal, ...process.env};
     }
 
-    private getScriptsFromData(jobData: any): string[] {
-        const sc = dotProp.get<string | string[] | undefined>(jobData, "script");
-        if (sc) {
-            let scripts: string[] = [];
-            scripts = scripts.concat(sc);
-            return scripts;
-        } else {
-            console.error(`${c.blueBright(`${this.name}`)} ${c.red(`must have script specified`)}`);
-            process.exit(1);
-        }
-    }
-
-    private exec(script: string, resolve: (b: boolean) => void, reject: () => void) {
+    private exec(script: string, resolve: (b: boolean) => void, reject: (e: string) => void) {
         const child = shelljs.exec(`${script}`, {
             cwd: this.cwd,
             env: this.getEnvs(),
@@ -75,11 +83,17 @@ export class Job {
             silent: true,
             shell,
         });
+
+        child.on("error", (e) => {
+            console.error(e);
+        });
+
         if (child.stdout) {
             child.stdout.on("data", (buf) => {
                 process.stdout.write(`${c.blueBright(`${this.name}`)}: ${buf}`);
             });
         }
+
         if (child.stderr) {
             child.stderr.on("data", (buf) => {
                 process.stderr.write(`${c.blueBright(`${this.name}`)}: ${c.red(`${buf}`)}`);
@@ -89,7 +103,7 @@ export class Job {
         child.on("exit", (code) => {
             if (code !== 0) {
                 console.error(`Bad Exit ${c.red(`${this.name}`)} with ${code}`);
-                reject();
+                reject(`${this.name} exited with code ${code}`);
                 return;
             }
             console.log(`Finished ${c.blueBright(`${this.name}`)}`);

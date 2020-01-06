@@ -3,17 +3,20 @@ Are you tired of pushing to test your .gitlab-ci.yml?
 
 Then this is the tool for you.
 
-# Dev script
+# Installation
+TODO: Make this.
+
+## Dev script
     $ npm run build
     $ node -r source-map-support/register dist/index.js --cwd /home/user/workspace/project-folder/
 
-# Build binaries
+## Build binaries
     $ npm run build-linux
     $ npm run build-win
     $ npm run build-macos
 
 ### Missing local overrides
-- before_script
+None
 
 ### Unsupported tags
 - include
@@ -22,7 +25,7 @@ Then this is the tool for you.
 - rules
 - cache
 - artifacts/dependencies
-- when:on_failure,always,delayed
+- when:on_failure,delayed,manual,always,never
 - start_in (Used only with when:delayed)
 - needs
 - coverage
@@ -41,6 +44,5 @@ Then this is the tool for you.
 
 ### Gitlab only sematics, will not be stripped nor used by gitlab-runner-local
 - interruptible
-- when:manual
 - only
 - except
