@@ -1,5 +1,6 @@
 .idea/
 node_modules/
 dist/
+bin/
 test.sh
 test_copy_to_usr_bin.sh

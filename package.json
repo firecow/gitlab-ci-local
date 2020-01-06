@@ -2,9 +2,9 @@
   "name": "gitlab-runner-local",
   "main": "index.js",
   "scripts": {
-    "build-linux": "pkg dist/index.js -t node12-linux-x64 -o ./bin/linux/gitlab-runner-local",
-    "build-macos": "pkg dist/index.js -t node12-macos-x64 -o ./bin/macos/gitlab-runner-local",
-    "build-win": "pkg dist/index.js -t node12-win-x64 -o ./bin/win/gitlab-runner-local",
+    "build-linux": "pkg dist/index.js -t node12-linux-x64 -o ./bin/linux/gitlab-runner-local && tar -czvf bin/linux.gz bin/linux/",
+    "build-macos": "pkg dist/index.js -t node12-macos-x64 -o ./bin/macos/gitlab-runner-local && tar -czvf bin/macos.gz bin/macos/",
+    "build-win": "pkg dist/index.js -t node12-win-x64 -o ./bin/win/gitlab-runner-local && tar -czvf bin/win.gz bin/win/",
     "build-all": "npm run build-linux && npm run build-macos && npm run build-win",
     "build": "tsc",
     "lint": "tslint --project .",
@@ -12,15 +12,15 @@
   },
   "bin": "dist/index.js",
   "dependencies": {
-    "ansi-colors": "4.1.1",
-    "dateformat": "3.0.3",
-    "dot-prop": "5.2.0",
-    "glob": "7.1.6",
-    "pretty-hrtime": "^1.0.3",
-    "shelljs": "0.8.3",
-    "winston": "3.2.1",
-    "yaml": "1.7.2",
-    "yargs": "15.1.0"
+    "ansi-colors": "4.x",
+    "dateformat": "3.x",
+    "dot-prop": "5.x",
+    "glob": "7.x",
+    "pretty-hrtime": "1.x",
+    "shelljs": "0.x",
+    "winston": "3.x",
+    "yaml": "1.X",
+    "yargs": "15.x"
   },
   "pkg": {
     "targets": [
@@ -30,13 +30,13 @@
   "author": "Mads Jon Nielsen <madsjon@gmail.com>",
   "license": "ISC",
   "devDependencies": {
-    "@types/pretty-hrtime": "^1.0.0",
-    "@types/shelljs": "0.8.6",
-    "@types/yaml": "1.2.0",
-    "@types/yargs": "13.0.4",
-    "pkg": "4.4.2",
-    "source-map-support": "0.5.16",
-    "tslint": "5.20.1",
-    "typescript": "3.7.4"
+    "@types/pretty-hrtime": "1.x",
+    "@types/shelljs": "0.x",
+    "@types/yaml": "1.x",
+    "@types/yargs": "13.x",
+    "pkg": "4.x",
+    "source-map-support": "0.x",
+    "tslint": "5.x",
+    "typescript": "3.x"
   }
 }
