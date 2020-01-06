@@ -1,9 +1,11 @@
 # gitlab-runner-local
-A git runner to run on developers local machines, to prevent tedious "live" debugging on gitlab.
+Are you tired of pushing to test your .gitlab-ci.yml?
+
+Then this is the tool for you.
 
 # Dev script
     $ npm run build
-    $ node -r source-map-support/register dist/index.js --cwd D:/Workspace/puzzle-parade
+    $ node -r source-map-support/register dist/index.js --cwd /home/user/workspace/project-folder/
 
 # Build binaries
     $ npm run build-linux
