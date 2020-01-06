@@ -18,6 +18,16 @@ TODO: Fill this
 - bash (linux, macos)
 - gitbash (windows)
 
+### Usage
+    $ cd /home/user/workspace/myproject
+    $ gitlab-runner-local
+
+### Convinience
+###### Bash alias
+    $ echo "alias grl='gitlab-runner-local'" >> ~/.bashrc
+###### Bash completion
+TODO: Fill this
+
 # Development
 ### Scripts
 
@@ -31,13 +41,13 @@ TODO: Fill this
 
 # TODO
 
-### Features
+###### Features
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
 
-### Missing local overrides
+###### Missing local overrides
 None
 
-### Unsupported tags
+###### Unsupported tags
 - include
 - after_script
 - allow_failure
@@ -57,11 +67,11 @@ None
 - pages
 - environment
 
-### Docker specfic tags.
+###### Docker specfic tags.
 - services
 - image
 
-### Gitlab only sematics, will not be stripped nor used by gitlab-runner-local
+###### Gitlab only sematics, will not be stripped nor used by gitlab-runner-local
 - interruptible
 - only
 - except
