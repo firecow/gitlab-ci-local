@@ -61,7 +61,7 @@ const addToMaps = (key: string, job: Job) => {
         stage.push(job);
     } else {
         const stagesJoin = Array.from(stages.keys()).join(", ");
-        console.error(`${c.yellow(`${job.stage}`)} ${c.red(`isn't specified in stages. Must be one of the following ${stagesJoin}`)}`);
+        console.error(`${c.blueBright(`${job.name}`)} ${c.yellow(`${job.stage}`)} ${c.red(`isn't specified in stages. Must be one of the following`)} ${c.yellow(`${stagesJoin}`)}`);
         process.exit(1);
     }
 
