@@ -4,7 +4,15 @@ Are you tired of pushing to test your .gitlab-ci.yml?
 Then this is the tool for you.
 
 ### Installation
-TODO: Make this.
+###### Linux
+    $ sudo wget -P /usr/bin/ https://github.com/firecow/gitlab-runner-local/raw/master/bin/linux/gitlab-runner-local
+    $ sudo chmod +x /usr/bin/gitlab-runner-local
+    
+###### Windows
+TODO: Fill this
+
+###### Macos
+TODO: Fill this
 
 ### Requirements
 - bash (linux, macos)
