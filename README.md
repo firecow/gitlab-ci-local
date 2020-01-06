@@ -31,6 +31,9 @@ TODO: Fill this
 
 # TODO
 
+### Features
+- Verbosity on .gitlab-ci.local.yml overrides and appends.
+
 ### Missing local overrides
 None
 
