@@ -8,8 +8,8 @@ Then this is the tool for you.
     $ sudo wget -P /usr/bin/ https://github.com/firecow/gitlab-runner-local/raw/master/bin/linux/gitlab-runner-local
     $ sudo chmod +x /usr/bin/gitlab-runner-local
     
-###### Windows
-TODO: Fill this
+###### Windows (Git bash)
+    $ curl -L https://github.com/firecow/gitlab-runner-local/releases/download/1.0.0/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-runner-local.exe
 
 ###### Macos
 TODO: Fill this
