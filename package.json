@@ -13,14 +13,14 @@
   "bin": "dist/index.js",
   "dependencies": {
     "ansi-colors": "4.1.1",
-    "dot-prop": "5.2.0",
-    "shelljs": "0.8.3",
     "dateformat": "3.0.3",
+    "dot-prop": "5.2.0",
     "glob": "7.1.6",
-    "pretty-hrtime": "1.0.3",
+    "pretty-hrtime": "^1.0.3",
+    "shelljs": "0.8.3",
+    "winston": "3.2.1",
     "yaml": "1.7.2",
-    "yargs": "15.1.0",
-    "winston": "3.2.1"
+    "yargs": "15.1.0"
   },
   "pkg": {
     "targets": [
@@ -30,6 +30,7 @@
   "author": "Mads Jon Nielsen <madsjon@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "@types/pretty-hrtime": "^1.0.0",
     "@types/shelljs": "0.8.6",
     "@types/yaml": "1.2.0",
     "@types/yargs": "13.0.4",

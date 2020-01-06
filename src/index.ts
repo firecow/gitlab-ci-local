@@ -98,17 +98,16 @@ const runJobs = async () => {
 
         if (jobList.length === 0) {
             console.log(`========> ${c.yellow(`${stageName}`)} has no jobs`);
+            console.log("");
             continue;
         }
-
-        console.log(`========> ${c.yellow(`${stageName}`)}`);
 
         if (jobList.length === 0) {
             continue;
         }
 
-        const jobNames = jobList.join(", ");
-        console.log(`Starting ${c.blueBright(`${jobNames}`)}...`);
+        const jobNames = `${jobList.join(" ")}`;
+        console.log(`========> ${c.yellow(`${stageName}`)} ${c.blueBright(`${jobNames}`)} ${c.magentaBright(`starting`)}...`);
         for (const job of jobList) {
             const jobPromise = job.start();
             promises.push(jobPromise);
@@ -116,8 +115,10 @@ const runJobs = async () => {
 
         try {
             await Promise.all(promises);
+            console.log("");
         } catch (e) {
             console.error(e);
+            process.exit(1);
         }
     }
 };
