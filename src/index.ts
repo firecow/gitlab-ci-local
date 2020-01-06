@@ -12,7 +12,6 @@ const logger: winston.Logger = winston.createLogger({
     format: winston.format.combine(
         winston.format.timestamp({format: "HH:mm:SS"}),
         winston.format.printf((m) => colorizer.colorize(m.level, `${m.timestamp}: ${m.message}`)),
-
     ),
     level: "info",
     transports: [
@@ -34,7 +33,7 @@ const gitlabCiContent = fs.readFileSync(gitlabCiYmlPath, "utf8");
 const gitlabCiData = yaml.parse(gitlabCiContent);
 
 // Parse .gitlab-local.yml
-const gitlabCiLocalYmlPath = `${cwd}/.gitlab-local.yml`;
+const gitlabCiLocalYmlPath = `${cwd}/.gitlab-ci.local.yml`;
 if (!fs.existsSync(gitlabCiLocalYmlPath)) {
     logger.error(`Could not find ${gitlabCiLocalYmlPath}`);
     process.exit(1);
@@ -43,7 +42,7 @@ const gitlabCiLocalContent = fs.readFileSync(gitlabCiLocalYmlPath, "utf8");
 const gitlabLocalData = yaml.parse(gitlabCiLocalContent);
 
 const jobs = new Map<string, Job>();
-const stages = new Map<string, any[]>();
+const stages = new Map<string, Job[]>();
 
 export interface IKeyValue {
     [key: string]: string | undefined;
@@ -61,7 +60,8 @@ const addToMaps = (key: string, job: Job) => {
     if (stage) {
         stage.push(job);
     } else {
-        console.error(`${c.yellow(`${job.stage}`)} ${c.red(`isn't specified in stages:`)}`);
+        const stagesJoin = Array.from(stages.keys()).join(", ");
+        console.error(`${c.yellow(`${job.stage}`)} ${c.red(`isn't specified in stages. Must be one of the following ${stagesJoin}`)}`);
         process.exit(1);
     }
 
@@ -93,25 +93,41 @@ for (const [key, value] of Object.entries(gitlabLocalData)) {
 
 const runJobs = async () => {
 
-    for (const [stageName, jobs] of stages) {
+    for (const [stageName, jobList] of stages) {
         const promises: Array<Promise<any>> = [];
+
+        if (jobList.length === 0) {
+            console.log(`========> ${c.yellow(`${stageName}`)} has no jobs`);
+            continue;
+        }
+
         console.log(`========> ${c.yellow(`${stageName}`)}`);
 
-        const jobNames = jobs.join(", ");
+        if (jobList.length === 0) {
+            continue;
+        }
 
+        const jobNames = jobList.join(", ");
         console.log(`Starting ${c.blueBright(`${jobNames}`)}...`);
-        for (const job of jobs) {
+        for (const job of jobList) {
             const jobPromise = job.start();
             promises.push(jobPromise);
         }
 
-        await Promise.all(promises);
+        try {
+            await Promise.all(promises);
+        } catch (e) {
+            console.error(e);
+        }
     }
-    process.exit(1);
 };
 
-runJobs().then(() => {
-    console.log("Ok!");
-}).catch(() => {
-    console.error("Error!");
+process.on("uncaughtException", (err) => {
+    // handle the error safely
+    console.log(err);
+});
+
+runJobs().catch((e) => {
+    console.error(e);
+    console.error("Error bubbled to top.");
 });
