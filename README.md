@@ -1,56 +1,81 @@
-#### Introduction
+# Introduction
 Are you tired of pushing to test your .gitlab-ci.yml?
 
 Then this is the tool for you.
 
-#### Installation
+# Table of contents
+   * [Introduction](#introduction)
+   * [Table of contents](#table-of-contents)
+   * [Installation](#installation)
+      * [Linux](#linux)
+      * [Windows (Git bash)](#windows-git-bash)
+      * [Macos](#macos)
+   * [Usage](#usage)
+      * [Example](#example)
+      * [Convinience](#convinience)
+         * [Bash alias](#bash-alias)
+      * [Bash completion](#bash-completion)
+   * [Development](#development)
+      * [Scripts](#scripts)
+      * [Scripts](#scripts-1)
+      * [Build binaries](#build-binaries)
+   * [TODO](#todo)
+      * [Features](#features)
+      * [Unsupported tags, will be implemented in order](#unsupported-tags-will-be-implemented-in-order)
+      * [Docker specfic tags. (Only shell working now)](#docker-specfic-tags-only-shell-working-now)
+      * [Gitlab CI only, will not be used by gitlab-runner-local](#gitlab-ci-only-will-not-be-used-by-gitlab-runner-local)
+      * [Undecided](#undecided)
 
-###### Linux
+# Installation
+
+## Linux
 Download and put binary in `/usr/bin`
 
-    $ sudo wget -P /usr/bin/ https://github.com/firecow/gitlab-runner-local/raw/master/bin/linux/gitlab-runner-local
-    $ sudo chmod +x /usr/bin/gitlab-runner-local
+    $ sudo su `must be installed as root, if placed in /usr/bin/`
+    $ curl -L https://github.com/firecow/gitlab-runner-local/releases/download/1.0.0/linux.gz | gunzip -c > /usr/bin/gitlab-runner-local
+    $ chmod +x /usr/bin/gitlab-runner-local
     
-###### Windows (Git bash)
+## Windows (Git bash)
 Install [gitbash](https://git-scm.com/downloads)
 
 Download and put binary in `C:\Program Files\Git\mingw64\bin`
 
     $ curl -L https://github.com/firecow/gitlab-runner-local/releases/download/1.0.0/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-runner-local.exe
 
-###### Macos
+## Macos
 TODO: Fill this
 
-#### Usage
+# Usage
+## Example
     $ cd /home/user/workspace/myproject
     $ gitlab-runner-local
 
-#### Convinience
-###### Bash alias
+## Convinience
+### Bash alias
     $ echo "alias grl='gitlab-runner-local'" >> ~/.bashrc
-###### Bash completion
+## Bash completion
 TODO: Fill this
 
-#### Development
-##### Scripts
+# Development
+## Scripts
 
     $ npm run build
     $ node -r source-map-support/register dist/index.js --cwd /home/user/workspace/project-folder/
 
-
+## Scripts
 ![Alt text](/docs/images/development.png "Development output")
 
-##### Build binaries
+## Build binaries
     $ npm run build-linux
     $ npm run build-win
     $ npm run build-macos
 
-#### TODO
+# TODO
 
-###### Features
+## Features
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
 
-###### Unsupported tags, will be implemented in order
+## Unsupported tags, will be implemented in order
 - after_script
 - include
 - extends
@@ -66,19 +91,19 @@ TODO: Fill this
 - retry (in case of failure)
 - timeout (job max execution time)
 
-###### Docker specfic tags. (Only shell working now)
+## Docker specfic tags. (Only shell working now)
 - services
 - image
 
-###### Gitlab CI only, will not be used by gitlab-runner-local
+## Gitlab CI only, will not be used by gitlab-runner-local
 - cache
 - pages
 - resource_group
 - interruptible
-- only
-- except
 - environment
 
-###### Undecided
+## Undecided
+- only
+- except
 - parallel
 - trigger
