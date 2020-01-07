@@ -8,7 +8,8 @@
     "build-all": "npm run build-linux && npm run build-macos && npm run build-win",
     "build": "tsc",
     "lint": "tslint --project .",
-    "lint-fix": "tslint --fix --project ."
+    "lint-fix": "tslint --fix --project .",
+    "test-yml-spec": "node -r source-map-support/register dist/index.js --cwd tests/test-yml-spec"
   },
   "bin": "dist/index.js",
   "dependencies": {
