@@ -69,7 +69,7 @@ const addToMaps = (key: string, job: Job) => {
 };
 
 for (const [key, value] of Object.entries(gitlabCiData)) {
-    if (illigalJobName.includes(key)) {
+    if (illigalJobName.includes(key) || key[0] === ".") {
         continue;
     }
 
@@ -77,7 +77,7 @@ for (const [key, value] of Object.entries(gitlabCiData)) {
     addToMaps(key, job);
 }
 
-for (const [key, value] of Object.entries(gitlabLocalData)) {
+for (const [key, value] of Object.entries(gitlabLocalData || {})) {
     if (illigalJobName.includes(key)) {
         continue;
     }
@@ -128,7 +128,4 @@ process.on("uncaughtException", (err) => {
     console.log(err);
 });
 
-runJobs().catch((e) => {
-    console.error(e);
-    console.error("Error bubbled to top.");
-});
+runJobs().catch();

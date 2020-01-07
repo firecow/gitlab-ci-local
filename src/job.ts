@@ -116,8 +116,7 @@ export class Job {
 
         child.on("exit", (code) => {
             if (code !== 0) {
-                console.error(`Bad Exit ${c.red(`${this.name}`)} with ${code}`);
-                reject(`${this.name} exited with code ${code}`);
+                reject(`${c.blueBright(`${this.name}`)} ${c.red(`exited with code ${code}`)}`);
                 return;
             }
             resolve(true);
