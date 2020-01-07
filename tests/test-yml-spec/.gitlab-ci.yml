@@ -1,4 +1,4 @@
-stages: [startup]
+stages: [startup, build]
 
 .defaultTags: &tags
   tags: [some_runner_tag]
@@ -6,12 +6,34 @@ stages: [startup]
 variables:
   PROJECT_NAME: test-yml-spec-project
 
-startup_echo:
+echo_project_name:
   <<: *tags
   stage: startup
-  script: echo "'${PROJECT_NAME}'"
+  script:
+    - sleep 1
+    - echo "Project Name is '${PROJECT_NAME}'"
 
-startup_project_context:
+project_context:
   <<: *tags
   stage: startup
   script: echo "This is the 'live' GITLAB CI RUNNER CONTEXT"
+
+error_test:
+  <<: *tags
+  stage: startup
+  allow_failure: true
+  script:
+    - echo "Throwing an error, but its ok, allow_failure equals true"
+    - exit 1
+
+after_script_test:
+  <<: *tags
+  stage: build
+  script:
+    - echo "Throwing an error"
+    - exit 1
+  after_script:
+    - echo "Called despite the error, cause i'm an after_script"
+    - echo "Trying make an error, but my exit code is ignored, cause i'm an after_script"
+    - exit 127
+
