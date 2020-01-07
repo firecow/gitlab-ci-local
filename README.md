@@ -17,7 +17,6 @@ Then this is the tool for you.
          * [Bash completion](#bash-completion)
    * [Development](#development)
       * [Scripts](#scripts)
-      * [Scripts](#scripts-1)
       * [Build binaries](#build-binaries)
    * [TODO](#todo)
       * [Features](#features)
@@ -62,7 +61,6 @@ TODO: Fill this
     $ npm run build
     $ node -r source-map-support/register dist/index.js --cwd /home/user/workspace/project-folder/
 
-## Scripts
 ![Alt text](/docs/images/development.png "Development output")
 
 ## Build binaries
