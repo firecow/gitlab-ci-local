@@ -47,18 +47,15 @@ TODO: Fill this
 ###### Features
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
 
-###### Missing local overrides
-None
-
-###### Unsupported tags
+###### Unsupported tags, will be implemented in order
 - include
 - extends
 - after_script
 - default
 - allow_failure
+- artifacts (reset/restore artifacts from job to job via .gitlab-ci.local folder)
 - rules
-- cache
-- artifacts/dependencies (.gitignore )
+- dependencies (depend or non-depend on artifacts, default is depend ALL)
 - when:on_failure,delayed,manual,always,never
 - start_in (Used only with when:delayed)
 - needs (directed acyclic graph)
@@ -66,12 +63,12 @@ None
 - retry (in case of failure)
 - timeout (job max execution time)
 
-
 ###### Docker specfic tags. (Only shell working now)
 - services
 - image
 
 ###### Gitlab CI only, will not be used by gitlab-runner-local
+- cache
 - pages
 - resource_group
 - interruptible
