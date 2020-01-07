@@ -27,7 +27,9 @@ export class Job {
     private readonly variables: IKeyValue;
     private variablesLocal: IKeyValue = {};
 
+    private allowFailure: boolean;
     private beforeScripts: string[] = [];
+    private afterScripts: string[] = [];
     private scripts: string[] = [];
 
     constructor(jobData: any, name: string, cwd: any, globalVariables: IKeyValue) {
@@ -38,41 +40,81 @@ export class Job {
 
         this.scripts = Job.getScriptLikeFromData(jobData, "script");
         this.beforeScripts = Job.getScriptLikeFromData(jobData, "before_script");
+        this.afterScripts = Job.getScriptLikeFromData(jobData, "after_script");
 
+        this.allowFailure = dotProp.get<boolean>(jobData, "allow_failure") || false;
         this.variables = dotProp.get<IKeyValue>(jobData, "variables") || {};
     }
 
     public override(jobData: any): void {
         const scripts = Job.getScriptLikeFromData(jobData, "script");
         this.scripts = scripts.length > 0 ? scripts : this.scripts;
+
         const beforeScripts = Job.getScriptLikeFromData(jobData, "before_script");
         this.beforeScripts = beforeScripts.length > 0 ? beforeScripts : this.beforeScripts;
+
+        const afterScripts = Job.getScriptLikeFromData(jobData, "before_script");
+        this.afterScripts = afterScripts.length > 0 ? afterScripts : this.afterScripts;
+
+        this.allowFailure = dotProp.get<boolean>(jobData, "allow_failure") || this.allowFailure;
         this.variablesLocal = dotProp.get<IKeyValue>(jobData, "variables") || {};
     }
 
-    public start(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            if (this.scripts.length === 0) {
-                console.error(`${c.blueBright(`${this.name}`)} ${c.red(`must have script specified`)}`);
-                process.exit(1);
-            }
+    public async start(): Promise<void> {
+        if (this.scripts.length === 0) {
+            console.error(`${c.blueBright(`${this.name}`)} ${c.red(`must have script specified`)}`);
+            process.exit(1);
+        }
 
-            const time = process.hrtime();
-            const prescripts = this.beforeScripts.concat(this.scripts);
+        const startTime = process.hrtime();
 
-            try {
-                this.exec(prescripts.join(" && "), () => {
-                    const endTime = process.hrtime(time);
-                    const timeStr = prettyHrtime(endTime);
-                    console.log(`${c.blueBright(`${this.name}`)} ${c.magentaBright(`finished`)} in ${c.magenta(`${timeStr}`)}`);
-                    resolve();
-                }, reject);
+        const prescripts = this.beforeScripts.concat(this.scripts);
+        const prescriptsExitCode = await this.exec(prescripts.join(" && "));
 
-            } catch (e) {
-                console.error(`${c.blueBright(`${this.name}`)} ${c.red(`${e}`)}`);
-                reject(e);
-            }
-        });
+        if (this.afterScripts.length === 0 && prescriptsExitCode > 0 && !this.allowFailure) {
+            throw this.getExitedString(prescriptsExitCode, false);
+        }
+
+        if (this.afterScripts.length === 0 && prescriptsExitCode > 0 && this.allowFailure) {
+            console.error(this.getExitedString(prescriptsExitCode, true));
+            console.log(this.getFinishedString(startTime));
+            return;
+        }
+
+        if (prescriptsExitCode > 0 && this.allowFailure) {
+            console.error(this.getExitedString(prescriptsExitCode, true));
+        }
+
+        if (prescriptsExitCode > 0 && !this.allowFailure) {
+            console.error(this.getExitedString(prescriptsExitCode, false));
+        }
+
+        let afterScriptsCode = 0;
+        if (this.afterScripts.length > 0) {
+            afterScriptsCode = await this.exec(this.afterScripts.join(" && "));
+        }
+
+        if (afterScriptsCode > 0) {
+            console.error(this.getExitedString(prescriptsExitCode, true, " (after_script)"));
+        }
+
+        if (prescriptsExitCode > 0 && !this.allowFailure) {
+            throw "";
+        }
+
+        console.log(this.getFinishedString(startTime));
+        return;
+    }
+
+    private getFinishedString(startTime: [number, number]) {
+        const endTime = process.hrtime(startTime);
+        const timeStr = prettyHrtime(endTime);
+        return `${c.blueBright(`${this.name}`)} ${c.magentaBright(`finished`)} in ${c.magenta(`${timeStr}`)}`;
+    }
+
+    private getExitedString(code: number, warning: boolean = false, prependString: string = "") {
+        const mistakeStr = warning ? c.yellowBright(`warning with code ${code}`) + prependString : c.red(`exited with code ${code}`) + prependString;
+        return `${c.blueBright(`${this.name}`)} ${mistakeStr}`;
     }
 
     public toString() {
@@ -83,43 +125,39 @@ export class Job {
         return {...this.globalVariables, ...this.variables, ...this.variablesLocal, ...process.env};
     }
 
-    private exec(script: string, resolve: (b: boolean) => void, reject: (e: string) => void) {
-        const child = shelljs.exec(`${script}`, {
-            cwd: this.cwd,
-            env: this.getEnvs(),
-            async: true,
-            silent: true,
-            shell,
-        });
-
-        child.on("error", (e) => {
-            console.error(e);
-        });
-
-        if (child.stdout) {
-            child.stdout.on("data", (buf) => {
-                const lines = `${buf}`.split(/\r?\n/);
-                lines.forEach((l) => {
-                    if (l) { process.stdout.write(`${c.blueBright(`${this.name}`)} ${c.greenBright(`>`)} ${c.green(`${l}`)}\n`); }
-                });
+    private async exec(script: string): Promise<number> {
+        return new Promise<any>((resolve, reject) => {
+            const child = shelljs.exec(`${script}`, {
+                cwd: this.cwd,
+                env: this.getEnvs(),
+                async: true,
+                silent: true,
+                shell,
             });
-        }
 
-        if (child.stderr) {
-            child.stderr.on("data", (buf) => {
-                const lines = `${buf}`.split(/\r?\n/);
-                lines.forEach((l) => {
-                    if (l) { process.stderr.write(`${c.blueBright(`${this.name}`)} ${c.redBright(`>`)} ${c.red(`${l}`)}\n`); }
-                });
+            child.on("error", (e) => {
+                reject(`${c.blueBright(`${this.name}`)} ${c.red(`error ${e}`)}`);
             });
-        }
 
-        child.on("exit", (code) => {
-            if (code !== 0) {
-                reject(`${c.blueBright(`${this.name}`)} ${c.red(`exited with code ${code}`)}`);
-                return;
+            if (child.stdout) {
+                child.stdout.on("data", (buf) => {
+                    const lines = `${buf}`.split(/\r?\n/);
+                    lines.forEach((l) => {
+                        if (l) { process.stdout.write(`${c.blueBright(`${this.name}`)} ${c.greenBright(`>`)} ${c.green(`${l}`)}\n`); }
+                    });
+                });
             }
-            resolve(true);
+
+            if (child.stderr) {
+                child.stderr.on("data", (buf) => {
+                    const lines = `${buf}`.split(/\r?\n/);
+                    lines.forEach((l) => {
+                        if (l) { process.stderr.write(`${c.blueBright(`${this.name}`)} ${c.redBright(`>`)} ${c.red(`${l}`)}\n`); }
+                    });
+                });
+            }
+
+            child.on("exit", resolve);
         });
     }
 }

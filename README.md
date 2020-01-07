@@ -76,11 +76,9 @@ TODO: Fill this
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
 
 ## Unsupported tags, will be implemented in order
-- after_script
 - include
 - extends
 - default
-- allow_failure
 - artifacts (reset/restore artifacts from job to job via .gitlab-ci.local folder)
 - rules
 - dependencies (depend or non-depend on artifacts, default is depend ALL)

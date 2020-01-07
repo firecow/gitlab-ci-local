@@ -1,2 +1,2 @@
-startup_project_context:
-  script: echo "I'm overriding this, IT IS THE LOCAL RUNNER CONTEXT"
+project_context:
+  script: echo "Overriding job script, IT IS NOW executed in the local runner context"

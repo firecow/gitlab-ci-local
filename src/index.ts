@@ -117,7 +117,7 @@ const runJobs = async () => {
             await Promise.all(promises);
             console.log("");
         } catch (e) {
-            console.error(e);
+            if (e !== "") { console.error(e); }
             process.exit(1);
         }
     }
