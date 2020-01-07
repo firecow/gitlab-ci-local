@@ -37,6 +37,9 @@ TODO: Fill this
     $ npm run build
     $ node -r source-map-support/register dist/index.js --cwd /home/user/workspace/project-folder/
 
+
+![Alt text](/docs/images/development.png "Development output")
+
 ##### Build binaries
     $ npm run build-linux
     $ npm run build-win
@@ -48,9 +51,9 @@ TODO: Fill this
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
 
 ###### Unsupported tags, will be implemented in order
+- after_script
 - include
 - extends
-- after_script
 - default
 - allow_failure
 - artifacts (reset/restore artifacts from job to job via .gitlab-ci.local folder)

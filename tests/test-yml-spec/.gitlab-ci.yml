@@ -1,0 +1,17 @@
+stages: [startup]
+
+.defaultTags: &tags
+  tags: [some_runner_tag]
+
+variables:
+  PROJECT_NAME: test-yml-spec-project
+
+startup_echo:
+  <<: *tags
+  stage: startup
+  script: echo "'${PROJECT_NAME}'"
+
+startup_project_context:
+  <<: *tags
+  stage: startup
+  script: echo "This is the 'live' GITLAB CI RUNNER CONTEXT"

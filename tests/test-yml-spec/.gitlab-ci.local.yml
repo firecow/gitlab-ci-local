@@ -1,0 +1,2 @@
+startup_project_context:
+  script: echo "NO ITS NOT, IT IS THE LOCAL RUNNER CONTEXT"
