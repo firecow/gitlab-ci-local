@@ -14,7 +14,7 @@ Then this is the tool for you.
       * [Example](#example)
       * [Convinience](#convinience)
          * [Bash alias](#bash-alias)
-      * [Bash completion](#bash-completion)
+         * [Bash completion](#bash-completion)
    * [Development](#development)
       * [Scripts](#scripts)
       * [Scripts](#scripts-1)
@@ -27,7 +27,6 @@ Then this is the tool for you.
       * [Undecided](#undecided)
 
 # Installation
-
 ## Linux
 Download and put binary in `/usr/bin`
 
@@ -53,8 +52,9 @@ TODO: Fill this
 ## Convinience
 ### Bash alias
     $ echo "alias grl='gitlab-runner-local'" >> ~/.bashrc
-## Bash completion
+### Bash completion
 TODO: Fill this
+
 
 # Development
 ## Scripts
