@@ -115,6 +115,7 @@ const runJobs = async () => {
 
         try {
             await Promise.all(promises);
+            console.log(`=> ${c.yellow(`${stageName}`)} > ${c.magentaBright(`finished`)}`);
             console.log("");
         } catch (e) {
             if (e !== "") { console.error(e); }
