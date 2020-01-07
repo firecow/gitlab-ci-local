@@ -49,29 +49,33 @@ None
 
 ###### Unsupported tags
 - include
+- extends
 - after_script
+- default
 - allow_failure
 - rules
 - cache
-- artifacts/dependencies
+- artifacts/dependencies (.gitignore )
 - when:on_failure,delayed,manual,always,never
 - start_in (Used only with when:delayed)
-- needs
-- coverage
-- retry
-- timeout
-- parallel
-- trigger
-- resource_group
-- extends
-- pages
-- environment
+- needs (directed acyclic graph)
+- coverage (code coverage)
+- retry (in case of failure)
+- timeout (job max execution time)
 
-###### Docker specfic tags.
+
+###### Docker specfic tags. (Only shell working now)
 - services
 - image
 
-###### Gitlab only sematics, will not be stripped nor used by gitlab-runner-local
+###### Gitlab CI only, will not be used by gitlab-runner-local
+- pages
+- resource_group
 - interruptible
 - only
 - except
+- environment
+
+###### Undecided
+- parallel
+- trigger
