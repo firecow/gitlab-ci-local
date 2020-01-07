@@ -1,2 +1,2 @@
 project_context:
-  script: echo "Overriding job script, IT IS NOW executed in the local runner context"
+  script: echo "Overriding job script, See (${PWD}/.gitlab-ci.local.yml)"
