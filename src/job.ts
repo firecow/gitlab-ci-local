@@ -106,6 +106,10 @@ export class Job {
         return;
     }
 
+    public toString() {
+        return this.name;
+    }
+
     private getFinishedString(startTime: [number, number]) {
         const endTime = process.hrtime(startTime);
         const timeStr = prettyHrtime(endTime);
@@ -115,10 +119,6 @@ export class Job {
     private getExitedString(code: number, warning: boolean = false, prependString: string = "") {
         const mistakeStr = warning ? c.yellowBright(`warning with code ${code}`) + prependString : c.red(`exited with code ${code}`) + prependString;
         return `${c.blueBright(`${this.name}`)} ${mistakeStr}`;
-    }
-
-    public toString() {
-        return this.name;
     }
 
     private getEnvs(): IKeyValue {
