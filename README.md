@@ -30,7 +30,7 @@ Then this is the tool for you.
 Download and put binary in `/usr/bin`
 
     $ sudo su `must be installed as root, if placed in /usr/bin/`
-    $ curl -L https://github.com/firecow/gitlab-runner-local/releases/download/1.0.0/linux.gz | gunzip -c > /usr/bin/gitlab-runner-local
+    $ curl -L https://github.com/firecow/gitlab-runner-local/releases/download/1.1.0/linux.gz | gunzip -c > /usr/bin/gitlab-runner-local
     $ chmod +x /usr/bin/gitlab-runner-local
     
 ## Windows (Git bash)
@@ -38,7 +38,7 @@ Install [gitbash](https://git-scm.com/downloads)
 
 Download and put binary in `C:\Program Files\Git\mingw64\bin`
 
-    $ curl -L https://github.com/firecow/gitlab-runner-local/releases/download/1.0.0/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-runner-local.exe
+    $ curl -L https://github.com/firecow/gitlab-runner-local/releases/download/1.1.0/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-runner-local.exe
 
 ## Macos
 TODO: Fill this
