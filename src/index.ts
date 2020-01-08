@@ -19,7 +19,7 @@ const logger: winston.Logger = winston.createLogger({
     ],
 });
 
-const illigalJobName = ["image", "services", "stages", "pages", "types", "before_script", "default", "after_script", "variables", "cache", "include"];
+const illigalJobName = ["local_configuration", "image", "services", "stages", "pages", "types", "before_script", "default", "after_script", "variables", "cache", "include"];
 const argv = yargs.argv;
 const cwd = argv.cwd || process.cwd();
 

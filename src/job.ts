@@ -53,7 +53,7 @@ export class Job {
         const beforeScripts = Job.getScriptLikeFromData(jobData, "before_script");
         this.beforeScripts = beforeScripts.length > 0 ? beforeScripts : this.beforeScripts;
 
-        const afterScripts = Job.getScriptLikeFromData(jobData, "before_script");
+        const afterScripts = Job.getScriptLikeFromData(jobData, "after_script");
         this.afterScripts = afterScripts.length > 0 ? afterScripts : this.afterScripts;
 
         this.allowFailure = dotProp.get<boolean>(jobData, "allow_failure") || this.allowFailure;
