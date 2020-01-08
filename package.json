@@ -17,10 +17,10 @@
     "dateformat": "3.x",
     "dot-prop": "5.x",
     "glob": "7.x",
+    "js-yaml": "3.x",
     "pretty-hrtime": "1.x",
     "shelljs": "0.x",
     "winston": "3.x",
-    "yaml": "1.X",
     "yargs": "15.x"
   },
   "pkg": {
@@ -31,6 +31,7 @@
   "author": "Mads Jon Nielsen <madsjon@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "@types/js-yaml": "^3.12.1",
     "@types/pretty-hrtime": "1.x",
     "@types/shelljs": "0.x",
     "@types/yaml": "1.x",

@@ -2,7 +2,7 @@ import c = require("ansi-colors");
 import * as dotProp from "dot-prop";
 import fs = require("fs");
 import * as winston from "winston";
-import yaml = require("yaml");
+import yaml = require("js-yaml");
 import yargs = require("yargs");
 import {Job} from "./job";
 
@@ -30,7 +30,7 @@ if (!fs.existsSync(gitlabCiYmlPath)) {
     process.exit(1);
 }
 const gitlabCiContent = fs.readFileSync(gitlabCiYmlPath, "utf8");
-const gitlabCiData = yaml.parse(gitlabCiContent);
+const gitlabCiData = yaml.safeLoad(gitlabCiContent);
 
 // Parse .gitlab-local.yml
 const gitlabCiLocalYmlPath = `${cwd}/.gitlab-ci.local.yml`;
@@ -39,7 +39,7 @@ if (!fs.existsSync(gitlabCiLocalYmlPath)) {
     process.exit(1);
 }
 const gitlabCiLocalContent = fs.readFileSync(gitlabCiLocalYmlPath, "utf8");
-const gitlabLocalData = yaml.parse(gitlabCiLocalContent);
+const gitlabLocalData = yaml.safeLoad(gitlabCiLocalContent);
 
 const jobs = new Map<string, Job>();
 const stages = new Map<string, Job[]>();
