@@ -41,7 +41,7 @@ export class Job {
         this.globals = globals;
 
         this.stage = dotProp.get<string>(jobData, "stage") || ".pre";
-        this.scripts = Job.getScriptLikesFromData(jobData, "script") || globals.scripts || [];
+        this.scripts = Job.getScriptLikesFromData(jobData, "script") || [];
         this.beforeScripts = Job.getScriptLikesFromData(jobData, "before_script") || globals.beforeScripts || [];
         this.afterScripts = Job.getScriptLikesFromData(jobData, "after_script") || globals.afterScripts || [];
         this.allowFailure = dotProp.get<boolean>(jobData, "allow_failure") || false;
