@@ -1,8 +1,8 @@
 import c = require("ansi-colors");
 import * as dotProp from "dot-prop";
 import fs = require("fs");
-import * as winston from "winston";
 import yaml = require("js-yaml");
+import * as winston from "winston";
 import yargs = require("yargs");
 import {Job} from "./job";
 
@@ -19,7 +19,7 @@ const logger: winston.Logger = winston.createLogger({
     ],
 });
 
-const illigalJobName = ["local_configuration", "image", "services", "stages", "pages", "types", "before_script", "default", "after_script", "variables", "cache", "include"];
+const illigalJobName = ["include", "local_configuration", "image", "services", "stages", "pages", "types", "before_script", "default", "after_script", "variables", "cache", "include"];
 const argv = yargs.argv;
 const cwd = argv.cwd || process.cwd();
 
