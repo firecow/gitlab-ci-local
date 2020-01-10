@@ -29,6 +29,12 @@ error_test:
     - echo "Throwing an error, but its ok, allow_failure equals true"
     - exit 1
 
+var_in_another_file:
+  <<: *tags
+  stage: startup
+  script:
+    - echo "${INCLUDED_FROM_ANOTHER_FILE}"
+
 after_script_test:
   <<: *tags
   stage: last
