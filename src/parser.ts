@@ -1,10 +1,8 @@
 import c = require("ansi-colors");
-import * as dotProp from "dot-prop";
+import deepExtend  = require("deep-extend");
 import fs = require("fs");
 import yaml = require("js-yaml");
-import merge = require("lodash.merge");
 import * as winston from "winston";
-import {IKeyValue} from "./index";
 import {Job} from "./job";
 import {Stage} from "./stage";
 
@@ -19,34 +17,51 @@ export class Parser {
     private readonly stages: Map<string, Stage> = new Map();
 
     constructor(cwd: any, logger: winston.Logger) {
-        // Parse .gitlab-ci.yml
+        // Fail if .gitlab-ci.yml missing
         const gitlabCiYmlPath = `${cwd}/.gitlab-ci.yml`;
         if (!fs.existsSync(gitlabCiYmlPath)) {
             logger.error(`Could not find ${gitlabCiYmlPath}`);
             process.exit(1);
         }
-        const gitlabCiContent = fs.readFileSync(gitlabCiYmlPath, "utf8");
-        const gitlabCiData = yaml.safeLoad(gitlabCiContent);
-        const globalVariables = dotProp.get<IKeyValue>(gitlabCiData, "variables") || {};
 
-        // Parse .gitlab-local.yml
+        // Fail if .gitlab-ci.local.yml missing
         const gitlabCiLocalYmlPath = `${cwd}/.gitlab-ci.local.yml`;
         if (!fs.existsSync(gitlabCiLocalYmlPath)) {
             logger.error(`Could not find ${gitlabCiLocalYmlPath}`);
             process.exit(1);
         }
-        const gitlabCiLocalContent = fs.readFileSync(gitlabCiLocalYmlPath, "utf8");
-        const gitlabLocalData = yaml.safeLoad(gitlabCiLocalContent);
-        const globalLocalVariables = dotProp.get<IKeyValue>(gitlabLocalData, "variables") || {};
 
-        const gitlabData = merge(gitlabCiData, gitlabLocalData);
-        gitlabData.variables = {...globalVariables, ...globalLocalVariables};
+        const orderedVariables = [];
+        const orderedYml = [];
 
-        for (const value of gitlabCiData.stages) {
+        // Parse .gitlab-ci.yml
+        orderedYml.push(yaml.safeLoad(fs.readFileSync(gitlabCiYmlPath, "utf8")));
+        orderedVariables.push(orderedYml[orderedYml.length - 1].variables || {});
+
+        // Parse .gitlab-ci.local.yml
+        orderedYml.push(yaml.safeLoad(fs.readFileSync(gitlabCiLocalYmlPath, "utf8")));
+        orderedVariables.push(orderedYml[orderedYml.length - 1].variables || {});
+
+        // Parse yamls included by other ci files.
+        const includes = deepExtend.apply(this, orderedYml).include || [];
+        for (const value of includes) {
+            if (!value.local) {
+                continue;
+            }
+
+            orderedYml.unshift(yaml.safeLoad(fs.readFileSync(`${cwd}/${value.local}`, "utf8")));
+            orderedVariables.unshift(orderedYml[0].variables || {});
+        }
+
+        // Setup variables and "merged" yml
+        const gitlabData = deepExtend.apply(this, orderedYml);
+
+        // Generate stages
+        for (const value of gitlabData.stages) {
             this.stages.set(value, new Stage(value));
         }
 
-        // Generate all jobs specified in final gitlabData
+        // Generate jobs and put them into stages
         for (const [key, value] of Object.entries(gitlabData)) {
             if (this.illigalJobNames.includes(key) || key[0] === ".") {
                 continue;

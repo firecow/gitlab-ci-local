@@ -1,5 +1,6 @@
 variables:
-  INCLUDED_FROM_ANOTHER_FILE: "Its correct i'm a var from another file"
+  PROJECT_NAME: "Trying to override PROJECT_NAME, not going to happen, .gitlab-ci.yml have higher priority than me"
+  INCLUDED_FROM_ANOTHER_FILE: "Its correct i'm a var from another file" # 'New' var gets recognized
 
 echo_project_name:
   tags: [some_runner_tag]
@@ -20,4 +21,5 @@ local_only_job:
 new_job_from_include:
   tags: [some_runner_tag]
   stage: startup
-  - echo "I get run, because i'm not specified anywhere else"
+  script:
+    - echo "I get run, because i'm not specified anywhere else"

@@ -15,10 +15,9 @@
   "dependencies": {
     "ansi-colors": "4.x",
     "dateformat": "3.x",
-    "dot-prop": "5.x",
+    "deep-extend": "0.x",
     "glob": "7.x",
     "js-yaml": "3.x",
-    "lodash.merge": "4.x",
     "pretty-hrtime": "1.x",
     "shelljs": "0.x",
     "winston": "3.x",
@@ -32,8 +31,8 @@
   "author": "Mads Jon Nielsen <madsjon@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "@types/deep-extend": "0.x",
     "@types/js-yaml": "3.x",
-    "@types/lodash.merge": "4.x",
     "@types/pretty-hrtime": "1.x",
     "@types/shelljs": "0.x",
     "@types/yaml": "1.x",

@@ -1,16 +1,13 @@
 import c = require("ansi-colors");
-import * as dotProp from "dot-prop";
 import prettyHrtime = require("pretty-hrtime");
 import * as shelljs from "shelljs";
-import {Globals} from "./globals";
-import {IKeyValue} from "./index";
 
 const shell = process.env.EXEPATH ? `${process.env.EXEPATH}/bash.exe` : "/bin/bash";
 
 export class Job {
 
     private static getScriptLikesFromData(jobData: any, keyname: string): string[] | null {
-        const sc = dotProp.get<string | string[] | undefined>(jobData, keyname);
+        const sc = jobData[keyname];
         if (sc) {
             let scripts: string[] = [];
             scripts = scripts.concat(sc);
@@ -23,9 +20,9 @@ export class Job {
     public readonly name: string;
 
     private readonly cwd: any;
+    private readonly globals: any;
 
-    private readonly globals: Globals;
-    private readonly variables: IKeyValue;
+    private readonly variables: {[key: string]: string};
 
     private readonly allowFailure: boolean;
 
@@ -35,17 +32,18 @@ export class Job {
 
     private running: boolean = false;
 
-    constructor(jobData: any, name: string, cwd: any, globals: Globals) {
+    constructor(jobData: any, name: string, cwd: any, globals: any) {
         this.name = name;
         this.cwd = cwd;
         this.globals = globals;
 
-        this.stage = dotProp.get<string>(jobData, "stage") || ".pre";
-        this.scripts = Job.getScriptLikesFromData(jobData, "script") || [];
-        this.beforeScripts = Job.getScriptLikesFromData(jobData, "before_script") || globals.beforeScripts || [];
-        this.afterScripts = Job.getScriptLikesFromData(jobData, "after_script") || globals.afterScripts || [];
-        this.allowFailure = dotProp.get<boolean>(jobData, "allow_failure") || false;
-        this.variables = dotProp.get<IKeyValue>(jobData, "variables") || {};
+        this.stage = jobData.stage || ".pre";
+        this.scripts = [].concat(jobData.script || []);
+
+        this.beforeScripts = [].concat(jobData.before_script || globals.before_script || []);
+        this.afterScripts = [].concat(jobData.after_script || globals.after_script || []);
+        this.allowFailure = jobData.allow_failure || false;
+        this.variables = jobData.variables || {};
     }
 
     public async start(): Promise<void> {
@@ -112,8 +110,8 @@ export class Job {
         return `${c.blueBright(`${this.name}`)} ${mistakeStr}`;
     }
 
-    private getEnvs(): IKeyValue {
-        return {...this.globals.variables, ...this.variables, ...process.env};
+    private getEnvs(): {[key: string]: string} {
+        return {...this.globals.variables || {}, ...this.variables, ...process.env};
     }
 
     private async exec(script: string): Promise<number> {

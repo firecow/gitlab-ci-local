@@ -3,10 +3,6 @@ import * as winston from "winston";
 import yargs = require("yargs");
 import {Parser} from "./parser";
 
-export interface IKeyValue {
-     [key: string]: string | undefined;
-}
-
 const colorizer = winston.format.colorize();
 
 const logger: winston.Logger = winston.createLogger({
