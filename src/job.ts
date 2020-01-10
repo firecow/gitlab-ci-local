@@ -2,20 +2,21 @@ import c = require("ansi-colors");
 import * as dotProp from "dot-prop";
 import prettyHrtime = require("pretty-hrtime");
 import * as shelljs from "shelljs";
+import {Globals} from "./globals";
 import {IKeyValue} from "./index";
 
 const shell = process.env.EXEPATH ? `${process.env.EXEPATH}/bash.exe` : "/bin/bash";
 
 export class Job {
 
-    private static getScriptLikeFromData(jobData: any, keyname: string): string[] {
+    private static getScriptLikesFromData(jobData: any, keyname: string): string[] | null {
         const sc = dotProp.get<string | string[] | undefined>(jobData, keyname);
         if (sc) {
             let scripts: string[] = [];
             scripts = scripts.concat(sc);
             return scripts;
         }
-        return [];
+        return null;
     }
 
     public readonly stage: string;
@@ -23,41 +24,26 @@ export class Job {
 
     private readonly cwd: any;
 
-    private readonly globalVariables: IKeyValue;
+    private readonly globals: Globals;
     private readonly variables: IKeyValue;
-    private variablesLocal: IKeyValue = {};
 
-    private allowFailure: boolean;
-    private beforeScripts: string[] = [];
-    private afterScripts: string[] = [];
-    private scripts: string[] = [];
+    private readonly allowFailure: boolean;
 
-    constructor(jobData: any, name: string, cwd: any, globalVariables: IKeyValue) {
+    private readonly beforeScripts: string[] = [];
+    private readonly scripts: string[] = [];
+    private readonly afterScripts: string[] = [];
+
+    constructor(jobData: any, name: string, cwd: any, globals: Globals) {
         this.name = name;
         this.cwd = cwd;
-        this.globalVariables = globalVariables;
+        this.globals = globals;
+
         this.stage = dotProp.get<string>(jobData, "stage") || ".pre";
-
-        this.scripts = Job.getScriptLikeFromData(jobData, "script");
-        this.beforeScripts = Job.getScriptLikeFromData(jobData, "before_script");
-        this.afterScripts = Job.getScriptLikeFromData(jobData, "after_script");
-
+        this.scripts = Job.getScriptLikesFromData(jobData, "script") || globals.scripts || [];
+        this.beforeScripts = Job.getScriptLikesFromData(jobData, "before_script") || globals.beforeScripts || [];
+        this.afterScripts = Job.getScriptLikesFromData(jobData, "after_script") || globals.afterScripts || [];
         this.allowFailure = dotProp.get<boolean>(jobData, "allow_failure") || false;
         this.variables = dotProp.get<IKeyValue>(jobData, "variables") || {};
-    }
-
-    public override(jobData: any): void {
-        const scripts = Job.getScriptLikeFromData(jobData, "script");
-        this.scripts = scripts.length > 0 ? scripts : this.scripts;
-
-        const beforeScripts = Job.getScriptLikeFromData(jobData, "before_script");
-        this.beforeScripts = beforeScripts.length > 0 ? beforeScripts : this.beforeScripts;
-
-        const afterScripts = Job.getScriptLikeFromData(jobData, "after_script");
-        this.afterScripts = afterScripts.length > 0 ? afterScripts : this.afterScripts;
-
-        this.allowFailure = dotProp.get<boolean>(jobData, "allow_failure") || this.allowFailure;
-        this.variablesLocal = dotProp.get<IKeyValue>(jobData, "variables") || {};
     }
 
     public async start(): Promise<void> {
@@ -122,7 +108,7 @@ export class Job {
     }
 
     private getEnvs(): IKeyValue {
-        return {...this.globalVariables, ...this.variables, ...this.variablesLocal, ...process.env};
+        return {...this.globals.variables, ...this.variables, ...process.env};
     }
 
     private async exec(script: string): Promise<number> {
