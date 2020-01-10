@@ -1,0 +1,23 @@
+variables:
+  INCLUDED_FROM_ANOTHER_FILE: "Its correct i'm a var from another file"
+
+echo_project_name:
+  tags: [some_runner_tag]
+  stage: startup
+  script:
+    - echo "I'm trying to overwrite 'echo_project_name'"
+    - echo "I'm not going to succeed, cause jobs specified in .gitlab-ci.yml have higher priority than me"
+    - exit 1
+
+local_only_job:
+  tags: [some_runner_tag]
+  stage: startup
+  script:
+    - echo "I'm trying to overwrite 'local_only_job'"
+    - echo "I'm not going to succeed, cause even local (only) jobs have higher priority than me"
+    - exit 1
+
+new_job_from_include:
+  tags: [some_runner_tag]
+  stage: startup
+  - echo "I get run, because i'm not specified anywhere else"
