@@ -1,2 +1,9 @@
+variables:
+  LOCAL_ONLY: "Im a LOCAL_ONLY_VAR"
+
 project_context:
   script: echo "Overriding job script, See (${PWD}/.gitlab-ci.local.yml)"
+
+local_only_job:
+  stage: build
+  script: echo "I only get run locally '${LOCAL_ONLY}'"

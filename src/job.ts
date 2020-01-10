@@ -33,6 +33,8 @@ export class Job {
     private readonly scripts: string[] = [];
     private readonly afterScripts: string[] = [];
 
+    private running: boolean = false;
+
     constructor(jobData: any, name: string, cwd: any, globals: Globals) {
         this.name = name;
         this.cwd = cwd;
@@ -47,13 +49,14 @@ export class Job {
     }
 
     public async start(): Promise<void> {
+        this.running = true;
+
         if (this.scripts.length === 0) {
             console.error(`${c.blueBright(`${this.name}`)} ${c.red(`must have script specified`)}`);
             process.exit(1);
         }
 
         const startTime = process.hrtime();
-
         const prescripts = this.beforeScripts.concat(this.scripts);
         const prescriptsExitCode = await this.exec(prescripts.join(" && "));
 
@@ -64,6 +67,7 @@ export class Job {
         if (this.afterScripts.length === 0 && prescriptsExitCode > 0 && this.allowFailure) {
             console.error(this.getExitedString(prescriptsExitCode, true));
             console.log(this.getFinishedString(startTime));
+            this.running = false;
             return;
         }
 
@@ -89,6 +93,7 @@ export class Job {
         }
 
         console.log(this.getFinishedString(startTime));
+        this.running = false;
         return;
     }
 

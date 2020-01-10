@@ -1,4 +1,7 @@
-stages: [startup, build]
+stages: [startup, build, last]
+
+include:
+  - local: .ci-include.yml
 
 .defaultTags: &tags
   tags: [some_runner_tag]
@@ -28,7 +31,7 @@ error_test:
 
 after_script_test:
   <<: *tags
-  stage: build
+  stage: last
   script:
     - echo "Throwing an error"
     - exit 1
