@@ -15,6 +15,8 @@ Then this is the tool for you.
       * [Convinience](#convinience)
          * [Bash alias](#bash-alias)
          * [Bash completion](#bash-completion)
+      * [Quicks](#quirks)
+         * [Artifacts](#artifacts)
    * [Development](#development)
       * [Scripts](#scripts)
       * [Build binaries](#build-binaries)
@@ -54,6 +56,9 @@ TODO: Fill this
 ### Bash completion
 TODO: Fill this
 
+## Quirks
+### Artifacts
+Artifacts works right now, as along as you don't overwirte git tracked files and as long as you don't use dependencies tag.
 
 # Development
 ## Scripts
@@ -74,9 +79,11 @@ TODO: Fill this
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
 
 ## Unsupported tags, will be implemented in order
-- include
 - extends
 - default
+- include:file
+- include:template
+- include:remote
 - artifacts (reset/restore artifacts from job to job via .gitlab-ci.local folder)
 - rules
 - dependencies (depend or non-depend on artifacts, default is depend ALL)
