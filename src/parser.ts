@@ -1,5 +1,5 @@
 import c = require("ansi-colors");
-import deepExtend  = require("deep-extend");
+import deepExtend = require("deep-extend");
 import fs = require("fs");
 import yaml = require("js-yaml");
 import * as winston from "winston";
@@ -36,11 +36,15 @@ export class Parser {
 
         // Parse .gitlab-ci.yml
         orderedYml.push(yaml.safeLoad(fs.readFileSync(gitlabCiYmlPath, "utf8")));
-        orderedVariables.push(orderedYml[orderedYml.length - 1].variables || {});
+        if (!orderedYml.last()) { // Print if empty
+            console.error(`${cwd}/.gitlab-ci.yml is empty`);
+            process.exit(1);
+        }
+        orderedVariables.push(orderedYml.last().variables);
 
         // Parse .gitlab-ci.local.yml
-        orderedYml.push(yaml.safeLoad(fs.readFileSync(gitlabCiLocalYmlPath, "utf8")));
-        orderedVariables.push(orderedYml[orderedYml.length - 1].variables || {});
+        orderedYml.push(yaml.safeLoad(fs.readFileSync(gitlabCiLocalYmlPath, "utf8")) || {});
+        orderedVariables.push(orderedYml.last().variables || {});
 
         // Parse yamls included by other ci files.
         const includes = deepExtend.apply(this, orderedYml).include || [];
@@ -50,7 +54,7 @@ export class Parser {
             }
 
             orderedYml.unshift(yaml.safeLoad(fs.readFileSync(`${cwd}/${value.local}`, "utf8")));
-            orderedVariables.unshift(orderedYml[0].variables || {});
+            orderedVariables.unshift(orderedYml.first().variables || {});
         }
 
         // Setup variables and "merged" yml

@@ -5,6 +5,21 @@ import {Parser} from "./parser";
 
 const colorizer = winston.format.colorize();
 
+// Array polyfill
+declare global {
+    // tslint:disable-next-line:interface-name
+    interface Array<T> {
+        last(): T | undefined;
+        first(): T | undefined;
+    }
+}
+Array.prototype.last = function() {
+    return this[this.length - 1];
+};
+Array.prototype.first = function() {
+    return this[0];
+};
+
 const logger: winston.Logger = winston.createLogger({
     format: winston.format.combine(
         winston.format.timestamp({format: "HH:mm:SS"}),
@@ -44,7 +59,9 @@ const runJobs = async () => {
             await Promise.all(promises);
             console.log("");
         } catch (e) {
-            if (e !== "") { console.error(e); }
+            if (e !== "") {
+                console.error(e);
+            }
             process.exit(1);
         }
     }
