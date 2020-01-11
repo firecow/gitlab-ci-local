@@ -6,16 +6,6 @@ const shell = process.env.EXEPATH ? `${process.env.EXEPATH}/bash.exe` : "/bin/ba
 
 export class Job {
 
-    private static getScriptLikesFromData(jobData: any, keyname: string): string[] | null {
-        const sc = jobData[keyname];
-        if (sc) {
-            let scripts: string[] = [];
-            scripts = scripts.concat(sc);
-            return scripts;
-        }
-        return null;
-    }
-
     public readonly stage: string;
     public readonly name: string;
 
