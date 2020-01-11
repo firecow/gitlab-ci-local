@@ -30,8 +30,9 @@ export class Job {
         this.stage = jobData.stage || ".pre";
         this.scripts = [].concat(jobData.script || []);
 
-        this.beforeScripts = [].concat(jobData.before_script || globals.before_script || []);
-        this.afterScripts = [].concat(jobData.after_script || globals.after_script || []);
+        const ciDefault = globals.default || {};
+        this.beforeScripts = [].concat(jobData.before_script || ciDefault.before_script || globals.before_script || []);
+        this.afterScripts = [].concat(jobData.after_script || ciDefault.after_script || globals.after_script || []);
         this.allowFailure = jobData.allow_failure || false;
         this.variables = jobData.variables || {};
     }
