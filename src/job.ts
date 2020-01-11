@@ -12,7 +12,7 @@ export class Job {
     private readonly cwd: any;
     private readonly globals: any;
 
-    private readonly variables: {[key: string]: string};
+    private readonly variables: { [key: string]: string };
 
     private readonly allowFailure: boolean;
 
@@ -100,7 +100,7 @@ export class Job {
         return `${c.blueBright(`${this.name}`)} ${mistakeStr}`;
     }
 
-    private getEnvs(): {[key: string]: string} {
+    private getEnvs(): { [key: string]: string } {
         return {...this.globals.variables || {}, ...this.variables, ...process.env};
     }
 
@@ -122,7 +122,10 @@ export class Job {
                 child.stdout.on("data", (buf) => {
                     const lines = `${buf}`.split(/\r?\n/);
                     lines.forEach((l) => {
-                        if (l) { process.stdout.write(`${c.blueBright(`${this.name}`)} ${c.greenBright(`>`)} ${c.green(`${l}`)}\n`); }
+                        if (!l) {
+                            return;
+                        }
+                        process.stdout.write(`${c.blueBright(`${this.name}`)} ${c.greenBright(`>`)} ${c.green(`${l}`)}\n`);
                     });
                 });
             }
@@ -131,7 +134,10 @@ export class Job {
                 child.stderr.on("data", (buf) => {
                     const lines = `${buf}`.split(/\r?\n/);
                     lines.forEach((l) => {
-                        if (l) { process.stderr.write(`${c.blueBright(`${this.name}`)} ${c.redBright(`>`)} ${c.red(`${l}`)}\n`); }
+                        if (!l) {
+                            return;
+                        }
+                        process.stderr.write(`${c.blueBright(`${this.name}`)} ${c.redBright(`>`)} ${c.red(`${l}`)}\n`);
                     });
                 });
             }
