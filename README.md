@@ -84,9 +84,7 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
 - include:file
 - include:template
 - include:remote
-- artifacts (reset/restore artifacts from job to job via .gitlab-ci.local folder)
 - rules
-- dependencies (depend or non-depend on artifacts, default is depend ALL)
 - when:on_failure,delayed,manual,always,never
 - start_in (Used only with when:delayed)
 - needs (directed acyclic graph)
@@ -106,6 +104,8 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
 - environment
 
 ## Undecided
+- artifacts (reset/restore/uploads "files" from job to job)
+- dependencies (depend or non-depend on artifacts, default is depend ALL)
 - only
 - except
 - parallel
