@@ -21,6 +21,7 @@ Then this is the tool for you.
       * [Scripts](#scripts)
       * [Build binaries](#build-binaries)
    * [TODO](#todo)
+      * [Known Bugs](#known-bugs)
       * [Features](#features)
       * [Unsupported tags, will be implemented in order](#unsupported-tags-will-be-implemented-in-order)
       * [Docker specfic tags. (Only shell working now)](#docker-specfic-tags-only-shell-working-now)
@@ -74,6 +75,9 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
     $ npm run build-macos
 
 # TODO
+
+## Known Bugs
+- include:local isn't recursive
 
 ## Features
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
