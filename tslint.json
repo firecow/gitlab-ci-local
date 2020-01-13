@@ -1,10 +1,17 @@
 {
     "defaultSeverity": "error",
     "extends": [
-        "tslint:recommended"
+        "tslint:all"
     ],
     "jsRules": {},
     "rules": {
+        "strict-boolean-expressions": false,
+        "newline-per-chained-call": false,
+        "no-any": false,
+        "no-unsafe-any": false,
+        "completed-docs": false,
+        "typedef": false,
+        "no-use-before-declare": false,
         "no-string-throw": false,
         "no-console": false,
         "object-literal-sort-keys": false,

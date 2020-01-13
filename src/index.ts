@@ -1,7 +1,8 @@
-import c = require("ansi-colors");
+import * as c from "ansi-colors";
 import * as winston from "winston";
-import yargs = require("yargs");
-import {Parser} from "./parser";
+import * as yargs from "yargs";
+
+import { Parser } from "./parser";
 
 const colorizer = winston.format.colorize();
 
@@ -9,8 +10,8 @@ const colorizer = winston.format.colorize();
 declare global {
     // tslint:disable-next-line:interface-name
     interface Array<T> {
-        last(): T | undefined;
         first(): T | undefined;
+        last(): T | undefined;
     }
 }
 Array.prototype.last = function() {
@@ -49,7 +50,7 @@ const runJobs = async () => {
         }
 
         const jobNames = `${jobs.map((j) => j.name).join(" ")}`;
-        console.log(`=> ${c.yellow(`${stageName}`)} > ${c.blueBright(`${jobNames}`)} ${c.magentaBright(`starting`)}...`);
+        console.log(`=> ${c.yellow(`${stageName}`)} > ${c.blueBright(`${jobNames}`)} ${c.magentaBright("starting")}...`);
         for (const job of jobs) {
             const jobPromise = job.start();
             promises.push(jobPromise);
@@ -68,7 +69,7 @@ const runJobs = async () => {
 };
 
 process.on("uncaughtException", (err) => {
-    // handle the error safely
+    // Handle the error safely
     console.log(err);
 });
 

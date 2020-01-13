@@ -1,11 +1,11 @@
-import {Job} from "./job";
+import { Job } from "./job";
 
 export class Stage {
 
     public readonly name: string;
     private readonly jobs: Job[] = [];
 
-    constructor(name: string) {
+    public constructor(name: string) {
         this.name = name;
     }
 
