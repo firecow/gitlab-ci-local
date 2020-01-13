@@ -7,8 +7,10 @@
     "build-win": "pkg dist/index.js -t node12-win-x64 -o ./bin/win/gitlab-local-pipeline && gzip -c bin/win/gitlab-local-pipeline.exe > bin/win.gz",
     "build-all": "npm run build-linux && npm run build-macos && npm run build-win",
     "build": "tsc",
+    "check-all": "npm run --silent lint && npm audit --parseable && npm run ncu",
     "lint": "tslint --project .",
     "lint-fix": "tslint --fix --project .",
+    "ncu": "ncu --semverLevel major -e 2",
     "test-yml-spec": "node -r source-map-support/register dist/index.js --cwd tests/test-yml-spec"
   },
   "bin": "dist/index.js",
@@ -37,6 +39,7 @@
     "@types/shelljs": "0.x",
     "@types/yaml": "1.x",
     "@types/yargs": "15.x",
+    "npm-check-updates": "4.0.1",
     "pkg": "4.x",
     "source-map-support": "0.x",
     "tslint": "5.x",

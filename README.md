@@ -1,7 +1,9 @@
 # Introduction
-Are you tired of pushing to test your .gitlab-ci.yml?
+Are you tired of pushing commits to test your Gitlab CI?
 
 Then this is the tool for you.
+
+It lets you simulate a CI pipeline on your local machine.
 
 # Table of contents
    * [Introduction](#introduction)
