@@ -1,10 +1,10 @@
 {
-  "name": "gitlab-runner-local",
+  "name": "gitlab-local-pipeline",
   "main": "index.js",
   "scripts": {
-    "build-linux": "pkg dist/index.js -t node12-linux-x64 -o ./bin/linux/gitlab-runner-local && gzip -c bin/linux/gitlab-runner-local > bin/linux.gz",
-    "build-macos": "pkg dist/index.js -t node12-macos-x64 -o ./bin/macos/gitlab-runner-local && gzip -c bin/macos/gitlab-runner-local > bin/macos.gz",
-    "build-win": "pkg dist/index.js -t node12-win-x64 -o ./bin/win/gitlab-runner-local && gzip -c bin/win/gitlab-runner-local.exe > bin/win.gz",
+    "build-linux": "pkg dist/index.js -t node12-linux-x64 -o ./bin/linux/gitlab-local-pipeline && gzip -c bin/linux/gitlab-local-pipeline > bin/linux.gz",
+    "build-macos": "pkg dist/index.js -t node12-macos-x64 -o ./bin/macos/gitlab-local-pipeline && gzip -c bin/macos/gitlab-local-pipeline > bin/macos.gz",
+    "build-win": "pkg dist/index.js -t node12-win-x64 -o ./bin/win/gitlab-local-pipeline && gzip -c bin/win/gitlab-local-pipeline.exe > bin/win.gz",
     "build-all": "npm run build-linux && npm run build-macos && npm run build-win",
     "build": "tsc",
     "lint": "tslint --project .",

@@ -25,7 +25,7 @@ Then this is the tool for you.
       * [Features](#features)
       * [Unsupported tags, will be implemented in order](#unsupported-tags-will-be-implemented-in-order)
       * [Docker specfic tags. (Only shell working now)](#docker-specfic-tags-only-shell-working-now)
-      * [Gitlab CI only, will not be used by gitlab-runner-local](#gitlab-ci-only-will-not-be-used-by-gitlab-runner-local)
+      * [Gitlab CI only, will not be used by gitlab-local-pipeline](#gitlab-ci-only-will-not-be-used-by-gitlab-local-pipeline)
       * [Undecided](#undecided)
 
 # Installation
@@ -33,15 +33,15 @@ Then this is the tool for you.
 Download and put binary in `/usr/bin`
 
     $ sudo su `must be installed as root, if placed in /usr/bin/`
-    $ curl -L https://github.com/firecow/gitlab-runner-local/releases/latest/download/linux.gz | gunzip -c > /usr/bin/gitlab-runner-local
-    $ chmod +x /usr/bin/gitlab-runner-local
+    $ curl -L https://github.com/firecow/gitlab-local-pipeline/releases/latest/download/linux.gz | gunzip -c > /usr/bin/gitlab-local-pipeline
+    $ chmod +x /usr/bin/gitlab-local-pipeline
     
 ## Windows (Git bash)
 Install [gitbash](https://git-scm.com/downloads)
 
 Download and put binary in `C:\Program Files\Git\mingw64\bin`
 
-    $ curl -L https://github.com/firecow/gitlab-runner-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-runner-local.exe
+    $ curl -L https://github.com/firecow/gitlab-local-pipeline/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-local-pipeline.exe
 
 ## Macos
 TODO: Fill this
@@ -49,11 +49,11 @@ TODO: Fill this
 # Usage
 ## Example
     $ cd /home/user/workspace/myproject
-    $ gitlab-runner-local
+    $ gitlab-local-pipeline
 
 ## Convinience
 ### Bash alias
-    $ echo "alias grl='gitlab-runner-local'" >> ~/.bashrc
+    $ echo "alias glp='gitlab-local-pipeline'" >> ~/.bashrc
 ### Bash completion
 TODO: Fill this
 
@@ -100,7 +100,7 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
 - services
 - image
 
-## Gitlab CI only, will not be used by gitlab-runner-local
+## Gitlab CI only, will not be used by gitlab-local-pipeline
 - cache
 - pages
 - resource_group
