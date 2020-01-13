@@ -1,28 +1,28 @@
-import c = require("ansi-colors");
-import prettyHrtime = require("pretty-hrtime");
+import * as c from "ansi-colors";
+import * as prettyHrtime from "pretty-hrtime";
 import * as shelljs from "shelljs";
 
 const shell = process.env.EXEPATH ? `${process.env.EXEPATH}/bash.exe` : "/bin/bash";
 
 export class Job {
-
-    public readonly stage: string;
     public readonly name: string;
 
-    private readonly cwd: any;
-    private readonly globals: any;
-
-    private readonly variables: { [key: string]: string };
+    public readonly stage: string;
+    private readonly afterScripts: string[] = [];
 
     private readonly allowFailure: boolean;
 
     private readonly beforeScripts: string[] = [];
+
+    private readonly cwd: any;
+    private readonly globals: any;
+
+    private running = false;
     private readonly scripts: string[] = [];
-    private readonly afterScripts: string[] = [];
 
-    private running: boolean = false;
+    private readonly variables: { [key: string]: string };
 
-    constructor(jobData: any, name: string, cwd: any, globals: any) {
+    public constructor(jobData: any, name: string, cwd: any, globals: any) {
         this.name = name;
         this.cwd = cwd;
         this.globals = globals;
@@ -41,7 +41,7 @@ export class Job {
         this.running = true;
 
         if (this.scripts.length === 0) {
-            console.error(`${c.blueBright(`${this.name}`)} ${c.red(`must have script specified`)}`);
+            console.error(`${c.blueBright(`${this.name}`)} ${c.red("must have script specified")}`);
             process.exit(1);
         }
 
@@ -57,6 +57,7 @@ export class Job {
             console.error(this.getExitedString(prescriptsExitCode, true));
             console.log(this.getFinishedString(startTime));
             this.running = false;
+
             return;
         }
 
@@ -83,26 +84,12 @@ export class Job {
 
         console.log(this.getFinishedString(startTime));
         this.running = false;
+
         return;
     }
 
     public toString() {
         return this.name;
-    }
-
-    private getFinishedString(startTime: [number, number]) {
-        const endTime = process.hrtime(startTime);
-        const timeStr = prettyHrtime(endTime);
-        return `${c.blueBright(`${this.name}`)} ${c.magentaBright(`finished`)} in ${c.magenta(`${timeStr}`)}`;
-    }
-
-    private getExitedString(code: number, warning: boolean = false, prependString: string = "") {
-        const mistakeStr = warning ? c.yellowBright(`warning with code ${code}`) + prependString : c.red(`exited with code ${code}`) + prependString;
-        return `${c.blueBright(`${this.name}`)} ${mistakeStr}`;
-    }
-
-    private getEnvs(): { [key: string]: string } {
-        return {...this.globals.variables || {}, ...this.variables, ...process.env};
     }
 
     private async exec(script: string): Promise<number> {
@@ -116,7 +103,7 @@ export class Job {
             });
 
             child.on("error", (e) => {
-                reject(`${c.blueBright(`${this.name}`)} ${c.red(`error ${e}`)}`);
+                reject(`${c.blueBright(`${this.name}`)} ${c.red(`error ${String(e)}`)}`);
             });
 
             if (child.stdout) {
@@ -126,7 +113,7 @@ export class Job {
                         if (!l) {
                             return;
                         }
-                        process.stdout.write(`${c.blueBright(`${this.name}`)} ${c.greenBright(`>`)} ${c.green(`${l}`)}\n`);
+                        process.stdout.write(`${c.blueBright(`${this.name}`)} ${c.greenBright(">")} ${c.green(`${l}`)}\n`);
                     });
                 });
             }
@@ -138,12 +125,29 @@ export class Job {
                         if (!l) {
                             return;
                         }
-                        process.stderr.write(`${c.blueBright(`${this.name}`)} ${c.redBright(`>`)} ${c.red(`${l}`)}\n`);
+                        process.stderr.write(`${c.blueBright(`${this.name}`)} ${c.redBright(">")} ${c.red(`${l}`)}\n`);
                     });
                 });
             }
 
             child.on("exit", resolve);
         });
+    }
+
+    private getEnvs(): { [key: string]: string } {
+        return {...this.globals.variables || {}, ...this.variables, ...process.env};
+    }
+
+    private getExitedString(code: number, warning: boolean = false, prependString: string = "") {
+        const mistakeStr = warning ? c.yellowBright(`warning with code ${code}`) + prependString : c.red(`exited with code ${code}`) + prependString;
+
+        return `${c.blueBright(`${this.name}`)} ${mistakeStr}`;
+    }
+
+    private getFinishedString(startTime: [number, number]) {
+        const endTime = process.hrtime(startTime);
+        const timeStr = prettyHrtime(endTime);
+
+        return `${c.blueBright(`${this.name}`)} ${c.magentaBright("finished")} in ${c.magenta(`${timeStr}`)}`;
     }
 }
