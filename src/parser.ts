@@ -1,10 +1,11 @@
-import c = require("ansi-colors");
-import deepExtend = require("deep-extend");
-import fs = require("fs");
-import yaml = require("js-yaml");
+import * as c from "ansi-colors";
+import * as deepExtend from "deep-extend";
+import * as fs from "fs";
+import * as yaml from "js-yaml";
 import * as winston from "winston";
-import {Job} from "./job";
-import {Stage} from "./stage";
+
+import { Job } from "./job";
+import { Stage } from "./stage";
 
 export class Parser {
 
@@ -16,7 +17,7 @@ export class Parser {
     private readonly jobs: Map<string, Job> = new Map();
     private readonly stages: Map<string, Stage> = new Map();
 
-    constructor(cwd: any, logger: winston.Logger) {
+    public constructor(cwd: any, logger: winston.Logger) {
         // Fail if .gitlab-ci.yml missing
         const gitlabCiYmlPath = `${cwd}/.gitlab-ci.yml`;
         if (!fs.existsSync(gitlabCiYmlPath)) {
@@ -77,7 +78,7 @@ export class Parser {
                 stage.addJob(job);
             } else {
                 const stagesJoin = Array.from(this.stages.keys()).join(", ");
-                console.error(`${c.blueBright(`${job.name}`)} ${c.yellow(`${job.stage}`)} ${c.red(`isn't specified in stages. Must be one of the following`)} ${c.yellow(`${stagesJoin}`)}`);
+                console.error(`${c.blueBright(`${job.name}`)} ${c.yellow(`${job.stage}`)} ${c.red("isn't specified in stages. Must be one of the following")} ${c.yellow(`${stagesJoin}`)}`);
                 process.exit(1);
             }
 
@@ -85,11 +86,11 @@ export class Parser {
         }
     }
 
-    public getStages(): ReadonlyMap<string, Stage> {
-        return this.stages;
-    }
-
     public getJobs(): ReadonlyMap<string, Job> {
         return this.jobs;
+    }
+
+    public getStages(): ReadonlyMap<string, Stage> {
+        return this.stages;
     }
 }
