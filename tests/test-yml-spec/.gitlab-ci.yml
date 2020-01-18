@@ -6,8 +6,26 @@ include:
 .defaultTags: &tags
   tags: [some_runner_tag]
 
+.parent0:
+  <<: *tags
+  stage: prepare
+  before_script: [echo "I'm from parents0 (before_script)"]
+  script: [echo "I'm from parents0 (script)"]
+  after_script: [echo "I'm from parents0 (after_script)"]
+
+.parent1:
+  stage: build
+  before_script: [echo "I'm from parents1 (before_script)"]
+  script: [echo "I'm from parents1 (script)"]
+  after_script: [echo "I'm from parents1 (after_script)"]
+
 variables:
   PROJECT_NAME: test-yml-spec-project
+
+extending:
+  extends: [.parent0, .parent1]
+  script:
+    - echo "I'm from extending (script)"
 
 echo_project_name:
   <<: *tags

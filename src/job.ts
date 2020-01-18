@@ -1,4 +1,5 @@
 import * as c from "ansi-colors";
+import * as deepExtend from "deep-extend";
 import * as prettyHrtime from "pretty-hrtime";
 import * as shelljs from "shelljs";
 
@@ -26,6 +27,23 @@ export class Job {
         this.name = name;
         this.cwd = cwd;
         this.globals = globals;
+
+        // Parse extends
+        if (jobData.extends) {
+            const extendList = [].concat(jobData.extends);
+            const deepExtendList: any[] = [];
+            extendList.forEach((parentJobName) => {
+                if (!globals[parentJobName]) {
+                    console.error(`${c.red(`'${parentJobName}' could not be found`)}`);
+                    process.exit(1);
+                }
+                deepExtendList.push(globals[parentJobName]);
+            });
+
+            deepExtendList.push(jobData);
+            // tslint:disable-next-line:no-parameter-reassignment
+            jobData = deepExtend.apply(this, deepExtendList);
+        }
 
         this.stage = jobData.stage || ".pre";
         this.scripts = [].concat(jobData.script || []);
