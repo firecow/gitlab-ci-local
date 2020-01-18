@@ -86,7 +86,6 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
 
 ## Unsupported tags, will be implemented in order
 - extends
-- default
 - include:file
 - include:template
 - include:remote
