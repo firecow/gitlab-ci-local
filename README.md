@@ -88,13 +88,17 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
 
 ## Unsupported tags, will be implemented in order
 - extends
+- when:manual
+- rules
+- when:on_failure
+- when:delayed
+  - start_in (Used only with when:delayed)
+- when:always
+- when:never
+- needs (directed acyclic graph)
 - include:file
 - include:template
 - include:remote
-- rules
-- when:on_failure,delayed,manual,always,never
-- start_in (Used only with when:delayed)
-- needs (directed acyclic graph)
 - coverage (code coverage)
 - retry (in case of failure)
 - timeout (job max execution time)
