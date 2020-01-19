@@ -64,3 +64,16 @@ after_script_test:
     - echo "Trying make an error, but my exit code is ignored, cause i'm an after_script"
     - exit 127
 
+manual_job:
+  <<: *tags
+  when: manual
+  stage: last
+  script:
+    - echo "I'm not going to be called"
+
+manual_job_invoked_from_cli:
+  <<: *tags
+  when: manual
+  stage: last
+  script:
+    - echo "I was invoked manually, because 'gitlab-local-pipeline manual_job_invoked_from_cli' was called"

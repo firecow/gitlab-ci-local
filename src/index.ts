@@ -52,6 +52,10 @@ const runJobs = async () => {
         const jobNames = `${jobs.map((j) => j.name).join(" ")}`;
         console.log(`=> ${c.yellow(`${stageName}`)} > ${c.blueBright(`${jobNames}`)} ${c.magentaBright("starting")}...`);
         for (const job of jobs) {
+            if (job.isManual() && !argv._.includes(job.name)) {
+                console.log(`${c.blueBright(`${job.name}`)} skipped. Manual job`);
+                continue;
+            }
             const jobPromise = job.start();
             promises.push(jobPromise);
         }
