@@ -83,7 +83,6 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
 
 ## Features
 - Execute single job `gitlab-local-pipeline ts-lint`
-- Execute certain manual jobs `gitlab-local-pipeline -m deploy -m someotherjob`
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
 
 ## Unsupported tags, will be implemented in order
