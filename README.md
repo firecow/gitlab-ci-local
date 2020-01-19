@@ -87,13 +87,13 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
 
 ## Unsupported tags, will be implemented in order
+- needs (directed acyclic graph)
 - rules
 - when:on_failure
 - when:delayed
   - start_in (Used only with when:delayed)
 - when:always
 - when:never
-- needs (directed acyclic graph)
 - include:file
 - include:template
 - include:remote
