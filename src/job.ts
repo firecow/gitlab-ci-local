@@ -1,9 +1,18 @@
 import * as c from "ansi-colors";
 import * as deepExtend from "deep-extend";
+import * as glob from "glob";
 import * as prettyHrtime from "pretty-hrtime";
 import * as shelljs from "shelljs";
 
-const shell = process.env.EXEPATH ? `${process.env.EXEPATH}/bash.exe` : "/bin/bash";
+let shell = "/bin/bash";
+if (process.env.EXEPATH) {
+    const bashExes = glob.sync(`${process.env.EXEPATH}/**/bash.exe`);
+    if (bashExes.length === 0) {
+        console.error(`${c.red("Could not find any bash executables")}`);
+        process.exit(1);
+    }
+    shell = bashExes[0];
+}
 
 export class Job {
     public readonly name: string;
