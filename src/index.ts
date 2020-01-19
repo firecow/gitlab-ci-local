@@ -46,6 +46,8 @@ process.env.CI_PIPELINE_ID = makeid(10);
 
 const argv = yargs.argv;
 const cwd = argv.cwd || process.cwd();
+const m: any = argv.m;
+const manualArgs: string[] = [].concat(m || []);
 
 const parser = new Parser(cwd, logger);
 
@@ -64,7 +66,7 @@ const runJobs = async () => {
         const jobNames = `${jobs.map((j) => j.name).join(" ")}`;
         console.log(`=> ${c.yellow(`${stageName}`)} > ${c.blueBright(`${jobNames}`)} ${c.magentaBright("starting")}...`);
         for (const job of jobs) {
-            if (job.isManual() && !argv._.includes(job.name)) {
+            if (job.isManual() && !manualArgs.includes(job.name)) {
                 console.log(`${c.blueBright(`${job.name}`)} skipped. Manual job`);
                 continue;
             }
