@@ -22,6 +22,7 @@ export class Job {
     private readonly scripts: string[] = [];
 
     private readonly variables: { [key: string]: string };
+    private readonly when: string;
 
     public constructor(jobData: any, name: string, cwd: any, globals: any) {
         this.name = name;
@@ -49,10 +50,15 @@ export class Job {
         this.scripts = [].concat(jobData.script || []);
 
         const ciDefault = globals.default || {};
+        this.when = jobData.when || "on_success";
         this.beforeScripts = [].concat(jobData.before_script || ciDefault.before_script || globals.before_script || []);
         this.afterScripts = [].concat(jobData.after_script || ciDefault.after_script || globals.after_script || []);
         this.allowFailure = jobData.allow_failure || false;
         this.variables = jobData.variables || {};
+    }
+
+    public isManual(): boolean {
+        return this.when === "manual";
     }
 
     public async start(): Promise<void> {
@@ -131,7 +137,7 @@ export class Job {
                         if (!l) {
                             return;
                         }
-                        process.stdout.write(`${c.blueBright(`${this.name}`)} ${c.greenBright(">")} ${c.green(`${l}`)}\n`);
+                        process.stdout.write(`${c.blueBright(`${this.name}`)} ${c.greenBright(">")} ${l}\n`);
                     });
                 });
             }

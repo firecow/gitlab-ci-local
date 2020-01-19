@@ -87,7 +87,6 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
 
 ## Unsupported tags, will be implemented in order
-- when:manual
 - rules
 - when:on_failure
 - when:delayed
