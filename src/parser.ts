@@ -48,6 +48,7 @@ export class Parser {
         orderedVariables.push(orderedYml.last().variables || {});
 
         // Parse yamls included by other ci files.
+        orderedYml.unshift({});
         const includes = deepExtend.apply(this, orderedYml).include || [];
         for (const value of includes) {
             if (!value.local) {
@@ -59,6 +60,7 @@ export class Parser {
         }
 
         // Setup variables and "merged" yml
+        orderedYml.unshift({});
         const gitlabData = deepExtend.apply(this, orderedYml);
 
         // Generate stages
