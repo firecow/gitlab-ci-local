@@ -41,7 +41,7 @@ export class Job {
         // Parse extends
         if (jobData.extends) {
             const extendList = [].concat(jobData.extends);
-            const deepExtendList: any[] = [];
+            const deepExtendList: any[] = [{}];
             extendList.forEach((parentJobName) => {
                 if (!globals[parentJobName]) {
                     console.error(`${c.red(`'${parentJobName}' could not be found`)}`);
