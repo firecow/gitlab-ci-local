@@ -22,4 +22,4 @@ new_job_from_include:
   tags: [some_runner_tag]
   stage: startup
   script:
-    - echo "I get run, because i'm not specified anywhere else"
+    - echo "I get run, because i'm not specified anywhere else. This is the CI_PIPELINE_ID ${CI_PIPELINE_ID}"
