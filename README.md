@@ -61,7 +61,7 @@ TODO: Fill this
 
 ## Quirks
 ### Artifacts
-Artifacts works right now, as along as you don't overwirte git tracked files and as long as you don't use dependencies tag.
+Artifacts works right now, as along as you don't overwrite tracked files and as long as you don't use dependencies tag.
 
 # Development
 ## Scripts
@@ -75,6 +75,7 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
     $ npm run build-linux
     $ npm run build-win
     $ npm run build-macos
+    $ npm run build-all
 
 # TODO
 
@@ -82,17 +83,15 @@ Artifacts works right now, as along as you don't overwirte git tracked files and
 - include:local isn't recursive
 
 ## Features
-- Execute single job `gitlab-local-pipeline ts-lint`
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
 
 ## Unsupported tags, will be implemented in order
 - needs (directed acyclic graph)
 - rules
+- when:always
 - when:on_failure
 - when:delayed
   - start_in (Used only with when:delayed)
-- when:always
-- when:never
 - include:file
 - include:template
 - include:remote
