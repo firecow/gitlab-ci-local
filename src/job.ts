@@ -70,6 +70,10 @@ export class Job {
         return this.when === "manual";
     }
 
+    public isNever(): boolean {
+        return this.when === "never";
+    }
+
     public async start(): Promise<void> {
         this.running = true;
 

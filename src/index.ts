@@ -49,6 +49,14 @@ const cwd = argv.cwd || process.cwd();
 const m: any = argv.m;
 const manualArgs: string[] = [].concat(m || []);
 
+const firstArg = argv._[0] ?? "pipeline";
+
+if (firstArg === "manual") {
+    for (let i = 1; i < argv._.length; i += 1) {
+        manualArgs.push(argv._[i]);
+    }
+}
+
 const parser = new Parser(cwd, logger);
 
 const runJobs = async () => {
@@ -67,9 +75,15 @@ const runJobs = async () => {
         console.log(`=> ${c.yellow(`${stageName}`)} > ${c.blueBright(`${jobNames}`)} ${c.magentaBright("starting")}...`);
         for (const job of jobs) {
             if (job.isManual() && !manualArgs.includes(job.name)) {
-                console.log(`${c.blueBright(`${job.name}`)} skipped. Manual job`);
+                console.log(`${c.blueBright(`${job.name}`)} skipped. when:manual`);
                 continue;
             }
+
+            if (job.isNever()) {
+                console.log(`${c.blueBright(`${job.name}`)} skipped. when:never`);
+                continue;
+            }
+
             const jobPromise = job.start();
             promises.push(jobPromise);
         }
@@ -86,9 +100,38 @@ const runJobs = async () => {
     }
 };
 
+const runExecJobs = async () => {
+    const promises: Array<Promise<any>> = [];
+    for (let i = 1; i < argv._.length; i += 1) {
+        const jobName = argv._[i];
+        const job = parser.getJobs().get(argv._[i]);
+        if (!job) {
+            console.error(`${c.blueBright(`${jobName}`)} ${c.red(" could not be found")}`);
+            process.exit(1);
+        }
+
+        const jobPromise = job.start();
+        promises.push(jobPromise);
+    }
+
+    try {
+        await Promise.all(promises);
+        console.log("");
+    } catch (e) {
+        if (e !== "") {
+            console.error(e);
+        }
+        process.exit(1);
+    }
+};
+
 process.on("uncaughtException", (err) => {
     // Handle the error safely
     console.log(err);
 });
 
-runJobs().catch();
+if (["pipeline", "manual"].includes(firstArg)) {
+    runJobs().catch();
+} else if (firstArg === "exec") {
+    runExecJobs().catch();
+}

@@ -76,4 +76,4 @@ manual_job_invoked_from_cli:
   when: manual
   stage: last
   script:
-    - echo "I was invoked manually, because 'gitlab-local-pipeline manual_job_invoked_from_cli' was called"
+    - echo "I was invoked manually, because 'gitlab-local-pipeline manual manual_job_invoked_from_cli' was called"
