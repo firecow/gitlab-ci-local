@@ -2,7 +2,6 @@ import * as c from "ansi-colors";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
-import * as winston from "winston";
 
 import { Job } from "./job";
 import { Stage } from "./stage";
@@ -17,18 +16,18 @@ export class Parser {
     private readonly jobs: Map<string, Job> = new Map();
     private readonly stages: Map<string, Stage> = new Map();
 
-    public constructor(cwd: any, logger: winston.Logger) {
+    public constructor(cwd: any) {
         // Fail if .gitlab-ci.yml missing
         const gitlabCiYmlPath = `${cwd}/.gitlab-ci.yml`;
         if (!fs.existsSync(gitlabCiYmlPath)) {
-            logger.error(`Could not find ${gitlabCiYmlPath}`);
+            console.error(`Could not find ${gitlabCiYmlPath}`);
             process.exit(1);
         }
 
         // Fail if .gitlab-ci.local.yml missing
         const gitlabCiLocalYmlPath = `${cwd}/.gitlab-ci.local.yml`;
         if (!fs.existsSync(gitlabCiLocalYmlPath)) {
-            logger.error(`Could not find ${gitlabCiLocalYmlPath}`);
+            console.error(`Could not find ${gitlabCiLocalYmlPath}`);
             process.exit(1);
         }
 
