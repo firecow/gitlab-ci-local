@@ -24,7 +24,7 @@ Array.prototype.first = function() {
 const logger: winston.Logger = winston.createLogger({
     format: winston.format.combine(
         winston.format.timestamp({format: "HH:mm:SS"}),
-        winston.format.printf((m) => colorizer.colorize(m.level, `${m.timestamp}: ${m.message}`)),
+        winston.format.printf((msg) => colorizer.colorize(msg.level, `${msg.timestamp}: ${msg.message}`)),
     ),
     level: "info",
     transports: [
