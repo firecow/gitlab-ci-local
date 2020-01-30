@@ -83,7 +83,11 @@ Artifacts works right now, as along as you don't overwrite tracked files and as 
 - include:local isn't recursive
 
 ## Features
+- Stdout and stderr into `.gitlab-ci.local/pipeline/${CI_PIPELINE_ID}/`
+  - Only show in cli, if -v and/or -vv have been passed as arugment
+- Configure gitlab-ci-local per project via .gitlab-ci.local/config.yml
 - Verbosity on .gitlab-ci.local.yml overrides and appends.
+- Color on "when:manual" etc. etc. etc.
 
 ## Unsupported tags, will be implemented in order
 - needs (directed acyclic graph)
