@@ -1,10 +1,7 @@
 import * as c from "ansi-colors";
-import * as winston from "winston";
 import * as yargs from "yargs";
 
 import { Parser } from "./parser";
-
-const colorizer = winston.format.colorize();
 
 // Array polyfill
 declare global {
@@ -20,17 +17,6 @@ Array.prototype.last = function() {
 Array.prototype.first = function() {
     return this[0];
 };
-
-const logger: winston.Logger = winston.createLogger({
-    format: winston.format.combine(
-        winston.format.timestamp({format: "HH:mm:SS"}),
-        winston.format.printf((msg) => colorizer.colorize(msg.level, `${msg.timestamp}: ${msg.message}`)),
-    ),
-    level: "info",
-    transports: [
-        new winston.transports.Console(),
-    ],
-});
 
 const makeid = (length: number): string => {
     let result = "";
@@ -57,7 +43,7 @@ if (firstArg === "manual") {
     }
 }
 
-const parser = new Parser(cwd, logger);
+const parser = new Parser(cwd);
 
 const runJobs = async () => {
     const stages = parser.getStages();

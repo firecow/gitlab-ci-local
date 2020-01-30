@@ -7,7 +7,7 @@
     "build-win": "pkg dist/index.js -t node12-win-x64 -o ./bin/win/gitlab-local-pipeline && gzip -c bin/win/gitlab-local-pipeline.exe > bin/win.gz",
     "build-all": "npm run build-linux && npm run build-macos && npm run build-win",
     "build": "tsc",
-    "check-all": "npm run --silent lint && npm audit --parseable && npm run ncu",
+    "check-all": "npm run build && npm run --silent lint && npm audit --parseable && npm run ncu",
     "lint": "tslint --project .",
     "lint-fix": "tslint --fix --project .",
     "ncu": "ncu --semverLevel major -e 2",
@@ -23,7 +23,6 @@
     "js-yaml": "3.x",
     "pretty-hrtime": "1.x",
     "shelljs": "0.x",
-    "winston": "3.x",
     "yargs": "15.x"
   },
   "pkg": {
