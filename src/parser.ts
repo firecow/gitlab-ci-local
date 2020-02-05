@@ -62,6 +62,12 @@ export class Parser {
         orderedYml.unshift({});
         const gitlabData = deepExtend.apply(this, orderedYml);
 
+        // 'stages' missing, throw error
+        if (!gitlabData.stages) {
+            console.error(`${c.red("'stages' tag is missing")}`);
+            process.exit(1);
+        }
+
         // Generate stages
         for (const value of gitlabData.stages) {
             this.stages.set(value, new Stage(value));
