@@ -1,6 +1,6 @@
 import * as c from "ansi-colors";
 import * as deepExtend from "deep-extend";
-import * as fs from "fs";
+import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 
 import { Job } from "./job";
