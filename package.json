@@ -23,7 +23,8 @@
     "js-yaml": "3.x",
     "pretty-hrtime": "1.x",
     "shelljs": "0.x",
-    "yargs": "15.x"
+    "yargs": "15.x",
+    "fs-extra": "8.x"
   },
   "pkg": {
     "targets": [
@@ -34,12 +35,13 @@
   "license": "ISC",
   "devDependencies": {
     "@types/deep-extend": "0.x",
+    "@types/fs-extra": "8.x",
     "@types/js-yaml": "3.x",
     "@types/pretty-hrtime": "1.x",
     "@types/shelljs": "0.x",
     "@types/yaml": "1.x",
     "@types/yargs": "15.x",
-    "npm-check-updates": "4.0.1",
+    "npm-check-updates": "4.x",
     "pkg": "4.x",
     "source-map-support": "0.x",
     "tslint": "5.x",

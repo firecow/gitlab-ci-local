@@ -1,4 +1,6 @@
 import * as c from "ansi-colors";
+import * as fs from "fs-extra";
+import * as yaml from "js-yaml";
 import * as yargs from "yargs";
 
 import { Parser } from "./parser";
@@ -28,10 +30,9 @@ const makeid = (length: number): string => {
 
     return result;
 };
-process.env.CI_PIPELINE_ID = makeid(10);
 
 const argv = yargs.argv;
-const cwd = argv.cwd || process.cwd();
+const cwd = String(argv.cwd) || process.cwd();
 const m: any = argv.m;
 const manualArgs: string[] = [].concat(m || []);
 
@@ -117,6 +118,17 @@ process.on("uncaughtException", (err) => {
 });
 
 if (["pipeline", "manual"].includes(firstArg)) {
+    const pipelinesPath = `${cwd}/.gitlab-ci-local/pipelines.yml`;
+    const configPath = `${cwd}/.gitlab-ci-local/config.yml`;
+    fs.ensureFileSync(configPath);
+    fs.ensureFileSync(pipelinesPath);
+    let config: any = yaml.safeLoad(fs.readFileSync(pipelinesPath, "utf8"));
+    if (!config) {
+        config = {};
+    }
+    config.pipelineId = config.pipelineId !== undefined ? Number(config.pipelineId) + 1 : 0;
+    fs.writeFileSync(pipelinesPath, yaml.safeDump(config), {});
+    process.env.CI_PIPELINE_ID = config.pipelineId;
     runJobs().catch();
 } else if (firstArg === "exec") {
     runExecJobs().catch();

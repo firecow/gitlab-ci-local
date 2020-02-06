@@ -1,5 +1,6 @@
 import * as c from "ansi-colors";
 import * as deepExtend from "deep-extend";
+import * as fs from "fs-extra";
 import * as glob from "glob";
 import * as prettyHrtime from "pretty-hrtime";
 import * as shelljs from "shelljs";
@@ -130,6 +131,10 @@ export class Job {
     }
 
     private async exec(script: string): Promise<number> {
+        const outputFilePath = `${this.cwd}/.gitlab-ci-local/pipe_logs/${this.getEnvs().CI_PIPELINE_ID}/${this.name}.log`;
+        fs.ensureFileSync(outputFilePath);
+        fs.truncateSync(outputFilePath);
+
         return new Promise<any>((resolve, reject) => {
             const child = shelljs.exec(`${script}`, {
                 cwd: this.cwd,
@@ -145,25 +150,12 @@ export class Job {
 
             if (child.stdout) {
                 child.stdout.on("data", (buf) => {
-                    const lines = `${buf}`.split(/\r?\n/);
-                    lines.forEach((l) => {
-                        if (!l) {
-                            return;
-                        }
-                        process.stdout.write(`${c.blueBright(`${this.name}`)} ${c.greenBright(">")} ${l}\n`);
-                    });
+                    fs.appendFileSync(outputFilePath, `${buf}`);
                 });
             }
-
             if (child.stderr) {
                 child.stderr.on("data", (buf) => {
-                    const lines = `${buf}`.split(/\r?\n/);
-                    lines.forEach((l) => {
-                        if (!l) {
-                            return;
-                        }
-                        process.stderr.write(`${c.blueBright(`${this.name}`)} ${c.redBright(">")} ${c.red(`${l}`)}\n`);
-                    });
+                    fs.appendFileSync(outputFilePath, `${c.red(`${buf}`)}`);
                 });
             }
 
