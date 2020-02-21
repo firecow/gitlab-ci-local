@@ -2,6 +2,7 @@ import * as c from "ansi-colors";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as glob from "glob";
+import * as path from "path";
 import * as prettyHrtime from "pretty-hrtime";
 import * as shelljs from "shelljs";
 
@@ -17,24 +18,21 @@ if (process.env.EXEPATH) {
 
 export class Job {
     public readonly name: string;
-
     public readonly stage: string;
+
     private readonly afterScripts: string[] = [];
-
     private readonly allowFailure: boolean;
-
     private readonly beforeScripts: string[] = [];
-
     private readonly cwd: any;
     private readonly globals: any;
-
+    private readonly maxJobNameLength: number;
     private running = false;
     private readonly scripts: string[] = [];
-
     private readonly variables: { [key: string]: string };
     private readonly when: string;
 
-    public constructor(jobData: any, name: string, cwd: any, globals: any) {
+    public constructor(jobData: any, name: string, cwd: any, globals: any, maxJobNameLength: number) {
+        this.maxJobNameLength = maxJobNameLength;
         this.name = name;
         this.cwd = cwd;
         this.globals = globals;
@@ -67,6 +65,14 @@ export class Job {
         this.variables = jobData.variables || {};
     }
 
+    public getJobNameString() {
+        return `${c.blueBright(`${this.name.padEnd(this.maxJobNameLength + 1)}`)}`;
+    }
+
+    public getOutputFilesPath() {
+        return `${this.cwd}/.gitlab-ci-local/output/${this.getEnvs().CI_PIPELINE_ID}/${this.name}.log`;
+    }
+
     public isManual(): boolean {
         return this.when === "manual";
     }
@@ -76,10 +82,12 @@ export class Job {
     }
 
     public async start(): Promise<void> {
+        const jobNameStr = this.getJobNameString();
+
         this.running = true;
 
         if (this.scripts.length === 0) {
-            console.error(`${c.blueBright(`${this.name}`)} ${c.red("must have script specified")}`);
+            console.error(`${jobNameStr} ${c.red("must have script specified")}`);
             process.exit(1);
         }
 
@@ -131,11 +139,12 @@ export class Job {
     }
 
     private async exec(script: string): Promise<number> {
-        const outputFilePath = `${this.cwd}/.gitlab-ci-local/pipe_logs/${this.getEnvs().CI_PIPELINE_ID}/${this.name}.log`;
-        fs.ensureFileSync(outputFilePath);
-        fs.truncateSync(outputFilePath);
+        fs.ensureFileSync(this.getOutputFilesPath());
+        fs.truncateSync(this.getOutputFilesPath());
 
         return new Promise<any>((resolve, reject) => {
+            const jobNameStr = this.getJobNameString();
+            const outputFilesPath = this.getOutputFilesPath();
             const child = shelljs.exec(`${script}`, {
                 cwd: this.cwd,
                 env: this.getEnvs(),
@@ -145,17 +154,17 @@ export class Job {
             });
 
             child.on("error", (e) => {
-                reject(`${c.blueBright(`${this.name}`)} ${c.red(`error ${String(e)}`)}`);
+                reject(`${jobNameStr} ${c.red(`error ${String(e)}`)}`);
             });
 
             if (child.stdout) {
                 child.stdout.on("data", (buf) => {
-                    fs.appendFileSync(outputFilePath, `${buf}`);
+                    fs.appendFileSync(outputFilesPath, `${buf}`);
                 });
             }
             if (child.stderr) {
                 child.stderr.on("data", (buf) => {
-                    fs.appendFileSync(outputFilePath, `${c.red(`${buf}`)}`);
+                    fs.appendFileSync(outputFilesPath, `${c.red(`${buf}`)}`);
                 });
             }
 
@@ -168,15 +177,20 @@ export class Job {
     }
 
     private getExitedString(code: number, warning: boolean = false, prependString: string = "") {
-        const mistakeStr = warning ? c.yellowBright(`warning with code ${code}`) + prependString : c.red(`exited with code ${code}`) + prependString;
+        const seeLogStr = `See ${path.resolve(this.getOutputFilesPath())}`;
+        const jobNameStr = this.getJobNameString();
+        if (warning) {
+            return `${jobNameStr} ${c.yellowBright(`warning with code ${code}`)} ${prependString} ${seeLogStr}`;
+        }
 
-        return `${c.blueBright(`${this.name}`)} ${mistakeStr}`;
+        return `${jobNameStr} ${c.red(`exited with code ${code}`)} ${prependString} ${seeLogStr}`;
     }
 
     private getFinishedString(startTime: [number, number]) {
         const endTime = process.hrtime(startTime);
         const timeStr = prettyHrtime(endTime);
+        const jobNameStr = this.getJobNameString();
 
-        return `${c.blueBright(`${this.name}`)} ${c.magentaBright("finished")} in ${c.magenta(`${timeStr}`)}`;
+        return `${jobNameStr} ${c.magentaBright("finished")} in ${c.magenta(`${timeStr}`)}`;
     }
 }

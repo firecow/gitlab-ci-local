@@ -8,45 +8,43 @@ import { Stage } from "./stage";
 
 export class Parser {
 
+    private static loadYaml(filePath: string): any {
+        const gitlabCiLocalYmlPath = `${filePath}`;
+        if (!fs.existsSync(gitlabCiLocalYmlPath)) {
+            return {};
+        }
+
+        return yaml.safeLoad(fs.readFileSync(`${filePath}`, "utf8"));
+    }
+
     private readonly illigalJobNames = [
         "include", "local_configuration", "image", "services",
         "stages", "pages", "types", "before_script", "default",
         "after_script", "variables", "cache", "include",
     ];
     private readonly jobs: Map<string, Job> = new Map();
+
+    private readonly maxJobNameLength: number = 0;
     private readonly stages: Map<string, Stage> = new Map();
 
     public constructor(cwd: any) {
-        // Fail if .gitlab-ci.yml missing
-        const gitlabCiYmlPath = `${cwd}/.gitlab-ci.yml`;
-        if (!fs.existsSync(gitlabCiYmlPath)) {
-            console.error(`Could not find ${gitlabCiYmlPath}`);
-            process.exit(1);
-        }
-
-        // Fail if .gitlab-ci.local.yml missing
-        const gitlabCiLocalYmlPath = `${cwd}/.gitlab-ci.local.yml`;
-        if (!fs.existsSync(gitlabCiLocalYmlPath)) {
-            console.error(`Could not find ${gitlabCiLocalYmlPath}`);
-            process.exit(1);
-        }
 
         const orderedVariables = [];
         const orderedYml = [];
 
-        // Parse .gitlab-ci.yml
-        orderedYml.push(yaml.safeLoad(fs.readFileSync(gitlabCiYmlPath, "utf8")));
-        if (!orderedYml.last()) { // Print if empty
+        // Add .gitlab-ci.yml
+        orderedYml.push(Parser.loadYaml(`${cwd}/.gitlab-ci.yml`));
+        if (!orderedYml.last()) { // Fail if empty
             console.error(`${cwd}/.gitlab-ci.yml is empty`);
             process.exit(1);
         }
         orderedVariables.push(orderedYml.last().variables);
 
-        // Parse .gitlab-ci.local.yml
-        orderedYml.push(yaml.safeLoad(fs.readFileSync(gitlabCiLocalYmlPath, "utf8")) || {});
+        // Add .gitlab-ci.yml
+        orderedYml.push(Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`));
         orderedVariables.push(orderedYml.last().variables || {});
 
-        // Parse yamls included by other ci files.
+        // Add included yaml's.
         orderedYml.unshift({});
         const includes = deepExtend.apply(this, orderedYml).include || [];
         for (const value of includes) {
@@ -54,7 +52,7 @@ export class Parser {
                 continue;
             }
 
-            orderedYml.unshift(yaml.safeLoad(fs.readFileSync(`${cwd}/${value.local}`, "utf8")));
+            orderedYml.unshift(Parser.loadYaml(`${cwd}/${value.local}`));
             orderedVariables.unshift(orderedYml.first().variables || {});
         }
 
@@ -73,13 +71,21 @@ export class Parser {
             this.stages.set(value, new Stage(value));
         }
 
+        // Find longest job name
+        for (const key of Object.keys(gitlabData)) {
+            if (this.illigalJobNames.includes(key) || key[0] === ".") {
+                continue;
+            }
+            this.maxJobNameLength = Math.max(this.maxJobNameLength, key.length);
+        }
+
         // Generate jobs and put them into stages
         for (const [key, value] of Object.entries(gitlabData)) {
             if (this.illigalJobNames.includes(key) || key[0] === ".") {
                 continue;
             }
 
-            const job = new Job(value, key, cwd, gitlabData);
+            const job = new Job(value, key, cwd, gitlabData, this.maxJobNameLength);
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);

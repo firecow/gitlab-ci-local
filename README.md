@@ -27,7 +27,7 @@ It lets you simulate a CI pipeline on your local machine.
       * [Features](#features)
       * [Unsupported tags, will be implemented in order](#unsupported-tags-will-be-implemented-in-order)
       * [Docker specfic tags. (Only shell working now)](#docker-specfic-tags-only-shell-working-now)
-      * [Gitlab CI only, will not be used by gitlab-local-pipeline](#gitlab-ci-only-will-not-be-used-by-gitlab-local-pipeline)
+      * [Gitlab CI only, will not be used by gitlab-ci-local](#gitlab-ci-only-will-not-be-used-by-gitlab-ci-local)
       * [Undecided](#undecided)
 
 # Installation
@@ -35,15 +35,15 @@ It lets you simulate a CI pipeline on your local machine.
 Download and put binary in `/usr/bin`
 
     $ sudo su `must be installed as root, if placed in /usr/bin/`
-    $ curl -L https://github.com/firecow/gitlab-local-pipeline/releases/latest/download/linux.gz | gunzip -c > /usr/bin/gitlab-local-pipeline
-    $ chmod +x /usr/bin/gitlab-local-pipeline
+    $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/linux.gz | gunzip -c > /usr/bin/gitlab-ci-local
+    $ chmod +x /usr/bin/gitlab-ci-local
     
 ## Windows (Git bash)
 Install [gitbash](https://git-scm.com/downloads)
 
 Download and put binary in `C:\Program Files\Git\mingw64\bin`
 
-    $ curl -L https://github.com/firecow/gitlab-local-pipeline/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-local-pipeline.exe
+    $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
 
 ## Macos
 TODO: Fill this
@@ -51,11 +51,11 @@ TODO: Fill this
 # Usage
 ## Example
     $ cd /home/user/workspace/myproject
-    $ gitlab-local-pipeline
+    $ gitlab-ci-local
 
 ## Convinience
 ### Bash alias
-    $ echo "alias glp='gitlab-local-pipeline'" >> ~/.bashrc
+    $ echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
 ### Bash completion
 TODO: Fill this
 
@@ -106,7 +106,7 @@ Artifacts works right now, as along as you don't overwrite tracked files and as 
 - services
 - image
 
-## Gitlab CI only, will not be used by gitlab-local-pipeline
+## Gitlab CI only, will not be used by gitlab-ci-local
 - cache
 - pages
 - resource_group

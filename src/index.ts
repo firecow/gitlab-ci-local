@@ -20,17 +20,6 @@ Array.prototype.first = function() {
     return this[0];
 };
 
-const makeid = (length: number): string => {
-    let result = "";
-    const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i = i + 1) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-
-    return result;
-};
-
 const argv = yargs.argv;
 const cwd = String(argv.cwd || process.cwd());
 const m: any = argv.m;
@@ -62,12 +51,12 @@ const runJobs = async () => {
         console.log(`=> ${c.yellow(`${stageName}`)} > ${c.blueBright(`${jobNames}`)} ${c.magentaBright("starting")}...`);
         for (const job of jobs) {
             if (job.isManual() && !manualArgs.includes(job.name)) {
-                console.log(`${c.blueBright(`${job.name}`)} skipped. when:manual`);
+                console.log(`${job.getJobNameString()} skipped. when:manual`);
                 continue;
             }
 
             if (job.isNever()) {
-                console.log(`${c.blueBright(`${job.name}`)} skipped. when:never`);
+                console.log(`${job.getJobNameString()} skipped. when:never`);
                 continue;
             }
 
@@ -117,18 +106,22 @@ process.on("uncaughtException", (err) => {
     console.log(err);
 });
 
+// Ensure gitlab-ci-local working directory and assets.
+const pipelinesStatePath = `${cwd}/.gitlab-ci-local/state.yml`;
+fs.ensureFileSync(pipelinesStatePath);
+let pipelinesState: any = yaml.safeLoad(fs.readFileSync(pipelinesStatePath, "utf8"));
+if (!pipelinesState) {
+    pipelinesState = {};
+}
+pipelinesState.pipelineId = pipelinesState.pipelineId !== undefined ? Number(pipelinesState.pipelineId) : 0;
+console.log(firstArg);
 if (["pipeline", "manual"].includes(firstArg)) {
-    const pipelinesPath = `${cwd}/.gitlab-ci-local/pipelines.yml`;
-    const configPath = `${cwd}/.gitlab-ci-local/config.yml`;
-    fs.ensureFileSync(configPath);
-    fs.ensureFileSync(pipelinesPath);
-    let config: any = yaml.safeLoad(fs.readFileSync(pipelinesPath, "utf8"));
-    if (!config) {
-        config = {};
-    }
-    config.pipelineId = config.pipelineId !== undefined ? Number(config.pipelineId) + 1 : 0;
-    fs.writeFileSync(pipelinesPath, yaml.safeDump(config), {});
-    process.env.CI_PIPELINE_ID = config.pipelineId;
+    pipelinesState.pipelineId += 1;
+}
+fs.writeFileSync(pipelinesStatePath, yaml.safeDump(pipelinesState), {});
+process.env.CI_PIPELINE_ID = pipelinesState.pipelineId;
+
+if (["pipeline", "manual"].includes(firstArg)) {
     runJobs().catch();
 } else if (firstArg === "exec") {
     runExecJobs().catch();

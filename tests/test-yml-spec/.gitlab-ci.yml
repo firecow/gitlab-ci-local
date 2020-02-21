@@ -56,6 +56,7 @@ var_in_another_file:
 after_script_test:
   <<: *tags
   stage: last
+  needs: [var_in_another_file]
   script:
     - echo "Throwing an error"
     - exit 1
@@ -76,4 +77,4 @@ manual_job_invoked_from_cli:
   when: manual
   stage: last
   script:
-    - echo "I was invoked manually, because 'gitlab-local-pipeline manual manual_job_invoked_from_cli' was called"
+    - echo "I was invoked manually, because 'gitlab-ci-local manual manual_job_invoked_from_cli' was called"
