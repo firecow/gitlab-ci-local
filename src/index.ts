@@ -32,7 +32,7 @@ const makeid = (length: number): string => {
 };
 
 const argv = yargs.argv;
-const cwd = String(argv.cwd) || process.cwd();
+const cwd = String(argv.cwd || process.cwd());
 const m: any = argv.m;
 const manualArgs: string[] = [].concat(m || []);
 
