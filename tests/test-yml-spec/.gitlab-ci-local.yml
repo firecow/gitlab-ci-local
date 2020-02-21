@@ -12,4 +12,4 @@ never_job:
   when: never
   stage: startup
   script:
-    - echo "I'm when:never i could have only been called by 'gitlab-local-pipeline exec never_job'"
+    - echo "I'm when:never i could have only been called by 'gitlab-ci-local exec never_job'"
