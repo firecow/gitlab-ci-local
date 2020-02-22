@@ -31,7 +31,7 @@ echo_project_name:
   <<: *tags
   stage: startup
   script:
-    - sleep 1
+    - sleep 2
     - echo "Project Name is '${PROJECT_NAME}'"
 
 project_context:
@@ -56,7 +56,7 @@ var_in_another_file:
 after_script_test:
   <<: *tags
   stage: last
-  needs: [var_in_another_file]
+  needs: [var_in_another_file, echo_project_name]
   script:
     - echo "Throwing an error"
     - exit 1
