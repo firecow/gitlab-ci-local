@@ -16,4 +16,16 @@ export class Stage {
     public getJobs(): ReadonlyArray<Job> {
         return this.jobs;
     }
+
+    public isFinished(): boolean {
+        return this.jobs.filter((j) => j.isFinished()).length === this.jobs.length;
+    }
+
+    public isRunning(): boolean {
+        return this.jobs.filter((j) => j.isRunning()).length > 0;
+    }
+
+    public isSuccess(): boolean {
+        return this.jobs.filter((j) => j.isSuccess()).length === this.jobs.length;
+    }
 }

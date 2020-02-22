@@ -36,48 +36,73 @@ if (firstArg === "manual") {
 const parser = new Parser(cwd);
 
 const runJobs = async () => {
-    const stages = parser.getStages();
-    for (const [stageName, stage] of stages) {
-        const promises: Array<Promise<any>> = [];
-        const jobs = stage.getJobs();
+    const jobs = Array.from(parser.getJobs().values());
+    const stages = Array.from(parser.getStages().values());
 
-        if (stage.getJobs().length === 0) {
-            console.log(`=> ${c.yellow(`${stageName}`)} has no jobs`);
-            console.log("");
-            continue;
+    let stage = stages.shift();
+    while (stage !== undefined) {
+        const jobsInStage = stage.getJobs();
+        const stageName = stage.name;
+
+        if (!stage.isRunning()) {
+            console.log(`=> ${c.yellow(`${stageName}`)} <=`);
+            if (jobsInStage.length === 0 && !stage.isRunning()) {
+                console.log(`=> ${c.yellow(`${stageName}`)} has no jobs`);
+            }
         }
 
-        const jobNames = `${jobs.map((j) => j.name).join(" ")}`;
-        console.log(`=> ${c.yellow(`${stageName}`)} > ${c.blueBright(`${jobNames}`)} ${c.magentaBright("starting")}...`);
-        for (const job of jobs) {
-            if (job.isManual() && !manualArgs.includes(job.name)) {
+        for (const job of jobsInStage) {
+            if (job.isManual() && !manualArgs.includes(job.name) && !job.isFinished()) {
                 console.log(`${job.getJobNameString()} skipped. when:manual`);
+                job.setFinished(true);
                 continue;
             }
 
-            if (job.isNever()) {
+            if (job.isNever() && !job.isFinished()) {
                 console.log(`${job.getJobNameString()} skipped. when:never`);
+                job.setFinished(true);
                 continue;
             }
 
-            const jobPromise = job.start();
-            promises.push(jobPromise);
+            if (!job.isRunning() && !job.isFinished()) {
+                /* tslint:disable */
+                // noinspection ES6MissingAwait
+                job.start();
+                /* tslint:enabled */
+            }
         }
 
-        try {
-            await Promise.all(promises);
-            console.log("");
-        } catch (e) {
-            if (e !== "") {
-                console.error(e);
+        // Find jobs that can be started, because their needed jobs have finished
+        for (const job of jobs) {
+            if (job.isRunning() || job.isFinished() || job.needs.length === 0) {
+                continue;
             }
-            process.exit(1);
+
+            const finishedJobNames = jobs.filter((e) => e.isFinished()).map((j) => j.name);
+            const needsConditionMet = job.needs.every((v) => (finishedJobNames.indexOf(v) >= 0));
+            if (needsConditionMet) {
+                /* tslint:disable */
+                // noinspection ES6MissingAwait
+                job.start();
+                /* tslint:enabled */
+            }
+        }
+
+        await new Promise((r) => setTimeout(r, 50));
+
+        if (stage.isFinished()) {
+            if (!stage.isSuccess()) {
+                process.exit(2);
+            }
+            console.log("");
+            stage = stages.shift();
         }
     }
+
 };
 
 const runExecJobs = async () => {
-    const promises: Array<Promise<any>> = [];
+    const jobs = [];
     for (let i = 1; i < argv._.length; i += 1) {
         const jobName = argv._[i];
         const job = parser.getJobs().get(argv._[i]);
@@ -86,24 +111,27 @@ const runExecJobs = async () => {
             process.exit(1);
         }
 
-        const jobPromise = job.start();
-        promises.push(jobPromise);
+        jobs.push(job);
+
+        /* tslint:disable */
+        // noinspection ES6MissingAwait
+        job.start();
+        /* tslint:enabled */
     }
 
-    try {
-        await Promise.all(promises);
-        console.log("");
-    } catch (e) {
-        if (e !== "") {
-            console.error(e);
-        }
-        process.exit(1);
+    while (jobs.filter((j) => j.isRunning()).length > 0) {
+        await new Promise((r) => setTimeout(r, 50));
+    }
+
+    if (jobs.filter((j) => j.isSuccess()).length !== jobs.length) {
+        process.exit(2);
     }
 };
 
 process.on("uncaughtException", (err) => {
     // Handle the error safely
     console.log(err);
+    process.exit(5);
 });
 
 // Ensure gitlab-ci-local working directory and assets.
@@ -114,7 +142,6 @@ if (!pipelinesState) {
     pipelinesState = {};
 }
 pipelinesState.pipelineId = pipelinesState.pipelineId !== undefined ? Number(pipelinesState.pipelineId) : 0;
-console.log(firstArg);
 if (["pipeline", "manual"].includes(firstArg)) {
     pipelinesState.pipelineId += 1;
 }
@@ -122,7 +149,9 @@ fs.writeFileSync(pipelinesStatePath, yaml.safeDump(pipelinesState), {});
 process.env.CI_PIPELINE_ID = pipelinesState.pipelineId;
 
 if (["pipeline", "manual"].includes(firstArg)) {
-    runJobs().catch();
+    // noinspection JSIgnoredPromiseFromCall
+    runJobs();
 } else if (firstArg === "exec") {
-    runExecJobs().catch();
+    // noinspection JSIgnoredPromiseFromCall
+    runExecJobs();
 }

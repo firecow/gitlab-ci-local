@@ -2,7 +2,6 @@ import * as c from "ansi-colors";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as glob from "glob";
-import * as path from "path";
 import * as prettyHrtime from "pretty-hrtime";
 import * as shelljs from "shelljs";
 
@@ -18,16 +17,19 @@ if (process.env.EXEPATH) {
 
 export class Job {
     public readonly name: string;
+    public readonly needs: string[];
     public readonly stage: string;
 
     private readonly afterScripts: string[] = [];
     private readonly allowFailure: boolean;
     private readonly beforeScripts: string[] = [];
     private readonly cwd: any;
+    private finished = false;
     private readonly globals: any;
     private readonly maxJobNameLength: number;
     private running = false;
     private readonly scripts: string[] = [];
+    private success = true;
     private readonly variables: { [key: string]: string };
     private readonly when: string;
 
@@ -57,12 +59,24 @@ export class Job {
         this.stage = jobData.stage || ".pre";
         this.scripts = [].concat(jobData.script || []);
 
+        const jobNameStr = this.getJobNameString();
+
+        if (this.scripts.length === 0) {
+            console.error(`${jobNameStr} ${c.red("must have script specified")}`);
+            process.exit(1);
+        }
+
         const ciDefault = globals.default || {};
         this.when = jobData.when || "on_success";
         this.beforeScripts = [].concat(jobData.before_script || ciDefault.before_script || globals.before_script || []);
         this.afterScripts = [].concat(jobData.after_script || ciDefault.after_script || globals.after_script || []);
         this.allowFailure = jobData.allow_failure || false;
         this.variables = jobData.variables || {};
+        if (this.needs && this.needs.length === 0) {
+            console.error(`${jobNameStr} ${c.red("'needs' cannot be empty array")}`);
+            process.exit(1);
+        }
+        this.needs = jobData.needs || [];
     }
 
     public getJobNameString() {
@@ -70,7 +84,11 @@ export class Job {
     }
 
     public getOutputFilesPath() {
-        return `${this.cwd}/.gitlab-ci-local/output/${this.getEnvs().CI_PIPELINE_ID}/${this.name}.log`;
+        return `${this.cwd}/.gitlab-ci-local/output/${this.name}.log`;
+    }
+
+    public isFinished() {
+        return this.finished;
     }
 
     public isManual(): boolean {
@@ -81,38 +99,50 @@ export class Job {
         return this.when === "never";
     }
 
+    public isRunning() {
+        return this.running;
+    }
+
+    public isSuccess() {
+        return this.success;
+    }
+
+    public setFinished(finished: boolean) {
+        this.finished = finished;
+    }
+
     public async start(): Promise<void> {
-        const jobNameStr = this.getJobNameString();
-
+        fs.ensureFileSync(this.getOutputFilesPath());
+        fs.truncateSync(this.getOutputFilesPath());
+        console.log(this.getStartingString());
         this.running = true;
-
-        if (this.scripts.length === 0) {
-            console.error(`${jobNameStr} ${c.red("must have script specified")}`);
-            process.exit(1);
-        }
 
         const startTime = process.hrtime();
         const prescripts = this.beforeScripts.concat(this.scripts);
         const prescriptsExitCode = await this.exec(prescripts.join(" && "));
-
         if (this.afterScripts.length === 0 && prescriptsExitCode > 0 && !this.allowFailure) {
-            throw this.getExitedString(prescriptsExitCode, false);
+            console.error(this.getExitedString(startTime, prescriptsExitCode, false));
+            this.running = false;
+            this.finished = true;
+            this.success = false;
+
+            return;
         }
 
         if (this.afterScripts.length === 0 && prescriptsExitCode > 0 && this.allowFailure) {
-            console.error(this.getExitedString(prescriptsExitCode, true));
-            console.log(this.getFinishedString(startTime));
+            console.error(this.getExitedString(startTime, prescriptsExitCode, true));
             this.running = false;
+            this.finished = true;
 
             return;
         }
 
         if (prescriptsExitCode > 0 && this.allowFailure) {
-            console.error(this.getExitedString(prescriptsExitCode, true));
+            console.error(this.getExitedString(startTime, prescriptsExitCode, true));
         }
 
         if (prescriptsExitCode > 0 && !this.allowFailure) {
-            console.error(this.getExitedString(prescriptsExitCode, false));
+            console.error(this.getExitedString(startTime, prescriptsExitCode, false));
         }
 
         let afterScriptsCode = 0;
@@ -121,15 +151,17 @@ export class Job {
         }
 
         if (afterScriptsCode > 0) {
-            console.error(this.getExitedString(prescriptsExitCode, true, " (after_script)"));
+            console.error(this.getExitedString(startTime, prescriptsExitCode, true, " (after_script)"));
         }
 
         if (prescriptsExitCode > 0 && !this.allowFailure) {
-            throw "";
+            this.success = false;
         }
 
         console.log(this.getFinishedString(startTime));
+
         this.running = false;
+        this.finished = true;
 
         return;
     }
@@ -139,9 +171,6 @@ export class Job {
     }
 
     private async exec(script: string): Promise<number> {
-        fs.ensureFileSync(this.getOutputFilesPath());
-        fs.truncateSync(this.getOutputFilesPath());
-
         return new Promise<any>((resolve, reject) => {
             const jobNameStr = this.getJobNameString();
             const outputFilesPath = this.getOutputFilesPath();
@@ -176,14 +205,13 @@ export class Job {
         return {...this.globals.variables || {}, ...this.variables, ...process.env};
     }
 
-    private getExitedString(code: number, warning: boolean = false, prependString: string = "") {
-        const seeLogStr = `See ${path.resolve(this.getOutputFilesPath())}`;
-        const jobNameStr = this.getJobNameString();
+    private getExitedString(startTime: [number, number], code: number, warning: boolean = false, prependString: string = "") {
+        const finishedStr = this.getFinishedString(startTime);
         if (warning) {
-            return `${jobNameStr} ${c.yellowBright(`warning with code ${code}`)} ${prependString} ${seeLogStr}`;
+            return `${finishedStr} ${c.yellowBright(`warning with code ${code}`)} ${prependString}`;
         }
 
-        return `${jobNameStr} ${c.red(`exited with code ${code}`)} ${prependString} ${seeLogStr}`;
+        return `${finishedStr} ${c.red(`exited with code ${code}`)} ${prependString}`;
     }
 
     private getFinishedString(startTime: [number, number]) {
@@ -192,5 +220,11 @@ export class Job {
         const jobNameStr = this.getJobNameString();
 
         return `${jobNameStr} ${c.magentaBright("finished")} in ${c.magenta(`${timeStr}`)}`;
+    }
+
+    private getStartingString() {
+        const jobNameStr = this.getJobNameString();
+
+        return `${jobNameStr} ${c.magentaBright("starting")}...`;
     }
 }
