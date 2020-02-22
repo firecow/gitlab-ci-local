@@ -6,6 +6,7 @@
     "build-macos": "pkg dist/index.js -t node12-macos-x64 -o ./bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
     "build-win": "pkg dist/index.js -t node12-win-x64 -o ./bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
     "build-all": "npm run build-linux && npm run build-macos && npm run build-win",
+    "pkg": "pkg",
     "build": "tsc",
     "check-all": "npm run build && npm run --silent lint && npm audit --parseable && npm run ncu",
     "lint": "tslint --project .",
