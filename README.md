@@ -89,7 +89,6 @@ Artifacts works right now, as along as you don't overwrite tracked files and as 
 - Different color when printing `when:{{value}}`.
 
 ## Unsupported tags, will be implemented in order
-- needs (directed acyclic graph)
 - rules
 - when:always
 - when:on_failure
