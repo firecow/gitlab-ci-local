@@ -96,7 +96,7 @@ export class Parser {
                 stage.addJob(job);
             } else {
                 const stagesJoin = Array.from(this.stages.keys()).join(", ");
-                console.error(`${c.blueBright(`${job.name}`)} ${c.yellow(`${job.stage}`)} ${c.red("isn't specified in stages. Must be one of the following")} ${c.yellow(`${stagesJoin}`)}`);
+                console.error(`${c.blueBright(`${job.name}`)} uses ${c.yellow(`stage:${job.stage}`)}. Stage cannot be found in [${c.yellow(`${stagesJoin}`)}]`);
                 process.exit(1);
             }
 
