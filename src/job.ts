@@ -174,6 +174,13 @@ export class Job {
         return new Promise<any>((resolve, reject) => {
             const jobNameStr = this.getJobNameString();
             const outputFilesPath = this.getOutputFilesPath();
+
+            const split = script.split(" && ");
+            split.forEach((s) => {
+                console.log(`${jobNameStr} ${c.green(`\$ ${s}`)}`);
+                fs.appendFileSync(outputFilesPath, `\$ ${s}\n`);
+            });
+
             const child = shelljs.exec(`${script}`, {
                 cwd: this.cwd,
                 env: this.getEnvs(),
@@ -188,12 +195,26 @@ export class Job {
 
             if (child.stdout) {
                 child.stdout.on("data", (buf) => {
+                    const lines = `${buf}`.split(/\r?\n/);
+                    lines.forEach((l) => {
+                        if (!l) {
+                            return;
+                        }
+                        process.stdout.write(`${jobNameStr} ${c.greenBright(">")} ${l}\n`);
+                    });
                     fs.appendFileSync(outputFilesPath, `${buf}`);
                 });
             }
             if (child.stderr) {
                 child.stderr.on("data", (buf) => {
-                    fs.appendFileSync(outputFilesPath, `${c.red(`${buf}`)}`);
+                    const lines = `${buf}`.split(/\r?\n/);
+                    lines.forEach((l) => {
+                        if (!l) {
+                            return;
+                        }
+                        process.stderr.write(`${jobNameStr} ${c.redBright(">")} ${l}\n`);
+                    });
+                    fs.appendFileSync(outputFilesPath, `${buf}`);
                 });
             }
 
