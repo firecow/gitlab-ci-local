@@ -33,16 +33,21 @@ export class Parser {
         const orderedYml = [];
 
         // Add .gitlab-ci.yml
-        orderedYml.push(Parser.loadYaml(`${cwd}/.gitlab-ci.yml`));
-        if (!orderedYml.last()) { // Fail if empty
-            console.error(`${cwd}/.gitlab-ci.yml is empty`);
+        let path = `${cwd}/.gitlab-ci.yml`;
+        if (!fs.existsSync(path)) { // Fail if empty
+            console.error(`${cwd}/.gitlab-ci.yml is not found`);
             process.exit(1);
         }
+        orderedYml.push(Parser.loadYaml(`${cwd}/.gitlab-ci.yml`));
         orderedVariables.push(orderedYml.last().variables);
 
-        // Add .gitlab-ci.yml
-        orderedYml.push(Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`));
+        // Add .gitlab-ci-local.yml
+        path = `${cwd}/.gitlab-ci-local.yml`;
+        orderedYml.push(Parser.loadYaml(path));
         orderedVariables.push(orderedYml.last().variables || {});
+        if (!orderedYml.last() || Object.keys(orderedYml.last()).length === 0) { // Warn if empty
+            console.error(`WARN: ${cwd}/.gitlab-ci-local.yml is empty or not found`);
+        }
 
         // Add included yaml's.
         orderedYml.unshift({});
