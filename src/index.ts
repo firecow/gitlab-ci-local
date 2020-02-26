@@ -53,13 +53,13 @@ const runJobs = async () => {
 
         for (const job of jobsInStage) {
             if (job.isManual() && !manualArgs.includes(job.name) && !job.isFinished()) {
-                console.log(`${job.getJobNameString()} skipped. when:manual`);
+                console.log(`${job.getJobNameString()} ${c.magentaBright("skipped")} when:manual`);
                 job.setFinished(true);
                 continue;
             }
 
             if (job.isNever() && !job.isFinished()) {
-                console.log(`${job.getJobNameString()} skipped. when:never`);
+                console.log(`${job.getJobNameString()} ${c.magentaBright("skipped")} when:never`);
                 job.setFinished(true);
                 continue;
             }
