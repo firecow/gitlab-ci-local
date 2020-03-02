@@ -22,6 +22,8 @@ Array.prototype.first = function() {
 
 const argv = yargs.argv;
 const cwd = String(argv.cwd || process.cwd());
+yargs.alias("v", "version");
+yargs.version(JSON.parse(fs.readFileSync(`${cwd}/package.json`, "UTF8")).version);
 const m: any = argv.m;
 const manualArgs: string[] = [].concat(m || []);
 
