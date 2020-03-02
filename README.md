@@ -66,6 +66,7 @@ Artifacts works right now, as along as you don't overwrite tracked files and as 
 # Development
 ## Scripts
 
+    $ npm install
     $ npm run build
     $ node -r source-map-support/register dist/index.js --cwd /home/user/workspace/project-folder/
 
