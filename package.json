@@ -1,6 +1,7 @@
 {
   "name": "gitlab-ci-local",
   "main": "index.js",
+  "version": "3.0.1",
   "scripts": {
     "build-linux": "pkg dist/index.js -t node12-linux-x64 -o ./bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
     "build-macos": "pkg dist/index.js -t node12-macos-x64 -o ./bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
@@ -12,7 +13,7 @@
     "lint": "tslint --project .",
     "lint-fix": "tslint --fix --project .",
     "ncu": "ncu --semverLevel major -e 2",
-    "test-yml-spec": "node -r source-map-support/register dist/index.js manual manual_job_invoked_from_cli --cwd tests/test-yml-spec",
+    "test-yml-spec": "node -r source-map-support/register dist/index.js manual manual_job_invoked_from_cli --cwd tests/test-yml-spec --version",
     "test-exec-never-job": "node -r source-map-support/register dist/index.js exec never_job --cwd tests/test-yml-spec"
   },
   "bin": "dist/index.js",
