@@ -5,6 +5,7 @@
     ],
     "jsRules": {},
     "rules": {
+        "no-null-keyword": false,
         "no-magic-numbers": false,
         "strict-boolean-expressions": false,
         "newline-per-chained-call": false,

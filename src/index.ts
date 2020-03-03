@@ -74,7 +74,7 @@ const runJobs = async () => {
 
         // Find jobs that can be started, because their needed jobs have finished
         for (const job of jobs) {
-            if (job.isRunning() || job.isFinished() || job.needs.length === 0) {
+            if (job.isRunning() || job.isFinished() || job.needs === null) {
                 continue;
             }
 
