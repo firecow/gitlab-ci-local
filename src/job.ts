@@ -17,7 +17,7 @@ if (process.env.EXEPATH) {
 
 export class Job {
     public readonly name: string;
-    public readonly needs: string[];
+    public readonly needs: string[] | null;
     public readonly stage: string;
 
     private readonly afterScripts: string[] = [];
@@ -72,11 +72,7 @@ export class Job {
         this.afterScripts = [].concat(jobData.after_script || ciDefault.after_script || globals.after_script || []);
         this.allowFailure = jobData.allow_failure || false;
         this.variables = jobData.variables || {};
-        if (this.needs && this.needs.length === 0) {
-            console.error(`${jobNameStr} ${c.red("'needs' cannot be empty array")}`);
-            process.exit(1);
-        }
-        this.needs = jobData.needs || [];
+        this.needs = jobData.needs || null;
     }
 
     public getJobNameString() {

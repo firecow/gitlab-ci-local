@@ -102,6 +102,8 @@ export class Parser {
 
             this.jobs.set(key, job);
         }
+
+        this.validateNeedsTags();
     }
 
     public getJobs(): ReadonlyMap<string, Job> {
@@ -110,5 +112,19 @@ export class Parser {
 
     public getStages(): ReadonlyMap<string, Stage> {
         return this.stages;
+    }
+
+    private validateNeedsTags() {
+        const jobNames = Array.from(this.jobs.values()).map((j) => j.name);
+        for (const job of this.jobs.values()) {
+            if (job.needs === null || job.needs.length === 0) {
+                continue;
+            }
+
+            if (job.needs.filter((v) => (jobNames.indexOf(v) >= 0)).length !== job.needs.length) {
+                console.error(`${c.blueBright(`${job.name}`)} needs list contains unspecified jobs.`);
+                process.exit(1);
+            }
+        }
     }
 }
