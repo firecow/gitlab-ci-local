@@ -20,10 +20,12 @@ Array.prototype.first = function() {
     return this[0];
 };
 
+yargs
+    .alias("v", "version")
+    .version("3.0.1");
+
 const argv = yargs.argv;
 const cwd = String(argv.cwd || process.cwd());
-yargs.alias("v", "version");
-yargs.version(JSON.parse(fs.readFileSync(`${cwd}/package.json`, "UTF8")).version);
 const m: any = argv.m;
 const manualArgs: string[] = [].concat(m || []);
 
