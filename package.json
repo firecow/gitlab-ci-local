@@ -1,7 +1,6 @@
 {
   "name": "gitlab-ci-local",
   "main": "index.js",
-  "version": "3.0.1",
   "scripts": {
     "build-linux": "pkg dist/index.js -t node12-linux-x64 -o ./bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
     "build-macos": "pkg dist/index.js -t node12-macos-x64 -o ./bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
