@@ -23,7 +23,7 @@ Array.prototype.first = function() {
 
 yargs
     .alias("v", "version")
-    .version("3.0.1");
+    .version("3.0.5");
 
 const argv = yargs.argv;
 const cwd = String(argv.cwd || process.cwd());
