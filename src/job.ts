@@ -24,14 +24,20 @@ export class Job {
     private readonly allowFailure: boolean;
     private readonly beforeScripts: string[] = [];
     private readonly cwd: any;
-    private finished = false;
+
     private readonly globals: any;
     private readonly maxJobNameLength: number;
-    private running = false;
+
     private readonly scripts: string[] = [];
-    private success = true;
     private readonly variables: { [key: string]: string };
     private readonly when: string;
+
+    private prescriptsExitCode = 0;
+    private afterScriptsExitCode = 0;
+
+    private finished = false;
+    private running = false;
+    private success = true;
 
     public constructor(jobData: any, name: string, cwd: any, globals: any, maxJobNameLength: number) {
         this.maxJobNameLength = maxJobNameLength;
@@ -75,6 +81,18 @@ export class Job {
         this.needs = jobData.needs || null;
     }
 
+    public isAllowedToFail() {
+        return this.allowFailure;
+    }
+
+    public getPrescriptsExitCode() {
+        return this.prescriptsExitCode;
+    }
+
+    public getAfterPrescriptsExitCode() {
+        return this.afterScriptsExitCode;
+    }
+
     public getJobNameString() {
         return `${c.blueBright(`${this.name.padEnd(this.maxJobNameLength + 1)}`)}`;
     }
@@ -115,9 +133,9 @@ export class Job {
 
         const startTime = process.hrtime();
         const prescripts = this.beforeScripts.concat(this.scripts);
-        const prescriptsExitCode = await this.exec(prescripts.join(" && "));
-        if (this.afterScripts.length === 0 && prescriptsExitCode > 0 && !this.allowFailure) {
-            console.error(this.getExitedString(startTime, prescriptsExitCode, false));
+        this.prescriptsExitCode = await this.exec(prescripts.join(" && "));
+        if (this.afterScripts.length === 0 && this.prescriptsExitCode > 0 && !this.allowFailure) {
+            console.error(this.getExitedString(startTime, this.prescriptsExitCode, false));
             this.running = false;
             this.finished = true;
             this.success = false;
@@ -125,32 +143,32 @@ export class Job {
             return;
         }
 
-        if (this.afterScripts.length === 0 && prescriptsExitCode > 0 && this.allowFailure) {
-            console.error(this.getExitedString(startTime, prescriptsExitCode, true));
+        if (this.afterScripts.length === 0 && this.prescriptsExitCode > 0 && this.allowFailure) {
+            console.error(this.getExitedString(startTime, this.prescriptsExitCode, true));
             this.running = false;
             this.finished = true;
 
             return;
         }
 
-        if (prescriptsExitCode > 0 && this.allowFailure) {
-            console.error(this.getExitedString(startTime, prescriptsExitCode, true));
+        if (this.prescriptsExitCode > 0 && this.allowFailure) {
+            console.error(this.getExitedString(startTime, this.prescriptsExitCode, true));
         }
 
-        if (prescriptsExitCode > 0 && !this.allowFailure) {
-            console.error(this.getExitedString(startTime, prescriptsExitCode, false));
+        if (this.prescriptsExitCode > 0 && !this.allowFailure) {
+            console.error(this.getExitedString(startTime, this.prescriptsExitCode, false));
         }
 
-        let afterScriptsCode = 0;
+        this.afterScriptsExitCode = 0;
         if (this.afterScripts.length > 0) {
-            afterScriptsCode = await this.exec(this.afterScripts.join(" && "));
+            this.afterScriptsExitCode = await this.exec(this.afterScripts.join(" && "));
         }
 
-        if (afterScriptsCode > 0) {
-            console.error(this.getExitedString(startTime, prescriptsExitCode, true, " (after_script)"));
+        if (this.afterScriptsExitCode > 0) {
+            console.error(this.getExitedString(startTime, this.prescriptsExitCode, true, " (after_script)"));
         }
 
-        if (prescriptsExitCode > 0 && !this.allowFailure) {
+        if (this.prescriptsExitCode > 0 && !this.allowFailure) {
             this.success = false;
         }
 
