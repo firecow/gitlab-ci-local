@@ -3,6 +3,7 @@ import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as yargs from "yargs";
 
+import { Job } from "./job";
 import { Parser } from "./parser";
 
 // Array polyfill
@@ -96,6 +97,7 @@ const runJobs = async () => {
 
         if (stage.isFinished()) {
             if (!stage.isSuccess()) {
+                printReport(jobs);
                 process.exit(2);
             }
             console.log("");
@@ -103,6 +105,22 @@ const runJobs = async () => {
         }
     }
 
+    printReport(jobs);
+
+};
+
+const printReport = (jobs: Job[]) => {
+    console.log('');
+    console.log(`<<<<< ------- ${c.magenta('report')} ------- >>>>>`);
+    for (const job of jobs) {
+        if (job.getPrescriptsExitCode() === 0) {
+            console.log(`${job.getJobNameString()} ${c.green('successful')}`);
+        } else if (job.isAllowedToFail()) {
+            console.log(`${job.getJobNameString()} ${c.yellowBright(`warning with code ${job.getPrescriptsExitCode()}`)}`);
+        } else {
+            console.log(`${job.getJobNameString()} ${c.red(`exited with code ${job.getPrescriptsExitCode()}`)}`);
+        }
+    }
 };
 
 const runExecJobs = async () => {
@@ -128,8 +146,10 @@ const runExecJobs = async () => {
     }
 
     if (jobs.filter((j) => j.isSuccess()).length !== jobs.length) {
+        printReport(jobs);
         process.exit(2);
     }
+    printReport(jobs);
 };
 
 process.on("uncaughtException", (err) => {

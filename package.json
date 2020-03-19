@@ -8,7 +8,7 @@
     "build-all": "npm run build-linux && npm run build-macos && npm run build-win",
     "pkg": "pkg",
     "build": "tsc",
-    "check-all": "npm run build && npm run --silent lint && npm audit --parseable && npm run ncu",
+    "check-all": "npm run build && npm run --silent lint && npm run ncu && npm audit --parseable",
     "lint": "tslint --project .",
     "lint-fix": "tslint --fix --project .",
     "ncu": "ncu --semverLevel major -e 2",
