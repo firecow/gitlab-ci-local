@@ -45,7 +45,7 @@
     "npm-check-updates": "4.x",
     "pkg": "4.x",
     "source-map-support": "0.x",
-    "tslint": "5.x",
+    "tslint": "6.x",
     "typescript": "3.x"
   }
 }
