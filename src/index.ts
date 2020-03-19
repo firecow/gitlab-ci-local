@@ -158,4 +158,7 @@ if (["pipeline", "manual"].includes(firstArg)) {
 } else if (firstArg === "exec") {
     // noinspection JSIgnoredPromiseFromCall
     runExecJobs();
+} else {
+    console.error("You must specify 'nothing', exec, manual or pipeline as 1st argument");
+    process.exit(1);
 }
