@@ -170,7 +170,7 @@ const listJobs = () => {
         const needs = job.needs;
         let jobLine = `${job.getJobNameString()} ${job.when.padEnd(20)} ${c.yellow(`${job.stage.padEnd(15)}`)} ${String(job.allowFailure).padEnd(15)}`;
         if (needs) {
-            jobLine += ` needs: [${needs.join(',')}]`
+            jobLine += ` needs: [${c.blueBright(`${needs.join(',')}`)}]`
         }
         console.log(jobLine);
     }
