@@ -23,7 +23,7 @@ Array.prototype.first = function() {
 
 yargs
     .alias("v", "version")
-    .version("3.0.5");
+    .version("3.0.6");
 
 const argv = yargs.argv;
 const cwd = String(argv.cwd || process.cwd());
@@ -115,7 +115,7 @@ const printReport = (jobs: Job[]) => {
     for (const job of jobs) {
         if (job.getPrescriptsExitCode() === 0) {
             console.log(`${job.getJobNameString()} ${c.green('successful')}`);
-        } else if (job.isAllowedToFail()) {
+        } else if (job.allowFailure) {
             console.log(`${job.getJobNameString()} ${c.yellowBright(`warning with code ${job.getPrescriptsExitCode()}`)}`);
         } else {
             console.log(`${job.getJobNameString()} ${c.red(`exited with code ${job.getPrescriptsExitCode()}`)}`);
@@ -152,6 +152,30 @@ const runExecJobs = async () => {
     printReport(jobs);
 };
 
+const listJobs = () => {
+    const stageNames = Array.from(parser.getStages().values()).map((s) => s.name);
+    const jobs = Array.from(parser.getJobs().values()).sort((a, b) => {
+        const whenPrio = ["never"];
+        if (a.stage !== b.stage) {
+            return stageNames.indexOf(a.stage) - stageNames.indexOf(b.stage);
+        }
+        return whenPrio.indexOf(b.when) - whenPrio.indexOf(a.when);
+    });
+
+    const header = `${"Name".padEnd(parser.maxJobNameLength)}  ${"When".padEnd(20)} ${"Stage".padEnd(15)} ${"AllowFailure".padEnd(15)} ${"Needs"}`;
+    console.log(header);
+    console.log(new Array(header.length).fill("-").join(""));
+
+    for (const job of jobs) {
+        const needs = job.needs;
+        let jobLine = `${job.getJobNameString()} ${job.when.padEnd(20)} ${c.yellow(`${job.stage.padEnd(15)}`)} ${String(job.allowFailure).padEnd(15)}`;
+        if (needs) {
+            jobLine += ` needs: [${needs.join(',')}]`
+        }
+        console.log(jobLine);
+    }
+};
+
 process.on("uncaughtException", (err) => {
     // Handle the error safely
     console.log(err);
@@ -178,6 +202,8 @@ if (["pipeline", "manual"].includes(firstArg)) {
 } else if (firstArg === "exec") {
     // noinspection JSIgnoredPromiseFromCall
     runExecJobs();
+} else if (firstArg === "list") {
+    listJobs();
 } else {
     console.error("You must specify 'nothing', exec, manual or pipeline as 1st argument");
     process.exit(1);

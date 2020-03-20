@@ -24,7 +24,7 @@ export class Parser {
     ];
     private readonly jobs: Map<string, Job> = new Map();
 
-    private readonly maxJobNameLength: number = 0;
+    public readonly maxJobNameLength: number = 0;
     private readonly stages: Map<string, Stage> = new Map();
 
     public constructor(cwd: any) {

@@ -19,18 +19,18 @@ export class Job {
     public readonly name: string;
     public readonly needs: string[] | null;
     public readonly stage: string;
+    public readonly allowFailure: boolean;
+    public readonly when: string;
 
     private readonly afterScripts: string[] = [];
-    private readonly allowFailure: boolean;
     private readonly beforeScripts: string[] = [];
     private readonly cwd: any;
 
     private readonly globals: any;
-    private readonly maxJobNameLength: number;
+    public readonly maxJobNameLength: number;
 
     private readonly scripts: string[] = [];
     private readonly variables: { [key: string]: string };
-    private readonly when: string;
 
     private prescriptsExitCode = 0;
     private afterScriptsExitCode = 0;
@@ -79,10 +79,6 @@ export class Job {
         this.allowFailure = jobData.allow_failure || false;
         this.variables = jobData.variables || {};
         this.needs = jobData.needs || null;
-    }
-
-    public isAllowedToFail() {
-        return this.allowFailure;
     }
 
     public getPrescriptsExitCode() {
