@@ -80,15 +80,6 @@ Artifacts works right now, as along as you don't overwrite tracked files and as 
 
 # TODO
 
-## Known Bugs
-- include:local isn't recursive
-
-## Features
-- Only show output in cli, if -v and/or -vv have been passed as argument
-- Configure gitlab-ci-local per project via .gitlab-ci.local/config.yml
-- Verbosity on .gitlab-ci.local.yml overrides and appends.
-- Different color when printing `when:{{value}}`.
-
 ## Unsupported tags, will be implemented in order
 - rules
 - when:always
