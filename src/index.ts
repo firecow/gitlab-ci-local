@@ -23,21 +23,17 @@ Array.prototype.first = function() {
 
 yargs
     .alias("v", "version")
-    .version("3.0.6");
+    .version("3.0.6")
+    .command("exec [name]", "Run a single job")
+    .command("manual [names..]", "Run manual jobs during the pipeline")
+    .command("list", "List all jobs, with detailed info")
+    .options("cwd", {type: "string", description: "Path to a gitlab-ci.yml", requiresArg: true});
 
-const argv = yargs.argv;
+const argv: any = yargs.argv;
 const cwd = String(argv.cwd || process.cwd());
-const m: any = argv.m;
-const manualArgs: string[] = [].concat(m || []);
+const manualArgs: string[] = [].concat(argv.names || []);
 
 const firstArg = argv._[0] ?? "pipeline";
-
-if (firstArg === "manual") {
-    for (let i = 1; i < argv._.length; i += 1) {
-        manualArgs.push(argv._[i]);
-    }
-}
-
 const parser = new Parser(cwd);
 
 const runJobs = async () => {
@@ -112,8 +108,20 @@ const runJobs = async () => {
 const printReport = (jobs: Job[]) => {
     console.log('');
     console.log(`<<<<< ------- ${c.magenta('report')} ------- >>>>>`);
+
+    const stageNames = Array.from(parser.getStages().values()).map((s) => s.name);
+    jobs.sort((a, b) => {
+        const whenPrio = ["never"];
+        if (a.stage !== b.stage) {
+            return stageNames.indexOf(a.stage) - stageNames.indexOf(b.stage);
+        }
+        return whenPrio.indexOf(b.when) - whenPrio.indexOf(a.when);
+    });
+
     for (const job of jobs) {
-        if (job.getPrescriptsExitCode() === 0) {
+        if (!job.isStarted()) {
+            console.log(`${job.getJobNameString()} not started`);
+        } else if (job.getPrescriptsExitCode() === 0) {
             console.log(`${job.getJobNameString()} ${c.green('successful')}`);
         } else if (job.allowFailure) {
             console.log(`${job.getJobNameString()} ${c.yellowBright(`warning with code ${job.getPrescriptsExitCode()}`)}`);
@@ -125,21 +133,20 @@ const printReport = (jobs: Job[]) => {
 
 const runExecJobs = async () => {
     const jobs = [];
-    for (let i = 1; i < argv._.length; i += 1) {
-        const jobName = argv._[i];
-        const job = parser.getJobs().get(argv._[i]);
-        if (!job) {
-            console.error(`${c.blueBright(`${jobName}`)} ${c.red(" could not be found")}`);
-            process.exit(1);
-        }
-
-        jobs.push(job);
-
-        /* tslint:disable */
-        // noinspection ES6MissingAwait
-        job.start();
-        /* tslint:enabled */
+    const jobName: string = String(argv.name);
+    const job = parser.getJobs().get(jobName);
+    if (!job) {
+        console.error(`${c.blueBright(`${jobName}`)} ${c.red(" could not be found")}`);
+        process.exit(1);
     }
+
+    jobs.push(job);
+
+    /* tslint:disable */
+    // noinspection ES6MissingAwait
+    job.start();
+    /* tslint:enabled */
+
 
     while (jobs.filter((j) => j.isRunning()).length > 0) {
         await new Promise((r) => setTimeout(r, 50));

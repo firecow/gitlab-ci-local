@@ -23,11 +23,9 @@ It lets you simulate a CI pipeline on your local machine.
       * [Scripts](#scripts)
       * [Build binaries](#build-binaries)
    * [TODO](#todo)
-      * [Known Bugs](#known-bugs)
-      * [Features](#features)
       * [Unsupported tags, will be implemented in order](#unsupported-tags-will-be-implemented-in-order)
       * [Docker specfic tags. (Only shell working now)](#docker-specfic-tags-only-shell-working-now)
-      * [Gitlab CI only, will not be used by gitlab-ci-local](#gitlab-ci-only-will-not-be-used-by-gitlab-ci-local)
+      * [Will not be implemented](#will-not-be-implemented)
       * [Undecided](#undecided)
 
 # Installation
@@ -57,7 +55,30 @@ TODO: Fill this
 ### Bash alias
     $ echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
 ### Bash completion
-TODO: Fill this
+
+Add this to `~/.bashrc`
+```
+_yargs_completions()
+{
+    local cur_word args type_list
+
+    cur_word="${COMP_WORDS[COMP_CWORD]}"
+    args=("${COMP_WORDS[@]}")
+
+    # ask yargs to generate completions.
+    type_list=$(/usr/local/bin/gitlab-ci-local --get-yargs-completions "${args[@]}")
+
+    COMPREPLY=( $(compgen -W "${type_list}" -- ${cur_word}) )
+
+    # if no match was found, fall back to filename completion
+    if [ ${#COMPREPLY[@]} -eq 0 ]; then
+      COMPREPLY=()
+    fi
+
+    return 0
+}
+complete -o default -F _yargs_completions gitlab-ci-local
+```
 
 ## Quirks
 ### Artifacts
@@ -82,6 +103,7 @@ Artifacts works right now, as along as you don't overwrite tracked files and as 
 
 ## Unsupported tags, will be implemented in order
 - rules
+- environment
 - when:always
 - when:on_failure
 - when:delayed
@@ -97,12 +119,11 @@ Artifacts works right now, as along as you don't overwrite tracked files and as 
 - services
 - image
 
-## Gitlab CI only, will not be used by gitlab-ci-local
+## Will not be implemented
 - cache
 - pages
 - resource_group
 - interruptible
-- environment
 
 ## Undecided
 - artifacts (reset/restore/uploads "files" from job to job)
