@@ -21,20 +21,19 @@ export class Job {
     public readonly stage: string;
     public readonly allowFailure: boolean;
     public readonly when: string;
+    public readonly maxJobNameLength: number;
 
     private readonly afterScripts: string[] = [];
     private readonly beforeScripts: string[] = [];
     private readonly cwd: any;
-
     private readonly globals: any;
-    public readonly maxJobNameLength: number;
-
     private readonly scripts: string[] = [];
     private readonly variables: { [key: string]: string };
 
     private prescriptsExitCode = 0;
     private afterScriptsExitCode = 0;
 
+    private started = false;
     private finished = false;
     private running = false;
     private success = true;
@@ -101,11 +100,15 @@ export class Job {
         return this.finished;
     }
 
-    public isManual(): boolean {
+    public isStarted() {
+        return this.started;
+    }
+
+    public isManual() {
         return this.when === "manual";
     }
 
-    public isNever(): boolean {
+    public isNever() {
         return this.when === "never";
     }
 
@@ -130,6 +133,7 @@ export class Job {
         const startTime = process.hrtime();
         const prescripts = this.beforeScripts.concat(this.scripts);
         this.prescriptsExitCode = await this.exec(prescripts.join(" && "));
+        this.started = true;
         if (this.afterScripts.length === 0 && this.prescriptsExitCode > 0 && !this.allowFailure) {
             console.error(this.getExitedString(startTime, this.prescriptsExitCode, false));
             this.running = false;
@@ -181,7 +185,7 @@ export class Job {
     }
 
     private async exec(script: string): Promise<number> {
-        return new Promise<any>((resolve, reject) => {
+        return new Promise<number>((resolve, reject) => {
             const jobNameStr = this.getJobNameString();
             const outputFilesPath = this.getOutputFilesPath();
 
