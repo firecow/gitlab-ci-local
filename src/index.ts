@@ -23,7 +23,7 @@ Array.prototype.first = function() {
 
 yargs
     .alias("v", "version")
-    .version("3.0.6")
+    .version("3.0.7")
     .command("exec [name]", "Run a single job")
     .command("manual [names..]", "Run manual jobs during the pipeline")
     .command("list", "List all jobs, with detailed info")
@@ -33,7 +33,7 @@ const argv: any = yargs.argv;
 const cwd = String(argv.cwd || process.cwd());
 const manualArgs: string[] = [].concat(argv.names || []);
 
-const firstArg = argv._[0] ?? "pipeline";
+const firstArg = argv._[0] ? argv._[0] : "pipeline";
 const parser = new Parser(cwd);
 
 const runJobs = async () => {
