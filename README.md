@@ -32,9 +32,10 @@ It lets you simulate a CI pipeline on your local machine.
 ## Linux
 Download and put binary in `/usr/bin`
 
-    $ sudo su `must be installed as root, if placed in /usr/bin/`
-    $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/linux.gz | gunzip -c > /usr/bin/gitlab-ci-local
+    $ sudo su # must be installed as root, if placed in /usr/local/bin/
+    $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/linux.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
     $ chmod +x /usr/bin/gitlab-ci-local
+    $ exit
     
 ## Windows (Git bash)
 Install [gitbash](https://git-scm.com/downloads)
