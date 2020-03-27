@@ -34,7 +34,7 @@ Download and put binary in `/usr/local/bin`
 
     $ sudo su # must be installed as root, if placed in /usr/local/bin/
     $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/linux.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
-    $ chmod +x /usr/bin/gitlab-ci-local
+    $ chmod +x /usr/local/bin/gitlab-ci-local
     $ exit
     
 ## Windows (Git bash)
