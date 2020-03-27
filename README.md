@@ -30,7 +30,7 @@ It lets you simulate a CI pipeline on your local machine.
 
 # Installation
 ## Linux
-Download and put binary in `/usr/bin`
+Download and put binary in `/usr/local/bin`
 
     $ sudo su # must be installed as root, if placed in /usr/local/bin/
     $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/linux.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
