@@ -22,6 +22,7 @@ export class Job {
     public readonly allowFailure: boolean;
     public readonly when: string;
     public readonly maxJobNameLength: number;
+    public readonly stageIndex: number;
 
     private readonly afterScripts: string[] = [];
     private readonly beforeScripts: string[] = [];
@@ -38,7 +39,7 @@ export class Job {
     private running = false;
     private success = true;
 
-    public constructor(jobData: any, name: string, cwd: any, globals: any, maxJobNameLength: number) {
+    public constructor(jobData: any, name: string, stages: string[], cwd: any, globals: any, maxJobNameLength: number) {
         this.maxJobNameLength = maxJobNameLength;
         this.name = name;
         this.cwd = cwd;
@@ -63,6 +64,12 @@ export class Job {
 
         this.stage = jobData.stage || ".pre";
         this.scripts = [].concat(jobData.script || []);
+
+        this.stageIndex = stages.indexOf(this.stage);
+        if (this.stageIndex === -1) {
+            console.error(`${c.red("Stage index is -1")}`);
+            process.exit(1);
+        }
 
         const jobNameStr = this.getJobNameString();
 

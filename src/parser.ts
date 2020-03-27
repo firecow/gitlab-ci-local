@@ -90,7 +90,7 @@ export class Parser {
                 continue;
             }
 
-            const job = new Job(value, key, cwd, gitlabData, this.maxJobNameLength);
+            const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, this.maxJobNameLength);
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
@@ -125,6 +125,15 @@ export class Parser {
                 console.error(`${c.blueBright(`${job.name}`)} needs list contains unspecified jobs.`);
                 process.exit(1);
             }
+
+            for (const need of job.needs) {
+                const needJob = this.jobs.get(need);
+                if (needJob && needJob.stageIndex >= job.stageIndex) {
+                    console.error(`${c.blueBright(`${job.name}`)} cannot need a job from same or future stage. need: ${c.blueBright(`${needJob.name}`)}`);
+                    process.exit(1);
+                }
+            }
+
         }
     }
 }
