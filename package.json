@@ -20,12 +20,12 @@
     "ansi-colors": "4.x",
     "dateformat": "3.x",
     "deep-extend": "0.x",
+    "fs-extra": "8.x",
     "glob": "7.x",
     "js-yaml": "3.x",
     "pretty-hrtime": "1.x",
     "shelljs": "0.x",
-    "yargs": "15.x",
-    "fs-extra": "8.x"
+    "yargs": "15.x"
   },
   "pkg": {
     "targets": [
