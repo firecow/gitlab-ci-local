@@ -46,21 +46,21 @@ const runJobs = async () => {
         const stageName = stage.name;
 
         if (!stage.isRunning()) {
-            console.log(`=> ${c.yellow(`${stageName}`)} <=`);
+            process.stdout.write(`=> ${c.yellow(`${stageName}`)} <=\n`);
             if (jobsInStage.length === 0 && !stage.isRunning()) {
-                console.log(`=> ${c.yellow(`${stageName}`)} has no jobs`);
+                process.stdout.write(`=> ${c.yellow(`${stageName}`)} has no jobs\n`);
             }
         }
 
         for (const job of jobsInStage) {
             if (job.isManual() && !manualArgs.includes(job.name) && !job.isFinished()) {
-                console.log(`${job.getJobNameString()} ${c.magentaBright("skipped")} when:manual`);
+                process.stdout.write(`${job.getJobNameString()} ${c.magentaBright("skipped")} when:manual\n`);
                 job.setFinished(true);
                 continue;
             }
 
             if (job.isNever() && !job.isFinished()) {
-                console.log(`${job.getJobNameString()} ${c.magentaBright("skipped")} when:never`);
+                process.stdout.write(`${job.getJobNameString()} ${c.magentaBright("skipped")} when:never\n`);
                 job.setFinished(true);
                 continue;
             }
@@ -96,7 +96,6 @@ const runJobs = async () => {
                 printReport(jobs);
                 process.exit(2);
             }
-            console.log("");
             stage = stages.shift();
         }
     }
@@ -106,8 +105,7 @@ const runJobs = async () => {
 };
 
 const printReport = (jobs: Job[]) => {
-    console.log('');
-    console.log(`<<<<< ------- ${c.magenta('report')} ------- >>>>>`);
+    process.stdout.write(`\n<<<<< ------- ${c.magenta('report')} ------- >>>>>\n`);
 
     const stageNames = Array.from(parser.getStages().values()).map((s) => s.name);
     jobs.sort((a, b) => {
@@ -120,13 +118,13 @@ const printReport = (jobs: Job[]) => {
 
     for (const job of jobs) {
         if (!job.isStarted()) {
-            console.log(`${job.getJobNameString()} not started`);
+            process.stdout.write(`${job.getJobNameString()} not started\n`);
         } else if (job.getPrescriptsExitCode() === 0) {
-            console.log(`${job.getJobNameString()} ${c.green('successful')}`);
+            process.stdout.write(`${job.getJobNameString()} ${c.green('successful')}\n`);
         } else if (job.allowFailure) {
-            console.log(`${job.getJobNameString()} ${c.yellowBright(`warning with code ${job.getPrescriptsExitCode()}`)}`);
+            process.stdout.write(`${job.getJobNameString()} ${c.yellowBright(`warning with code ${job.getPrescriptsExitCode()}`)}\n`);
         } else {
-            console.log(`${job.getJobNameString()} ${c.red(`exited with code ${job.getPrescriptsExitCode()}`)}`);
+            process.stdout.write(`${job.getJobNameString()} ${c.red(`exited with code ${job.getPrescriptsExitCode()}`)}\n`);
         }
     }
 };
@@ -136,7 +134,7 @@ const runExecJobs = async () => {
     const jobName: string = String(argv.name);
     const job = parser.getJobs().get(jobName);
     if (!job) {
-        console.error(`${c.blueBright(`${jobName}`)} ${c.red(" could not be found")}`);
+        process.stderr.write(`${c.blueBright(`${jobName}`)} ${c.red(" could not be found")}\n`);
         process.exit(1);
     }
 
@@ -170,8 +168,8 @@ const listJobs = () => {
     });
 
     const header = `${"Name".padEnd(parser.maxJobNameLength)}  ${"When".padEnd(20)} ${"Stage".padEnd(15)} ${"AllowFailure".padEnd(15)} ${"Needs"}`;
-    console.log(header);
-    console.log(new Array(header.length).fill("-").join(""));
+    process.stdout.write(`${header}\n`);
+    process.stdout.write(`${new Array(header.length).fill("-").join("")}\n`);
 
     for (const job of jobs) {
         const needs = job.needs;
@@ -179,13 +177,13 @@ const listJobs = () => {
         if (needs) {
             jobLine += ` needs: [${c.blueBright(`${needs.join(',')}`)}]`
         }
-        console.log(jobLine);
+        process.stdout.write(`${jobLine}\n`);
     }
 };
 
 process.on("uncaughtException", (err) => {
     // Handle the error safely
-    console.log(err);
+    process.stderr.write(`${err}\n`);
     process.exit(5);
 });
 
@@ -212,6 +210,6 @@ if (["pipeline", "manual"].includes(firstArg)) {
 } else if (firstArg === "list") {
     listJobs();
 } else {
-    console.error("You must specify 'nothing', exec, manual or pipeline as 1st argument");
+    process.stderr.write("You must specify 'nothing', exec, manual or pipeline as 1st argument\n");
     process.exit(1);
 }

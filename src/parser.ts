@@ -35,7 +35,7 @@ export class Parser {
         // Add .gitlab-ci.yml
         let path = `${cwd}/.gitlab-ci.yml`;
         if (!fs.existsSync(path)) { // Fail if empty
-            console.error(`${cwd}/.gitlab-ci.yml is not found`);
+            process.stderr.write(`${cwd}/.gitlab-ci.yml is not found\n`);
             process.exit(1);
         }
         orderedYml.push(Parser.loadYaml(`${cwd}/.gitlab-ci.yml`));
@@ -46,7 +46,7 @@ export class Parser {
         orderedYml.push(Parser.loadYaml(path));
         orderedVariables.push(orderedYml.last().variables || {});
         if (!orderedYml.last() || Object.keys(orderedYml.last()).length === 0) { // Warn if empty
-            console.error(`WARN: ${cwd}/.gitlab-ci-local.yml is empty or not found`);
+            process.stderr.write(`WARN: ${cwd}/.gitlab-ci-local.yml is empty or not found\n`);
         }
 
         // Add included yaml's.
@@ -67,7 +67,7 @@ export class Parser {
 
         // 'stages' missing, throw error
         if (!gitlabData.stages) {
-            console.error(`${c.red("'stages' tag is missing")}`);
+            process.stderr.write(`${c.red("'stages' tag is missing")}\n`);
             process.exit(1);
         }
 
@@ -96,7 +96,7 @@ export class Parser {
                 stage.addJob(job);
             } else {
                 const stagesJoin = Array.from(this.stages.keys()).join(", ");
-                console.error(`${c.blueBright(`${job.name}`)} uses ${c.yellow(`stage:${job.stage}`)}. Stage cannot be found in [${c.yellow(`${stagesJoin}`)}]`);
+                process.stderr.write(`${c.blueBright(`${job.name}`)} uses ${c.yellow(`stage:${job.stage}`)}. Stage cannot be found in [${c.yellow(`${stagesJoin}`)}]\n`);
                 process.exit(1);
             }
 
@@ -122,14 +122,14 @@ export class Parser {
             }
 
             if (job.needs.filter((v) => (jobNames.indexOf(v) >= 0)).length !== job.needs.length) {
-                console.error(`${c.blueBright(`${job.name}`)} needs list contains unspecified jobs.`);
+                process.stderr.write(`${c.blueBright(`${job.name}`)} needs list contains unspecified jobs.\n`);
                 process.exit(1);
             }
 
             for (const need of job.needs) {
                 const needJob = this.jobs.get(need);
                 if (needJob && needJob.stageIndex >= job.stageIndex) {
-                    console.error(`${c.blueBright(`${job.name}`)} cannot need a job from same or future stage. need: ${c.blueBright(`${needJob.name}`)}`);
+                    process.stderr.write(`${c.blueBright(`${job.name}`)} cannot need a job from same or future stage. need: ${c.blueBright(`${needJob.name}`)}\n`);
                     process.exit(1);
                 }
             }

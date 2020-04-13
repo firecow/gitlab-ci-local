@@ -1,15 +1,15 @@
 import * as c from "ansi-colors";
+import { spawn } from "child_process";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as glob from "glob";
 import * as prettyHrtime from "pretty-hrtime";
-import * as shelljs from "shelljs";
 
 let shell = "/bin/bash";
 if (process.env.EXEPATH) {
     const bashExes = glob.sync(`${process.env.EXEPATH}/**/bash.exe`);
     if (bashExes.length === 0) {
-        console.error(`${c.red("Could not find any bash executables")}`);
+        process.stderr.write(`${c.red("Could not find any bash executables")}\n`);
         process.exit(1);
     }
     shell = bashExes[0];
@@ -51,7 +51,7 @@ export class Job {
             const deepExtendList: any[] = [{}];
             extendList.forEach((parentJobName) => {
                 if (!globals[parentJobName]) {
-                    console.error(`${c.red(`'${parentJobName}' could not be found`)}`);
+                    process.stderr.write(`${c.red(`'${parentJobName}' could not be found`)}\n`);
                     process.exit(1);
                 }
                 deepExtendList.push(globals[parentJobName]);
@@ -67,14 +67,14 @@ export class Job {
 
         this.stageIndex = stages.indexOf(this.stage);
         if (this.stageIndex === -1) {
-            console.error(`${c.red("Stage index is -1")}`);
+            process.stderr.write(`${c.red("Stage index is -1")}\n`);
             process.exit(1);
         }
 
         const jobNameStr = this.getJobNameString();
 
         if (this.scripts.length === 0) {
-            console.error(`${jobNameStr} ${c.red("must have script specified")}`);
+            process.stderr.write(`${jobNameStr} ${c.red("must have script specified")}\n`);
             process.exit(1);
         }
 
@@ -134,15 +134,15 @@ export class Job {
     public async start(): Promise<void> {
         fs.ensureFileSync(this.getOutputFilesPath());
         fs.truncateSync(this.getOutputFilesPath());
-        console.log(this.getStartingString());
+        process.stdout.write(`${this.getStartingString()}\n`);
         this.running = true;
 
         const startTime = process.hrtime();
         const prescripts = this.beforeScripts.concat(this.scripts);
-        this.prescriptsExitCode = await this.exec(prescripts.join(" && "));
+        this.prescriptsExitCode = await this.exec(prescripts);
         this.started = true;
         if (this.afterScripts.length === 0 && this.prescriptsExitCode > 0 && !this.allowFailure) {
-            console.error(this.getExitedString(startTime, this.prescriptsExitCode, false));
+            process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, false)}\n`);
             this.running = false;
             this.finished = true;
             this.success = false;
@@ -151,7 +151,7 @@ export class Job {
         }
 
         if (this.afterScripts.length === 0 && this.prescriptsExitCode > 0 && this.allowFailure) {
-            console.error(this.getExitedString(startTime, this.prescriptsExitCode, true));
+            process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, true)}\n`);
             this.running = false;
             this.finished = true;
 
@@ -159,27 +159,27 @@ export class Job {
         }
 
         if (this.prescriptsExitCode > 0 && this.allowFailure) {
-            console.error(this.getExitedString(startTime, this.prescriptsExitCode, true));
+            process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, true)}\n`);
         }
 
         if (this.prescriptsExitCode > 0 && !this.allowFailure) {
-            console.error(this.getExitedString(startTime, this.prescriptsExitCode, false));
+            process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, false)}\n`);
         }
 
         this.afterScriptsExitCode = 0;
         if (this.afterScripts.length > 0) {
-            this.afterScriptsExitCode = await this.exec(this.afterScripts.join(" && "));
+            this.afterScriptsExitCode = await this.exec(this.afterScripts);
         }
 
         if (this.afterScriptsExitCode > 0) {
-            console.error(this.getExitedString(startTime, this.prescriptsExitCode, true, " (after_script)"));
+            process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, true, " (after_script)")}\n`);
         }
 
         if (this.prescriptsExitCode > 0 && !this.allowFailure) {
             this.success = false;
         }
 
-        console.log(this.getFinishedString(startTime));
+        process.stdout.write(`${this.getFinishedString(startTime)}\n`);
 
         this.running = false;
         this.finished = true;
@@ -191,55 +191,69 @@ export class Job {
         return this.name;
     }
 
-    private async exec(script: string): Promise<number> {
-        return new Promise<number>((resolve, reject) => {
-            const jobNameStr = this.getJobNameString();
-            const outputFilesPath = this.getOutputFilesPath();
+    private async exec(scripts: string[]): Promise<number> {
+        if (scripts.length === 0) {
+            return Promise.resolve(0);
+        }
 
-            const split = script.split(" && ");
-            split.forEach((s) => {
-                console.log(`${jobNameStr} ${c.green(`\$ ${s}`)}`);
-                fs.appendFileSync(outputFilesPath, `\$ ${s}\n`);
+        const jobNameStr = this.getJobNameString();
+        const outputFilesPath = this.getOutputFilesPath();
+
+        return new Promise((resolve, reject) => {
+            const bash = spawn("bash", { cwd: this.cwd, env: this.getEnvs() });
+            bash.on("error", (err) => {
+                reject(err);
+            });
+            bash.on("close", (signal) => {
+                resolve(signal);
             });
 
-            const child = shelljs.exec(`${script}`, {
-                cwd: this.cwd,
-                env: this.getEnvs(),
-                async: true,
-                silent: true,
-                shell,
-            });
+            const nextCmd = () => {
+                const script = scripts.shift();
+                if (!script) {
+                    bash.stdin.write("exit 0\n");
+                } else {
+                    process.stdout.write(`${jobNameStr} ${c.green(`\$ ${script}`)}\n`);
+                    bash.stdin.write(`${script}\n`);
+                    bash.stdin.write("echo GCL_MARKER=$?\n");
+                }
+            };
 
-            child.on("error", (e) => {
-                reject(`${jobNameStr} ${c.red(`error ${String(e)}`)}`);
-            });
+            bash.stdout.on("data", (e) => {
+                const out = `${e}`;
+                const exec = /GCL_MARKER=(?<exitCode>\d*)/.exec(out);
+                const stripped = out.replace(/GCL_MARKER=\d*\n/, "");
 
-            if (child.stdout) {
-                child.stdout.on("data", (buf) => {
-                    const lines = `${buf}`.split(/\r?\n/);
-                    lines.forEach((l) => {
-                        if (!l) {
-                            return;
+                if (stripped !== "") {
+                    for (const line of stripped.split(/\r?\n/)) {
+                        if (line !== "") {
+                            fs.appendFileSync(outputFilesPath, `out: ${line}\n`);
+                            process.stdout.write(`${jobNameStr} ${c.greenBright(">")} ${line}\n`);
                         }
-                        process.stdout.write(`${jobNameStr} ${c.greenBright(">")} ${l}\n`);
-                    });
-                    fs.appendFileSync(outputFilesPath, `${buf}`);
-                });
-            }
-            if (child.stderr) {
-                child.stderr.on("data", (buf) => {
-                    const lines = `${buf}`.split(/\r?\n/);
-                    lines.forEach((l) => {
-                        if (!l) {
-                            return;
-                        }
-                        process.stderr.write(`${jobNameStr} ${c.redBright(">")} ${l}\n`);
-                    });
-                    fs.appendFileSync(outputFilesPath, `${buf}`);
-                });
-            }
+                    }
+                }
 
-            child.on("exit", resolve);
+                if (exec && exec.groups && exec.groups.exitCode && exec.groups.exitCode === "0") {
+                    nextCmd();
+                } else if (exec && exec.groups && exec.groups.exitCode && exec.groups.exitCode !== "0") {
+                    bash.stdin.write(`exit ${exec.groups.exitCode}\n`);
+                } else if (exec) {
+                    reject(`GCL_MARKER was not parsed correctly ${JSON.stringify(exec)}`);
+                }
+            });
+            bash.stderr.on("data", (e) => {
+                const err = `${e}`;
+                if (err !== "") {
+                    for (const line of err.split(/\r?\n/)) {
+                        if (line !== "") {
+                            fs.appendFileSync(outputFilesPath, `${line}\n`);
+                            process.stderr.write(`${jobNameStr} ${c.redBright(">")} ${line}\n`);
+                        }
+                    }
+                }
+            });
+
+            nextCmd();
         });
     }
 
