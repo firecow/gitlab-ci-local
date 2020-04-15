@@ -227,7 +227,7 @@ export class Job {
                 if (stripped !== "") {
                     for (const line of stripped.split(/\r?\n/)) {
                         if (line !== "") {
-                            fs.appendFileSync(outputFilesPath, `out: ${line}\n`);
+                            fs.appendFileSync(outputFilesPath, `${line}\n`);
                             process.stdout.write(`${jobNameStr} ${c.greenBright(">")} ${line}\n`);
                         }
                     }
