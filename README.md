@@ -83,7 +83,7 @@ complete -o default -F _yargs_completions gitlab-ci-local
 
 ## Quirks
 ### Artifacts
-Artifacts works right now, as along as you don't overwrite tracked files and as long as you don't use dependencies tag.
+Artifacts works right now, as along as you don't overwrite tracked files.
 
 # Development
 ## Scripts
