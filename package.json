@@ -39,12 +39,12 @@
     "@types/js-yaml": "^3.12.3",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/shelljs": "^0.8.7",
-    "@types/yaml": "^1.2.0",
+    "@types/yaml": "^1.9.7",
     "@types/yargs": "^15.0.4",
     "npm-check-updates": "^4.1.2",
-    "pkg": "^4.4.6",
-    "source-map-support": "^0.5.16",
-    "tslint": "^6.1.1",
+    "pkg": "^4.4.8",
+    "source-map-support": "^0.5.19",
+    "tslint": "^6.1.2",
     "typescript": "^3.8.3"
   }
 }
