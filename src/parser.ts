@@ -106,12 +106,26 @@ export class Parser {
         this.validateNeedsTags();
     }
 
-    public getJobs(): ReadonlyMap<string, Job> {
-        return this.jobs;
+    public getJobByName(name: string): Job {
+        const job = this.jobs.get(name);
+        if (!job) {
+            process.stderr.write(`${c.blueBright(`${name}`)} ${c.red(" could not be found")}\n`);
+            process.exit(1);
+        }
+
+        return job;
     }
 
-    public getStages(): ReadonlyMap<string, Stage> {
-        return this.stages;
+    public getJobs(): ReadonlyArray<Job> {
+        return Array.from(this.jobs.values());
+    }
+
+    public getStageNames(): ReadonlyArray<string> {
+        return Array.from(this.stages.values()).map((s) => s.name);
+    }
+
+    public getStages(): ReadonlyArray<Stage> {
+        return Array.from(this.stages.values());
     }
 
     private validateNeedsTags() {
