@@ -8,7 +8,7 @@ import { Stage } from "./stage";
 
 export class Parser {
 
-    private static loadYaml(filePath: string): any {
+    public static loadYaml(filePath: string): any {
         const gitlabCiLocalYmlPath = `${filePath}`;
         if (!fs.existsSync(gitlabCiLocalYmlPath)) {
             return {};
@@ -26,11 +26,14 @@ export class Parser {
 
     public readonly maxJobNameLength: number = 0;
     private readonly stages: Map<string, Stage> = new Map();
+    private readonly pipelineId: number;
 
-    public constructor(cwd: any) {
+    public constructor(cwd: any, pipelineId: number) {
 
         const orderedVariables = [];
         const orderedYml = [];
+
+        this.pipelineId = pipelineId;
 
         // Add .gitlab-ci.yml
         let path = `${cwd}/.gitlab-ci.yml`;
@@ -90,7 +93,10 @@ export class Parser {
                 continue;
             }
 
-            const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, this.maxJobNameLength);
+            const predefinedVariables: {[key: string]: string} = {
+                CI_PIPELINE_ID: `${this.pipelineId}`,
+            };
+            const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, predefinedVariables, this.maxJobNameLength);
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
@@ -118,6 +124,10 @@ export class Parser {
 
     public getJobs(): ReadonlyArray<Job> {
         return Array.from(this.jobs.values());
+    }
+
+    public getJobNames(): ReadonlyArray<string> {
+        return Array.from(this.jobs.keys());
     }
 
     public getStageNames(): ReadonlyArray<string> {

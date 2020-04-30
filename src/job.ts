@@ -30,6 +30,7 @@ export class Job {
     private readonly globals: any;
     private readonly scripts: string[] = [];
     private readonly variables: { [key: string]: string };
+    private readonly predefinedVariables: { [key: string]: string };
 
     private prescriptsExitCode = 0;
     private afterScriptsExitCode = 0;
@@ -39,11 +40,12 @@ export class Job {
     private running = false;
     private success = true;
 
-    public constructor(jobData: any, name: string, stages: string[], cwd: any, globals: any, maxJobNameLength: number) {
+    public constructor(jobData: any, name: string, stages: string[], cwd: any, globals: any, predefinedVariables: {[key: string]: string}, maxJobNameLength: number) {
         this.maxJobNameLength = maxJobNameLength;
         this.name = name;
         this.cwd = cwd;
         this.globals = globals;
+        this.predefinedVariables = predefinedVariables;
 
         // Parse extends
         if (jobData.extends) {
@@ -258,7 +260,7 @@ export class Job {
     }
 
     private getEnvs(): { [key: string]: string } {
-        return {...this.globals.variables || {}, ...this.variables, ...process.env};
+        return {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
     }
 
     private getExitedString(startTime: [number, number], code: number, warning: boolean = false, prependString: string = "") {
