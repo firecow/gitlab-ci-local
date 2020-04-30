@@ -21,20 +21,16 @@ Array.prototype.first = function() {
 };
 
 const a = yargs
-    .version("3.0.8")
+    .version("4.0.0")
     .command(defaultCmd as CommandModule)
     .option("manual", {type: "array", description: "One or more manual jobs to run during a pipeline", requiresArg: true})
     .option("list", {type: "string", description: "List jobs and job information", requiresArg: false})
     .option("cwd", {type: "string", description: "Path to a gitlab-ci.yml", requiresArg: true})
-    .completion('completion', async (current, argv) => {
+    .completion('', async (current, argv) => {
         const cwd = argv.cwd as string || process.cwd();
-        const pipelineId = await predefinedVariables.getPipelineId(cwd);
-        const parser = new Parser(cwd, pipelineId);
-        const options = ['list']
-        for (const jobName of parser.getJobNames()) {
-            options.push(jobName);
-        }
-        return options;
+        const pipelineIid = predefinedVariables.getPipelineIid(cwd);
+        const parser = new Parser(cwd, pipelineIid);
+        return parser.getJobNames();
     })
     .argv;
 

@@ -12,8 +12,8 @@ exports.builder = (y: any) => {
 };
 exports.handler = async(argv: any) => {
     const cwd = argv.cwd as string || process.cwd();
-    const pipelineId = await predefinedVariables.getPipelineId(cwd);
-    const parser = new Parser(cwd, pipelineId);
+    const pipelineIid = predefinedVariables.getPipelineIid(cwd);
+    const parser = new Parser(cwd, pipelineIid);
 
     if (argv.list !== undefined) {
         await Commander.runList(parser);
@@ -23,7 +23,7 @@ exports.handler = async(argv: any) => {
     if (argv.job) {
         await Commander.runSingleJob(parser, argv.job as string);
     } else {
-        await predefinedVariables.incrementPipelineId(cwd);
+        predefinedVariables.incrementPipelineIid(cwd);
         await Commander.runPipeline(parser, argv.manual as string[] || []);
     }
 };

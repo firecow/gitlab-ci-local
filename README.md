@@ -94,11 +94,11 @@ Artifacts works right now, as along as you don't overwrite tracked files and as 
 
 ![Alt text](/docs/images/development.png "Development output")
 
-## Build binaries
-    $ npm run build-linux
-    $ npm run build-win
-    $ npm run build-macos
-    $ npm run build-all
+## Package binaries
+    $ npm run pkg-linux
+    $ npm run pkg-win
+    $ npm run pkg-macos
+    $ npm run pkg-all
 
 # TODO
 
