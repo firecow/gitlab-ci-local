@@ -1,23 +1,12 @@
 {
     "defaultSeverity": "error",
     "extends": [
-        "tslint:all"
+        "tslint:recommended"
     ],
     "jsRules": {},
     "rules": {
-        "member-ordering": false,
-        "no-null-keyword": false,
-        "no-magic-numbers": false,
-        "strict-boolean-expressions": false,
-        "newline-per-chained-call": false,
-        "no-any": false,
-        "no-unsafe-any": false,
-        "completed-docs": false,
-        "typedef": false,
-        "no-use-before-declare": false,
-        "no-string-throw": false,
-        "no-console": false,
-        "object-literal-sort-keys": false,
+        "no-string-literal": false,
+        "no-empty": false,
         "max-line-length": [true, 220]
     },
     "rulesDirectory": []
