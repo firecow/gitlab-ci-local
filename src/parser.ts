@@ -3,6 +3,7 @@ import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 
+import * as predefinedVariables from "./predefined_variables";
 import { Job } from "./job";
 import { Stage } from "./stage";
 
@@ -26,14 +27,12 @@ export class Parser {
 
     public readonly maxJobNameLength: number = 0;
     private readonly stages: Map<string, Stage> = new Map();
-    private readonly pipelineId: number;
 
-    public constructor(cwd: any, pipelineId: number) {
+    public constructor(cwd: any, pipelineIid: number) {
 
         const orderedVariables = [];
         const orderedYml = [];
 
-        this.pipelineId = pipelineId;
 
         // Add .gitlab-ci.yml
         let path = `${cwd}/.gitlab-ci.yml`;
@@ -93,10 +92,8 @@ export class Parser {
                 continue;
             }
 
-            const predefinedVariables: {[key: string]: string} = {
-                CI_PIPELINE_ID: `${this.pipelineId}`,
-            };
-            const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, predefinedVariables, this.maxJobNameLength);
+            const jobId = predefinedVariables.getJobId(cwd);
+            const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength);
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
@@ -105,6 +102,7 @@ export class Parser {
                 process.stderr.write(`${c.blueBright(`${job.name}`)} uses ${c.yellow(`stage:${job.stage}`)}. Stage cannot be found in [${c.yellow(`${stagesJoin}`)}]\n`);
                 process.exit(1);
             }
+            predefinedVariables.incrementJobId(cwd);
 
             this.jobs.set(key, job);
         }
