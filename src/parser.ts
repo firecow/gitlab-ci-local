@@ -3,12 +3,13 @@ import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 
+import * as predefinedVariables from "./predefined_variables";
 import { Job } from "./job";
 import { Stage } from "./stage";
 
 export class Parser {
 
-    private static loadYaml(filePath: string): any {
+    public static loadYaml(filePath: string): any {
         const gitlabCiLocalYmlPath = `${filePath}`;
         if (!fs.existsSync(gitlabCiLocalYmlPath)) {
             return {};
@@ -27,10 +28,11 @@ export class Parser {
     public readonly maxJobNameLength: number = 0;
     private readonly stages: Map<string, Stage> = new Map();
 
-    public constructor(cwd: any) {
+    public constructor(cwd: any, pipelineIid: number) {
 
         const orderedVariables = [];
         const orderedYml = [];
+
 
         // Add .gitlab-ci.yml
         let path = `${cwd}/.gitlab-ci.yml`;
@@ -90,7 +92,8 @@ export class Parser {
                 continue;
             }
 
-            const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, this.maxJobNameLength);
+            const jobId = predefinedVariables.getJobId(cwd);
+            const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength);
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
@@ -99,6 +102,7 @@ export class Parser {
                 process.stderr.write(`${c.blueBright(`${job.name}`)} uses ${c.yellow(`stage:${job.stage}`)}. Stage cannot be found in [${c.yellow(`${stagesJoin}`)}]\n`);
                 process.exit(1);
             }
+            predefinedVariables.incrementJobId(cwd);
 
             this.jobs.set(key, job);
         }
@@ -106,12 +110,30 @@ export class Parser {
         this.validateNeedsTags();
     }
 
-    public getJobs(): ReadonlyMap<string, Job> {
-        return this.jobs;
+    public getJobByName(name: string): Job {
+        const job = this.jobs.get(name);
+        if (!job) {
+            process.stderr.write(`${c.blueBright(`${name}`)} ${c.red(" could not be found")}\n`);
+            process.exit(1);
+        }
+
+        return job;
     }
 
-    public getStages(): ReadonlyMap<string, Stage> {
-        return this.stages;
+    public getJobs(): ReadonlyArray<Job> {
+        return Array.from(this.jobs.values());
+    }
+
+    public getJobNames(): ReadonlyArray<string> {
+        return Array.from(this.jobs.keys());
+    }
+
+    public getStageNames(): ReadonlyArray<string> {
+        return Array.from(this.stages.values()).map((s) => s.name);
+    }
+
+    public getStages(): ReadonlyArray<Stage> {
+        return Array.from(this.stages.values());
     }
 
     private validateNeedsTags() {
