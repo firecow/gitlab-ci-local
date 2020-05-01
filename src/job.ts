@@ -246,8 +246,7 @@ export class Job {
                     bash.stdin.write("exit 0\n");
                 } else {
                     process.stdout.write(`${jobNameStr} ${c.green(`\$ ${script}`)}\n`);
-                    bash.stdin.write(`${script}\n`);
-                    bash.stdin.write("echo GCL_MARKER=$?\n");
+                    bash.stdin.write(`${script};echo GCL_MARKER=$?\n`);
                 }
             };
 
