@@ -6,5 +6,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="@types/yargs" level="application" />
+    <orderEntry type="library" name="@types/fs-extra" level="application" />
+    <orderEntry type="library" name="@types/fs-extra-promise-es6" level="application" />
   </component>
 </module>

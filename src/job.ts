@@ -30,6 +30,7 @@ export class Job {
     private readonly globals: any;
     private readonly scripts: string[] = [];
     private readonly variables: { [key: string]: string };
+    private readonly predefinedVariables: { [key: string]: string };
 
     private prescriptsExitCode = 0;
     private afterScriptsExitCode = 0;
@@ -39,7 +40,7 @@ export class Job {
     private running = false;
     private success = true;
 
-    public constructor(jobData: any, name: string, stages: string[], cwd: any, globals: any, maxJobNameLength: number) {
+    public constructor(jobData: any, name: string, stages: string[], cwd: any, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number) {
         this.maxJobNameLength = maxJobNameLength;
         this.name = name;
         this.cwd = cwd;
@@ -85,6 +86,37 @@ export class Job {
         this.allowFailure = jobData.allow_failure || false;
         this.variables = jobData.variables || {};
         this.needs = jobData.needs || null;
+
+        this.predefinedVariables = {
+            CI_COMMIT_SHORT_SHA: "a33bd89c", // Changes
+            CI_COMMIT_SHA: "a33bd89c7b8fa3567524525308d8cafd7c0cd2ad",
+            CI_PROJECT_NAME: "local-project",
+            CI_PROJECT_TITLE: "LocalProject",
+            CI_PROJECT_PATH_SLUG: "group/sub/local-project",
+            CI_PROJECT_NAMESPACE: "group/sub/LocalProject",
+            CI_COMMIT_REF_PROTECTED: "false",
+            CI_COMMIT_BRANCH: "local/branch", // Branch name, only when building branches
+            CI_COMMIT_REF_NAME: "local/branch", // Tag or branch name
+            CI_PROJECT_VISIBILITY: "internal",
+            GITLAB_USER_LOGIN: "localusername",
+            GITLAB_USER_EMAIL: "localusername@gitlab.com",
+            GITLAB_USER_NAME: "Local User Name",
+            CI_PROJECT_ID: "1217",
+            CI_COMMIT_TITLE: "Commit Title", // First line of commit message.
+            CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
+            CI_COMMIT_DESCRIPTION: "More commit text",
+            CI_PIPELINE_SOURCE: "push",
+            CI_JOB_ID: `${jobId}`, // Changes on rerun
+            CI_PIPELINE_ID: `${pipelineIid + 1000}`,
+            CI_PIPELINE_IID: `${pipelineIid}`,
+            CI_SERVER_URL: "https://gitlab.com",
+            CI_PROJECT_URL: "https://gitlab.com/group/sub/local-project",
+            CI_JOB_URL: `https://gitlab.com/group/sub/local-project/-/jobs/${jobId}`, // Changes on rerun.
+            CI_PIPELINE_URL: `https://gitlab.cego.dk/group/sub/local-project/pipelines/${pipelineIid}`,
+            CI_JOB_NAME: `${this.name}`,
+            CI_JOB_STAGE: `${this.stage}`,
+            GITLAB_CI: "false",
+        }
     }
 
     public getPrescriptsExitCode() {
@@ -214,8 +246,7 @@ export class Job {
                     bash.stdin.write("exit 0\n");
                 } else {
                     process.stdout.write(`${jobNameStr} ${c.green(`\$ ${script}`)}\n`);
-                    bash.stdin.write(`${script}\n`);
-                    bash.stdin.write("echo GCL_MARKER=$?\n");
+                    bash.stdin.write(`${script};echo GCL_MARKER=$?\n`);
                 }
             };
 
@@ -258,7 +289,7 @@ export class Job {
     }
 
     private getEnvs(): { [key: string]: string } {
-        return {...this.globals.variables || {}, ...this.variables, ...process.env};
+        return {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
     }
 
     private getExitedString(startTime: [number, number], code: number, warning: boolean = false, prependString: string = "") {
