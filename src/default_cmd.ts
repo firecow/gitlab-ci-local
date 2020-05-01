@@ -13,8 +13,6 @@ exports.builder = (y: any) => {
 };
 exports.handler = async(argv: any) => {
     const cwd = argv.cwd as string || process.cwd();
-    const pipelineIid = predefinedVariables.getPipelineIid(cwd);
-    const parser = new Parser(cwd, pipelineIid);
 
     if (argv.completion !== undefined) {
         yargs.showCompletionScript();
@@ -22,14 +20,20 @@ exports.handler = async(argv: any) => {
     }
 
     if (argv.list !== undefined) {
+        const pipelineIid = predefinedVariables.getPipelineIid(cwd);
+        const parser = new Parser(cwd, pipelineIid);
         await Commander.runList(parser);
         return;
     }
 
     if (argv.job) {
+        const pipelineIid = predefinedVariables.getPipelineIid(cwd);
+        const parser = new Parser(cwd, pipelineIid);
         await Commander.runSingleJob(parser, argv.job as string);
     } else {
         predefinedVariables.incrementPipelineIid(cwd);
+        const pipelineIid = predefinedVariables.getPipelineIid(cwd);
+        const parser = new Parser(cwd, pipelineIid);
         await Commander.runPipeline(parser, argv.manual as string[] || []);
     }
 };
