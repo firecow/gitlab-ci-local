@@ -41,7 +41,7 @@ const argv = yargs
         const parser = new Parser(cwd, pipelineIid);
         return parser.getJobNames();
     })
-    .epilogue('for more information, find our manual at http://github.com/firecow/')
+    .epilogue('find more information at https://github.com/firecow/gitlab-ci-local')
     .argv;
 
 (async() => {
