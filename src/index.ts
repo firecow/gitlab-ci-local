@@ -1,9 +1,17 @@
-import {CommandModule} from "yargs";
 import * as yargs from "yargs";
+import {Commander} from "./commander";
 
-import * as defaultCmd from "./commands/default_cmd"
 import {Parser} from "./parser";
 import * as predefinedVariables from "./predefined_variables";
+
+process.on('uncaughtException', (err) => {
+    process.stderr.write(`${err.stack ? err.stack : err}\n`);
+    process.exit(5);
+});
+process.on('unhandledRejection', (reason) => {
+    process.stderr.write(`${reason}\n`);
+    process.exit(5);
+});
 
 // Array polyfill
 declare global {
@@ -20,22 +28,42 @@ Array.prototype.first = function() {
     return this[0];
 };
 
-const a = yargs
+const argv = yargs
     .version("4.0.0")
-    .command(defaultCmd as CommandModule)
+    .usage("\nUsage: $0           Run entire pipeline\nUsage: $0 [jobname] Run single job")
     .option("manual", {type: "array", description: "One or more manual jobs to run during a pipeline", requiresArg: true})
     .option("list", {type: "string", description: "List jobs and job information", requiresArg: false})
     .option("cwd", {type: "string", description: "Path to a gitlab-ci.yml", requiresArg: true})
-    .completion('', async (current, argv) => {
-        const cwd = argv.cwd as string || process.cwd();
+    .option("completion", {type: "string", description: "Generate bash completion script", requiresArg: false})
+    .completion("completion", false, async (current, a) => {
+        const cwd = a.cwd as string || process.cwd();
         const pipelineIid = predefinedVariables.getPipelineIid(cwd);
         const parser = new Parser(cwd, pipelineIid);
         return parser.getJobNames();
     })
+    .epilogue('for more information, find our manual at http://github.com/firecow/')
     .argv;
 
-process.on("uncaughtException", (err) => {
-    // Handle the error safely
-    process.stderr.write(`${err.stack ? err.stack : err}\n`);
-    process.exit(5);
-});
+(async() => {
+    const cwd = argv.cwd as string || process.cwd();
+    const pipelineIid = predefinedVariables.getPipelineIid(cwd);
+    const parser = new Parser(cwd, pipelineIid);
+
+    if (argv.completion !== undefined) {
+        yargs.showCompletionScript();
+        return;
+    }
+
+    if (argv.list !== undefined) {
+        await Commander.runList(parser);
+        return;
+    }
+
+    if (argv._.length > 0) {
+        await Commander.runSingleJob(parser, argv._[0] as string);
+    } else {
+        predefinedVariables.incrementPipelineIid(cwd);
+        await Commander.runPipeline(parser, argv.manual as string[] || []);
+    }
+})();
+
