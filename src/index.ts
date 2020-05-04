@@ -37,6 +37,7 @@ const argv = yargs
     .option("list", {type: "string", description: "List jobs and job information", requiresArg: false})
     .option("cwd", {type: "string", description: "Path to a gitlab-ci.yml", requiresArg: true})
     .option("completion", {type: "string", description: "Generate bash completion script", requiresArg: false})
+    .option("needs", {type: "boolean", description: "Run needed jobs, when executing a single job", requiresArg: false})
     .completion("completion", false, async (current, a) => {
         const cwd = a.cwd as string || process.cwd();
         const pipelineIid = predefinedVariables.getPipelineIid(cwd);
