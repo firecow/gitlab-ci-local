@@ -95,21 +95,23 @@ export class Commander {
         }
     }
 
-    static async runSingleJob(parser: Parser, jobName: string) {
+    static async runSingleJob(parser: Parser, jobName: string, needs: boolean) {
         const jobs: Job[] = [];
         const stageNames = parser.getStageNames();
         const foundJob = parser.getJobByName(jobName);
         jobs.push(foundJob);
-        let needs: string[] = [];
-        if (foundJob.needs) needs = needs.concat(foundJob.needs);
 
-        // Recursive backwards traversal to find parant needs.
-        while (needs.length > 0) {
-            const need = needs.pop();
-            if (need) {
-                const needJob = parser.getJobByName(need);
-                jobs.unshift(needJob);
-                if (needJob.needs) needs = needs.concat(needJob.needs);
+        if (needs) {
+            // Recursive backwards traversal to find parant needs.
+            let needed: string[] = [];
+            if (foundJob.needs) needed = needed.concat(foundJob.needs);
+            while (needed.length > 0) {
+                const need = needed.pop();
+                if (need) {
+                    const needJob = parser.getJobByName(need);
+                    jobs.unshift(needJob);
+                    if (needJob.needs) needed = needed.concat(needJob.needs);
+                }
             }
         }
 
