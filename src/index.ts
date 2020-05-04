@@ -30,7 +30,7 @@ Array.prototype.first = function() {
 };
 
 const argv = yargs
-    .version("4.0.0")
+    .version("4.0.1")
     .command(defaultCmd as CommandModule)
     .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
     .option("manual", {type: "array", description: "One or more manual jobs to run during a pipeline", requiresArg: true})
