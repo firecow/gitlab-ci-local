@@ -289,7 +289,21 @@ export class Job {
     }
 
     private getEnvs(): { [key: string]: string } {
-        return {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
+        const envs: {[key: string]: string} = {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
+        const regex = /\${(.*?)}/g
+        let exec;
+
+        for (const [env, value] of Object.entries(envs)) {
+            while ((exec = regex.exec(value as string)) !== null) {
+                const cap = exec[1];
+                if (this.predefinedVariables[cap] != null) {
+                    const replacer = new RegExp(`\\$\{${cap}\}`, "g");
+                    envs[env] = value.replace(replacer, this.predefinedVariables[cap]);
+                }
+            }
+        }
+
+        return envs;
     }
 
     private getExitedString(startTime: [number, number], code: number, warning: boolean = false, prependString: string = "") {
