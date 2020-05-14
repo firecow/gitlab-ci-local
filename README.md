@@ -45,7 +45,12 @@ Download and put binary in `C:\Program Files\Git\mingw64\bin`
     $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
 
 ## Macos
-TODO: Fill this
+Download and put binary in `/usr/local/bin`
+
+    $ sudo su # must be installed as root, if placed in /usr/local/bin/
+    $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/macOS.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
+    $ chmod +x /usr/local/bin/gitlab-ci-local
+    $ exit
 
 # Usage
 ## Example
