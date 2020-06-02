@@ -22,8 +22,8 @@
     "deep-extend": "^0.6.0",
     "fs-extra": "^9.0.0",
     "glob": "^7.1.6",
-    "js-yaml": "^3.14.0",
     "pretty-hrtime": "^1.0.3",
+    "yaml": "^1.10.0",
     "yargs": "^15.3.1"
   },
   "pkg": {
