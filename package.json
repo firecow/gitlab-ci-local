@@ -22,7 +22,7 @@
     "deep-extend": "^0.6.0",
     "fs-extra": "^9.0.0",
     "glob": "^7.1.6",
-    "js-yaml": "^3.13.1",
+    "js-yaml": "^3.14.0",
     "pretty-hrtime": "^1.0.3",
     "yargs": "^15.3.1"
   },
@@ -35,16 +35,16 @@
   "license": "ISC",
   "devDependencies": {
     "@types/deep-extend": "^0.4.31",
-    "@types/fs-extra": "^8.1.0",
-    "@types/js-yaml": "^3.12.3",
+    "@types/fs-extra": "^8.1.1",
+    "@types/js-yaml": "^3.12.4",
     "@types/pretty-hrtime": "^1.0.0",
-    "@types/shelljs": "^0.8.7",
+    "@types/shelljs": "^0.8.8",
     "@types/yaml": "^1.9.7",
-    "@types/yargs": "^15.0.4",
+    "@types/yargs": "^15.0.5",
     "npm-check-updates": "^4.1.2",
     "pkg": "^4.4.8",
     "source-map-support": "^0.5.19",
     "tslint": "^6.1.2",
-    "typescript": "^3.8.3"
+    "typescript": "^3.9.3"
   }
 }
