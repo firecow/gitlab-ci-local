@@ -1,7 +1,7 @@
 import * as c from "ansi-colors";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
-import * as yaml from "js-yaml";
+import * as yaml from "yaml";
 
 import * as predefinedVariables from "./predefined_variables";
 import { Job } from "./job";
@@ -15,7 +15,7 @@ export class Parser {
             return {};
         }
 
-        return yaml.safeLoad(fs.readFileSync(`${filePath}`, "utf8"));
+        return yaml.parse(fs.readFileSync(`${filePath}`, "utf8"));
     }
 
     private readonly illigalJobNames = [
