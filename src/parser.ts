@@ -3,6 +3,7 @@ import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "yaml";
 
+import { execSync } from "child_process";
 import * as predefinedVariables from "./predefined_variables";
 import { Job } from "./job";
 import { Stage } from "./stage";
@@ -55,12 +56,25 @@ export class Parser {
         orderedYml.unshift({});
         const includes = deepExtend.apply(this, orderedYml).include || [];
         for (const value of includes) {
-            if (!value.local) {
-                continue;
-            }
+            if (value.local) {
+                orderedYml.unshift(Parser.loadYaml(`${cwd}/${value.local}`));
+                orderedVariables.unshift(orderedYml.first().variables || {});
+            } else if (value.file) {
+                const ref = value.ref || "master";
+                const file = value.file;
+                const project = value.project;
+                const gitlabCiLocalPath = `${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`;
 
-            orderedYml.unshift(Parser.loadYaml(`${cwd}/${value.local}`));
-            orderedVariables.unshift(orderedYml.first().variables || {});
+                fs.ensureDirSync(gitlabCiLocalPath);
+                execSync(`git archive --remote=git@gitlab.cego.dk:${project}.git ${ref} --format=zip ${file} | gunzip -c - > ${file}`, {
+                    cwd: gitlabCiLocalPath
+                });
+
+                orderedYml.unshift(Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`));
+                orderedVariables.unshift(orderedYml.first().variables || {});
+            } else {
+                process.stderr.write(`Didn't understand include ${JSON.stringify(value)}\n`);
+            }
         }
 
         // Setup variables and "merged" yml
