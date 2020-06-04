@@ -116,7 +116,7 @@ export class Job {
             CI_JOB_NAME: `${this.name}`,
             CI_JOB_STAGE: `${this.stage}`,
             GITLAB_CI: "false",
-        }
+        };
     }
 
     public getPrescriptsExitCode() {
@@ -290,7 +290,7 @@ export class Job {
 
     private getEnvs(): { [key: string]: string } {
         const envs: {[key: string]: string} = {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
-        const regex = /\${(.*?)}/g
+        const regex = /\${(.*?)}/g;
         let exec;
 
         for (const [env, value] of Object.entries(envs)) {
