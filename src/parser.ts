@@ -16,7 +16,7 @@ export class Parser {
             return {};
         }
 
-        return yaml.parse(fs.readFileSync(`${filePath}`, "utf8"));
+        return yaml.parse(fs.readFileSync(`${filePath}`, "utf8")) || {};
     }
 
     private readonly illigalJobNames = [
@@ -28,67 +28,27 @@ export class Parser {
 
     public readonly maxJobNameLength: number = 0;
     private readonly stages: Map<string, Stage> = new Map();
+    private readonly cwd: string;
 
     public constructor(cwd: any, pipelineIid: number) {
+        let path = '';
+        let yamlDataList: any[] = [];
 
-        const orderedVariables = [];
-        const orderedYml = [];
+        this.cwd = cwd;
 
+        path = `${cwd}/.gitlab-ci.yml`;
+        const gitlabCiData = Parser.loadYaml(path);
+        yamlDataList = yamlDataList.concat(this.prepareIncludes(gitlabCiData));
 
-        // Add .gitlab-ci.yml
-        let path = `${cwd}/.gitlab-ci.yml`;
-        if (!fs.existsSync(path)) { // Fail if empty
-            process.stderr.write(`${cwd}/.gitlab-ci.yml is not found\n`);
-            process.exit(1);
-        }
-        orderedYml.push(Parser.loadYaml(`${cwd}/.gitlab-ci.yml`));
-        orderedVariables.push(orderedYml.last().variables);
-
-        // Add .gitlab-ci-local.yml
         path = `${cwd}/.gitlab-ci-local.yml`;
-        orderedYml.push(Parser.loadYaml(path));
-        orderedVariables.push(orderedYml.last().variables || {});
-        if (!orderedYml.last() || Object.keys(orderedYml.last()).length === 0) { // Warn if empty
-            process.stderr.write(`WARN: ${cwd}/.gitlab-ci-local.yml is empty or not found\n`);
-        }
-
-        // Add included yaml's.
-        orderedYml.unshift({});
-        const includes = deepExtend.apply(this, orderedYml).include || [];
-        for (const value of includes) {
-            if (value.local) {
-                orderedYml.unshift(Parser.loadYaml(`${cwd}/${value.local}`));
-                orderedVariables.unshift(orderedYml.first().variables || {});
-            } else if (value.file) {
-                const ref = value.ref || "master";
-                const file = value.file;
-                const project = value.project;
-                const gitlabCiLocalPath = `${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`;
-
-                fs.ensureDirSync(gitlabCiLocalPath);
-                execSync(`git archive --remote=git@gitlab.cego.dk:${project}.git ${ref} --format=zip ${file} | gunzip -c - > ${file}`, {
-                    cwd: gitlabCiLocalPath
-                });
-
-                orderedYml.unshift(Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`));
-                orderedVariables.unshift(orderedYml.first().variables || {});
-            } else {
-                process.stderr.write(`Didn't understand include ${JSON.stringify(value)}\n`);
-            }
-        }
+        const gitlabCiLocalData = Parser.loadYaml(path);
+        yamlDataList = yamlDataList.concat(this.prepareIncludes(gitlabCiLocalData));
 
         // Setup variables and "merged" yml
-        orderedYml.unshift({});
-        const gitlabData = deepExtend.apply(this, orderedYml);
-
-        // 'stages' missing, throw error
-        if (!gitlabData.stages) {
-            process.stderr.write(`${c.red("'stages' tag is missing")}\n`);
-            process.exit(1);
-        }
+        const gitlabData = deepExtend.apply(this, yamlDataList);
 
         // Generate stages
-        for (const value of gitlabData.stages) {
+        for (const value of gitlabData.stages || []) {
             this.stages.set(value, new Stage(value));
         }
 
@@ -120,8 +80,43 @@ export class Parser {
 
             this.jobs.set(key, job);
         }
+    }
 
-        this.validateNeedsTags();
+    private prepareIncludes(doc: any): any[] {
+        let includeDatas: any[] = [];
+        const cwd = this.cwd;
+
+        for (const value of doc["include"] || []) {
+            if (value["local"]) {
+                const localDoc = Parser.loadYaml(`${this.cwd}/${value.local}`);
+                includeDatas = includeDatas.concat(this.prepareIncludes(localDoc));
+            } else if (value["file"]) {
+                const ref = value["ref"] || "master";
+                const file = value["file"];
+                const project = value["project"];
+                const gitlabCiLocalPath = `${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`;
+
+                const domainRegExp = /^.*@(.*):.*\(fetch\)/;
+                const output = execSync(`git remote -v`, {
+                    cwd: `${this.cwd}`
+                });
+                const exec = domainRegExp.exec(`${output}`);
+                const gitDomain = exec ? exec[1] : null;
+                fs.ensureDirSync(gitlabCiLocalPath);
+                execSync(`git archive --remote=git@${gitDomain}:${project}.git ${ref} --format=zip ${file} | gunzip -c - > ${file}`, {
+                    cwd: gitlabCiLocalPath
+                });
+
+                const fileDoc = Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`);
+                includeDatas = includeDatas.concat(this.prepareIncludes(fileDoc));
+
+            } else {
+                process.stderr.write(`Didn't understand include ${JSON.stringify(value)}\n`);
+            }
+        }
+
+        includeDatas.push(doc);
+        return includeDatas;
     }
 
     public getJobByName(name: string): Job {
@@ -150,7 +145,7 @@ export class Parser {
         return Array.from(this.stages.values());
     }
 
-    private validateNeedsTags() {
+    public validateNeedsTags() {
         const jobNames = Array.from(this.jobs.values()).map((j) => j.name);
         for (const job of this.jobs.values()) {
             if (job.needs === null || job.needs.length === 0) {

@@ -72,8 +72,8 @@ export class Commander {
     }
 
     static runList(parser: Parser) {
-        const stageNames = Array.from(parser.getStages().values()).map((s) => s.name);
-        const jobs = Array.from(parser.getJobs().values()).sort((a, b) => {
+        const stageNames = Array.from(parser.getStages()).map((s) => s.name);
+        const jobs = Array.from(parser.getJobs()).sort((a, b) => {
             const whenPrio = ["never"];
             if (a.stage !== b.stage) {
                 return stageNames.indexOf(a.stage) - stageNames.indexOf(b.stage);
@@ -81,15 +81,19 @@ export class Commander {
             return whenPrio.indexOf(b.when) - whenPrio.indexOf(a.when);
         });
 
-        const header = `${"Name".padEnd(parser.maxJobNameLength)}  ${"When".padEnd(20)} ${"Stage".padEnd(15)} ${"AllowFailure".padEnd(15)} ${"Needs"}`;
-        process.stdout.write(`${header}\n`);
-        process.stdout.write(`${new Array(header.length).fill("-").join("")}\n`);
+
+        let whenPadEnd = 0;
+        parser.getJobs().forEach(j => whenPadEnd = Math.max(j.when.length + 1, whenPadEnd));
+
+        let stagePadEnd = 0;
+        parser.getStageNames().forEach(s => stagePadEnd = Math.max(s.length + 1, stagePadEnd));
 
         for (const job of jobs) {
             const needs = job.needs;
-            let jobLine = `${job.getJobNameString()} ${job.when.padEnd(20)} ${c.yellow(`${job.stage.padEnd(15)}`)} ${String(job.allowFailure).padEnd(15)}`;
+            const allowFailure = job.allowFailure ? 'warning' : ''
+            let jobLine = `${job.getJobNameString()} ${c.yellow(`${job.stage.padEnd(stagePadEnd)}`)} ${job.when.padEnd(whenPadEnd)} ${allowFailure.padEnd(8)}`;
             if (needs) {
-                jobLine += ` needs: [${c.blueBright(`${needs.join(',')}`)}]`
+                jobLine += ` [${c.blueBright(`${needs.join(',')}`)}]`
             }
             process.stdout.write(`${jobLine}\n`);
         }

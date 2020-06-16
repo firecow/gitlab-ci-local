@@ -45,6 +45,6 @@
     "pkg": "^4.4.8",
     "source-map-support": "^0.5.19",
     "tslint": "^6.1.2",
-    "typescript": "^3.9.4"
+    "typescript": "^3.9.5"
   }
 }
