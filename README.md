@@ -114,7 +114,6 @@ Artifacts works right now, as along as you don't overwrite tracked files.
 - when:on_failure
 - when:delayed
   - start_in (Used only with when:delayed)
-- include:file
 - include:template
 - include:remote
 - coverage (code coverage)
