@@ -29,11 +29,13 @@ exports.handler = async(argv: any) => {
     if (argv.job) {
         const pipelineIid = predefinedVariables.getPipelineIid(cwd);
         const parser = new Parser(cwd, pipelineIid);
+        parser.validateNeedsTags();
         await Commander.runSingleJob(parser, argv.job as string, argv.needs as boolean);
     } else {
         predefinedVariables.incrementPipelineIid(cwd);
         const pipelineIid = predefinedVariables.getPipelineIid(cwd);
         const parser = new Parser(cwd, pipelineIid);
+        parser.validateNeedsTags();
         await Commander.runPipeline(parser, argv.manual as string[] || []);
     }
 };

@@ -68,7 +68,7 @@ export class Job {
 
         this.stageIndex = stages.indexOf(this.stage);
         if (this.stageIndex === -1) {
-            process.stderr.write(`${c.red("Stage index is -1")}\n`);
+            process.stderr.write(`${c.yellowBright(this.stage)} ${c.red(`not defined for`)} ${c.blueBright(this.name)}\n`);
             process.exit(1);
         }
 
