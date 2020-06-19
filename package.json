@@ -41,7 +41,7 @@
     "@types/shelljs": "^0.8.8",
     "@types/yaml": "^1.9.7",
     "@types/yargs": "^15.0.5",
-    "npm-check-updates": "^6.0.1",
+    "npm-check-updates": "^7.0.1",
     "pkg": "^4.4.8",
     "source-map-support": "^0.5.19",
     "tslint": "^6.1.2",
