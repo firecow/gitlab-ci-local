@@ -13,7 +13,8 @@
     "lint-fix": "tslint --fix --project .",
     "ncu": "ncu --semverLevel major -e 2",
     "test-yml-spec": "node -r source-map-support/register dist/index.js --manual manual_job_invoked_from_cli --cwd tests/test-yml-spec",
-    "test-exec-never-job": "node -r source-map-support/register dist/index.js never_job --cwd tests/test-yml-spec"
+    "test-exec-never-job": "node -r source-map-support/register dist/index.js never_job --cwd tests/test-yml-spec",
+    "start": "node -r source-map-support/register dist/index.js"
   },
   "bin": "dist/index.js",
   "dependencies": {
