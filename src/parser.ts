@@ -47,7 +47,21 @@ export class Parser {
         // Setup variables and "merged" yml
         const gitlabData = deepExtend.apply(this, yamlDataList);
 
-        // Generate stages
+        // Generate stages. We'll do our best to replicate what the
+        // gitlab-org runner does.
+
+        // If there's no stages defined by the user, the following stages
+        // must be defined. Please see:
+        // https://docs.gitlab.com/ee/ci/yaml/#stages
+        if (!gitlabData.stages) {
+            gitlabData.stages = ["build", "test", "deploy"];
+        }
+
+        // ".pre" and ".post" are always present. See:
+        // https://docs.gitlab.com/ee/ci/yaml/#pre-and-post
+        gitlabData.stages.unshift(".pre");
+        gitlabData.stages.push(".post");
+
         for (const value of gitlabData.stages || []) {
             this.stages.set(value, new Stage(value));
         }
