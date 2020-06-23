@@ -63,13 +63,12 @@ export class Job {
             jobData = deepExtend.apply(this, deepExtendList);
         }
 
-        this.stage = jobData.stage;
+        // If the stage name is not set, it should default to "test", see:
+        // https://docs.gitlab.com/ee/ci/yaml/#configuration-parameters
+        this.stage = jobData.stage || "test";
         this.scripts = [].concat(jobData.script || []);
 
         this.stageIndex = stages.indexOf(this.stage);
-        if (this.stageIndex === -1) {
-            this.stage = stages[0];
-        }
 
         const jobNameStr = this.getJobNameString();
 
