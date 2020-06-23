@@ -63,13 +63,12 @@ export class Job {
             jobData = deepExtend.apply(this, deepExtendList);
         }
 
-        this.stage = jobData.stage || ".pre";
+        this.stage = jobData.stage;
         this.scripts = [].concat(jobData.script || []);
 
         this.stageIndex = stages.indexOf(this.stage);
         if (this.stageIndex === -1) {
-            process.stderr.write(`${c.yellowBright(this.stage)} ${c.red(`not defined for`)} ${c.blueBright(this.name)}\n`);
-            process.exit(1);
+            this.stage = stages[0];
         }
 
         const jobNameStr = this.getJobNameString();
