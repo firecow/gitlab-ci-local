@@ -30,7 +30,7 @@ Array.prototype.first = function() {
 };
 
 const argv = yargs
-    .version("4.1.2")
+    .version("4.1.3")
     .showHelpOnFail(false)
     .command(defaultCmd as CommandModule)
     .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
