@@ -16,9 +16,10 @@ export class Commander {
             const stageName = stage.name;
 
             if (!stage.isRunning()) {
-                process.stdout.write(`=> ${c.yellow(`${stageName}`)} <=\n`);
                 if (jobsInStage.length === 0 && !stage.isRunning()) {
                     process.stdout.write(`=> ${c.yellow(`${stageName}`)} has no jobs\n`);
+                } else {
+                    process.stdout.write(`=> ${c.yellow(`${stageName}`)} <=\n`);
                 }
             }
 
@@ -170,7 +171,7 @@ export class Commander {
         const printJobName = (job: Job, i: number, arr: Job[]) => {
             terminalLength += job.name.length;
             if (terminalLength > 180) {
-                process.stdout.write(`\n${"".padEnd(14)}`);
+                process.stdout.write(`\n${"".padEnd(2)}`);
                 terminalLength = 0;
             }
             if (i === arr.length - 1) {
@@ -181,35 +182,35 @@ export class Commander {
         }
 
         if (preScripts.never.length !== 0) {
-            process.stdout.write(`${c.magenta("not started").padEnd(22)}: `);
+            process.stdout.write(`${c.magenta("not started")} `);
             terminalLength = 0;
             preScripts.never.forEach(printJobName);
             process.stdout.write(`\n`);
         }
 
         if (preScripts.successful.length !== 0) {
-            process.stdout.write(`${c.green("successful").padEnd(22)}: `);
+            process.stdout.write(`${c.green("successful")} `);
             terminalLength = 0;
             preScripts.successful.forEach(printJobName);
             process.stdout.write(`\n`);
         }
 
         if (preScripts.warned.length !== 0) {
-            process.stdout.write(`${c.yellowBright("warning").padEnd(22)}: `);
+            process.stdout.write(`${c.yellowBright("warning")} `);
             terminalLength = 0;
             preScripts.warned.forEach(printJobName);
             process.stdout.write(`\n`);
         }
 
         if (afterScripts.warned.length !== 0) {
-            process.stdout.write(`${c.yellowBright("after script").padEnd(22)}: `);
+            process.stdout.write(`${c.yellowBright("after script")} `);
             terminalLength = 0;
             afterScripts.warned.forEach(printJobName);
             process.stdout.write(`\n`);
         }
 
         if (preScripts.failed.length !== 0) {
-            process.stdout.write(`${c.red("failure").padEnd(22)}: `);
+            process.stdout.write(`${c.red("failure")} `);
             terminalLength = 0;
             preScripts.failed.forEach(printJobName);
             process.stdout.write(`\n`);
