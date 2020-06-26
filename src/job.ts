@@ -202,7 +202,7 @@ export class Job {
         }
 
         if (this.afterScriptsExitCode > 0) {
-            process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, true, " (after_script)")}\n`);
+            process.stderr.write(`${this.getExitedString(startTime, this.afterScriptsExitCode, true, " (after_script)")}\n`);
         }
 
         if (this.prescriptsExitCode > 0 && !this.allowFailure) {
