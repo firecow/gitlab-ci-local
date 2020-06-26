@@ -127,7 +127,7 @@ export class Commander {
     };
 
     static printReport = (jobs: ReadonlyArray<Job>, stageNames: ReadonlyArray<string>) => {
-        process.stdout.write(`\n<<<<< ------- ${c.magenta("report")} ------- >>>>>\n`);
+        process.stdout.write(`\n`);
 
         jobs = jobs.concat().sort((a, b) => {
             const whenPrio = ["never"];
@@ -138,17 +138,83 @@ export class Commander {
             return whenPrio.indexOf(b.when) - whenPrio.indexOf(a.when);
         });
 
+        const preScripts: any = {
+            never: [],
+            successful: [],
+            failed: [],
+            warned: []
+        };
+        const afterScripts: any = {
+            warned: []
+        }
+
         for (const job of jobs) {
-            if (!job.isStarted()) {
-                process.stdout.write(`${job.getJobNameString()} not started\n`);
-            } else if (job.getPrescriptsExitCode() === 0) {
-                process.stdout.write(`${job.getJobNameString()} ${c.green("successful")}\n`);
-            } else if (job.allowFailure) {
-                process.stdout.write(`${job.getJobNameString()} ${c.yellowBright(`warning with code ${job.getPrescriptsExitCode()}`)}\n`);
-            } else {
-                process.stdout.write(`${job.getJobNameString()} ${c.red(`exited with code ${job.getPrescriptsExitCode()}`)}\n`);
+            if (job.isStarted() && job.getAfterPrescriptsExitCode() !== 0) {
+                afterScripts.warned.push(job);
             }
         }
+
+        for (const job of jobs) {
+            if (!job.isStarted()) {
+                preScripts.never.push(job);
+            } else if (job.getPrescriptsExitCode() === 0) {
+                preScripts.successful.push(job);
+            } else if (job.allowFailure) {
+                preScripts.warned.push(job);
+            } else {
+                preScripts.failed.push(job);
+            }
+        }
+
+        let terminalLength = 0;
+        const printJobName = (job: Job, i: number, arr: Job[]) => {
+            terminalLength += job.name.length;
+            if (terminalLength > 180) {
+                process.stdout.write(`\n${"".padEnd(14)}`);
+                terminalLength = 0;
+            }
+            if (i === arr.length - 1) {
+                process.stdout.write(`${c.blueBright(`${job.name}`)}`);
+            } else {
+                process.stdout.write(`${c.blueBright(`${job.name}`)}, `);
+            }
+        }
+
+        if (preScripts.never.length !== 0) {
+            process.stdout.write(`${c.magenta("not started").padEnd(22)}: `);
+            terminalLength = 0;
+            preScripts.never.forEach(printJobName);
+            process.stdout.write(`\n`);
+        }
+
+        if (preScripts.successful.length !== 0) {
+            process.stdout.write(`${c.green("successful").padEnd(22)}: `);
+            terminalLength = 0;
+            preScripts.successful.forEach(printJobName);
+            process.stdout.write(`\n`);
+        }
+
+        if (preScripts.warned.length !== 0) {
+            process.stdout.write(`${c.yellowBright("warning").padEnd(22)}: `);
+            terminalLength = 0;
+            preScripts.warned.forEach(printJobName);
+            process.stdout.write(`\n`);
+        }
+
+        if (afterScripts.warned.length !== 0) {
+            process.stdout.write(`${c.yellowBright("after script").padEnd(22)}: `);
+            terminalLength = 0;
+            afterScripts.warned.forEach(printJobName);
+            process.stdout.write(`\n`);
+        }
+
+        if (preScripts.failed.length !== 0) {
+            process.stdout.write(`${c.red("failure").padEnd(22)}: `);
+            terminalLength = 0;
+            preScripts.failed.forEach(printJobName);
+            process.stdout.write(`\n`);
+        }
+
     };
 
 }
