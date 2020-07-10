@@ -89,10 +89,14 @@ export class Commander {
         let stagePadEnd = 0;
         parser.getStageNames().forEach(s => stagePadEnd = Math.max(s.length + 1, stagePadEnd));
 
+        let descriptionPadEnd = 0;
+        parser.getJobs().forEach(j => descriptionPadEnd = Math.max(j.getDescription().length + 1, descriptionPadEnd));
+
         for (const job of jobs) {
             const needs = job.needs;
             const allowFailure = job.allowFailure ? 'warning' : ''
-            let jobLine = `${job.getJobNameString()} ${c.yellow(`${job.stage.padEnd(stagePadEnd)}`)} ${job.when.padEnd(whenPadEnd)} ${allowFailure.padEnd(8)}`;
+            let jobLine = `${job.getJobNameString()}  ${job.getDescription().padEnd(descriptionPadEnd)}`;
+            jobLine += `    ${c.yellow(`${job.stage.padEnd(stagePadEnd)}`)} ${job.when.padEnd(whenPadEnd)} ${allowFailure.padEnd(8)}`
             if (needs) {
                 jobLine += ` [${c.blueBright(`${needs.join(',')}`)}]`
             }
