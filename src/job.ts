@@ -28,6 +28,7 @@ export class Job {
     private readonly beforeScripts: string[] = [];
     private readonly cwd: any;
     private readonly globals: any;
+    private readonly description: string;
     private readonly scripts: string[] = [];
     private readonly variables: { [key: string]: string };
     private readonly predefinedVariables: { [key: string]: string };
@@ -45,6 +46,7 @@ export class Job {
         this.name = name;
         this.cwd = cwd;
         this.globals = globals;
+        this.description = jobData['description'];
 
         // Parse extends
         if (jobData.extends) {
@@ -127,6 +129,10 @@ export class Job {
 
     public getJobNameString() {
         return `${c.blueBright(`${this.name.padEnd(this.maxJobNameLength + 1)}`)}`;
+    }
+
+    public getDescription() {
+        return this.description || "";
     }
 
     public getOutputFilesPath() {

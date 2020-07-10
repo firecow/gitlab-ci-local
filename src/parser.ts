@@ -16,7 +16,18 @@ export class Parser {
             return {};
         }
 
-        return yaml.parse(fs.readFileSync(`${filePath}`, "utf8")) || {};
+        const fileContent = fs.readFileSync(`${filePath}`, "utf8");
+        const descRegEx = /#.*?@Description\s?(.*)\s(.*)?:/gm
+        const parse = yaml.parse(fileContent) || {};
+
+        let match;
+        while (match = descRegEx.exec(fileContent)) {
+            if (match[1] && match[2]) {
+                parse[match[2]].description = match[1]
+            }
+        }
+
+        return parse;
     }
 
     private readonly illigalJobNames = [
