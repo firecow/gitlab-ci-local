@@ -24,6 +24,7 @@ export class Commander {
             }
 
             for (const job of jobsInStage) {
+
                 if (job.isManual() && !manualArgs.includes(job.name) && !job.isFinished()) {
                     process.stdout.write(`${job.getJobNameString()} ${c.magentaBright("skipped")} when:manual\n`);
                     job.setFinished(true);
@@ -46,7 +47,7 @@ export class Commander {
 
             // Find jobs that can be started, because their needed jobs have finished
             for (const job of jobs) {
-                if (job.isRunning() || job.isFinished() || job.needs === null) {
+                if ((job.isManual() && !manualArgs.includes(job.name)) || job.isRunning() || job.isFinished() || job.needs === null) {
                     continue;
                 }
 
