@@ -85,21 +85,21 @@ export class Commander {
 
 
         let whenPadEnd = 0;
-        parser.getJobs().forEach(j => whenPadEnd = Math.max(j.when.length + 1, whenPadEnd));
+        parser.getJobs().forEach(j => whenPadEnd = Math.max(j.when.length, whenPadEnd));
 
         let stagePadEnd = 0;
-        parser.getStageNames().forEach(s => stagePadEnd = Math.max(s.length + 1, stagePadEnd));
+        parser.getStageNames().forEach(s => stagePadEnd = Math.max(s.length , stagePadEnd));
 
         let descriptionPadEnd = 0;
-        parser.getJobs().forEach(j => descriptionPadEnd = Math.max(j.getDescription().length + 1, descriptionPadEnd));
+        parser.getJobs().forEach(j => descriptionPadEnd = Math.max(j.getDescription().length, descriptionPadEnd));
 
         for (const job of jobs) {
             const needs = job.needs;
             const allowFailure = job.allowFailure ? 'warning' : ''
             let jobLine = `${job.getJobNameString()}  ${job.getDescription().padEnd(descriptionPadEnd)}`;
-            jobLine += `    ${c.yellow(`${job.stage.padEnd(stagePadEnd)}`)} ${job.when.padEnd(whenPadEnd)} ${allowFailure.padEnd(8)}`
+            jobLine += `  ${c.yellow(`${job.stage.padEnd(stagePadEnd)}`)}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`
             if (needs) {
-                jobLine += ` [${c.blueBright(`${needs.join(',')}`)}]`
+                jobLine += `  [${c.blueBright(`${needs.join(',')}`)}]`
             }
             process.stdout.write(`${jobLine}\n`);
         }
