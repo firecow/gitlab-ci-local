@@ -128,7 +128,7 @@ export class Job {
     }
 
     public getJobNameString() {
-        return `${c.blueBright(`${this.name.padEnd(this.maxJobNameLength + 1)}`)}`;
+        return `${c.blueBright(`${this.name.padEnd(this.maxJobNameLength)}`)}`;
     }
 
     public getDescription() {

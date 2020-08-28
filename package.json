@@ -25,7 +25,7 @@
     "glob": "^7.1.6",
     "pretty-hrtime": "^1.0.3",
     "yaml": "^1.10.0",
-    "yargs": "^15.4.0"
+    "yargs": "^15.4.1"
   },
   "pkg": {
     "targets": [
@@ -42,10 +42,10 @@
     "@types/shelljs": "^0.8.8",
     "@types/yaml": "^1.9.7",
     "@types/yargs": "^15.0.5",
-    "npm-check-updates": "^7.0.1",
+    "npm-check-updates": "^7.1.1",
     "pkg": "^4.4.9",
     "source-map-support": "^0.5.19",
-    "tslint": "^6.1.2",
-    "typescript": "^3.9.6"
+    "tslint": "^6.1.3",
+    "typescript": "^4.0.2"
   }
 }
