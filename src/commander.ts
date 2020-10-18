@@ -10,6 +10,29 @@ export class Commander {
         const stages = parser.getStages().concat();
         const stageNames = parser.getStageNames();
 
+        const skippingNever = [];
+        const skippingManual = [];
+        for (const st of stages) {
+            const jobsInStage = st.getJobs();
+            for (const job of jobsInStage) {
+                if (job.isManual() && !manualArgs.includes(job.name) && !job.isFinished()) {
+                    skippingManual.push(job);
+                    continue;
+                }
+
+                if (job.isNever() && !job.isFinished()) {
+                    skippingNever.push(job);
+                }
+            }
+        }
+
+        if (skippingNever.length > 0) {
+            process.stdout.write(`${skippingNever.map((j) => j.name).join(', ')} ${c.magentaBright("skipped")} when:never\n`);
+        }
+        if (skippingManual.length > 0) {
+            process.stdout.write(`${skippingManual.map((j) => j.name).join(', ')} ${c.magentaBright("skipped")} when:manual\n`);
+        }
+
         let stage = stages.shift();
         while (stage !== undefined) {
             const jobsInStage = stage.getJobs();
@@ -26,13 +49,11 @@ export class Commander {
             for (const job of jobsInStage) {
 
                 if (job.isManual() && !manualArgs.includes(job.name) && !job.isFinished()) {
-                    process.stdout.write(`${job.getJobNameString()} ${c.magentaBright("skipped")} when:manual\n`);
                     job.setFinished(true);
                     continue;
                 }
 
                 if (job.isNever() && !job.isFinished()) {
-                    process.stdout.write(`${job.getJobNameString()} ${c.magentaBright("skipped")} when:never\n`);
                     job.setFinished(true);
                     continue;
                 }
@@ -47,7 +68,7 @@ export class Commander {
 
             // Find jobs that can be started, because their needed jobs have finished
             for (const job of jobs) {
-                if ((job.isManual() && !manualArgs.includes(job.name)) || job.isRunning() || job.isFinished() || job.needs === null) {
+                if ((job.isManual() && !manualArgs.includes(job.name)) || job.isRunning() || job.isFinished() || job.needs === null || job.isNever()) {
                     continue;
                 }
 
