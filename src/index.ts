@@ -1,8 +1,8 @@
-import {CommandModule} from "yargs";
 import * as yargs from "yargs";
+import {CommandModule} from "yargs";
+import * as defaultCmd from "./default_cmd";
 
 import {Parser} from "./parser";
-import * as defaultCmd from "./default_cmd";
 import * as predefinedVariables from "./predefined_variables";
 
 process.on('uncaughtException', (err) => {
@@ -43,7 +43,7 @@ const argv = yargs
     .completion("completion", false, async (current, a) => {
         const cwd = a.cwd as string || process.cwd();
         const pipelineIid = predefinedVariables.getPipelineIid(cwd);
-        const parser = new Parser(cwd, pipelineIid);
+        const parser = new Parser(cwd, pipelineIid, true);
         return parser.getJobNames();
     })
     .argv;
