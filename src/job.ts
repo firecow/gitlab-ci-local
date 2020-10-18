@@ -1,5 +1,5 @@
 import * as c from "ansi-colors";
-import { spawn } from "child_process";
+import {spawn} from "child_process";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as glob from "glob";
@@ -236,7 +236,7 @@ export class Job {
         const outputFilesPath = this.getOutputFilesPath();
 
         return new Promise((resolve, reject) => {
-            const bash = spawn("bash", { cwd: this.cwd, env: this.getEnvs() });
+            const bash = spawn("bash", {cwd: this.cwd, env: this.getEnvs()});
             bash.on("error", (err) => {
                 reject(err);
             });
@@ -293,7 +293,7 @@ export class Job {
     }
 
     private getEnvs(): { [key: string]: string } {
-        const envs: {[key: string]: string} = {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
+        const envs: { [key: string]: string } = {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
         const regex = /\${(.*?)}/g;
         let exec;
 
