@@ -2,6 +2,7 @@ import * as c from "ansi-colors";
 
 import {Job} from "./job";
 import {Parser} from "./parser";
+import {Utils} from "./utils";
 
 export class Commander {
 
@@ -27,10 +28,12 @@ export class Commander {
         }
 
         if (skippingNever.length > 0) {
-            process.stdout.write(`${skippingNever.map((j) => j.name).join(', ')} ${c.magentaBright("skipped")} when:never\n`);
+            skippingNever.forEach(Utils.printJobNames);
+            process.stdout.write(` ${c.magentaBright("skipped")} when:never\n`);
         }
         if (skippingManual.length > 0) {
-            process.stdout.write(`${skippingManual.map((j) => j.name).join(', ')} ${c.magentaBright("skipped")} when:manual\n`);
+            skippingManual.forEach(Utils.printJobNames);
+            process.stdout.write(` ${c.magentaBright("skipped")} when:manual\n`);
         }
 
         let stage = stages.shift();
@@ -196,52 +199,33 @@ export class Commander {
             }
         }
 
-        let terminalLength = 0;
-        const printJobName = (job: Job, i: number, arr: Job[]) => {
-            terminalLength += job.name.length;
-            if (terminalLength > 180) {
-                process.stdout.write(`\n${"".padEnd(2)}`);
-                terminalLength = 0;
-            }
-            if (i === arr.length - 1) {
-                process.stdout.write(`${c.blueBright(`${job.name}`)}`);
-            } else {
-                process.stdout.write(`${c.blueBright(`${job.name}`)}, `);
-            }
-        };
-
         if (preScripts.never.length !== 0) {
             process.stdout.write(`${c.magenta("not started")} `);
-            terminalLength = 0;
-            preScripts.never.forEach(printJobName);
+            preScripts.never.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
         }
 
         if (preScripts.successful.length !== 0) {
             process.stdout.write(`${c.green("successful")} `);
-            terminalLength = 0;
-            preScripts.successful.forEach(printJobName);
+            preScripts.successful.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
         }
 
         if (preScripts.warned.length !== 0) {
             process.stdout.write(`${c.yellowBright("warning")} `);
-            terminalLength = 0;
-            preScripts.warned.forEach(printJobName);
+            preScripts.warned.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
         }
 
         if (afterScripts.warned.length !== 0) {
             process.stdout.write(`${c.yellowBright("after script")} `);
-            terminalLength = 0;
-            afterScripts.warned.forEach(printJobName);
+            afterScripts.warned.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
         }
 
         if (preScripts.failed.length !== 0) {
             process.stdout.write(`${c.red("failure")} `);
-            terminalLength = 0;
-            preScripts.failed.forEach(printJobName);
+            preScripts.failed.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
         }
 
