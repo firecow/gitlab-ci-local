@@ -1,5 +1,5 @@
 import * as c from "ansi-colors";
-import {spawn} from "child_process";
+import {spawn, execSync} from "child_process";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as glob from "glob";
@@ -19,8 +19,6 @@ export class Job {
     public readonly name: string;
     public readonly needs: string[] | null;
     public readonly stage: string;
-    public readonly allowFailure: boolean;
-    public readonly when: string;
     public readonly maxJobNameLength: number;
     public readonly stageIndex: number;
 
@@ -32,6 +30,10 @@ export class Job {
     private readonly scripts: string[] = [];
     private readonly variables: { [key: string]: string };
     private readonly predefinedVariables: { [key: string]: string };
+    private readonly rules: any;
+
+    public allowFailure: boolean;
+    public when: string;
 
     private prescriptsExitCode = 0;
     private afterScriptsExitCode = 0;
@@ -86,6 +88,7 @@ export class Job {
         this.allowFailure = jobData.allow_failure || false;
         this.variables = jobData.variables || {};
         this.needs = jobData.needs || null;
+        this.rules = jobData.rules || null;
 
         this.predefinedVariables = {
             CI_COMMIT_SHORT_SHA: "a33bd89c", // Changes
@@ -117,6 +120,27 @@ export class Job {
             CI_JOB_STAGE: `${this.stage}`,
             GITLAB_CI: "false",
         };
+    }
+
+    public async initRules() {
+        if (!this.rules) {
+            return
+        }
+        for (const rule of this.rules) {
+            try {
+                if (rule['if']) {
+                    const output = execSync(`[ ${rule['if']} ] && exit 0 || exit 1`, {cwd: this.cwd, env: this.getEnvs(), shell: 'bash'});
+                    if (output.length > 0) {
+                        process.stderr.write(`Rule output ${output}`);
+                    }
+                }
+                this.when = rule['when'] ? rule['when'] : this.when;
+                this.allowFailure = rule['allowFailure'] ? rule['allowFailure'] : this.allowFailure;
+                break;
+            } catch (e) {
+                // By pass rule on exit 1
+            }
+        }
     }
 
     public getPrescriptsExitCode() {
