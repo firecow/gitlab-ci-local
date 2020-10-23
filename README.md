@@ -68,7 +68,10 @@ gitlab-ci-local
 
 ## Convinience
 ### Bash alias
-    $ echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
+```
+echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
+```
+
 ### Bash completion
 
 Add this to `~/.bashrc`
