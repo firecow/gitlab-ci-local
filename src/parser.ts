@@ -19,6 +19,8 @@ export class Parser {
     private readonly stages: Map<string, Stage> = new Map();
     private readonly cwd: string;
     private readonly bashCompletionPhase: boolean;
+    private readonly pipelineIid: number;
+    private readonly gitlabData: any;
 
     public constructor(cwd: any, pipelineIid: number, bashCompletionPhase: boolean = false) {
         let path = '';
@@ -26,6 +28,7 @@ export class Parser {
 
         this.bashCompletionPhase = bashCompletionPhase;
         this.cwd = cwd;
+        this.pipelineIid = pipelineIid;
 
         path = `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = Parser.loadYaml(path);
@@ -65,6 +68,14 @@ export class Parser {
             this.maxJobNameLength = Math.max(this.maxJobNameLength, key.length);
         }
 
+        this.gitlabData = gitlabData;
+    }
+
+    public async initJobs() {
+        const pipelineIid = this.pipelineIid;
+        const cwd = this.cwd;
+        const gitlabData = this.gitlabData;
+        const promises = [];
         // Generate jobs and put them into stages
         for (const [key, value] of Object.entries(gitlabData)) {
             if (this.illigalJobNames.includes(key) || key[0] === ".") {
@@ -73,6 +84,7 @@ export class Parser {
 
             const jobId = predefinedVariables.getJobId(cwd);
             const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength);
+            promises.push(job.initRules());
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
@@ -85,6 +97,8 @@ export class Parser {
 
             this.jobs.set(key, job);
         }
+
+        await Promise.all(promises);
     }
 
     public static loadYaml(filePath: string): any {

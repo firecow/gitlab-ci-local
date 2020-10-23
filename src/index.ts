@@ -44,6 +44,7 @@ const argv = yargs
         const cwd = a.cwd as string || process.cwd();
         const pipelineIid = predefinedVariables.getPipelineIid(cwd);
         const parser = new Parser(cwd, pipelineIid, true);
+        await parser.initJobs();
         return parser.getJobNames();
     })
     .argv;
