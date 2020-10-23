@@ -32,30 +32,39 @@ It lets you simulate a CI pipeline on your local machine.
 ## Linux
 Download and put binary in `/usr/local/bin`
 
-    $ sudo su # must be installed as root, if placed in /usr/local/bin/
-    $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/linux.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
-    $ chmod +x /usr/local/bin/gitlab-ci-local
-    $ exit
+```
+sudo su # must be installed as root, if placed in /usr/local/bin/
+curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/linux.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
+chmod +x /usr/local/bin/gitlab-ci-local
+exit
+```
     
 ## Windows (Git bash)
 Install [gitbash](https://git-scm.com/downloads)
 
 Download and put binary in `C:\Program Files\Git\mingw64\bin`
 
-    $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
+```
+curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
+```
 
 ## Macos
 Download and put binary in `/usr/local/bin`
 
-    $ sudo su # must be installed as root, if placed in /usr/local/bin/
-    $ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/macOS.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
-    $ chmod +x /usr/local/bin/gitlab-ci-local
-    $ exit
+```
+sudo su # must be installed as root, if placed in /usr/local/bin/
+curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/macOS.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
+chmod +x /usr/local/bin/gitlab-ci-local
+exit
+```
 
 # Usage
 ## Example
-    $ cd /home/user/workspace/myproject
-    $ gitlab-ci-local
+
+```
+cd /home/user/workspace/myproject
+gitlab-ci-local
+```
 
 ## Convinience
 ### Bash alias
@@ -92,18 +101,21 @@ Artifacts works right now, as along as you don't overwrite tracked files.
 
 # Development
 ## Scripts
-
-    $ npm install
-    $ npm run build
-    $ npm start -- --cwd /home/user/workspace/project-folder/
+```
+npm install
+npm run build
+npm start -- --cwd /home/user/workspace/project-folder/
+```
 
 ![Alt text](/docs/images/development.png "Development output")
 
 ## Package binaries
-    $ npm run pkg-linux
-    $ npm run pkg-win
-    $ npm run pkg-macos
-    $ npm run pkg-all
+```
+npm run pkg-linux
+npm run pkg-win
+npm run pkg-macos
+npm run pkg-all
+```
 
 # TODO
 
