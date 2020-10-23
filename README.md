@@ -108,7 +108,6 @@ Artifacts works right now, as along as you don't overwrite tracked files.
 # TODO
 
 ## Unsupported tags, will be implemented in order
-- rules
 - environment
 - when:always
 - when:on_failure
