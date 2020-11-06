@@ -189,14 +189,15 @@ export class Parser {
     private static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitDomain: string): Promise<void>{
         const gitlabCiLocalPath = `${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`;
         fs.ensureDirSync(gitlabCiLocalPath);
-        if (!fs.existsSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`)) {
-            process.stderr.write(`Problem fetching git@${gitDomain}:${project}.git ${ref} ${file} does it exist?\n`);
-            process.exit(1);
-        }
 
         await cpExec(`git archive --remote=git@${gitDomain}:${project}.git ${ref} ${file} | tar -xC ${gitlabCiLocalPath}`, {
             cwd: gitlabCiLocalPath
         });
+
+        if (!fs.existsSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`)) {
+            process.stderr.write(`Problem fetching git@${gitDomain}:${project}.git ${ref} ${file} does it exist?\n`);
+            process.exit(1);
+        }
 
         return;
     }
