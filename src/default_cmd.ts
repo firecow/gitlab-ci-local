@@ -1,7 +1,7 @@
 import * as yargs from "yargs";
 import {Commander} from "./commander";
 import {Parser} from "./parser";
-import * as predefinedVariables from "./predefined_variables";
+import * as state from "./state";
 
 exports.command = "$0 [job]";
 exports.describe = "Runs the entire pipeline or a single [job]";
@@ -17,32 +17,20 @@ exports.handler = async(argv: any) => {
     if (argv.completion !== undefined) {
         yargs.showCompletionScript();
         return;
-    }
-
-    if (argv.list !== undefined) {
-        const pipelineIid = predefinedVariables.getPipelineIid(cwd);
-        const parser = new Parser(cwd, pipelineIid);
-        await parser.initJobs();
-        parser.validateNeedsTags();
-
+    } else if (argv.list !== undefined) {
+        const pipelineIid = await state.getPipelineIid(cwd);
+        const parser = await Parser.create(cwd, pipelineIid);
         await Commander.runList(parser);
         return;
-    }
-
-    if (argv.job) {
-        const pipelineIid = predefinedVariables.getPipelineIid(cwd);
-        const parser = new Parser(cwd, pipelineIid);
-        await parser.initJobs();
-        parser.validateNeedsTags();
-
+    } else if (argv.job) {
+        const pipelineIid = await state.getPipelineIid(cwd);
+        const parser = await Parser.create(cwd, pipelineIid);
         await Commander.runSingleJob(parser, argv.job as string, argv.needs as boolean);
+        return;
     } else {
-        predefinedVariables.incrementPipelineIid(cwd);
-        const pipelineIid = predefinedVariables.getPipelineIid(cwd);
-        const parser = new Parser(cwd, pipelineIid);
-        await parser.initJobs();
-        parser.validateNeedsTags();
-
+        await state.incrementPipelineIid(cwd);
+        const pipelineIid = await state.getPipelineIid(cwd);
+        const parser = await Parser.create(cwd, pipelineIid);
         await Commander.runPipeline(parser, argv.manual as string[] || []);
     }
 };

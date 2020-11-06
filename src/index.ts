@@ -1,9 +1,8 @@
 import * as yargs from "yargs";
 import {CommandModule} from "yargs";
-import * as defaultCmd from "./default_cmd";
-
 import {Parser} from "./parser";
-import * as predefinedVariables from "./predefined_variables";
+import * as defaultCmd from "./default_cmd";
+import * as state from "./state";
 
 process.on('uncaughtException', (err) => {
     process.stderr.write(`${err.stack ? err.stack : err}\n`);
@@ -30,7 +29,7 @@ Array.prototype.first = function() {
 };
 
 const argv = yargs
-    .version("4.3.0")
+    .version("4.3.1")
     .showHelpOnFail(false)
     .wrap(180)
     .command(defaultCmd as CommandModule)
@@ -42,9 +41,8 @@ const argv = yargs
     .option("needs", {type: "boolean", description: "Run needed jobs, when executing a single job", requiresArg: false})
     .completion("completion", false, async (current, a) => {
         const cwd = a.cwd as string || process.cwd();
-        const pipelineIid = predefinedVariables.getPipelineIid(cwd);
-        const parser = new Parser(cwd, pipelineIid, true);
-        await parser.initJobs();
+        const pipelineIid = await state.getPipelineIid(cwd);
+        const parser = await Parser.create(cwd, pipelineIid, true);
         return parser.getJobNames();
     })
     .argv;
