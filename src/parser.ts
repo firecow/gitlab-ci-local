@@ -13,7 +13,7 @@ export class Parser {
     private readonly illigalJobNames = [
         "include", "local_configuration", "image", "services",
         "stages", "pages", "types", "before_script", "default",
-        "after_script", "variables", "cache", "include",
+        "after_script", "variables", "cache", "workflow",
     ];
     private readonly jobs: Map<string, Job> = new Map();
     private readonly stages: Map<string, Stage> = new Map();
