@@ -192,7 +192,7 @@ export class Parser {
                 const gitDomain = exec ? exec[1] : null;
                 fs.ensureDirSync(gitlabCiLocalPath);
                 if (!this.bashCompletionPhase || !fs.existsSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`)) {
-                    execSync(`git archive --remote=git@${gitDomain}:${project}.git ${ref} --format=zip ${file} | gunzip -c - > ${file}`, {
+                    execSync(`git archive --remote=git@${gitDomain}:${project}.git ${ref} ${file} | tar -xC ${gitlabCiLocalPath}`, {
                         cwd: gitlabCiLocalPath
                     });
                 }
