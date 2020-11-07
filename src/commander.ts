@@ -224,7 +224,7 @@ export class Commander {
 
         for (const job of preScripts.successful) {
             const e = job.environment;
-            if (e === null) {
+            if (e == null) {
                 continue;
             }
             let res;
