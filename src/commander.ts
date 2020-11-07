@@ -1,15 +1,18 @@
 import * as c from "ansi-colors";
+import * as childProcess from "child_process";
+import * as util from "util";
 
 import {Job} from "./job";
 import {Parser} from "./parser";
 import {Utils} from "./utils";
+
+const exec = util.promisify(childProcess.exec);
 
 export class Commander {
 
     public static async runPipeline(parser: Parser, manualArgs: string[]) {
         const jobs = parser.getJobs();
         const stages = parser.getStages().concat();
-        const stageNames = parser.getStageNames();
 
         const skippingNever = [];
         const skippingManual = [];
@@ -87,14 +90,14 @@ export class Commander {
 
             if (stage.isFinished()) {
                 if (!stage.isSuccess()) {
-                    Commander.printReport(jobs, stageNames);
+                    await Commander.printReport(jobs);
                     process.exit(2);
                 }
                 stage = stages.shift();
             }
         }
 
-        Commander.printReport(jobs, stageNames);
+        await Commander.printReport(jobs);
     }
 
     static runList(parser: Parser) {
@@ -130,7 +133,6 @@ export class Commander {
 
     static async runSingleJob(parser: Parser, jobName: string, needs: boolean) {
         const jobs: Job[] = [];
-        const stageNames = parser.getStageNames();
         const foundJob = parser.getJobByName(jobName);
         jobs.push(foundJob);
 
@@ -156,20 +158,11 @@ export class Commander {
             await job.start();
         }
 
-        Commander.printReport(jobs, stageNames);
+        await Commander.printReport(jobs);
     };
 
-    static printReport = (jobs: ReadonlyArray<Job>, stageNames: ReadonlyArray<string>) => {
+    static printReport = async (jobs: ReadonlyArray<Job>) => {
         process.stdout.write(`\n`);
-
-        jobs = jobs.concat().sort((a, b) => {
-            const whenPrio = ["never"];
-            if (a.stage !== b.stage) {
-                return stageNames.indexOf(a.stage) - stageNames.indexOf(b.stage);
-            }
-
-            return whenPrio.indexOf(b.when) - whenPrio.indexOf(a.when);
-        });
 
         const preScripts: any = {
             never: [],
@@ -227,6 +220,24 @@ export class Commander {
             process.stdout.write(`${c.red("failure")} `);
             preScripts.failed.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
+        }
+
+        for (const job of preScripts.successful) {
+            const e = job.environment;
+            if (e === null) {
+                continue;
+            }
+            let res;
+            res = await exec(`printf ${e.name}`, {env: job.getEnvs()});
+            const name = res.stdout;
+            res = await exec(`printf ${e.url}`, {env: job.getEnvs()});
+            const url = res.stdout;
+            if (url !== 'undefined') {
+                process.stdout.write(`${c.blueBright(job.name)} environment: { name: ${c.bold(name)}, url: ${c.bold(url)} }\n`);
+            } else {
+                process.stdout.write(`${c.blueBright(job.name)} environment: { name: ${c.bold(name)} }\n`);
+            }
+
         }
 
     };
