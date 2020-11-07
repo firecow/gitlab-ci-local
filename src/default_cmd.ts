@@ -16,17 +16,14 @@ exports.handler = async(argv: any) => {
 
     if (argv.completion !== undefined) {
         yargs.showCompletionScript();
-        return;
     } else if (argv.list !== undefined) {
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid);
         await Commander.runList(parser);
-        return;
     } else if (argv.job) {
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid);
         await Commander.runSingleJob(parser, argv.job as string, argv.needs as boolean);
-        return;
     } else {
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
