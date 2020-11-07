@@ -1,5 +1,5 @@
 import * as c from "ansi-colors";
-import {spawn, execSync} from "child_process";
+import * as childProcess from "child_process";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as glob from "glob";
@@ -21,6 +21,7 @@ export class Job {
     public readonly stage: string;
     public readonly maxJobNameLength: number;
     public readonly stageIndex: number;
+    public readonly environment: { name: string|null, url: string|null } | null;
 
     private readonly afterScripts: string[] = [];
     private readonly beforeScripts: string[] = [];
@@ -89,6 +90,7 @@ export class Job {
         this.variables = jobData.variables || {};
         this.needs = jobData.needs || null;
         this.rules = jobData.rules || null;
+        this.environment = typeof jobData.environment === "string" ? { name: jobData.environment} : jobData.environment;
 
         this.predefinedVariables = {
             CI_COMMIT_SHORT_SHA: "a33bd89c", // Changes
@@ -129,7 +131,7 @@ export class Job {
         for (const rule of this.rules) {
             try {
                 if (rule['if']) {
-                    const output = execSync(`[ ${rule['if']} ] && exit 0 || exit 1`, {cwd: this.cwd, env: this.getEnvs(), shell: 'bash'});
+                    const output = childProcess.execSync(`[ ${rule['if']} ] && exit 0 || exit 1`, {cwd: this.cwd, env: this.getEnvs(), shell: 'bash'});
                     if (output.length > 0) {
                         process.stderr.write(`Rule output ${output}`);
                     }
@@ -260,7 +262,7 @@ export class Job {
         const outputFilesPath = this.getOutputFilesPath();
 
         return new Promise((resolve, reject) => {
-            const bash = spawn("bash", {cwd: this.cwd, env: this.getEnvs()});
+            const bash = childProcess.spawn("bash", {cwd: this.cwd, env: this.getEnvs()});
             bash.on("error", (err) => {
                 reject(err);
             });
