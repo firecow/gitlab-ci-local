@@ -17,11 +17,11 @@ It lets you simulate a CI pipeline on your local machine.
       * [Convinience](#convinience)
          * [Bash alias](#bash-alias)
          * [Bash completion](#bash-completion)
-      * [Quicks](#quirks)
+      * [Quirks](#quirks)
          * [Artifacts](#artifacts)
    * [Development](#development)
       * [Scripts](#scripts)
-      * [Build binaries](#build-binaries)
+      * [Package binaries](#package-binaries)
    * [TODO](#todo)
       * [Unsupported tags, will be implemented in order](#unsupported-tags-will-be-implemented-in-order)
       * [Docker specfic tags. (Only shell working now)](#docker-specfic-tags-only-shell-working-now)
@@ -122,32 +122,25 @@ npm run pkg-all
 
 # TODO
 
-## Unsupported tags, will be implemented in order
-- environment
+## Needs implementation
+- artifacts, dependencies
 - when:always
 - when:on_failure
 - when:delayed
   - start_in (Used only with when:delayed)
 - include:template
 - include:remote
-- coverage (code coverage)
-- retry (in case of failure)
-- timeout (job max execution time)
-
-## Docker specfic tags. (Only shell working now)
-- services
-- image
+- service, image
 
 ## Will not be implemented
 - cache
 - pages
 - resource_group
 - interruptible
-
-## Undecided
-- artifacts (reset/restore/uploads "files" from job to job)
-- dependencies (depend or non-depend on artifacts, default is depend ALL)
 - only
 - except
 - parallel
 - trigger
+- retry (in case of failure)
+- timeout (job max execution time)
+- coverage (code coverage)
