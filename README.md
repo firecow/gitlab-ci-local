@@ -120,18 +120,6 @@ npm run pkg-macos
 npm run pkg-all
 ```
 
-# TODO
-
-## Needs implementation
-- artifacts, dependencies
-- when:always
-- when:on_failure
-- when:delayed
-  - start_in (Used only with when:delayed)
-- include:template
-- include:remote
-- service, image
-
 ## Will not be implemented
 - cache
 - pages
