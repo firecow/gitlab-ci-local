@@ -42,6 +42,23 @@ export class Parser {
         return parser;
     }
 
+    private async initLocalGitlabUser() {
+        const gitlabUser: { [key: string]: string } = {};
+
+        try {
+            const res = await cpExec(`git config user.email`, {cwd: this.cwd});
+            gitlabUser['GITLAB_USER_LOGIN'] = res.stdout.trimEnd().replace('/@.*/g', '');
+            gitlabUser['GITLAB_USER_EMAIL'] = res.stdout.trimEnd();
+        } catch (e) {}
+
+        try {
+            const res = await cpExec(`git config user.name`, {cwd: this.cwd});
+            gitlabUser['GITLAB_USER_NAME'] = res.stdout.trimEnd();
+        } catch (e) {}
+
+        return gitlabUser;
+    }
+
     public async init() {
         const cwd = this.cwd;
 
@@ -92,6 +109,8 @@ export class Parser {
         const cwd = this.cwd;
         const gitlabData = this.gitlabData;
         const promises = [];
+        const gitlabUser = await this.initLocalGitlabUser();
+
         // Generate jobs and put them into stages
         for (const [key, value] of Object.entries(gitlabData)) {
             if (this.illigalJobNames.includes(key) || key[0] === ".") {
@@ -99,7 +118,7 @@ export class Parser {
             }
 
             const jobId = await state.getJobId(cwd);
-            const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength);
+            const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitlabUser);
             promises.push(job.initRules());
             const stage = this.stages.get(job.stage);
             if (stage) {
