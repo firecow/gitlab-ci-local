@@ -47,7 +47,7 @@ export class Parser {
 
         try {
             const res = await cpExec(`git config user.email`, {cwd: this.cwd});
-            gitlabUser['GITLAB_USER_LOGIN'] = res.stdout.trimEnd().replace('/@.*/g', '');
+            gitlabUser['GITLAB_USER_LOGIN'] = res.stdout.trimEnd().replace(/@.*/, '');
             gitlabUser['GITLAB_USER_EMAIL'] = res.stdout.trimEnd();
         } catch (e) {}
 
