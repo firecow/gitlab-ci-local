@@ -44,7 +44,7 @@ export class Job {
     private running = false;
     private success = true;
 
-    public constructor(jobData: any, name: string, stages: string[], cwd: any, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number) {
+    public constructor(jobData: any, name: string, stages: string[], cwd: any, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitlabUser: { [key: string]: string }) {
         this.maxJobNameLength = maxJobNameLength;
         this.name = name;
         this.cwd = cwd;
@@ -93,6 +93,9 @@ export class Job {
         this.environment = typeof jobData.environment === "string" ? { name: jobData.environment} : jobData.environment;
 
         this.predefinedVariables = {
+            GITLAB_USER_LOGIN: gitlabUser["GITLAB_USER_LOGIN"] || "local",
+            GITLAB_USER_EMAIL: gitlabUser["GITLAB_USER_EMAIL"] || "local@gitlab.com",
+            GITLAB_USER_NAME: gitlabUser["GITLAB_USER_NAME"] || "Bob Local",
             CI_COMMIT_SHORT_SHA: "a33bd89c", // Changes
             CI_COMMIT_SHA: "a33bd89c7b8fa3567524525308d8cafd7c0cd2ad",
             CI_PROJECT_NAME: "local-project",
@@ -103,9 +106,6 @@ export class Job {
             CI_COMMIT_BRANCH: "local/branch", // Branch name, only when building branches
             CI_COMMIT_REF_NAME: "local/branch", // Tag or branch name
             CI_PROJECT_VISIBILITY: "internal",
-            GITLAB_USER_LOGIN: "localusername",
-            GITLAB_USER_EMAIL: "localusername@gitlab.com",
-            GITLAB_USER_NAME: "Local User Name",
             CI_PROJECT_ID: "1217",
             CI_COMMIT_TITLE: "Commit Title", // First line of commit message.
             CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
@@ -125,9 +125,6 @@ export class Job {
     }
 
     public async initRules() {
-        if (!this.rules) {
-            return
-        }
         for (const rule of this.rules) {
             try {
                 if (rule['if']) {
