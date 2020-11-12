@@ -134,7 +134,7 @@ export class Job {
                     }
                 }
                 this.when = rule['when'] ? rule['when'] : this.when;
-                this.allowFailure = rule['allowFailure'] ? rule['allowFailure'] : this.allowFailure;
+                this.allowFailure = rule['allow_failure'] ? rule['allow_failure'] : this.allowFailure;
                 break;
             } catch (e) {
                 // By pass rule on exit 1
