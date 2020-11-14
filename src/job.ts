@@ -125,7 +125,14 @@ export class Job {
     }
 
     public async initRules() {
-        for (const rule of this.rules || []) {
+        if (!this.rules) {
+            return;
+        }
+
+        this.when = 'never';
+        this.allowFailure = false;
+
+        for (const rule of this.rules) {
             try {
                 if (rule['if']) {
                     const output = childProcess.execSync(`[ ${rule['if']} ] && exit 0 || exit 1`, {cwd: this.cwd, env: this.getEnvs(), shell: 'bash'});
