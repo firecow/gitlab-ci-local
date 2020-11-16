@@ -140,7 +140,7 @@ export class Job {
                         process.stderr.write(`Rule output ${output}`);
                     }
                 }
-                this.when = rule['when'] ? rule['when'] : this.when;
+                this.when = rule['when'] ? rule['when'] : 'on_success';
                 this.allowFailure = rule['allow_failure'] ? rule['allow_failure'] : this.allowFailure;
                 break;
             } catch (e) {
