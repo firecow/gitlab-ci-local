@@ -101,14 +101,7 @@ export class Commander {
     }
 
     static runList(parser: Parser) {
-        const stageNames = Array.from(parser.getStages()).map((s) => s.name);
-        const jobs = Array.from(parser.getJobs()).sort((a, b) => {
-            const whenPrio = ["never"];
-            if (a.stage !== b.stage) {
-                return stageNames.indexOf(a.stage) - stageNames.indexOf(b.stage);
-            }
-            return whenPrio.indexOf(b.when) - whenPrio.indexOf(a.when);
-        });
+        const jobs = Array.from(parser.getJobs());
 
         let whenPadEnd = 0;
         parser.getJobs().forEach(j => whenPadEnd = Math.max(j.when.length, whenPadEnd));
