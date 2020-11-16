@@ -56,7 +56,8 @@ export class Job {
         if (jobData.extends) {
             let i;
             let clonedData: any = clone(jobData);
-            for (i = 0; i < 10; i++) {
+            const maxDepth = 50;
+            for (i = 0; i < maxDepth; i++) {
                 const parentDatas = []
                 if (!clonedData.extends) {
                     break;
@@ -65,7 +66,7 @@ export class Job {
                 for (const parentName of clonedData.extends) {
                     const parentData = globals[parentName];
                     if (!parentData) {
-                        process.stderr.write(`${c.blueBright(parentName)} is used by ${c.blueBright(name)}, but is unspecified`)
+                        process.stderr.write(`${c.blueBright(parentName)} is used by ${c.blueBright(name)}, but is unspecified\n`)
                         process.exit(1);
                     }
                     parentDatas.push(clone(globals[parentName]));
@@ -74,6 +75,11 @@ export class Job {
                 delete clonedData.extends;
                 clonedData = deepExtend.apply(this, parentDatas.concat(clonedData));
             }
+            if (i === maxDepth) {
+                process.stderr.write(`You seem to have an infinite extends loop starting from ${c.blueBright(name)}\n`)
+                process.exit(1);
+            }
+
             jobData = clonedData;
         }
 
