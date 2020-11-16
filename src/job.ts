@@ -1,8 +1,9 @@
 import * as c from "ansi-colors";
 import * as childProcess from "child_process";
-import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as glob from "glob";
+import * as deepExtend from "deep-extend";
+import * as clone from "clone";
 import * as prettyHrtime from "pretty-hrtime";
 
 let shell = "/bin/bash";
@@ -51,21 +52,29 @@ export class Job {
         this.globals = globals;
         this.description = jobData['description'];
 
-        // Parse extends
+        // Parse extends recursively and deepExtend data.
         if (jobData.extends) {
-            const extendList = [].concat(jobData.extends);
-            const deepExtendList: any[] = [{}];
-            extendList.forEach((parentJobName) => {
-                if (!globals[parentJobName]) {
-                    process.stderr.write(`${c.red(`'${parentJobName}' could not be found`)}\n`);
-                    process.exit(1);
+            let i;
+            let clonedData: any = clone(jobData);
+            for (i = 0; i < 10; i++) {
+                const parentDatas = []
+                if (!clonedData.extends) {
+                    break;
                 }
-                deepExtendList.push(globals[parentJobName]);
-            });
 
-            deepExtendList.push(jobData);
-            // tslint:disable-next-line:no-parameter-reassignment
-            jobData = deepExtend.apply(this, deepExtendList);
+                for (const parentName of clonedData.extends) {
+                    const parentData = globals[parentName];
+                    if (!parentData) {
+                        process.stderr.write(`${c.blueBright(parentName)} is used by ${c.blueBright(name)}, but is unspecified`)
+                        process.exit(1);
+                    }
+                    parentDatas.push(clone(globals[parentName]));
+                }
+
+                delete clonedData.extends;
+                clonedData = deepExtend.apply(this, parentDatas.concat(clonedData));
+            }
+            jobData = clonedData;
         }
 
         // If the stage name is not set, it should default to "test", see:
