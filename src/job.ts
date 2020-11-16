@@ -5,6 +5,9 @@ import * as glob from "glob";
 import * as deepExtend from "deep-extend";
 import * as clone from "clone";
 import * as prettyHrtime from "pretty-hrtime";
+import * as util from "util";
+
+const exec = util.promisify(childProcess.exec);
 
 let shell = "/bin/bash";
 if (process.env.EXEPATH) {
@@ -37,6 +40,9 @@ export class Job {
     public allowFailure: boolean;
     public when: string;
 
+    private readonly extendsDepth: number;
+    private envs: { [key: string]: string };
+
     private prescriptsExitCode = 0;
     private afterScriptsExitCode = 0;
 
@@ -51,6 +57,8 @@ export class Job {
         this.cwd = cwd;
         this.globals = globals;
         this.description = jobData['description'];
+
+        this.extendsDepth = 0;
 
         // Parse extends recursively and deepExtend data.
         if (jobData.extends) {
@@ -80,6 +88,7 @@ export class Job {
                 process.exit(1);
             }
 
+            this.extendsDepth = i;
             jobData = clonedData;
         }
 
@@ -139,7 +148,30 @@ export class Job {
         };
     }
 
-    public async initRules() {
+    public async init() {
+        const allEnvs: { [key: string]: string } = {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
+        const envs: { [key: string]: string } = {}
+
+        let command = 'printenv'
+        for (let i = 0; i < this.extendsDepth; i++) {
+            command += ` | envsubst`
+        }
+        const res = await exec(command, { env: allEnvs });
+
+        const keysToSubst = Object.keys({...this.globals.variables || {}, ...this.variables});
+        for (const line of res.stdout.split("\n")) {
+            const split = line.split('=');
+            if (!split[1]) {
+                continue;
+            }
+            if (!keysToSubst.includes(split[0])) {
+                continue;
+            }
+            envs[split[0]] = split[1];
+        }
+
+        this.envs = ({...envs, ...process.env, ...this.predefinedVariables} as any);
+
         if (!this.rules) {
             return;
         }
@@ -301,7 +333,7 @@ export class Job {
 
             bash.stdout.on("data", (e) => {
                 const out = `${e}`;
-                const exec = /GCL_MARKER=(?<exitCode>\d*)/.exec(out);
+                const regExec = /GCL_MARKER=(?<exitCode>\d*)/.exec(out);
                 const stripped = out.replace(/GCL_MARKER=\d*\n/, "");
 
                 if (stripped !== "") {
@@ -313,12 +345,12 @@ export class Job {
                     }
                 }
 
-                if (exec && exec.groups && exec.groups.exitCode && exec.groups.exitCode === "0") {
+                if (regExec && regExec.groups && regExec.groups.exitCode && regExec.groups.exitCode === "0") {
                     nextCmd();
-                } else if (exec && exec.groups && exec.groups.exitCode && exec.groups.exitCode !== "0") {
-                    bash.stdin.write(`exit ${exec.groups.exitCode}\n`);
-                } else if (exec) {
-                    reject(`GCL_MARKER was not parsed correctly ${JSON.stringify(exec)}`);
+                } else if (regExec && regExec.groups && regExec.groups.exitCode && regExec.groups.exitCode !== "0") {
+                    bash.stdin.write(`exit ${regExec.groups.exitCode}\n`);
+                } else if (regExec) {
+                    reject(`GCL_MARKER was not parsed correctly ${JSON.stringify(regExec)}`);
                 }
             });
             bash.stderr.on("data", (e) => {
@@ -338,21 +370,7 @@ export class Job {
     }
 
     private getEnvs(): { [key: string]: string } {
-        const envs: { [key: string]: string } = {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
-        const regex = /\${(.*?)}/g;
-        let exec;
-
-        for (const [env, value] of Object.entries(envs)) {
-            while ((exec = regex.exec(value as string)) !== null) {
-                const cap = exec[1];
-                if (this.predefinedVariables[cap] != null) {
-                    const replacer = new RegExp(`\\$\{${cap}\}`, "g");
-                    envs[env] = value.replace(replacer, this.predefinedVariables[cap]);
-                }
-            }
-        }
-
-        return envs;
+        return this.envs;
     }
 
     private getExitedString(startTime: [number, number], code: number, warning: boolean = false, prependString: string = "") {
