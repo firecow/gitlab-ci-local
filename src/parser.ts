@@ -119,7 +119,7 @@ export class Parser {
 
             const jobId = await state.getJobId(cwd);
             const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitlabUser);
-            promises.push(job.initRules());
+            promises.push(job.init());
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
