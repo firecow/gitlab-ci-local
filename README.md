@@ -3,7 +3,7 @@ Are you tired of pushing commits to test your Gitlab CI?
 
 Then this is the tool for you.
 
-It lets you simulate a CI pipeline on your local machine.
+It lets you run a Gitlab CI pipeline on your local machine.
 
 # Table of contents
    * [Introduction](#introduction)
