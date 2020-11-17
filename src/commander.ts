@@ -101,7 +101,10 @@ export class Commander {
     }
 
     static runList(parser: Parser) {
-        const jobs = Array.from(parser.getJobs());
+        const stageNames = Array.from(parser.getStages()).map((s) => s.name);
+        const jobs = Array.from(parser.getJobs()).sort((a, b) => {
+            return stageNames.indexOf(a.stage) - stageNames.indexOf(b.stage);
+        });
 
         let whenPadEnd = 0;
         parser.getJobs().forEach(j => whenPadEnd = Math.max(j.when.length, whenPadEnd));
