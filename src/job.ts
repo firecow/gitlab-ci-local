@@ -40,7 +40,6 @@ export class Job {
     public allowFailure: boolean;
     public when: string;
 
-    private readonly extendsDepth: number;
     private envs: { [key: string]: string };
 
     private prescriptsExitCode = 0;
@@ -57,8 +56,6 @@ export class Job {
         this.cwd = cwd;
         this.globals = globals;
         this.description = jobData['description'];
-
-        this.extendsDepth = 0;
 
         // Parse extends recursively and deepExtend data.
         if (jobData.extends) {
@@ -88,7 +85,6 @@ export class Job {
                 process.exit(1);
             }
 
-            this.extendsDepth = i;
             jobData = clonedData;
         }
 
