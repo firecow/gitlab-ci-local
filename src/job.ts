@@ -148,29 +148,25 @@ export class Job {
         };
     }
 
+    private static escape (key: any, val: any) {
+        if (typeof(val) !== "string") return val;
+        return val
+            .replace(/[\\]/g, '\\\\')
+            .replace(/[\/]/g, '\\/')
+            .replace(/[\b]/g, '\\b')
+            .replace(/[\f]/g, '\\f')
+            .replace(/[\n]/g, '\\n')
+            .replace(/[\r]/g, '\\r')
+            .replace(/[\t]/g, '\\t')
+            .replace(/["]/g, '\\"')
+            .replace(/\\'/g, "\\'");
+    }
+
     public async init() {
         const allEnvs: { [key: string]: string } = {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
-        const envs: { [key: string]: string } = {}
-
-        let command = 'printenv'
-        for (let i = 0; i < this.extendsDepth; i++) {
-            command += ` | envsubst`
-        }
+        const command = `echo '${JSON.stringify(allEnvs, Job.escape)}' | envsubst`;
         const res = await exec(command, { env: allEnvs });
-
-        const keysToSubst = Object.keys({...this.globals.variables || {}, ...this.variables});
-        for (const line of res.stdout.split("\n")) {
-            const split = line.split('=');
-            if (!split[1]) {
-                continue;
-            }
-            if (!keysToSubst.includes(split[0])) {
-                continue;
-            }
-            envs[split[0]] = split[1];
-        }
-
-        this.envs = ({...envs, ...process.env, ...this.predefinedVariables} as any);
+        this.envs = JSON.parse(res.stdout);
 
         if (!this.rules) {
             return;
