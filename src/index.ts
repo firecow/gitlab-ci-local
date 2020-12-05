@@ -3,6 +3,7 @@ import {CommandModule} from "yargs";
 import {Parser} from "./parser";
 import * as defaultCmd from "./default_cmd";
 import * as state from "./state";
+import * as fs from "fs-extra";
 
 process.on('uncaughtException', (err) => {
     process.stderr.write(`${err.stack ? err.stack : err}\n`);
@@ -29,20 +30,24 @@ Array.prototype.first = function() {
 };
 
 const argv = yargs
-    .version("4.6.1")
+    .version("4.7.0")
     .showHelpOnFail(false)
-    .wrap(180)
+    .wrap(yargs.terminalWidth())
     .command(defaultCmd as CommandModule)
     .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
+    .strictOptions()
     .option("manual", {type: "array", description: "One or more manual jobs to run during a pipeline", requiresArg: true})
     .option("list", {type: "string", description: "List jobs and job information", requiresArg: false})
     .option("cwd", {type: "string", description: "Path to a gitlab-ci.yml", requiresArg: true})
     .option("completion", {type: "string", description: "Generate bash completion script", requiresArg: false})
     .option("needs", {type: "boolean", description: "Run needed jobs, when executing a single job", requiresArg: false})
-    .completion("completion", false, async (current, a) => {
-        const cwd = a.cwd as string || process.cwd();
+    .completion("completion", false, async (current, yargsArgv) => {
+        const cwd = yargsArgv.cwd as string || process.cwd();
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid, true);
+        // await fs.appendFile(".gitlab-ci-bash-complete.log", JSON.stringify(current) + "\n");
+        // await fs.appendFile(".gitlab-ci-bash-complete.log", JSON.stringify(yargsArgv) + "\n");
+        // await fs.appendFile(".gitlab-ci-bash-complete.log", "\n");
         return parser.getJobNames();
     })
     .argv;
