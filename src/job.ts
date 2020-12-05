@@ -59,6 +59,7 @@ export class Job {
 
         // Parse extends recursively and deepExtend data.
         if (jobData.extends) {
+            jobData.extends = typeof jobData.extends === "string" ? [ jobData.extends ] : jobData.extends;
             let i;
             let clonedData: any = clone(jobData);
             const maxDepth = 50;
