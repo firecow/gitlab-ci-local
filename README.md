@@ -1,11 +1,11 @@
-## Introduction
+### Introduction
 Are you tired of pushing commits to test your Gitlab CI?
 
 Then this is the tool for you.
 
 It lets you run a Gitlab CI pipeline on your local machine.
 
-## Table of contents
+### Table of contents
 * [Introduction](#introduction)
 * [Table of contents](#table-of-contents)
 * [Installation](#installation)
