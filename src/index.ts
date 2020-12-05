@@ -3,7 +3,6 @@ import {CommandModule} from "yargs";
 import {Parser} from "./parser";
 import * as defaultCmd from "./default_cmd";
 import * as state from "./state";
-import * as fs from "fs-extra";
 
 process.on('uncaughtException', (err) => {
     process.stderr.write(`${err.stack ? err.stack : err}\n`);
@@ -30,7 +29,7 @@ Array.prototype.first = function() {
 };
 
 const argv = yargs
-    .version("4.7.0")
+    .version("4.7.1")
     .showHelpOnFail(false)
     .wrap(yargs.terminalWidth())
     .command(defaultCmd as CommandModule)
@@ -45,9 +44,6 @@ const argv = yargs
         const cwd = yargsArgv.cwd as string || process.cwd();
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid, true);
-        // await fs.appendFile(".gitlab-ci-bash-complete.log", JSON.stringify(current) + "\n");
-        // await fs.appendFile(".gitlab-ci-bash-complete.log", JSON.stringify(yargsArgv) + "\n");
-        // await fs.appendFile(".gitlab-ci-bash-complete.log", "\n");
         return parser.getJobNames();
     })
     .argv;
