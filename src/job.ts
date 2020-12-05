@@ -159,10 +159,9 @@ export class Job {
     }
 
     public async init() {
-        const allEnvs: { [key: string]: string } = {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables};
-        const command = `echo '${JSON.stringify(allEnvs, Job.escape)}' | envsubst`;
-        const res = await exec(command, { env: allEnvs });
-        this.envs = JSON.parse(res.stdout);
+        const command = `echo '${JSON.stringify({...this.globals.variables || {}, ...this.variables}, Job.escape)}' | envsubst`;
+        const res = await exec(command, { env: {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables} });
+        this.envs = {...JSON.parse(res.stdout), ...process.env, ...this.predefinedVariables};
 
         if (!this.rules) {
             return;
