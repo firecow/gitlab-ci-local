@@ -1,11 +1,11 @@
-# Introduction
+## Introduction
 Are you tired of pushing commits to test your Gitlab CI?
 
 Then this is the tool for you.
 
 It lets you run a Gitlab CI pipeline on your local machine.
 
-# Table of contents
+## Table of contents
 * [Introduction](#introduction)
 * [Table of contents](#table-of-contents)
 * [Installation](#installation)
@@ -24,8 +24,8 @@ It lets you run a Gitlab CI pipeline on your local machine.
     * [Package binaries](#package-binaries)
     * [Will not be implemented](#will-not-be-implemented)
 
-# Installation
-## Linux
+## Installation
+### Linux
 Download and put binary in `/usr/local/bin`
 
 ```
@@ -35,7 +35,7 @@ chmod +x /usr/local/bin/gitlab-ci-local
 exit
 ```
     
-## Windows (Git bash)
+### Windows (Git bash)
 Install [gitbash](https://git-scm.com/downloads)
 
 Download and put binary in `C:\Program Files\Git\mingw64\bin`
@@ -44,7 +44,7 @@ Download and put binary in `C:\Program Files\Git\mingw64\bin`
 curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
 ```
 
-## Macos
+### Macos
 Download and put binary in `/usr/local/bin`
 
 ```
@@ -54,21 +54,21 @@ chmod +x /usr/local/bin/gitlab-ci-local
 exit
 ```
 
-# Usage
-## Example
+## Usage
+### Example
 
 ```
 cd /home/user/workspace/myproject
 gitlab-ci-local
 ```
 
-## Convinience
-### Bash alias
+### Convinience
+#### Bash alias
 ```
 echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
 ```
 
-### Bash completion
+#### Bash completion
 
 Add this to `~/.bashrc`
 ```
@@ -94,12 +94,12 @@ _yargs_completions()
 complete -o default -F _yargs_completions gitlab-ci-local
 ```
 
-## Quirks
-### Artifacts
+### Quirks
+#### Artifacts
 Artifacts works right now, as along as you don't overwrite tracked files.
 
-# Development
-## Scripts
+## Development
+### Scripts
 ```
 npm install
 npm run build
@@ -108,7 +108,7 @@ npm start -- --cwd /home/user/workspace/project-folder/
 
 ![Alt text](/docs/images/development.png "Development output")
 
-## Package binaries
+### Package binaries
 ```
 npm run pkg-linux
 npm run pkg-win
@@ -116,7 +116,7 @@ npm run pkg-macos
 npm run pkg-all
 ```
 
-## Will not be implemented
+### Will not be implemented
 - cache
 - pages
 - resource_group
