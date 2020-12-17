@@ -1,23 +1,12 @@
 import * as c from "ansi-colors";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
-import * as glob from "glob";
 import * as deepExtend from "deep-extend";
 import * as clone from "clone";
 import * as prettyHrtime from "pretty-hrtime";
 import * as util from "util";
 
 const exec = util.promisify(childProcess.exec);
-
-let shell = "/bin/bash";
-if (process.env.EXEPATH) {
-    const bashExes = glob.sync(`${process.env.EXEPATH}/**/bash.exe`);
-    if (bashExes.length === 0) {
-        process.stderr.write(`${c.red("Could not find any bash executables")}\n`);
-        process.exit(1);
-    }
-    shell = bashExes[0];
-}
 
 export class Job {
     public readonly name: string;
@@ -174,7 +163,7 @@ export class Job {
         for (const rule of this.rules) {
             try {
                 if (rule['if']) {
-                    const output = childProcess.execSync(`[ ${rule['if']} ] && exit 0 || exit 1`, {cwd: this.cwd, env: this.getEnvs(), shell: 'bash'});
+                    const output = childProcess.execSync(`[ ${rule['if']} ] && exit 0 || exit 1`, {cwd: this.cwd, env: this.getEnvs()});
                     if (output.length > 0) {
                         process.stderr.write(`Rule output ${output}`);
                     }
