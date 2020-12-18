@@ -163,7 +163,7 @@ export class Job {
         for (const rule of this.rules) {
             try {
                 if (rule['if']) {
-                    const output = childProcess.execSync(`[ ${rule['if']} ] && exit 0 || exit 1`, {cwd: this.cwd, env: this.getEnvs()});
+                    const output = childProcess.execSync(`if [ ${rule['if']} ]; then exit 0; else exit 1; fi`, {cwd: this.cwd, env: this.getEnvs(), shell: 'bash'});
                     if (output.length > 0) {
                         process.stderr.write(`Rule output ${output}`);
                     }
@@ -233,7 +233,7 @@ export class Job {
 
         const startTime = process.hrtime();
         const prescripts = this.beforeScripts.concat(this.scripts);
-        this.prescriptsExitCode = await this.exec(prescripts);
+        this.prescriptsExitCode = await this.execScripts(prescripts);
         this.started = true;
         if (this.afterScripts.length === 0 && this.prescriptsExitCode > 0 && !this.allowFailure) {
             process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, false)}\n`);
@@ -262,7 +262,7 @@ export class Job {
 
         this.afterScriptsExitCode = 0;
         if (this.afterScripts.length > 0) {
-            this.afterScriptsExitCode = await this.exec(this.afterScripts);
+            this.afterScriptsExitCode = await this.execScripts(this.afterScripts);
         }
 
         if (this.afterScriptsExitCode > 0) {
@@ -285,68 +285,51 @@ export class Job {
         return this.name;
     }
 
-    private async exec(scripts: string[]): Promise<number> {
+    private async execScripts(scripts: string[]): Promise<number> {
         if (scripts.length === 0) {
-            return Promise.resolve(0);
+            return Promise.reject(new Error(`'scripts:' empty for ${this.name}`));
         }
 
+        const jobName = this.name;
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
+        const scriptPath = `${this.cwd}.gitlab-ci-local/shell/${jobName}.sh`;
+
+        await fs.ensureFile(scriptPath);
+        await fs.chmod(scriptPath, '755');
+        await fs.truncate(scriptPath);
+
+
+        await fs.appendFile(scriptPath, `#!/bin/bash\n`);
+        await fs.appendFile(scriptPath, `set -e\n`);
+
+        for (const line of scripts) {
+            await fs.appendFile(scriptPath, `echo '${c.green(`\$ ${line.replace(/[']/g, "\\''")}`)}'\n`);
+            await fs.appendFile(scriptPath, `${line}\n`);
+        }
 
         return new Promise((resolve, reject) => {
-            const bash = childProcess.spawn("bash", {cwd: this.cwd, env: this.getEnvs()});
-            bash.on("error", (err) => {
-                reject(err);
-            });
-            bash.on("close", (signal) => {
-                resolve(signal);
-            });
+            const p = childProcess.exec(`${scriptPath}`, { env: this.envs, cwd: this.cwd, shell: 'bash' });
 
-            const nextCmd = () => {
-                const script = scripts.shift();
-                if (!script) {
-                    bash.stdin.write("exit 0\n");
-                } else {
-                    process.stdout.write(`${jobNameStr} ${c.green(`\$ ${script}`)}\n`);
-                    bash.stdin.write(`${script};echo GCL_MARKER=$?\n`);
-                }
-            };
-
-            bash.stdout.on("data", (e) => {
-                const out = `${e}`;
-                const regExec = /GCL_MARKER=(?<exitCode>\d*)/.exec(out);
-                const stripped = out.replace(/GCL_MARKER=\d*\n/, "");
-
-                if (stripped !== "") {
-                    for (const line of stripped.split(/\r?\n/)) {
-                        if (line !== "") {
-                            fs.appendFileSync(outputFilesPath, `${line}\n`);
-                            process.stdout.write(`${jobNameStr} ${c.greenBright(">")} ${line}\n`);
-                        }
+            const outFunc = (e: any, stream: NodeJS.WriteStream, colorize: (str: string) => string) => {
+                for (const line of `${e}`.split(/\r?\n/)) {
+                    if (line.length === 0) continue;
+                    stream.write(`${jobNameStr} `);
+                    if (!line.startsWith('\u001b[32m$')) {
+                        stream.write(`${colorize(">")} `);
                     }
+                    stream.write(`${line}\n`);
+                    fs.appendFileSync(outputFilesPath, `${line}\n`);
                 }
+            }
 
-                if (regExec && regExec.groups && regExec.groups.exitCode && regExec.groups.exitCode === "0") {
-                    nextCmd();
-                } else if (regExec && regExec.groups && regExec.groups.exitCode && regExec.groups.exitCode !== "0") {
-                    bash.stdin.write(`exit ${regExec.groups.exitCode}\n`);
-                } else if (regExec) {
-                    reject(`GCL_MARKER was not parsed correctly ${JSON.stringify(regExec)}`);
-                }
-            });
-            bash.stderr.on("data", (e) => {
-                const err = `${e}`;
-                if (err !== "") {
-                    for (const line of err.split(/\r?\n/)) {
-                        if (line !== "") {
-                            fs.appendFileSync(outputFilesPath, `${line}\n`);
-                            process.stderr.write(`${jobNameStr} ${c.redBright(">")} ${line}\n`);
-                        }
-                    }
-                }
-            });
+            // @ts-ignore
+            p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => c.greenBright(s)));
+            // @ts-ignore
+            p.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => c.redBright(s)));
 
-            nextCmd();
+            p.on("error", (err) => reject(err));
+            p.on("close", (signal) => resolve(signal));
         });
     }
 
