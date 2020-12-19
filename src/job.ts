@@ -293,7 +293,7 @@ export class Job {
         const jobName = this.name;
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
-        const scriptPath = `${this.cwd}.gitlab-ci-local/shell/${jobName}.sh`;
+        const scriptPath = `${this.cwd}/.gitlab-ci-local/shell/${jobName}.sh`;
 
         await fs.ensureFile(scriptPath);
         await fs.chmod(scriptPath, '755');
