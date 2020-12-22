@@ -112,7 +112,7 @@ npm run build
 npm start -- --cwd /home/user/workspace/project-folder/
 ```
 
-![Alt text](/docs/images/development.png "Development output")
+![Alt text](docs/images/development.png "Development output")
 
 ### Package binaries
 ```
