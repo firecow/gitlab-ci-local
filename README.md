@@ -66,17 +66,26 @@ exit
 ```
 # /home/user/workspace/myproject/.gitlab-ci.yml
 ---
-stages: [ .post ]
+stages: [ build, .post ]
 
 # @Description Is only executed locally
 clean:
   stage: .post
   rules:
-    - { if: $GITLAB_CI == 'false', when: manual }
+    - { if: $GITLAB_CI == 'false' }
   script:
     - echo "I'm only executed locally because GITLAB_CI is false via gitlab-ci-local"
     - echo "I also have a description, when gitlab-ci-local --list is executed"
 
+# @Description Is only executed remotely
+build:
+  stage: build
+  tags: [ runner-tag ]
+  rules:
+    - { if: $GITLAB_CI == 'true' }
+  script:
+    - echo "I'm only executed remotely because GITLAB_CI is true on actual gitlab runners
+    
 
 
 cd /home/user/workspace/myproject
