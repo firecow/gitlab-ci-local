@@ -9,6 +9,7 @@ It lets you run a Gitlab CI pipeline on your local machine.
 * [Introduction](#introduction)
 * [Table of contents](#table-of-contents)
 * [Installation](#installation)
+    * [NPM](#npm)
     * [Linux](#linux)
     * [Windows (Git bash)](#windows-git-bash)
     * [Macos](#macos)
@@ -25,6 +26,11 @@ It lets you run a Gitlab CI pipeline on your local machine.
     * [Will not be implemented](#will-not-be-implemented)
 
 ## Installation
+### NPM
+```
+npm install -g gitlab-ci-local
+```
+
 ### Linux
 Download and put binary in `/usr/local/bin`
 
