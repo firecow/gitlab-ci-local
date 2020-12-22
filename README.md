@@ -84,7 +84,7 @@ build:
   rules:
     - { if: $GITLAB_CI == 'true' }
   script:
-    - echo "I'm only executed remotely because GITLAB_CI is true on actual gitlab runners
+    - echo "I'm only executed remotely because GITLAB_CI is true on actual gitlab runners"
     
 
 
