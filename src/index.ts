@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as yargs from "yargs";
 import {CommandModule} from "yargs";
 import {Parser} from "./parser";
