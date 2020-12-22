@@ -64,6 +64,21 @@ exit
 ### Example
 
 ```
+# /home/user/workspace/myproject/.gitlab-ci.yml
+---
+stages: [ .post ]
+
+# @Description Is only executed locally
+clean:
+  stage: .post
+  rules:
+    - { if: $GITLAB_CI == 'false', when: manual }
+  script:
+    - echo "I'm only executed locally because GITLAB_CI is false via gitlab-ci-local"
+    - echo "I also have a description, when gitlab-ci-local --list is executed"
+
+
+
 cd /home/user/workspace/myproject
 gitlab-ci-local
 ```
