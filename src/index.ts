@@ -30,7 +30,7 @@ Array.prototype.first = function() {
 };
 
 const argv = yargs
-    .version("4.7.1")
+    .version("4.7.2")
     .showHelpOnFail(false)
     .wrap(yargs.terminalWidth())
     .command(defaultCmd as CommandModule)
