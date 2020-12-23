@@ -235,7 +235,7 @@ export class Job {
 
     private async syncSource() {
         if (!this.image) return;
-        const command = "docker cp" || "rsync -a --delete-after"
+        const command = "docker cp";
         const source = `${this.cwd}/`;
         const target = `${this.getContainerName()}:`;
         await exec(`${command} ${source} ${target}`);
