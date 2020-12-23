@@ -2,7 +2,7 @@
   "name": "gitlab-ci-local",
   "main": "dist/index.js",
   "bin": "dist/index.js",
-  "version": "4.7.2",
+  "version": "4.8.0",
   "scripts": {
     "prepare": "npm run check-all && chmod +x dist/index.js",
     "pkg-linux": "pkg dist/index.js -t node14-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
@@ -40,7 +40,7 @@
   "devDependencies": {
     "@types/clone": "^2.1.0",
     "@types/deep-extend": "^0.4.31",
-    "@types/fs-extra": "^9.0.5",
+    "@types/fs-extra": "^9.0.6",
     "@types/js-yaml": "^3.12.5",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/shelljs": "^0.8.8",
