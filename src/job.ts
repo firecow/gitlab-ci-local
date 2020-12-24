@@ -169,7 +169,7 @@ export class Job {
         for (const rule of this.rules) {
             try {
                 if (rule['if']) {
-                    const output = childProcess.execSync(`if [ ${rule['if']} ]; then exit 0; else exit 1; fi`, {cwd: this.cwd, env: this.getEnvs(), shell: 'bash'});
+                    const output = childProcess.execSync(`if [ ${rule['if']} ]; then exit 0; else exit 1; fi`, {cwd: this.cwd, env: this.envs, shell: 'bash'});
                     if (output.length > 0) {
                         process.stderr.write(`Rule output ${output}`);
                     }
@@ -203,14 +203,14 @@ export class Job {
 
         try {
             const imagePlusTag = this.image.includes(':') ? this.image : `${this.image}:latest`;
-            return await exec(`docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '${imagePlusTag}'`);
+            return await exec(`docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '${imagePlusTag}'`, {env: this.envs});
         } catch (e) {
             // Could not be found, carry on.
         }
 
         try {
             process.stdout.write(`${this.getJobNameString()} ${c.cyanBright(`pulling ${this.image}`)}\n`)
-            return await exec(`docker pull ${this.image}`);
+            return await exec(`docker pull ${this.image}`, {env: this.envs});
         } catch (e) {
             process.stderr.write(`${this.getJobNameString()} ${c.red(`could not pull ${this.image}`)}\n`)
             this.printLines(`${e}`, 'stderr');
@@ -225,7 +225,7 @@ export class Job {
         const containerName = this.getContainerName();
 
         try {
-            await exec(`docker run --name ${containerName} -d ${this.image} sleep 30m`);
+            await exec(`docker run --name ${containerName} -d ${this.image} sleep 30m`, {env: this.envs});
         } catch (e) {
             process.stderr.write(`${this.getJobNameString()} ${c.red(`could not start ${containerName} with ${this.image}`)}\n`)
             this.printLines(`${e}`, 'stderr');
@@ -238,7 +238,7 @@ export class Job {
         const command = "docker cp";
         const source = `${this.cwd}/`;
         const target = `${this.getContainerName()}:`;
-        await exec(`${command} ${source} ${target}`);
+        await exec(`${command} ${source} ${target}`, {env: this.envs});
     }
 
     private async removeContainer() {
@@ -247,7 +247,7 @@ export class Job {
         const containerName = this.getContainerName();
 
         try {
-            await exec(`docker rm -f ${containerName}`);
+            await exec(`docker rm -f ${containerName}`, {env: this.envs});
         } catch (e) {
             process.stderr.write(`${this.getJobNameString()} ${c.red(`could not remove ${containerName}`)}\n`)
             this.printLines(e, 'stderr');
@@ -330,7 +330,7 @@ export class Job {
 
         if (!jobsToDownloadFrom) {
             try {
-                const res = await exec(`ls -1d ${this.cwd}/.gitlab-ci-local/artifacts/*/`);
+                const res = await exec(`ls -1d ${this.cwd}/.gitlab-ci-local/artifacts/*/`, {env: this.envs});
                 jobsToDownloadFrom = [];
                 for (const line of `${res.stdout}`.split(/\r?\n/)) {
                     if (line.length === 0) continue;
@@ -346,7 +346,7 @@ export class Job {
             const target = this.image ? `${this.getContainerName()}:` : `${this.cwd}/`
             const command = this.image ? `docker cp` : `rsync -a`
             try {
-                await exec(`${command} ${artifactsStorePath} ${target}`);
+                await exec(`${command} ${artifactsStorePath} ${target}`, {env: this.envs});
             } catch (e) {
                 this.printLines(`${e}}`, 'stderr');
             }
@@ -365,7 +365,7 @@ export class Job {
             await fs.ensureDir(artifactsStorePath);
 
             try {
-                await exec(`${command} ${source} ${artifactsStorePath}`);
+                await exec(`${command} ${source} ${artifactsStorePath}`, {env: this.envs});
             } catch (e) {
                 this.printLines(`${e}}`, 'stderr');
             }
@@ -434,10 +434,6 @@ export class Job {
             p.on("error", (err) => reject(err));
             p.on("close", (signal) => resolve(signal));
         });
-    }
-
-    private getEnvs(): { [key: string]: string } {
-        return this.envs;
     }
 
     private getExitedString(startTime: [number, number], code: number, warning: boolean = false, prependString: string = "") {
