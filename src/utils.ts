@@ -9,4 +9,15 @@ export class Utils {
             process.stdout.write(`${c.blueBright(`${job.name}`)}, `);
         }
     }
+
+    static printToStream(text: string, stream: string) {
+        const colorize = (l: string) => {
+            return stream === 'stderr' ? c.red(l) : l;
+        }
+        for (const line of text.split(/\r?\n/)) {
+            if (line.length === 0) continue;
+            // @ts-ignore
+            process[stream].write(`${colorize(`${line}`)}\n`)
+        }
+    }
 }

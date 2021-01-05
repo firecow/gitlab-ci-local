@@ -4,13 +4,14 @@ import {CommandModule} from "yargs";
 import {Parser} from "./parser";
 import * as defaultCmd from "./default_cmd";
 import * as state from "./state";
+import {Utils} from "./utils";
 
 process.on('uncaughtException', (err) => {
-    process.stderr.write(`${err.stack ? err.stack : err}\n`);
+    Utils.printToStream(`${err.stack ? err.stack : err}`, 'stderr');
     process.exit(5);
 });
 process.on('unhandledRejection', (reason) => {
-    process.stderr.write(`${reason}\n`);
+    Utils.printToStream(`${reason}`, 'stderr')
     process.exit(5);
 });
 
