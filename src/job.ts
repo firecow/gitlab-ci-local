@@ -183,17 +183,6 @@ export class Job {
         }
     }
 
-    private printLines(text: string, stream: string) {
-        const colorize = (l: string) => {
-            return stream === 'stdout' ? c.red(l) : l;
-        }
-        for (const line of text.split(/\r?\n/)) {
-            if (line.length === 0) continue;
-            // @ts-ignore
-            process[stream].write(`${this.getJobNameString()} ${colorize(`${line}`)}\n`)
-        }
-    }
-
     private getContainerName() {
         return `gitlab-ci-local-job-${this.name}`
     }
@@ -205,16 +194,8 @@ export class Job {
             const imagePlusTag = this.image.includes(':') ? this.image : `${this.image}:latest`;
             return await exec(`docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '${imagePlusTag}'`, {env: this.envs});
         } catch (e) {
-            // Could not be found, carry on.
-        }
-
-        try {
             process.stdout.write(`${this.getJobNameString()} ${c.cyanBright(`pulling ${this.image}`)}\n`)
             return await exec(`docker pull ${this.image}`, {env: this.envs});
-        } catch (e) {
-            process.stderr.write(`${this.getJobNameString()} ${c.red(`could not pull ${this.image}`)}\n`)
-            this.printLines(`${e}`, 'stderr');
-            process.exit(1);
         }
     }
 
@@ -222,15 +203,8 @@ export class Job {
         if (!this.image) return;
 
         await this.removeContainer();
-        const containerName = this.getContainerName();
-
-        try {
-            await exec(`docker run --name ${containerName} -d ${this.image} sleep 30m`, {env: this.envs});
-        } catch (e) {
-            process.stderr.write(`${this.getJobNameString()} ${c.red(`could not start ${containerName} with ${this.image}`)}\n`)
-            this.printLines(`${e}`, 'stderr');
-            process.exit(1);
-        }
+        await exec(`mkdir -p ${this.cwd}/.gitlab-ci-local/shell`);
+        await exec(`docker run -v ${this.cwd}/.gitlab-ci-local/shell:/gitlab-ci-local-shell/ --name ${this.getContainerName()} -d ${this.image} sleep 30m`, {env: this.envs});
     }
 
     private async syncSource() {
@@ -243,40 +217,50 @@ export class Job {
 
     private async removeContainer() {
         if (!this.image) return;
+        await exec(`docker rm -f ${this.getContainerName()}`, {env: this.envs});
+    }
+
+    private async copyArtifactsToHost() {
+        if (!this.artifacts || !this.image) {
+            return;
+        }
 
         const containerName = this.getContainerName();
 
-        try {
-            await exec(`docker rm -f ${containerName}`, {env: this.envs});
-        } catch (e) {
-            process.stderr.write(`${this.getJobNameString()} ${c.red(`could not remove ${containerName}`)}\n`)
-            this.printLines(e, 'stderr');
-            process.exit(1);
+        const command = `echo '${JSON.stringify(this.artifacts)}' | envsubst`;
+        const res = await exec(command, { env: this.envs });
+        const artifacts = JSON.parse(`${res.stdout}`);
+
+        for (const artifactPath of artifacts.paths || []) {
+            const source = `${containerName}:${artifactPath}`
+            const target = `${this.cwd}/${path.dirname(artifactPath)}`;
+            await fs.promises.mkdir(target, { recursive: true });
+            await exec(`docker cp ${source} ${target}`);
         }
-    }
+    };
 
     public async start(): Promise<void> {
         const startTime = process.hrtime();
 
-        fs.ensureFileSync(this.getOutputFilesPath());
-        fs.truncateSync(this.getOutputFilesPath());
-        process.stdout.write(`${this.getStartingString()} ${this.image ? c.magentaBright("in docker...") : c.magentaBright("in shell...")}\n`);
         this.running = true;
+        this.started = true;
+
+        await fs.ensureFile(this.getOutputFilesPath());
+        await fs.truncate(this.getOutputFilesPath());
+        process.stdout.write(`${this.getStartingString()} ${this.image ? c.magentaBright("in docker...") : c.magentaBright("in shell...")}\n`);
 
         await this.pullImage();
         await this.startContainer();
         await this.syncSource();
-        await this.downloadArtifacts();
 
         const prescripts = this.beforeScripts.concat(this.scripts);
         this.prescriptsExitCode = await this.execScripts(prescripts);
-        this.started = true;
         if (this.afterScripts.length === 0 && this.prescriptsExitCode > 0 && !this.allowFailure) {
             process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, false)}\n`);
             this.running = false;
             this.finished = true;
             this.success = false;
-
+            await this.removeContainer();
             return;
         }
 
@@ -284,7 +268,7 @@ export class Job {
             process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, true)}\n`);
             this.running = false;
             this.finished = true;
-
+            await this.removeContainer();
             return;
         }
 
@@ -309,85 +293,20 @@ export class Job {
             this.success = false;
         }
 
+        await this.copyArtifactsToHost();
+        await this.removeContainer();
+
         process.stdout.write(`${this.getFinishedString(startTime)}\n`);
 
         this.running = false;
         this.finished = true;
 
-        await this.uploadArtifacts();
-        await this.removeContainer();
-
         return;
     }
-
-    private async downloadArtifacts() {
-        let jobsToDownloadFrom: string[]|null = null;
-        if (this.needs || this.dependencies) {
-            jobsToDownloadFrom = (this.needs || []).concat(this.dependencies || []).filter((value, index, self) => {
-                return self.indexOf(value) === index;
-            });
-        }
-
-        if (!jobsToDownloadFrom) {
-            try {
-                const res = await exec(`ls -1d ${this.cwd}/.gitlab-ci-local/artifacts/*/`, {env: this.envs});
-                jobsToDownloadFrom = [];
-                for (const line of `${res.stdout}`.split(/\r?\n/)) {
-                    if (line.length === 0) continue;
-                    jobsToDownloadFrom.push(line.replace(`${this.cwd}/.gitlab-ci-local/artifacts/`, '').replace('/', ''));
-                }
-            } catch (e) {
-                // Carry on no artifacts generated yet.
-            }
-        }
-
-        for (const jobName of jobsToDownloadFrom || []) {
-            const artifactsStorePath = `${this.cwd}/.gitlab-ci-local/artifacts/${jobName}/`;
-            const target = this.image ? `${this.getContainerName()}:` : `${this.cwd}/`
-            const command = this.image ? `docker cp` : `rsync -a`
-            try {
-                await exec(`${command} ${artifactsStorePath} ${target}`, {env: this.envs});
-            } catch (e) {
-                this.printLines(`${e}}`, 'stderr');
-            }
-        }
-    }
-
-    private async uploadArtifacts() {
-        if (!this.artifacts) {
-            return;
-        }
-
-        for (const artifactPath of this.artifacts.paths || []) {
-            const artifactsStorePath = `${this.cwd}/.gitlab-ci-local/artifacts/${this.name}/${path.dirname(artifactPath)}/`;
-            const source = this.image ? `${this.getContainerName()}:${artifactPath}` : `${this.cwd}/${artifactPath}`;
-            const command = this.image ? `docker cp` : `rsync -a`;
-            await fs.ensureDir(artifactsStorePath);
-
-            try {
-                await exec(`${command} ${source} ${artifactsStorePath}`, {env: this.envs});
-            } catch (e) {
-                this.printLines(`${e}}`, 'stderr');
-            }
-        }
-    };
 
     private async execScripts(scripts: string[]): Promise<number> {
         if (scripts.length === 0) {
             return Promise.reject(new Error(`'scripts:' empty for ${this.name}`));
-        }
-
-        const jobNameStr = this.getJobNameString();
-
-        if (this.image) {
-            for (const line of scripts) {
-                process.stdout.write(`${jobNameStr} ${c.green(`\$ ${line.replace(/[']/g, "\\''")}`)}\n`);
-                const exitCode = await this.executeCommandHandleOutputStreams(`docker exec -t ${this.getContainerName()} bash -c "${line}"`);
-                if (exitCode > 0) {
-                    return exitCode;
-                }
-            }
-            return 0;
         }
 
         const jobName = this.name;
@@ -397,7 +316,7 @@ export class Job {
         await fs.chmod(scriptPath, '755');
         await fs.truncate(scriptPath);
 
-        await fs.appendFile(scriptPath, `#!/bin/bash\n`);
+        await fs.appendFile(scriptPath, `#!/bin/sh\n`);
         await fs.appendFile(scriptPath, `set -e\n`);
 
         for (const line of scripts) {
@@ -405,6 +324,9 @@ export class Job {
             await fs.appendFile(scriptPath, `${line}\n`);
         }
 
+        if (this.image) {
+            return await this.executeCommandHandleOutputStreams(`docker exec -t ${this.getContainerName()} /gitlab-ci-local-shell/${jobName}.sh`);
+        }
         return await this.executeCommandHandleOutputStreams(scriptPath);
     }
 
@@ -477,6 +399,10 @@ export class Job {
 
     public getOutputFilesPath() {
         return `${this.cwd}/.gitlab-ci-local/output/${this.name}.log`;
+    }
+
+    public getEnvs() {
+        return this.envs;
     }
 
     public isFinished() {
