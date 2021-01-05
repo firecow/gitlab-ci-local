@@ -184,7 +184,7 @@ export class Job {
     }
 
     private getContainerName() {
-        return `gitlab-ci-local-job-${this.name}`
+        return `gitlab-ci-local-job-${this.name.replace(/[^a-zA-Z0-9_.-]/g, '-')}`
     }
 
     private async pullImage() {
