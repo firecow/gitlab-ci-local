@@ -140,25 +140,43 @@ export class Job {
         };
     }
 
-    private static escape (_: any, val: any) {
-        if (typeof(val) !== "string") return val;
-        return val
-            .replace(/[\\]/g, '\\\\')
-            .replace(/[\/]/g, '\\/')
-            .replace(/[\b]/g, '\\b')
-            .replace(/[\f]/g, '\\f')
-            .replace(/[\n]/g, '\\n')
-            .replace(/[\r]/g, '\\r')
-            .replace(/[\t]/g, '\\t')
-            .replace(/["]/g, '\\"')
-            .replace(/\\'/g, "\\'");
+    public async init() {
+        return Promise.all([
+            this.initEnvironment(),
+            this.initRules(),
+        ]);
     }
 
-    public async init() {
-        const command = `echo '${JSON.stringify({...this.globals.variables || {}, ...this.variables}, Job.escape)}' | envsubst`;
-        const res = await exec(command, { env: {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables} });
-        this.envs = {...JSON.parse(res.stdout), ...process.env, ...this.predefinedVariables};
+    private async initEnvironment() {
+        const envFile = `${this.cwd}/.gitlab-ci-local/envs/.env-${this.name}`;
+        await fs.ensureFile(envFile);
+        await fs.truncate(envFile);
 
+        // Print env vars, that should be envsubst'ed
+        for (const [key, value] of Object.entries({...this.globals.variables || {}, ...this.variables})) {
+            await fs.appendFile(envFile, `${key}=${value}\n`);
+        }
+
+        // Pipe envs through envsubst
+        await exec(`cat ${envFile} | envsubst > ${envFile}-tmp`, { env: {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables} });
+        await exec(`mv ${envFile}-tmp ${envFile}`);
+
+        // Print env var, that should not be envsubst'ed
+        for (const [key, value] of Object.entries({...process.env, ...this.predefinedVariables})) {
+            await fs.appendFile(envFile, `${key}=${JSON.stringify(value).substr(1).slice(0, -1)}\n`);
+        }
+
+        let e;
+        const envFileCnt = await fs.readFile(envFile, 'utf8');
+        const regExp = /(?<key>.*)=(?<value>.*)/g
+
+        this.envs = {};
+        while (e = regExp.exec(envFileCnt)) {
+            this.envs[e[1]] = e[2];
+        }
+    }
+
+    private async initRules() {
         if (!this.rules) {
             return;
         }
@@ -199,22 +217,6 @@ export class Job {
         }
     }
 
-    private async startContainer() {
-        if (!this.image) return;
-
-        await this.removeContainer();
-        await exec(`mkdir -p ${this.cwd}/.gitlab-ci-local/shell`);
-        await exec(`docker run -v ${this.cwd}/.gitlab-ci-local/shell:/gitlab-ci-local-shell/ --name ${this.getContainerName()} -d ${this.image} sleep 30m`, {env: this.envs});
-    }
-
-    private async syncSource() {
-        if (!this.image) return;
-        const command = "docker cp";
-        const source = `${this.cwd}/`;
-        const target = `${this.getContainerName()}:`;
-        await exec(`${command} ${source} ${target}`, {env: this.envs});
-    }
-
     private async removeContainer() {
         if (!this.image) return;
         await exec(`docker rm -f ${this.getContainerName()}`, {env: this.envs});
@@ -226,7 +228,6 @@ export class Job {
         }
 
         const containerName = this.getContainerName();
-
         const command = `echo '${JSON.stringify(this.artifacts)}' | envsubst`;
         const res = await exec(command, { env: this.envs });
         const artifacts = JSON.parse(`${res.stdout}`);
@@ -250,8 +251,6 @@ export class Job {
         process.stdout.write(`${this.getStartingString()} ${this.image ? c.magentaBright("in docker...") : c.magentaBright("in shell...")}\n`);
 
         await this.pullImage();
-        await this.startContainer();
-        await this.syncSource();
 
         const prescripts = this.beforeScripts.concat(this.scripts);
         this.prescriptsExitCode = await this.execScripts(prescripts);
@@ -305,27 +304,34 @@ export class Job {
     }
 
     private async execScripts(scripts: string[]): Promise<number> {
-        if (scripts.length === 0) {
-            return Promise.reject(new Error(`'scripts:' empty for ${this.name}`));
-        }
-
         const jobName = this.name;
         const scriptPath = `${this.cwd}/.gitlab-ci-local/shell/${jobName}.sh`;
 
         await fs.ensureFile(scriptPath);
-        await fs.chmod(scriptPath, '755');
+        await fs.chmod(scriptPath, '777');
         await fs.truncate(scriptPath);
 
         await fs.appendFile(scriptPath, `#!/bin/sh\n`);
-        await fs.appendFile(scriptPath, `set -e\n`);
+        await fs.appendFile(scriptPath, `set -e\n\n`);
 
         for (const line of scripts) {
-            await fs.appendFile(scriptPath, `echo '${c.green(`\$ ${line.replace(/[']/g, "\\''")}`)}'\n`);
+            // Print command echo'ed in color
+            const split = line.split(/\r?\n/);
+            const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
+            const text = split[0].replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
+            await fs.appendFile(scriptPath, `echo "${c.green(`\$ ${text}${multilineText}`)}"\n`);
+
+            // Print command to execute
             await fs.appendFile(scriptPath, `${line}\n`);
         }
 
         if (this.image) {
-            return await this.executeCommandHandleOutputStreams(`docker exec -t ${this.getContainerName()} /gitlab-ci-local-shell/${jobName}.sh`);
+            const envFile = `${this.cwd}/.gitlab-ci-local/envs/.env-${this.name}`
+            await this.removeContainer();
+            await exec(`docker create --env-file ${envFile} --name ${this.getContainerName()} ${this.image} gitlab-ci-local-${this.name}`);
+            await exec(`docker cp ${scriptPath} ${this.getContainerName()}:/usr/bin/gitlab-ci-local-${this.name}`);
+            await exec(`docker cp ${this.cwd}/ ${this.getContainerName()}:`);
+            return await this.executeCommandHandleOutputStreams(`docker start --attach ${this.getContainerName()}`);
         }
         return await this.executeCommandHandleOutputStreams(scriptPath);
     }
@@ -346,7 +352,7 @@ export class Job {
         }
 
         return new Promise((resolve, reject) => {
-            const p = childProcess.exec(`${command}`, { env: this.envs, cwd: this.cwd, shell: 'bash' });
+            const p = childProcess.exec(`${command}`, { env: this.envs, cwd: this.cwd });
 
             // @ts-ignore
             p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => c.greenBright(s)));
