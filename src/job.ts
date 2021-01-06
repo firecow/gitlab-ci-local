@@ -187,7 +187,7 @@ export class Job {
         for (const rule of this.rules) {
             try {
                 if (rule['if']) {
-                    const output = childProcess.execSync(`if [ ${rule['if']} ]; then exit 0; else exit 1; fi`, {cwd: this.cwd, env: this.envs, shell: 'bash'});
+                    const output = childProcess.execSync(`if [[ ${rule['if']} ]]; then exit 0; else exit 1; fi`, {cwd: this.cwd, env: this.envs, shell: 'bash'});
                     if (output.length > 0) {
                         process.stderr.write(`Rule output ${output}`);
                     }
