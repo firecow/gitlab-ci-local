@@ -84,6 +84,12 @@ export class Parser {
             gitlabData.stages = ["build", "test", "deploy"];
         }
 
+        // Validate that 'stages:' is array
+        if (gitlabData.stages && !Array.isArray(gitlabData.stages)) {
+            process.stderr.write(`${c.red(`'stages:' must be an array`)}\n`);
+            process.exit(1);
+        }
+
         // ".pre" and ".post" are always present. See: https://docs.gitlab.com/ee/ci/yaml/#pre-and-post
         gitlabData.stages.unshift(".pre");
         gitlabData.stages.push(".post");
