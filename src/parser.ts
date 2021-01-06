@@ -3,7 +3,7 @@ import * as util from 'util';
 import * as childProcess from "child_process";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
-import * as yaml from "yaml";
+import * as yaml from "js-yaml";
 import {Job} from "./job";
 import * as state from "./state";
 import {Stage} from "./stage";
@@ -144,7 +144,7 @@ export class Parser {
 
         const fileContent = await fs.readFile(`${filePath}`, "utf8");
         const descRegEx = /#.*?@Description\s?(.*)\s(.*)?:/gm;
-        const parse = yaml.parse(fileContent) || {};
+        const parse: any = yaml.load(fileContent) || {};
 
         let match;
         while (match = descRegEx.exec(fileContent)) {
