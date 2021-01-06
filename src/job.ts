@@ -222,7 +222,7 @@ export class Job {
         const artifacts = JSON.parse(`${res.stdout}`);
 
         for (const artifactPath of artifacts.paths || []) {
-            const source = `${containerName}:${artifactPath}`
+            const source = `${containerName}:/gcl-wrk/${artifactPath}`
             const target = `${this.cwd}/${path.dirname(artifactPath)}`;
             await fs.promises.mkdir(target, { recursive: true });
             await exec(`docker cp ${source} ${target}`);
@@ -317,9 +317,9 @@ export class Job {
         if (this.image) {
             const envFile = `${this.cwd}/.gitlab-ci-local/envs/.env-${this.name}`
             await this.removeContainer();
-            await exec(`docker create -w /gitlab-ci-local-workdir --env-file ${envFile} --name ${this.getContainerName()} ${this.image} ./gitlab-ci-local-shell-${this.name}`);
-            await exec(`docker cp ${scriptPath} ${this.getContainerName()}:/gitlab-ci-local-workdir/gitlab-ci-local-shell-${this.name}`);
-            await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gitlab-ci-local-workdir/.`);
+            await exec(`docker create -w /gcl-wrk/ --env-file ${envFile} --name ${this.getContainerName()} ${this.image} ./gitlab-ci-local-shell-${this.name}`);
+            await exec(`docker cp ${scriptPath} ${this.getContainerName()}:/gcl-wrk/gitlab-ci-local-shell-${this.name}`);
+            await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gcl-wrk/.`);
             return await this.executeCommandHandleOutputStreams(`docker start --attach ${this.getContainerName()}`);
         }
         return await this.executeCommandHandleOutputStreams(scriptPath);
