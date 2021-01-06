@@ -317,9 +317,9 @@ export class Job {
         if (this.image) {
             const envFile = `${this.cwd}/.gitlab-ci-local/envs/.env-${this.name}`
             await this.removeContainer();
-            await exec(`docker create -w /gitlab-ci-local-workdir --env-file ${envFile} --name ${this.getContainerName()} ${this.image} gitlab-ci-local-${this.name}`);
-            await exec(`docker cp ${scriptPath} ${this.getContainerName()}:/usr/bin/gitlab-ci-local-${this.name}`);
-            await exec(`docker cp ${this.cwd}/ ${this.getContainerName()}:/gitlab-ci-local-workdir`);
+            await exec(`docker create -w /gitlab-ci-local-workdir --env-file ${envFile} --name ${this.getContainerName()} ${this.image} ./gitlab-ci-local-shell-${this.name}`);
+            await exec(`docker cp ${scriptPath} ${this.getContainerName()}:/gitlab-ci-local-workdir/gitlab-ci-local-shell-${this.name}`);
+            await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gitlab-ci-local-workdir/.`);
             return await this.executeCommandHandleOutputStreams(`docker start --attach ${this.getContainerName()}`);
         }
         return await this.executeCommandHandleOutputStreams(scriptPath);
