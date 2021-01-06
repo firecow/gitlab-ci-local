@@ -141,10 +141,8 @@ export class Job {
     }
 
     public async init() {
-        return Promise.all([
-            this.initEnvironment(),
-            this.initRules(),
-        ]);
+        await this.initEnvironment();
+        await this.initRules();
     }
 
     private async initEnvironment() {
@@ -154,7 +152,7 @@ export class Job {
 
         // Print env vars, that should be envsubst'ed
         for (const [key, value] of Object.entries({...this.globals.variables || {}, ...this.variables})) {
-            await fs.appendFile(envFile, `${key}=${value}\n`);
+            await fs.appendFile(envFile, `${key}=${JSON.stringify(value).substr(1).slice(0, -1)}\n`);
         }
 
         // Pipe envs through envsubst
@@ -187,7 +185,7 @@ export class Job {
         for (const rule of this.rules) {
             try {
                 if (rule['if']) {
-                    const output = childProcess.execSync(`if [[ ${rule['if']} ]]; then exit 0; else exit 1; fi`, {cwd: this.cwd, env: this.envs, shell: 'bash'});
+                    const output = childProcess.execSync(`if [ ${rule['if']} ]; then exit 0; else exit 1; fi`, {cwd: this.cwd, env: this.envs});
                     if (output.length > 0) {
                         process.stderr.write(`Rule output ${output}`);
                     }
