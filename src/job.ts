@@ -183,19 +183,12 @@ export class Job {
         this.allowFailure = false;
 
         for (const rule of this.rules) {
-            try {
-                if (rule['if']) {
-                    const output = childProcess.execSync(`if [ ${rule['if']} ]; then exit 0; else exit 1; fi`, {cwd: this.cwd, env: this.envs});
-                    if (output.length > 0) {
-                        process.stderr.write(`Rule output ${output}`);
-                    }
-                }
-                this.when = rule['when'] ? rule['when'] : 'on_success';
-                this.allowFailure = rule['allow_failure'] ? rule['allow_failure'] : this.allowFailure;
-                break;
-            } catch (e) {
-                // By pass rule on exit 1
+            if (rule['if']) {
+                const output = childProcess.execSync(`if [ ${rule['if']} ]; then echo "Yes"; else echo "No"; fi`, {cwd: this.cwd, env: this.envs});
+                if (`${output}` === "Yes") break;
             }
+            this.when = rule['when'] ? rule['when'] : 'on_success';
+            this.allowFailure = rule['allow_failure'] ? rule['allow_failure'] : this.allowFailure;
         }
     }
 
