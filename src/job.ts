@@ -175,9 +175,7 @@ export class Job {
     }
 
     private async initRules() {
-        if (!this.rules) {
-            return;
-        }
+        if (!this.rules) return;
 
         this.when = 'never';
         this.allowFailure = false;
