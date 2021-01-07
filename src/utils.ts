@@ -20,6 +20,7 @@ export class Utils {
             process[stream].write(`${colorize(`${line}`)}\n`)
         }
     }
+
     static expandEnv(text: string, envs: { [key: string]: string | undefined } = process.env) {
         // tslint:disable-next-line:only-arrow-functions
         return text.replace(/[$][{]?\w*[}]?/g, function (match) {
