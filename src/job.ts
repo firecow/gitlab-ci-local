@@ -343,7 +343,7 @@ export class Job {
         }
 
         return new Promise((resolve, reject) => {
-            const p = childProcess.exec(`${command}`, { env: this.envs, cwd: this.cwd });
+            const p = childProcess.exec(`${command}`, { env: {...this.envs, ...process.env}, cwd: this.cwd });
 
             // @ts-ignore
             p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => c.greenBright(s)));
