@@ -20,4 +20,8 @@ export class Utils {
             process[stream].write(`${colorize(`${line}`)}\n`)
         }
     }
+
+    static expandEnv(text: string, envs: { [key: string]: string }) {
+        // [\$]{1}[\{]{0,1}(\w*)[\}]{0,1}
+    }
 }
