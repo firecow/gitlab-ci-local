@@ -321,6 +321,7 @@ export class Job {
             await exec(`docker create -w /gcl-wrk/ --env-file ${envFile} --name ${this.getContainerName()} ${this.image} ./gitlab-ci-local-shell-${this.name}`);
             await exec(`docker cp ${scriptPath} ${this.getContainerName()}:/gcl-wrk/gitlab-ci-local-shell-${this.name}`);
             await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gcl-wrk/.`);
+            // TODO: "bad" docker entrypoints will break this way of starting containers
             return await this.executeCommandHandleOutputStreams(`docker start --attach ${this.getContainerName()}`);
         }
         return await this.executeCommandHandleOutputStreams(scriptPath);
