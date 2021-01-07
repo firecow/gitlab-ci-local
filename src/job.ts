@@ -123,6 +123,7 @@ export class Job {
             CI_COMMIT_REF_NAME: "local/branch", // Tag or branch name
             CI_PROJECT_VISIBILITY: "internal",
             CI_PROJECT_ID: "1217",
+            CI_COMMIT_REF_SLUG: "local-branch",
             CI_COMMIT_TITLE: "Commit Title", // First line of commit message.
             CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
             CI_COMMIT_DESCRIPTION: "More commit text",
@@ -160,7 +161,7 @@ export class Job {
         await exec(`mv ${envFile}-tmp ${envFile}`);
 
         // Print env var, that should not be envsubst'ed
-        for (const [key, value] of Object.entries({...process.env, ...this.predefinedVariables})) {
+        for (const [key, value] of Object.entries({...this.predefinedVariables})) {
             await fs.appendFile(envFile, `${key}=${JSON.stringify(value).substr(1).slice(0, -1)}\n`);
         }
 
