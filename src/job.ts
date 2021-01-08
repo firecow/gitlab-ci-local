@@ -183,7 +183,8 @@ export class Job {
 
         for (const rule of this.rules) {
             if (rule['if']) {
-                const output = childProcess.execSync(`if [ ${rule['if']} ]; then echo "Yes"; else echo "No"; fi`, {cwd: this.cwd, env: this.envs});
+                // TODO: It should be possible to remove shell: 'bash'
+                const output = childProcess.execSync(`if [ ${rule['if']} ]; then echo "Yes"; else echo "No"; fi`, {cwd: this.cwd, env: this.envs, shell: 'bash'});
                 if (`${output}` === "Yes") break;
             }
             this.when = rule['when'] ? rule['when'] : 'on_success';
