@@ -6,6 +6,7 @@ import * as clone from "clone";
 import * as prettyHrtime from "pretty-hrtime";
 import * as util from "util";
 import * as path from "path";
+import {Utils} from "./utils";
 
 const exec = util.promisify(childProcess.exec);
 
@@ -219,11 +220,9 @@ export class Job {
         }
 
         const containerName = this.getContainerName();
-        const command = `echo '${JSON.stringify(this.artifacts)}' | envsubst`;
-        const res = await exec(command, { env: this.envs });
-        const artifacts = JSON.parse(`${res.stdout}`);
 
-        for (const artifactPath of artifacts.paths || []) {
+        for (let artifactPath of this.artifacts.paths || []) {
+            artifactPath = Utils.expandEnv(artifactPath, this.getEnvs());
             const source = `${containerName}:/gcl-wrk/${artifactPath}`
             const target = `${this.cwd}/${path.dirname(artifactPath)}`;
             await fs.promises.mkdir(target, { recursive: true });
