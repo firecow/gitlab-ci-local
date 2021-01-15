@@ -219,15 +219,10 @@ export class Commander {
         }
 
         for (const job of preScripts.successful) {
-            const e = job.environment;
-            if (e == null) {
-                continue;
-            }
-            let res;
-            res = await exec(`printf ${e.name}`, {env: job.getEnvs()});
-            const name = res.stdout;
-            res = await exec(`printf ${e.url}`, {env: job.getEnvs()});
-            const url = res.stdout;
+            let e = job.environment;
+            if (e == null) continue
+            const name = Utils.expandEnv(e.name, job.getEnvs());
+            const url = Utils.expandEnv(e.url, job.getEnvs());
             if (url !== 'undefined') {
                 process.stdout.write(`${c.blueBright(job.name)} environment: { name: ${c.bold(name)}, url: ${c.bold(url)} }\n`);
             } else {
