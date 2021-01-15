@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import * as fs from "fs-extra";
 import * as yargs from "yargs";
 import {CommandModule} from "yargs";
 import {Parser} from "./parser";
@@ -15,22 +16,8 @@ process.on('unhandledRejection', (reason) => {
     process.exit(5);
 });
 
-// Array polyfill
-declare global {
-    // tslint:disable-next-line:interface-name
-    interface Array<T> {
-        first(): T | undefined;
-        last(): T | undefined;
-    }
-}
-Array.prototype.last = function() {
-    return this[this.length - 1];
-};
-Array.prototype.first = function() {
-    return this[0];
-};
-
-const argv = yargs
+// tslint:disable-next-line:no-unused-expression
+yargs
     .version("4.8.0")
     .showHelpOnFail(false)
     .wrap(yargs.terminalWidth())
