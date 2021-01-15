@@ -1,3 +1,4 @@
+import * as fs from "fs-extra";
 import * as yargs from "yargs";
 import {Commander} from "./commander";
 import {Parser} from "./parser";
@@ -13,6 +14,11 @@ exports.builder = (y: any) => {
 };
 exports.handler = async(argv: any) => {
     const cwd = argv.cwd as string || process.cwd();
+
+    if (!fs.existsSync(`${cwd}/.gitlab-ci.yml`)) {
+        process.stdout.write(`.gitlab-ci.yml not found\n`);
+        process.exit(0);
+    }
 
     if (argv.completion !== undefined) {
         yargs.showCompletionScript();
