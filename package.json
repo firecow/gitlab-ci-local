@@ -25,7 +25,6 @@
     "dateformat": "^4.4.1",
     "deep-extend": "^0.6.0",
     "fs-extra": "^9.0.1",
-    "glob": "^7.1.6",
     "pretty-hrtime": "^1.0.3",
     "js-yaml": "^4.0.0",
     "yargs": "^16.2.0"
