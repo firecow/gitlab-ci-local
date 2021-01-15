@@ -21,8 +21,8 @@ export class Utils {
         }
     }
 
-    static expandEnv(text?: string, envs: { [key: string]: string | undefined } = process.env) {
-        if (text == null) return '';
+    static expandEnv(text?: any, envs: { [key: string]: string | undefined } = process.env) {
+        if (typeof text !== 'string') return text;
         return text.replace(/[$][{]?\w*[}]?/g, (match) => {
             const sub = envs[match.replace(/^[$][{]?/, '').replace(/[}]?$/, '')];
             return sub || match;
