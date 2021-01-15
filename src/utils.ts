@@ -21,9 +21,9 @@ export class Utils {
         }
     }
 
-    static expandEnv(text: string, envs: { [key: string]: string | undefined } = process.env) {
-        // tslint:disable-next-line:only-arrow-functions
-        return text.replace(/[$][{]?\w*[}]?/g, function (match) {
+    static expandEnv(text?: string, envs: { [key: string]: string | undefined } = process.env) {
+        if (text == null) return '';
+        return text.replace(/[$][{]?\w*[}]?/g, (match) => {
             const sub = envs[match.replace(/^[$][{]?/, '').replace(/[}]?$/, '')];
             return sub || match;
         });
