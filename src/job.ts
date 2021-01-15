@@ -316,12 +316,27 @@ export class Job {
         }
 
         if (this.image) {
+            // Generate custom entrypoint
+            const entrypointPath = `${this.cwd}/.gitlab-ci-local/entrypoint/${jobName}.sh`;
+            await fs.ensureFile(entrypointPath);
+            await fs.chmod(entrypointPath, '777');
+            await fs.truncate(entrypointPath);
+            await fs.appendFile(entrypointPath, `#!/bin/sh\n`);
+            await fs.appendFile(entrypointPath, `set -e\n\n`);
+            const result = await exec(`docker inspect ${this.image} --format "{{ .Config.Entrypoint }}"`);
+            const originalEntrypoint = result.stdout.slice(1,-2);
+            if (originalEntrypoint !== '') {
+                await fs.appendFile(entrypointPath, `${originalEntrypoint}\n`);
+            }
+            await fs.appendFile(entrypointPath, `exec "$@"\n`);
+
             const envFile = `${this.cwd}/.gitlab-ci-local/envs/.env-${this.name}`
             await this.removeContainer();
-            await exec(`docker create -w /gcl-wrk/ --env-file ${envFile} --name ${this.getContainerName()} ${this.image} ./gitlab-ci-local-shell-${this.name}`);
+            await exec(`docker create -w /gcl-wrk/ --env-file ${envFile} --entrypoint "./gitlab-ci-local-entrypoint-${this.name}.sh" --name ${this.getContainerName()} ${this.image} ./gitlab-ci-local-shell-${this.name}`);
+            await exec(`docker cp ${entrypointPath} ${this.getContainerName()}:/gcl-wrk/gitlab-ci-local-entrypoint-${this.name}.sh`);
             await exec(`docker cp ${scriptPath} ${this.getContainerName()}:/gcl-wrk/gitlab-ci-local-shell-${this.name}`);
             await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gcl-wrk/.`);
-            // TODO: "bad" docker entrypoints will break this way of starting containers
+
             return await this.executeCommandHandleOutputStreams(`docker start --attach ${this.getContainerName()}`);
         }
         return await this.executeCommandHandleOutputStreams(scriptPath);
