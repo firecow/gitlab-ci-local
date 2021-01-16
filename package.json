@@ -11,11 +11,11 @@
     "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win",
     "pkg": "pkg",
     "build": "tsc",
-    "check-all": "npm run --silent build && npm run --silent lint && npm run --silent ncu && npm audit --parseable",
+    "check-all": "npm run build && npm run lint && npm run ncu && npm run test:badges && npm audit --parseable",
     "lint": "tslint --project .",
-    "lint-fix": "tslint --fix --project .",
     "ncu": "ncu --target latest -e 2",
     "test": "npx jest",
+    "test:badges": "jest --coverage && make-coverage-badge --output-path badge.svg",
     "start": "node -r source-map-support/register dist/index.js"
   },
   "dependencies": {
@@ -49,6 +49,7 @@
     "glob-promise": "^3.4.0",
     "jest": "^26.6.3",
     "jest-mock-process": "^1.4.0",
+    "make-coverage-badge": "^1.2.0",
     "mock-fs": "^4.13.0",
     "npm-check-updates": "^10.2.5",
     "pkg": "^4.4.9",
