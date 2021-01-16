@@ -1,3 +1,4 @@
 *
 !docs/**/*
 !dist/**/*
+!coverage/badge.svg
