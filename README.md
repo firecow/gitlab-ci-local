@@ -1,6 +1,6 @@
 ## Introduction
 
-[![coverage](badge.svg)](https://npmjs.org/package/gitlab-ci-local)
+[![coverage](coverage/badge.svg)](https://npmjs.org/package/gitlab-ci-local)
 [![build](https://github.com/firecow/gitlab-ci-local/workflows/build/badge.svg)](https://npmjs.org/package/gitlab-ci-local)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://npmjs.org/package/gitlab-ci-local)
 [![npm](https://img.shields.io/npm/v/gitlab-ci-local?color=green)](https://npmjs.org/package/gitlab-ci-local)
@@ -142,7 +142,7 @@ npm run build
 npm start -- --cwd /home/user/workspace/project-folder/
 ```
 
-![Alt text](docs/images/development.png "Development output")
+![output](docs/images/development.png)
 
 ### Package binaries
 ```
