@@ -15,7 +15,7 @@
     "lint": "tslint --project .",
     "ncu": "ncu --target latest -e 2",
     "test": "jest",
-    "test:badges": "jest --coverage && make-coverage-badge --output-path badge.svg",
+    "test:badges": "jest --coverage && make-coverage-badge",
     "start": "node -r source-map-support/register dist/index.js"
   },
   "dependencies": {
