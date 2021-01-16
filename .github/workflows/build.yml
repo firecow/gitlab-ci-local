@@ -16,7 +16,7 @@ jobs:
       - name: Install modules
         run: yarn
       - name: Run Typescipt Compiler
-        run: yarn tsc
+        run: yarn build
   jest:
     runs-on: ubuntu-latest
     steps:
