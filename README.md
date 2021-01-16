@@ -5,11 +5,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://npmjs.org/package/gitlab-ci-local)
 [![npm](https://img.shields.io/npm/v/gitlab-ci-local?color=green)](https://npmjs.org/package/gitlab-ci-local)
 
-Are you tired of pushing commits to test your Gitlab CI?
+Are you tired of pushing commits to test your .gitlab-ci.yml?
 
 Then this is the tool for you.
 
-It lets you run a Gitlab CI pipeline on your local machine.
+Run gitlab pipelines on your local machine as shell runner or docker executor.
+
+Get rid of all those "pesky" dev workflow shell scripts and make files. 
 
 ## Table of contents
 * [Introduction](#introduction)
@@ -20,7 +22,7 @@ It lets you run a Gitlab CI pipeline on your local machine.
     * [Windows (Git bash)](#windows-git-bash)
     * [Macos](#macos)
 * [Usage](#usage)
-    * [Example](#example)
+    * [Examples](#examples)
     * [Convinience](#convinience)
         * [Bash alias](#bash-alias)
         * [Bash completion](#bash-completion)
@@ -67,36 +69,10 @@ exit
 ```
 
 ## Usage
-### Example
+### Examples
 
-```
-# /home/user/workspace/myproject/.gitlab-ci.yml
----
-stages: [ build, .post ]
+- Docker Compose "deploy" a nodejs webserver
 
-# @Description Is only executed locally
-clean:
-  stage: .post
-  rules:
-    - { if: $GITLAB_CI == 'false' }
-  script:
-    - echo "I'm only executed locally because GITLAB_CI is false via gitlab-ci-local"
-    - echo "I also have a description, when gitlab-ci-local --list is executed"
-
-# @Description Is only executed remotely
-build:
-  stage: build
-  tags: [ runner-tag ]
-  rules:
-    - { if: $GITLAB_CI == 'true' }
-  script:
-    - echo "I'm only executed remotely because GITLAB_CI is true on actual gitlab runners"
-    
-
-
-cd /home/user/workspace/myproject
-gitlab-ci-local
-```
 
 ### Convinience
 #### Bash alias
