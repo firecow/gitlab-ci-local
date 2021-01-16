@@ -1,4 +1,10 @@
 ## Introduction
+
+[![coverage](badge.svg)](https://npmjs.org/package/gitlab-ci-local)
+[![build](https://github.com/firecow/gitlab-ci-local/workflows/build/badge.svg)](https://npmjs.org/package/gitlab-ci-local)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://npmjs.org/package/gitlab-ci-local)
+[![npm](https://img.shields.io/npm/v/gitlab-ci-local?color=green)](https://npmjs.org/package/gitlab-ci-local)
+
 Are you tired of pushing commits to test your Gitlab CI?
 
 Then this is the tool for you.
