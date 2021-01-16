@@ -28,4 +28,41 @@ export class Utils {
             return sub || match;
         });
     }
+
+    public static evaluateRuleIf(ruleIf: string, envs: { [key: string]: string }) {
+        const expandedRule = ruleIf.replace(/[$]\w*/g, (match) => {
+            const sub = envs[match.replace(/^[$]/, '')];
+            return sub != null ? `'${sub}'` : 'null';
+        });
+
+        const subRules = expandedRule.split(/&&|\|\|/g);
+        const subEvals = [];
+        for (const subRule of subRules) {
+            let subEval = subRule;
+            if (!subRule.match(/(?:==)|(?:!=)|(?:=~)|(?:!~)/)) {
+                subEval = subRule.trim() !== 'null' && subRule.trim() !== "''" ? 'true' : 'false';
+            }
+
+            if (subRule.includes('!~')) {
+                subEval = subRule.replace(/\s?!~\s?(\/.*\/)/, `.match($1) == null`);
+            }
+
+            if (subRule.includes('=~')) {
+                subEval = subRule.replace(/\s?=~\s?(\/.*\/)/, `.match($1) != null`);
+            }
+            subEvals.push(subEval);
+        }
+
+        const conditions = expandedRule.match(/&&|\|\|/g)
+
+        let evalStr = '';
+
+        subEvals.forEach((subEval, index) => {
+            evalStr += subEval;
+            evalStr += conditions && conditions[index] ? conditions[index] : '';
+        })
+
+        // tslint:disable-next-line:no-eval
+        return eval(evalStr);
+    }
 }

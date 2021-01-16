@@ -1,12 +1,8 @@
 import * as c from "ansi-colors";
-import * as childProcess from "child_process";
-import * as util from "util";
 
 import {Job} from "./job";
 import {Parser} from "./parser";
 import {Utils} from "./utils";
-
-const exec = util.promisify(childProcess.exec);
 
 export class Commander {
 
