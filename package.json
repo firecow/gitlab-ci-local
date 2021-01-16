@@ -14,7 +14,7 @@
     "check-all": "npm run build && npm run lint && npm run ncu && npm run test:badges && npm audit --parseable",
     "lint": "tslint --project .",
     "ncu": "ncu --target latest -e 2",
-    "test": "npx jest",
+    "test": "jest",
     "test:badges": "jest --coverage && make-coverage-badge --output-path badge.svg",
     "start": "node -r source-map-support/register dist/index.js"
   },
