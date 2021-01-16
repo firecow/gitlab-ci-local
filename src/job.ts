@@ -364,7 +364,7 @@ export class Job {
             p.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => c.redBright(s)));
 
             p.on("error", (err) => reject(err));
-            p.on("close", (signal) => resolve(signal));
+            p.on("close", (signal) => resolve(signal ? signal : 1));
         });
     }
 
