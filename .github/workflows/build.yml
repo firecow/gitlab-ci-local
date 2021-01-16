@@ -33,6 +33,7 @@ jobs:
         run: yarn
       - name: Run Typescipt Compiler
         run: yarn build
+      - run: docker --version
       - name: Build pkg
         run: yarn pkg-linux
       - name: Run gitlab-ci-local on docker-compose-node example
