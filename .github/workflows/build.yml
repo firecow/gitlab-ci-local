@@ -25,18 +25,3 @@ jobs:
         run: npm install
       - name: Run tests
         run: npm run test
-  example-docker-compose-nodejs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install modules
-        run: yarn
-      - name: Run Typescipt Compiler
-        run: yarn build
-      - run: docker --version
-      - name: Build pkg
-        run: yarn pkg-linux
-      - name: Run gitlab-ci-local on docker-compose-node example
-        run: bin/linux/gitlab-ci-local --cwd examples/docker-compose-nodejs/
-      - name: Check webserver container runs
-        run: docker container ls | grep docker-compose-nodejs_webserver_1
