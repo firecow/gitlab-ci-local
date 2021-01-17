@@ -1,0 +1,9 @@
+services:
+  webserver:
+    image: node
+    command: node webserver.js
+    ports:
+      - 8891:3000
+    volumes:
+      - ./node_modules/:/node_modules/
+      - ./webserver.js:/webserver.js
