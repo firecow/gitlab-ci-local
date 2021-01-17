@@ -16,7 +16,7 @@
     "ncu": "ncu --target latest -e 2",
     "test": "jest",
     "test:badges": "jest --coverage && make-coverage-badge",
-    "start": "node -r source-map-support/register dist/index.js --cwd examples/docker-compose-nodejs"
+    "start": "ts-node src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
     "ansi-colors": "^4.1.1",
@@ -53,8 +53,8 @@
     "mock-fs": "^4.13.0",
     "npm-check-updates": "^10.2.5",
     "pkg": "^4.4.9",
-    "source-map-support": "^0.5.19",
     "ts-jest": "^26.4.4",
+    "ts-node": "^9.1.1",
     "typescript": "^4.1.3"
   }
 }
