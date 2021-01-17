@@ -1,5 +1,6 @@
 import * as fs from "fs-extra";
 import * as yargs from "yargs";
+import * as path from "path";
 import {Commander} from "./commander";
 import {Parser} from "./parser";
 import * as state from "./state";
@@ -13,11 +14,16 @@ exports.builder = (y: any) => {
     });
 };
 exports.handler = async(argv: any) => {
-    const cwd = argv.cwd as string || process.cwd();
+    const cwd = argv.cwd ? path.resolve(argv.cwd) : process.cwd();
+
+    if (!fs.pathExistsSync(`${cwd}`)) {
+        process.stdout.write(`${cwd} is not a directory\n`);
+        process.exit(1);
+    }
 
     if (!fs.existsSync(`${cwd}/.gitlab-ci.yml`)) {
-        process.stdout.write(`.gitlab-ci.yml not found\n`);
-        process.exit(0);
+        process.stdout.write(`${cwd} does not contain .gitlab-ci.yml\n`);
+        process.exit(1);
     }
 
     if (argv.completion !== undefined) {

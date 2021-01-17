@@ -1,9 +1,11 @@
 ## Introduction
 
 [![coverage](coverage/badge.svg)](https://npmjs.org/package/gitlab-ci-local)
-[![build](https://github.com/firecow/gitlab-ci-local/workflows/build/badge.svg)](https://npmjs.org/package/gitlab-ci-local)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://npmjs.org/package/gitlab-ci-local)
-[![npm](https://img.shields.io/npm/v/gitlab-ci-local?color=green)](https://npmjs.org/package/gitlab-ci-local)
+[![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://npmjs.org/package/gitlab-ci-local)
+[![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
+[![dependencies](https://img.shields.io/librariesio/release/npm/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
+[![npm](https://img.shields.io/npm/v/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
+[![license](https://img.shields.io/npm/l/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 
 Tired of pushing commits to test your .gitlab-ci.yml?
 
@@ -129,7 +131,6 @@ npm run pkg-all
 ```
 
 ### Will not be implemented
-- cache
 - pages
 - resource_group
 - interruptible

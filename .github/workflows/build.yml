@@ -6,25 +6,25 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install modules
-        run: yarn
+        run: npm install
       - name: Run TSLint
-        run: yarn lint
+        run: npm run lint
   typescript-compile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Install modules
-        run: yarn
+        run: npm install
       - name: Run Typescipt Compiler
-        run: yarn build
+        run: npm run build
   jest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Install modules
-        run: yarn
+        run: npm install
       - name: Run tests
-        run: yarn test
+        run: npm run test
   example-docker-compose-nodejs:
     runs-on: ubuntu-latest
     steps:
