@@ -5,13 +5,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://npmjs.org/package/gitlab-ci-local)
 [![npm](https://img.shields.io/npm/v/gitlab-ci-local?color=green)](https://npmjs.org/package/gitlab-ci-local)
 
-Are you tired of pushing commits to test your .gitlab-ci.yml?
+Tired of pushing commits to test your .gitlab-ci.yml?
 
 Then this is the tool for you.
 
 Run gitlab pipelines on your local machine as shell runner or docker executor.
 
-Get rid of all those "pesky" dev workflow shell scripts and make files. 
+Get rid of all those pesky dev workflow shell scripts and make files.
 
 ## Table of contents
 * [Introduction](#introduction)
