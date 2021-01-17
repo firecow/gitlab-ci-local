@@ -9,14 +9,14 @@ export class Utils {
         }
     }
 
-    static printToStream(text: string, stream: string) {
+    static printToStream(text: string, stream: 'stdout'|'stderr') {
         const colorize = (l: string) => {
             return stream === 'stderr' ? c.red(l) : l;
         }
+        const writeStream = stream === 'stdout' ? process.stdout : process.stderr
         for (const line of text.split(/\r?\n/)) {
             if (line.length === 0) continue;
-            // @ts-ignore
-            process[stream].write(`${colorize(`${line}`)}\n`)
+            writeStream.write(`${colorize(`${line}`)}\n`)
         }
     }
 
@@ -61,7 +61,6 @@ export class Utils {
             evalStr += conditions && conditions[index] ? conditions[index] : '';
         })
 
-        // tslint:disable-next-line:no-eval
         return eval(evalStr);
     }
 }

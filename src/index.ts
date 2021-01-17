@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import * as fs from "fs-extra";
 import * as yargs from "yargs";
 import {CommandModule} from "yargs";
 import {Parser} from "./parser";
@@ -16,7 +15,6 @@ process.on('unhandledRejection', (reason) => {
     process.exit(5);
 });
 
-// tslint:disable-next-line:no-unused-expression
 yargs
     .version("4.8.2")
     .showHelpOnFail(false)
@@ -29,7 +27,7 @@ yargs
     .option("cwd", {type: "string", description: "Path to a gitlab-ci.yml", requiresArg: true})
     .option("completion", {type: "string", description: "Generate bash completion script", requiresArg: false})
     .option("needs", {type: "boolean", description: "Run needed jobs, when executing a single job", requiresArg: false})
-    .completion("completion", false, async (current, yargsArgv) => {
+    .completion("completion", false, async (_, yargsArgv) => {
         const cwd = yargsArgv.cwd as string || process.cwd();
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid, true);

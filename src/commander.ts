@@ -151,7 +151,7 @@ export class Commander {
         }
 
         await Commander.printReport(jobs);
-    };
+    }
 
     static printReport = async (jobs: ReadonlyArray<Job>) => {
         process.stdout.write(`\n`);
@@ -215,7 +215,7 @@ export class Commander {
         }
 
         for (const job of preScripts.successful) {
-            let e = job.environment;
+            const e = job.environment;
             if (e == null) continue
             const name = Utils.expandEnv(e.name, job.getEnvs());
             const url = Utils.expandEnv(e.url, job.getEnvs());
