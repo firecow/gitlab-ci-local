@@ -25,15 +25,15 @@ export class Parser {
 
     private gitDomain: string|null;
     private gitlabData: any;
-    private maxJobNameLength: number = 0;
+    private maxJobNameLength = 0;
 
-    private constructor(cwd: string, pipelineIid: number, bashCompletionPhase: boolean = false) {
+    private constructor(cwd: string, pipelineIid: number, bashCompletionPhase = false) {
         this.bashCompletionPhase = bashCompletionPhase;
         this.cwd = cwd;
         this.pipelineIid = pipelineIid;
     }
 
-    public static async create(cwd: any, pipelineIid: number, bashCompletionPhase: boolean = false) {
+    public static async create(cwd: any, pipelineIid: number, bashCompletionPhase = false) {
         const parser = new Parser(cwd, pipelineIid, bashCompletionPhase);
         await parser.init();
         await parser.initJobs();

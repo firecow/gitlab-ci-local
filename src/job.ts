@@ -226,7 +226,7 @@ export class Job {
             await fs.promises.mkdir(target, { recursive: true });
             await exec(`docker cp ${source} ${target}`);
         }
-    };
+    }
 
     public async start(): Promise<void> {
         const startTime = process.hrtime();
@@ -358,17 +358,19 @@ export class Job {
         return new Promise((resolve, reject) => {
             const p = childProcess.exec(`${command}`, { env: {...this.envs, ...process.env}, cwd: this.cwd });
 
-            // @ts-ignore
-            p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => c.greenBright(s)));
-            // @ts-ignore
-            p.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => c.redBright(s)));
+            if (p.stdout) {
+                p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => c.greenBright(s)));
+            }
+            if (p.stderr) {
+                p.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => c.redBright(s)));
+            }
 
             p.on("error", (err) => reject(err));
             p.on("close", (signal) => resolve(signal ? signal : 0));
         });
     }
 
-    private getExitedString(startTime: [number, number], code: number, warning: boolean = false, prependString: string = "") {
+    private getExitedString(startTime: [number, number], code: number, warning = false, prependString = "") {
         const finishedStr = this.getFinishedString(startTime);
         if (warning) {
             return `${finishedStr} ${c.yellowBright(`warning with code ${code}`)} ${prependString}`;

@@ -32,9 +32,9 @@
     /* Parse in strict mode and emit "use strict" for each source file. */
 
     /* Additional Checks */
-    "noUnusedLocals": false,
+    "noUnusedLocals": true,
     /* Report errors on unused locals. */
-    "noUnusedParameters": false,
+    "noUnusedParameters": true,
     /* Report errors on unused parameters. */
     "noImplicitReturns": true,
     /* Report error when not all code paths in function return a value. */
@@ -63,10 +63,6 @@
     // "experimentalDecorators": true,        /* Enables experimental support for ES7 decorators. */
     // "emitDecoratorMetadata": true,         /* Enables experimental support for emitting type metadata for decorators. */
   },
-  "exclude": [
-    "tests/",
-    "dist/"
-  ],
   "compileOnSave": true,
   "buildOnSave": true
 }
