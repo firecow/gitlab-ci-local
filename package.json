@@ -16,7 +16,7 @@
     "ncu": "ncu --target latest -e 2",
     "test": "jest",
     "test:badges": "jest --coverage && make-coverage-badge",
-    "start": "node -r source-map-support/register dist/index.js"
+    "start": "node -r source-map-support/register dist/index.js --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
     "ansi-colors": "^4.1.1",
