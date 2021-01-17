@@ -11,29 +11,31 @@ Tired of pushing commits to test your .gitlab-ci.yml?
 
 Then this is the tool for you.
 
-Run gitlab pipelines on your local machine as shell runner or docker executor.
+Run gitlab pipelines on your local machine as shell executor or docker executor.
 
 Get rid of all those pesky dev workflow shell scripts and make files.
 
 ## Table of contents
 * [Introduction](#introduction)
 * [Table of contents](#table-of-contents)
+* [Examples](#examples)
 * [Installation](#installation)
     * [NPM](#npm)
     * [Linux](#linux)
     * [Windows (Git bash)](#windows-git-bash)
     * [Macos](#macos)
-* [Usage](#usage)
-    * [Example](#example)
-    * [Convinience](#convinience)
-        * [Bash alias](#bash-alias)
-        * [Bash completion](#bash-completion)
-    * [Quirks](#quirks)
-        * [Artifacts](#artifacts)
+* [Convinience](#convinience)
+    * [Bash alias](#bash-alias)
+    * [Bash completion](#bash-completion)
+* [Quirks](#quirks)
+    * [Artifacts](#artifacts)
 * [Development](#development)
     * [Scripts](#scripts)
     * [Package binaries](#package-binaries)
     * [Will not be implemented](#will-not-be-implemented)
+
+## Examples
+- [Docker Compose "deploy" a nodejs webserver](examples/docker-compose-nodejs/README.md)
 
 ## Installation
 ### NPM
@@ -70,45 +72,13 @@ chmod +x /usr/local/bin/gitlab-ci-local
 exit
 ```
 
-## Usage
-### Example
-
-```
-# /home/user/workspace/myproject/.gitlab-ci.yml
----
-stages: [ build, .post ]
-
-# @Description Is only executed locally
-clean:
-  stage: .post
-  rules:
-    - { if: $GITLAB_CI == 'false' }
-  script:
-    - echo "I'm only executed locally because GITLAB_CI is false via gitlab-ci-local"
-    - echo "I also have a description, when gitlab-ci-local --list is executed"
-
-# @Description Is only executed remotely
-build:
-  stage: build
-  tags: [ runner-tag ]
-  rules:
-    - { if: $GITLAB_CI == 'true' }
-  script:
-    - echo "I'm only executed remotely because GITLAB_CI is true on actual gitlab runners"
-    
-
-
-cd /home/user/workspace/myproject
-gitlab-ci-local
-```
-
-### Convinience
-#### Bash alias
+## Convinience
+### Bash alias
 ```
 echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
 ```
 
-#### Bash completion
+### Bash completion
 
 Add this to `~/.bashrc`
 ```
@@ -134,19 +104,21 @@ _yargs_completions()
 complete -o default -F _yargs_completions gitlab-ci-local
 ```
 
-### Quirks
-#### Artifacts
-Artifacts works right now, as along as you don't overwrite tracked files.
+## Quirks
+### Artifacts
+Shell executor just place files in host directory
+
+Docker executor copies files specified via artifacts field to host
 
 ## Development
 ### Scripts
 ```
 npm install
 npm run build
-npm start -- --cwd /home/user/workspace/project-folder/
+npm start
 ```
 
-![output](docs/images/development.png)
+![output](docs/images/example.png)
 
 ### Package binaries
 ```
@@ -160,10 +132,9 @@ npm run pkg-all
 - pages
 - resource_group
 - interruptible
-- only
-- except
+- only (deprecated)
+- except (deprecated)
 - parallel
 - trigger
 - retry (in case of failure)
 - timeout (job max execution time)
-- coverage (code coverage)

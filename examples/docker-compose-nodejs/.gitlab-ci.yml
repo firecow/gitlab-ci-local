@@ -1,0 +1,36 @@
+
+# @Description Install npm packages
+npm-install:
+  stage: .pre
+  image: node
+  artifacts:
+    paths:
+      - node_modules/
+  script:
+    - npm install --no-audit
+
+# @Description Find security vulnerabilities in node_modules
+npm-audit:
+  stage: test
+  image: node
+  needs: [ ]
+  allow_failure: true
+  script: npm audit
+
+# @Description Find outdated packages in node_modules
+npm-outdated:
+  stage: test
+  image: node
+  needs: [ npm-install ]
+  allow_failure: true
+  script:
+    - npx -s ncu -e2 --deprecated
+
+# @Description Up docker-compose services
+docker-compose-up:
+  stage: deploy
+  environment:
+    url: http://localhost:8891
+    name: local
+  script:
+    - docker-compose --no-ansi up -d
