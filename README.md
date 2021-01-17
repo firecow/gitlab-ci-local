@@ -1,7 +1,7 @@
 ## Introduction
 
 [![coverage](coverage/badge.svg)](https://npmjs.org/package/gitlab-ci-local)
-[![build](https://github.com/firecow/gitlab-ci-local/workflows/build/badge.svg)](https://npmjs.org/package/gitlab-ci-local)
+[![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://npmjs.org/package/gitlab-ci-local)
 [![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![dependencies](https://img.shields.io/librariesio/release/npm/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![npm](https://img.shields.io/npm/v/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
