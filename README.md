@@ -5,7 +5,7 @@
 [![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![dependencies](https://img.shields.io/librariesio/release/npm/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![npm](https://img.shields.io/npm/v/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
-[![license](https://img.shields.io/npm/l/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
+[![license](https://img.shields.io/github/license/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 
 Tired of pushing commits to test your .gitlab-ci.yml?
 
