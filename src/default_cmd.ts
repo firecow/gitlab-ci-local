@@ -14,7 +14,7 @@ exports.builder = (y: any) => {
     });
 };
 exports.handler = async(argv: any) => {
-    const cwd = path.resolve(argv.cwd) as string || process.cwd();
+    const cwd = argv.cwd ? path.resolve(argv.cwd) : process.cwd();
 
     if (!fs.pathExistsSync(`${cwd}`)) {
         process.stdout.write(`${cwd} is not a directory\n`);
