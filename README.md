@@ -7,11 +7,13 @@
 [![npm](https://img.shields.io/npm/v/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![license](https://img.shields.io/npm/l/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 
-Are you tired of pushing commits to test your Gitlab CI?
+Tired of pushing commits to test your .gitlab-ci.yml?
 
 Then this is the tool for you.
 
-It lets you run a Gitlab CI pipeline on your local machine.
+Run gitlab pipelines on your local machine as shell runner or docker executor.
+
+Get rid of all those pesky dev workflow shell scripts and make files.
 
 ## Table of contents
 * [Introduction](#introduction)
