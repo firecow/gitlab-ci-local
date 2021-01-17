@@ -39,14 +39,14 @@ Get rid of all those pesky dev workflow shell scripts and make files.
 
 ## Installation
 ### NPM
-```
+```bash
 npm install -g gitlab-ci-local
 ```
 
 ### Linux
 Download and put binary in `/usr/local/bin`
 
-```
+```bash
 sudo su # must be installed as root, if placed in /usr/local/bin/
 curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/linux.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
 chmod +x /usr/local/bin/gitlab-ci-local
@@ -58,14 +58,14 @@ Install [gitbash](https://git-scm.com/downloads)
 
 Download and put binary in `C:\Program Files\Git\mingw64\bin`
 
-```
+```bash
 curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
 ```
 
 ### Macos
 Download and put binary in `/usr/local/bin`
 
-```
+```bash
 sudo su # must be installed as root, if placed in /usr/local/bin/
 curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/macOS.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
 chmod +x /usr/local/bin/gitlab-ci-local
@@ -74,14 +74,14 @@ exit
 
 ## Convinience
 ### Bash alias
-```
+```bash
 echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
 ```
 
 ### Bash completion
 
 Add this to `~/.bashrc`
-```
+```bash
 _yargs_completions()
 {
     local cur_word args type_list
@@ -112,7 +112,7 @@ Docker executor copies files specified via artifacts field to host
 
 ## Development
 ### Scripts
-```
+```bash
 npm install
 npm run build
 npm start
@@ -121,7 +121,7 @@ npm start
 ![output](./docs/images/example.png)
 
 ### Package binaries
-```
+```bash
 npm run pkg-linux
 npm run pkg-win
 npm run pkg-macos
