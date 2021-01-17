@@ -18,7 +18,7 @@ process.on('unhandledRejection', (reason) => {
 
 // tslint:disable-next-line:no-unused-expression
 yargs
-    .version("4.8.1")
+    .version("4.8.2")
     .showHelpOnFail(false)
     .wrap(yargs.terminalWidth())
     .command(defaultCmd as CommandModule)

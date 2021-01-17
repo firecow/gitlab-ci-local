@@ -2,7 +2,7 @@
   "name": "gitlab-ci-local",
   "main": "dist/index.js",
   "bin": "dist/index.js",
-  "version": "4.8.1",
+  "version": "4.8.2",
   "scripts": {
     "prepublishOnly": "npm run check-all && chmod +x dist/index.js",
     "pkg-linux": "pkg dist/index.js -t node14-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
