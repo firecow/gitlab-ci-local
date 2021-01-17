@@ -34,7 +34,7 @@
     ]
   },
   "author": "Mads Jon Nielsen <madsjon@gmail.com>",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
     "@types/clone": "^2.1.0",
     "@types/deep-extend": "^0.4.31",
