@@ -153,7 +153,6 @@ npm run pkg-all
 ```
 
 ### Will not be implemented
-- cache
 - pages
 - resource_group
 - interruptible
