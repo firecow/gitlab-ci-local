@@ -20,7 +20,7 @@ export class Utils {
         }
     }
 
-    static expandEnv(text?: any, envs: { [key: string]: string | undefined } = process.env) {
+    static expandText(text?: any, envs: { [key: string]: string | undefined } = process.env) {
         if (typeof text !== 'string') return text;
         return text.replace(/[$][{]?\w*[}]?/g, (match) => {
             const sub = envs[match.replace(/^[$][{]?/, '').replace(/[}]?$/, '')];
@@ -28,7 +28,30 @@ export class Utils {
         });
     }
 
-    public static evaluateRuleIf(ruleIf: string, envs: { [key: string]: string }) {
+    static expandVariables(variables: {[key: string]: string}, envs: {[key: string]: string}): {[key: string]: string} {
+        const expandedVariables: {[key: string]: string} = {};
+        for (const [key, value] of Object.entries(variables)) {
+            expandedVariables[key] = Utils.expandText(value, envs)
+        }
+        return expandedVariables;
+    }
+
+    static getRulesResult(rules: {if?: string, when?: string, allow_failure?: boolean}[], variables: {[key: string]: string}): { when: string, allowFailure: boolean} {
+        let when = 'never';
+        let allowFailure = false;
+
+        for (const rule of rules) {
+            if (!Utils.evaluateRuleIf(rule.if || "true", variables)) {
+                continue;
+            }
+            when = rule.when ? rule.when : 'on_success';
+            allowFailure = rule.allow_failure ? rule.allow_failure : allowFailure;
+        }
+
+        return { when, allowFailure}
+    }
+
+    static evaluateRuleIf(ruleIf: string, envs: { [key: string]: string }) {
         const expandedRule = ruleIf.replace(/[$]\w*/g, (match) => {
             const sub = envs[match.replace(/^[$]/, '')];
             return sub != null ? `'${sub}'` : 'null';

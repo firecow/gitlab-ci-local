@@ -17,41 +17,37 @@ export class Job {
     public readonly stage: string;
     public readonly maxJobNameLength: number;
     public readonly stageIndex: number;
-    public readonly environment: { name: string|null, url: string|null } | null;
+    public readonly environment?: { name: string, url: string|null };
     public readonly image: string | null;
     public readonly jobId: number;
-    public readonly artifacts: any;
-
+    public readonly artifacts?: { paths: string[] };
     public readonly afterScripts: string[] = [];
     public readonly beforeScripts: string[] = [];
-    public readonly cwd: any;
-    public readonly globals: any;
-    public readonly description: string;
+    public readonly cwd: string;
     public readonly scripts: string[] = [];
-    public readonly variables: { [key: string]: string };
-    public readonly predefinedVariables: { [key: string]: string };
-    public readonly rules: any;
+    public readonly rules?: { if: string, when: string, allow_failure: boolean }[];
+    public readonly expandedVariables: { [key: string]: string };
+    public readonly allowFailure: boolean;
+    public readonly when: string;
+    public readonly description: string;
 
-    public allowFailure: boolean;
-    public when: string;
+    get preScriptsExitCode() { return this._prescriptsExitCode }
+    private _prescriptsExitCode = 0;
 
-    private envs: { [key: string]: string };
-
-    private prescriptsExitCode = 0;
-    private afterScriptsExitCode = 0;
+    get afterScriptsExitCode() { return this._afterScriptsExitCode }
+    private _afterScriptsExitCode = 0;
 
     private started = false;
     private finished = false;
     private running = false;
     private success = true;
 
-    public constructor(jobData: any, name: string, stages: string[], cwd: any, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitlabUser: { [key: string]: string }) {
+    constructor(jobData: any, name: string, stages: string[], cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitlabUser: { [key: string]: string }) {
         this.maxJobNameLength = maxJobNameLength;
         this.name = name;
         this.cwd = cwd;
-        this.globals = globals;
         this.jobId = jobId;
-        this.description = jobData['description'];
+        this.description = jobData['description'] || "";
 
         // Parse extends recursively and deepExtend data.
         if (jobData.extends) {
@@ -92,13 +88,12 @@ export class Job {
 
         const ciDefault = globals.default || {};
         this.when = jobData.when || "on_success";
+        this.allowFailure = jobData.allow_failure || false;
         this.scripts = [].concat(jobData.script || []);
         this.beforeScripts = [].concat(jobData.before_script || ciDefault.before_script || globals.before_script || []);
         this.afterScripts = [].concat(jobData.after_script || ciDefault.after_script || globals.after_script || []);
         this.image = jobData.image || ciDefault.image || globals.image || null;
         this.artifacts = jobData.artifacts || ciDefault.artifacts || globals.artifacts || null;
-        this.allowFailure = jobData.allow_failure || false;
-        this.variables = jobData.variables || {};
         this.needs = jobData.needs || null;
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
@@ -109,7 +104,7 @@ export class Job {
             process.exit(1);
         }
 
-        this.predefinedVariables = {
+        const predefinedVariables = {
             GITLAB_USER_LOGIN: gitlabUser["GITLAB_USER_LOGIN"] || "local",
             GITLAB_USER_EMAIL: gitlabUser["GITLAB_USER_EMAIL"] || "local@gitlab.com",
             GITLAB_USER_NAME: gitlabUser["GITLAB_USER_NAME"] || "Bob Local",
@@ -140,54 +135,30 @@ export class Job {
             CI_JOB_STAGE: `${this.stage}`,
             GITLAB_CI: "false",
         };
+
+        // Create expanded variables
+        const envs = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...process.env}
+        const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs)
+        const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
+        this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...predefinedVariables};
+
+        // Set {when, allowFailure} based on rules result
+        if (this.rules) {
+            const ruleResult = Utils.getRulesResult(this.rules, this.expandedVariables);
+            this.when = ruleResult.when;
+            this.allowFailure = ruleResult.allowFailure
+        }
+
     }
 
-    public async init() {
-        await this.initEnvironment();
-        await this.initRules();
-    }
-
-    private async initEnvironment() {
+    private async initEnvFile() {
         const envFile = `${this.cwd}/.gitlab-ci-local/envs/.env-${this.name}`;
         await fs.ensureFile(envFile);
         await fs.truncate(envFile);
 
-        // Print env vars, that should be envsubst'ed
-        for (const [key, value] of Object.entries({...this.globals.variables || {}, ...this.variables})) {
+        // Append expanded variales to .env file
+        for (const [key, value] of Object.entries(this.expandedVariables)) {
             await fs.appendFile(envFile, `${key}=${JSON.stringify(value).substr(1).slice(0, -1)}\n`);
-        }
-
-        // Pipe envs through envsubst
-        await exec(`cat ${envFile} | envsubst > ${envFile}-tmp`, { env: {...this.globals.variables || {}, ...this.variables, ...process.env, ...this.predefinedVariables} });
-        await exec(`mv ${envFile}-tmp ${envFile}`);
-
-        // Print env var, that should not be envsubst'ed
-        for (const [key, value] of Object.entries({...this.predefinedVariables})) {
-            await fs.appendFile(envFile, `${key}=${JSON.stringify(value).substr(1).slice(0, -1)}\n`);
-        }
-
-        let e;
-        const envFileCnt = await fs.readFile(envFile, 'utf8');
-        const regExp = /(?<key>.*)=(?<value>.*)/g
-
-        this.envs = {};
-        while (e = regExp.exec(envFileCnt)) {
-            this.envs[e[1]] = e[2];
-        }
-    }
-
-    private async initRules() {
-        if (!this.rules) return;
-
-        this.when = 'never';
-        this.allowFailure = false;
-
-        for (const rule of this.rules) {
-            if (rule['if'] && !Utils.evaluateRuleIf(rule['if'], this.envs)) {
-                break;
-            }
-            this.when = rule['when'] ? rule['when'] : 'on_success';
-            this.allowFailure = rule['allow_failure'] ? rule['allow_failure'] : this.allowFailure;
         }
     }
 
@@ -200,16 +171,16 @@ export class Job {
 
         try {
             const imagePlusTag = this.image.includes(':') ? this.image : `${this.image}:latest`;
-            return await exec(`docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '${imagePlusTag}'`, {env: this.envs});
+            return await exec(`docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '${imagePlusTag}'`, {env: this.expandedVariables});
         } catch (e) {
             process.stdout.write(`${this.getJobNameString()} ${c.cyanBright(`pulling ${this.image}`)}\n`)
-            return await exec(`docker pull ${this.image}`, {env: this.envs});
+            return await exec(`docker pull ${this.image}`, {env: this.expandedVariables});
         }
     }
 
     private async removeContainer() {
         if (!this.image) return;
-        await exec(`docker rm -f ${this.getContainerName()}`, {env: this.envs});
+        await exec(`docker rm -f ${this.getContainerName()}`, {env: this.expandedVariables});
     }
 
     private async copyArtifactsToHost() {
@@ -220,7 +191,7 @@ export class Job {
         const containerName = this.getContainerName();
 
         for (let artifactPath of this.artifacts.paths || []) {
-            artifactPath = Utils.expandEnv(artifactPath, this.getEnvs());
+            artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
             const source = `${containerName}:/gcl-wrk/${artifactPath}`
             const target = `${this.cwd}/${path.dirname(artifactPath)}`;
             await fs.promises.mkdir(target, { recursive: true });
@@ -228,7 +199,7 @@ export class Job {
         }
     }
 
-    public async start(): Promise<void> {
+    async start(): Promise<void> {
         const startTime = process.hrtime();
 
         this.running = true;
@@ -241,9 +212,9 @@ export class Job {
         await this.pullImage();
 
         const prescripts = this.beforeScripts.concat(this.scripts);
-        this.prescriptsExitCode = await this.execScripts(prescripts);
-        if (this.afterScripts.length === 0 && this.prescriptsExitCode > 0 && !this.allowFailure) {
-            process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, false)}\n`);
+        this._prescriptsExitCode = await this.execScripts(prescripts);
+        if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
+            process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
             this.running = false;
             this.finished = true;
             this.success = false;
@@ -251,32 +222,32 @@ export class Job {
             return;
         }
 
-        if (this.afterScripts.length === 0 && this.prescriptsExitCode > 0 && this.allowFailure) {
-            process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, true)}\n`);
+        if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
+            process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
             this.running = false;
             this.finished = true;
             await this.removeContainer();
             return;
         }
 
-        if (this.prescriptsExitCode > 0 && this.allowFailure) {
-            process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, true)}\n`);
+        if (this._prescriptsExitCode > 0 && this.allowFailure) {
+            process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
         }
 
-        if (this.prescriptsExitCode > 0 && !this.allowFailure) {
-            process.stderr.write(`${this.getExitedString(startTime, this.prescriptsExitCode, false)}\n`);
+        if (this._prescriptsExitCode > 0 && !this.allowFailure) {
+            process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
         }
 
-        this.afterScriptsExitCode = 0;
+        this._afterScriptsExitCode = 0;
         if (this.afterScripts.length > 0) {
-            this.afterScriptsExitCode = await this.execScripts(this.afterScripts);
+            this._afterScriptsExitCode = await this.execScripts(this.afterScripts);
         }
 
-        if (this.afterScriptsExitCode > 0) {
-            process.stderr.write(`${this.getExitedString(startTime, this.afterScriptsExitCode, true, " (after_script)")}\n`);
+        if (this._afterScriptsExitCode > 0) {
+            process.stderr.write(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " (after_script)")}\n`);
         }
 
-        if (this.prescriptsExitCode > 0 && !this.allowFailure) {
+        if (this._prescriptsExitCode > 0 && !this.allowFailure) {
             this.success = false;
         }
 
@@ -312,6 +283,8 @@ export class Job {
             // Print command to execute
             await fs.appendFile(scriptPath, `${line}\n`);
         }
+
+        await this.initEnvFile();
 
         if (this.image) {
             // Generate custom entrypoint
@@ -356,7 +329,7 @@ export class Job {
         }
 
         return new Promise((resolve, reject) => {
-            const p = childProcess.exec(`${command}`, { env: {...this.envs, ...process.env}, cwd: this.cwd });
+            const p = childProcess.exec(`${command}`, { env: {...this.expandedVariables, ...process.env}, cwd: this.cwd });
 
             if (p.stdout) {
                 p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => c.greenBright(s)));
@@ -393,59 +366,43 @@ export class Job {
         return `${jobNameStr} ${c.magentaBright("starting")}`;
     }
 
-    public getPrescriptsExitCode() {
-        return this.prescriptsExitCode;
-    }
-
-    public getAfterPrescriptsExitCode() {
-        return this.afterScriptsExitCode;
-    }
-
-    public getJobNameString() {
+    getJobNameString() {
         return `${c.blueBright(`${this.name.padEnd(this.maxJobNameLength)}`)}`;
     }
 
-    public getDescription() {
-        return this.description || "";
-    }
-
-    public getOutputFilesPath() {
+    getOutputFilesPath() {
         return `${this.cwd}/.gitlab-ci-local/output/${this.name}.log`;
     }
 
-    public getEnvs() {
-        return this.envs;
-    }
-
-    public isFinished() {
+    isFinished() {
         return this.finished;
     }
 
-    public isStarted() {
+    isStarted() {
         return this.started;
     }
 
-    public isManual() {
+    isManual() {
         return this.when === "manual";
     }
 
-    public isNever() {
+    isNever() {
         return this.when === "never";
     }
 
-    public isRunning() {
+    isRunning() {
         return this.running;
     }
 
-    public isSuccess() {
+    isSuccess() {
         return this.success;
     }
 
-    public setFinished(finished: boolean) {
+    setFinished(finished: boolean) {
         this.finished = finished;
     }
 
-    public toString() {
+    toString() {
         return this.name;
     }
 }
