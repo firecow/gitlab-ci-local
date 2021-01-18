@@ -15,7 +15,7 @@ test('Print to stderr', () => {
     mockStderr.mockRestore();
 });
 
-test('Print job on index 0', () => {
+test('Print job on first index', () => {
     const mockStdout = mockProcess.mockProcessStdout();
     Utils.printJobNames({name: "Hello"}, 0, [{name: "Hello"}, {name: "Hello"}, {name: "Hello"}]);
     expect(mockStdout).toHaveBeenCalledWith('[94mHello[39m, ');
