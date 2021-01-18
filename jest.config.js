@@ -2,6 +2,7 @@ module.exports = {
     "roots": [
         "<rootDir>/src"
     ],
+    // "collectCoverageFrom" : ["src/**/*.ts"],
     "testMatch": [
         "**/tests/**/*.test.(ts|tsx)",
         "**/?(*.)+(spec|test).+(ts|tsx)"
@@ -11,5 +12,6 @@ module.exports = {
     },
     "coverageReporters": [
         "json-summary",
+        "text-summary"
     ]
 }

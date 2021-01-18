@@ -33,7 +33,7 @@ export class Parser {
         this.pipelineIid = pipelineIid;
     }
 
-    public static async create(cwd: any, pipelineIid: number, bashCompletionPhase = false) {
+    static async create(cwd: string, pipelineIid: number, bashCompletionPhase = false) {
         const parser = new Parser(cwd, pipelineIid, bashCompletionPhase);
         await parser.init();
         await parser.initJobs();
@@ -59,7 +59,7 @@ export class Parser {
         return gitlabUser;
     }
 
-    public async init() {
+    async init() {
         const cwd = this.cwd;
 
         let path;
@@ -110,11 +110,10 @@ export class Parser {
         this.gitlabData = gitlabData;
     }
 
-    public async initJobs() {
+    async initJobs() {
         const pipelineIid = this.pipelineIid;
         const cwd = this.cwd;
         const gitlabData = this.gitlabData;
-        const promises = [];
         const gitlabUser = await this.initLocalGitlabUser();
 
         // Generate jobs and put them into stages
@@ -125,7 +124,6 @@ export class Parser {
 
             const jobId = await state.getJobId(cwd);
             const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitlabUser);
-            promises.push(job.init());
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
@@ -139,10 +137,9 @@ export class Parser {
             this.jobs.set(key, job);
         }
 
-        await Promise.all(promises);
     }
 
-    public static async loadYaml(filePath: string): Promise<any> {
+    static async loadYaml(filePath: string): Promise<any> {
         const gitlabCiLocalYmlPath = `${filePath}`;
         if (!await fs.existsSync(gitlabCiLocalYmlPath)) {
             return {};
@@ -162,7 +159,7 @@ export class Parser {
         return parse;
     }
 
-    public getJobByName(name: string): Job {
+    getJobByName(name: string): Job {
         const job = this.jobs.get(name);
         if (!job) {
             process.stderr.write(`${c.blueBright(`${name}`)} ${c.red(" could not be found")}\n`);
@@ -172,19 +169,19 @@ export class Parser {
         return job;
     }
 
-    public getJobs(): ReadonlyArray<Job> {
+    getJobs(): ReadonlyArray<Job> {
         return Array.from(this.jobs.values());
     }
 
-    public getJobNames(): ReadonlyArray<string> {
+    getJobNames(): ReadonlyArray<string> {
         return Array.from(this.jobs.keys());
     }
 
-    public getStageNames(): ReadonlyArray<string> {
+    getStageNames(): ReadonlyArray<string> {
         return Array.from(this.stages.values()).map((s) => s.name);
     }
 
-    public getStages(): ReadonlyArray<Stage> {
+    getStages(): ReadonlyArray<Stage> {
         return Array.from(this.stages.values());
     }
 
@@ -227,7 +224,7 @@ export class Parser {
         return;
     }
 
-    private static async getGitDomain(cwd: string) {
+    private static async getGitDomain(cwd: string): Promise<string|null> {
         const domainRegExp = /^.*@(.*):.*\(fetch\)/;
         try {
             const {stdout} = await cpExec(`git remote -v`, { cwd });
@@ -241,13 +238,13 @@ export class Parser {
         }
     }
 
-    private async prepareIncludes(doc: any): Promise<any[]> {
+    private async prepareIncludes(gitlabData: any): Promise<any[]> {
         let includeDatas: any[] = [];
         const cwd = this.cwd;
         const promises = [];
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
-        for (const value of doc["include"] || []) {
+        for (const value of gitlabData["include"] || []) {
             if (!value["file"]) {
                 continue;
             }
@@ -270,7 +267,7 @@ export class Parser {
 
         await Promise.all(promises);
 
-        for (const value of doc["include"] || []) {
+        for (const value of gitlabData["include"] || []) {
             if (value["local"]) {
                 const localDoc = await Parser.loadYaml(`${this.cwd}/${value.local}`);
                 includeDatas = includeDatas.concat(await this.prepareIncludes(localDoc));
@@ -285,7 +282,7 @@ export class Parser {
             }
         }
 
-        includeDatas.push(doc);
+        includeDatas.push(gitlabData);
         return includeDatas;
     }
 }

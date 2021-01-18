@@ -1,10 +1,22 @@
 import {Utils} from "../utils";
 
-test('VAR exists success', () => {
-    const ruleIf = "$VAR";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: 'val'});
-    expect(val).toBe(true);
+test('rules pass 1st if', () => {
+    const rules = [
+        { if: "$GITLAB_CI == 'false'" }
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: 'false'});
+    expect(rulesResult).toEqual({when: 'on_success', allowFailure: false});
 });
+
+test('rules fallback to manual', () => {
+    const rules = [
+        { if: "$GITLAB_CI == 'true'" },
+        { when: "manual" }
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: 'false'});
+    expect(rulesResult).toEqual({when: 'manual', allowFailure: false});
+});
+
 
 test('VAR exists fail', () => {
     const ruleIf = "$VAR";

@@ -1,6 +1,6 @@
 node_modules/
 dist/
 bin/
-test.sh
+*.sh
 test_copy_to_usr_bin.sh
 TOC.md

@@ -6,7 +6,7 @@ import {Utils} from "./utils";
 
 export class Commander {
 
-    public static async runPipeline(parser: Parser, manualArgs: string[]) {
+    static async runPipeline(parser: Parser, manualArgs: string[]) {
         const jobs = parser.getJobs();
         const stages = parser.getStages().concat();
 
@@ -109,12 +109,12 @@ export class Commander {
         parser.getStageNames().forEach(s => stagePadEnd = Math.max(s.length, stagePadEnd));
 
         let descriptionPadEnd = 0;
-        parser.getJobs().forEach(j => descriptionPadEnd = Math.max(j.getDescription().length, descriptionPadEnd));
+        parser.getJobs().forEach(j => descriptionPadEnd = Math.max(j.description.length, descriptionPadEnd));
 
         for (const job of jobs) {
             const needs = job.needs;
             const allowFailure = job.allowFailure ? 'warning' : '';
-            let jobLine = `${job.getJobNameString()}  ${job.getDescription().padEnd(descriptionPadEnd)}`;
+            let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
             jobLine += `  ${c.yellow(`${job.stage.padEnd(stagePadEnd)}`)}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
             if (needs) {
                 jobLine += `  [${c.blueBright(`${needs.join(',')}`)}]`;
@@ -156,18 +156,18 @@ export class Commander {
     static printReport = async (jobs: ReadonlyArray<Job>) => {
         process.stdout.write(`\n`);
 
-        const preScripts: any = {
+        const preScripts: { never: Job[], successful: Job[], failed: Job[], warned: Job[] } = {
             never: [],
             successful: [],
             failed: [],
             warned: []
         };
-        const afterScripts: any = {
+        const afterScripts: { warned: Job[] } = {
             warned: []
         };
 
         for (const job of jobs) {
-            if (job.isStarted() && job.getAfterPrescriptsExitCode() !== 0) {
+            if (job.isStarted() && job.afterScriptsExitCode !== 0) {
                 afterScripts.warned.push(job);
             }
         }
@@ -175,7 +175,7 @@ export class Commander {
         for (const job of jobs) {
             if (!job.isStarted()) {
                 preScripts.never.push(job);
-            } else if (job.getPrescriptsExitCode() === 0) {
+            } else if (job.preScriptsExitCode === 0) {
                 preScripts.successful.push(job);
             } else if (job.allowFailure) {
                 preScripts.warned.push(job);
@@ -217,8 +217,8 @@ export class Commander {
         for (const job of preScripts.successful) {
             const e = job.environment;
             if (e == null) continue
-            const name = Utils.expandEnv(e.name, job.getEnvs());
-            const url = Utils.expandEnv(e.url, job.getEnvs());
+            const name = Utils.expandText(e.name, job.expandedVariables);
+            const url = Utils.expandText(e.url, job.expandedVariables);
             if (url !== 'undefined') {
                 process.stdout.write(`${c.blueBright(job.name)} environment: { name: ${c.bold(name)}, url: ${c.bold(url)} }\n`);
             } else {
