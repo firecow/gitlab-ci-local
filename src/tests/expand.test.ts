@@ -1,28 +1,34 @@
 import {Utils} from "../utils";
 
 
-test('Variable without brackets success', () => {
-    const variables = { APP_ENV: '$GITLAB_USER_LOGIN', TUNNEL_HOSTNAME: '${GITLAB_USER_LOGIN}-dk.latoyapip.org' }
+test('GITLAB_USER_LOGIN positive', () => {
+    const variables = { APP_ENV: '$GITLAB_USER_LOGIN', HOSTNAME: '${GITLAB_USER_LOGIN}-stage.domain.com' }
     const expanded = Utils.expandVariables(variables, { GITLAB_USER_LOGIN: 'mjn'});
-    expect(expanded).toEqual({ APP_ENV: 'mjn', TUNNEL_HOSTNAME: 'mjn-dk.latoyapip.org' });
+    expect(expanded).toEqual({ APP_ENV: 'mjn', HOSTNAME: 'mjn-stage.domain.com' });
 });
 
-test('Variable without brackets success', () => {
+test('GITLAB_USER_LOGIN negative', () => {
+    const variables = { APP_ENV: '$GITLAB_USER_LOGIN', HOSTNAME: '${GITLAB_USER_LOGIN}-stage.domain.com' }
+    const expanded = Utils.expandVariables(variables, { NOT_GITLAB_USER_LOGIN: 'mjn'});
+    expect(expanded).toEqual({ APP_ENV: '$GITLAB_USER_LOGIN', HOSTNAME: '${GITLAB_USER_LOGIN}-stage.domain.com' });
+});
+
+test('VAR w.o. brackets positive', () => {
     const expanded = Utils.expandText('$VAR', { VAR: 'success' });
     expect(expanded).toBe('success');
 });
 
-test('Variable with brackets success', () => {
-    const expanded = Utils.expandText('${VAR}', { VAR: 'success' });
-    expect(expanded).toBe('success');
-});
-
-test('Variable with brackets negative', () => {
+test('VAR w.o. brackets negative', () => {
     const expanded = Utils.expandText('$VAR', { UNSET_VAR: 'success' });
     expect(expanded).toBe('$VAR');
 });
 
-test('Variable without brackets negative', () => {
+test('VAR w. brackets postive', () => {
     const expanded = Utils.expandText('${VAR}', { VAR: 'success' });
+    expect(expanded).toBe('success');
+});
+
+test('VAR w. brackets negative', () => {
+    const expanded = Utils.expandText('${VAR}', { UNSET_VAR: 'success' });
     expect(expanded).toBe('success');
 });
