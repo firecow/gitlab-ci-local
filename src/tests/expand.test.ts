@@ -30,5 +30,5 @@ test('VAR w. brackets postive', () => {
 
 test('VAR w. brackets negative', () => {
     const expanded = Utils.expandText('${VAR}', { UNSET_VAR: 'success' });
-    expect(expanded).toBe('success');
+    expect(expanded).toBe('${VAR}');
 });
