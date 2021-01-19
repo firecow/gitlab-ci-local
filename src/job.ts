@@ -37,6 +37,7 @@ export class Job {
     get afterScriptsExitCode() { return this._afterScriptsExitCode }
     private _afterScriptsExitCode = 0;
 
+    private containerId: string|null = null;
     private started = false;
     private finished = false;
     private running = false;
@@ -178,9 +179,10 @@ export class Job {
         }
     }
 
-    private async removeContainer() {
+    private async removeContainer(containerId: string|null) {
         if (!this.image) return;
-        await exec(`docker rm -f ${this.getContainerName()}`, {env: this.expandedVariables});
+        if (!containerId) return;
+        await exec(`docker rm -f ${containerId}`, {env: this.expandedVariables});
     }
 
     private async copyArtifactsToHost() {
@@ -218,7 +220,7 @@ export class Job {
             this.running = false;
             this.finished = true;
             this.success = false;
-            await this.removeContainer();
+            await this.removeContainer(this.containerId);
             return;
         }
 
@@ -226,7 +228,7 @@ export class Job {
             process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
             this.running = false;
             this.finished = true;
-            await this.removeContainer();
+            await this.removeContainer(this.containerId);
             return;
         }
 
@@ -252,7 +254,7 @@ export class Job {
         }
 
         await this.copyArtifactsToHost();
-        await this.removeContainer();
+        await this.removeContainer(this.containerId);
 
         process.stdout.write(`${this.getFinishedString(startTime)}\n`);
 
@@ -302,8 +304,8 @@ export class Job {
             await fs.appendFile(entrypointPath, `exec "$@"\n`);
 
             const envFile = `${this.cwd}/.gitlab-ci-local/envs/.env-${this.name}`
-            await this.removeContainer();
-            await exec(`docker create -w /gcl-wrk/ --env-file ${envFile} --entrypoint "./gitlab-ci-local-entrypoint-${this.name}.sh" --name ${this.getContainerName()} ${this.image} ./gitlab-ci-local-shell-${this.name}`);
+            const {stdout} = await exec(`docker create -w /gcl-wrk/ --env-file ${envFile} --entrypoint "./gitlab-ci-local-entrypoint-${this.name}.sh" --name ${this.getContainerName()} ${this.image} ./gitlab-ci-local-shell-${this.name}`);
+            this.containerId = stdout ? stdout.replace(/\r?\n/g, '') : null;
             await exec(`docker cp ${entrypointPath} ${this.getContainerName()}:/gcl-wrk/gitlab-ci-local-entrypoint-${this.name}.sh`);
             await exec(`docker cp ${scriptPath} ${this.getContainerName()}:/gcl-wrk/gitlab-ci-local-shell-${this.name}`);
             await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gcl-wrk/.`);
