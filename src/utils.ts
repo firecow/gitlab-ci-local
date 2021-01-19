@@ -61,17 +61,21 @@ export class Utils {
         const subEvals = [];
         for (const subRule of subRules) {
             let subEval = subRule;
-            if (!subRule.match(/(?:==)|(?:!=)|(?:=~)|(?:!~)/)) {
-                subEval = subRule.trim() !== 'null' && subRule.trim() !== "''" ? 'true' : 'false';
-            }
 
             if (subRule.includes('!~')) {
-                subEval = subRule.replace(/\s?!~\s?(\/.*\/)/, `.match($1) == null`);
+                subEval = subRule.replace(/\s*!~\s*(\/.*\/)/, `.match($1) == null`);
+            } else if (subRule.includes('=~')) {
+                subEval = subRule.replace(/\s*=~\s*(\/.*\/)/, `.match($1) != null`);
+            } else if (!subRule.match(/(?:==)|(?:!=)/)) {
+                if (subRule.match(/null/)) {
+                    subEval = subRule.replace(/(\s*)\S*(\s*)/, '$1false$2')
+                } else if (subRule.match(/''/)) {
+                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, '$1false$2');
+                } else {
+                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, '$1true$2');
+                }
             }
 
-            if (subRule.includes('=~')) {
-                subEval = subRule.replace(/\s?=~\s?(\/.*\/)/, `.match($1) != null`);
-            }
             subEvals.push(subEval);
         }
 
