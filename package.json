@@ -22,7 +22,7 @@
     "ansi-colors": "^4.1.1",
     "clone": "^2.1.2",
     "deep-extend": "^0.6.0",
-    "fs-extra": "^9.0.1",
+    "fs-extra": "^9.1.0",
     "js-yaml": "^4.0.0",
     "pretty-hrtime": "^1.0.3",
     "source-map-support": "^0.5.19",
@@ -40,8 +40,8 @@
     ]
   },
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/firecow/gitlab-ci-local.git"
+    "type": "git",
+    "url": "https://github.com/firecow/gitlab-ci-local.git"
   },
   "author": "Mads Jon Nielsen <madsjon@gmail.com>",
   "license": "MIT",
