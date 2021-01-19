@@ -34,3 +34,16 @@ docker-compose-up:
     name: local
   script:
     - docker-compose --no-ansi up -d
+
+# @Description Down docker-compose services
+docker-compose-down:
+  stage: .post
+  rules:
+    # Just job will only run locally, and only when manually startet
+    # gitlab-ci-local docker-compose-down
+    - { if: $GITLAB_CI == 'false', when: 'manual'}
+  environment:
+    url: http://localhost:8891
+    name: local
+  script:
+    - docker-compose --no-ansi down
