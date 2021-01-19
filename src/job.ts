@@ -403,8 +403,4 @@ export class Job {
     setFinished(finished: boolean) {
         this.finished = finished;
     }
-
-    toString() {
-        return this.name;
-    }
 }
