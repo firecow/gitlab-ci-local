@@ -31,6 +31,7 @@ exports.handler = async(argv: any) => {
     if (argv.completion !== undefined) {
         yargs.showCompletionScript();
     } else if (argv.list !== undefined) {
+        checkFolderAndFile(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid);
         await Commander.runList(parser);
