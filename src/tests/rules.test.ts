@@ -1,6 +1,6 @@
 import {Utils} from "../utils";
 
-test('rules pass 1st if', () => {
+test('GITLAB_CI on_success', () => {
     const rules = [
         { if: "$GITLAB_CI == 'false'" }
     ];
@@ -8,7 +8,7 @@ test('rules pass 1st if', () => {
     expect(rulesResult).toEqual({when: 'on_success', allowFailure: false});
 });
 
-test('rules fallback to manual', () => {
+test('GITLAB_CI fail and fallback', () => {
     const rules = [
         { if: "$GITLAB_CI == 'true'" },
         { when: "manual" }
@@ -17,6 +17,12 @@ test('rules fallback to manual', () => {
     expect(rulesResult).toEqual({when: 'manual', allowFailure: false});
 });
 
+
+test('VAR exists positive', () => {
+    const ruleIf = "$VAR";
+    const val = Utils.evaluateRuleIf(ruleIf, { VAR: 'set-value'});
+    expect(val).toBe(true);
+});
 
 test('VAR exists fail', () => {
     const ruleIf = "$VAR";
@@ -102,14 +108,26 @@ test('Disjunction fail', () => {
     expect(val).toBe(false);
 });
 
-test('Complex (con/dis)junction with parentheses success', () => {
+test('Complex parentheses junctions var exists success', () => {
     const ruleIf = "$VAR1 && ($VAR2 || $VAR3)";
     const val = Utils.evaluateRuleIf(ruleIf, {VAR1: 'val', VAR2: 'val', VAR3: ''});
     expect(val).toBe(true);
 });
 
-test('Complex (con/dis)junction with parentheses fail', () => {
+test('Complex parentheses junctions var exists fail', () => {
     const ruleIf = "$VAR1 && ($VAR2 || $VAR3)";
     const val = Utils.evaluateRuleIf(ruleIf, {VAR1: 'val', VAR2: '', VAR3: ''});
+    expect(val).toBe(false);
+});
+
+test('Complex parentheses junctions regex success', () => {
+    const ruleIf = "$VAR1 =~ /val/ && ($VAR2 =~ /val/ || $VAR3)";
+    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: 'val', VAR2: 'val', VAR3: ''});
     expect(val).toBe(true);
+});
+
+test('Complex parentheses junctions regex fail', () => {
+    const ruleIf = "$VAR1 =~ /val/ && ($VAR2 =~ /val/ || $VAR3)";
+    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: 'val', VAR2: 'not', VAR3: ''});
+    expect(val).toBe(false);
 });
