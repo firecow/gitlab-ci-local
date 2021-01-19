@@ -7,6 +7,13 @@
 - Deploy a webserver container via docker-compose (docker-compose-up)
 
 
-```
+```bash
 gitlab-ci-local --cwd examples/docker-compose-nodejs/
+```
+
+If you want to down docker-compose service call.
+
+This job is only run locally, and only when manually triggered 
+```bash
+gitlab-ci-local --cwd examples/docker-compose-nodejs/ docker-compose-down
 ```
