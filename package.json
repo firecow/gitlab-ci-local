@@ -10,7 +10,7 @@
     "pkg-win": "pkg dist/index.js --public -t win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
     "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win",
     "pkg": "pkg",
-    "build": "tsc",
+    "build": "rm -rf dist/ && tsc",
     "check-all": "npm run build && npm run lint && npm run ncu && npm run test:coverage && npm audit --parseable",
     "lint": "eslint .",
     "ncu": "ncu --target latest -e 2",
@@ -31,6 +31,9 @@
   "pkg": {
     "assets": [
       "package.json"
+    ],
+    "scripts": [
+      "dist/*.js"
     ],
     "targets": [
       "node14"
