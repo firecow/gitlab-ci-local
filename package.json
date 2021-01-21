@@ -70,7 +70,7 @@
   "author": "Mads Jon Nielsen <madsjon@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/firecow/node-filebeat-logger/issues"
+    "url": "https://github.com/firecow/gitlab-ci-local/issues"
   },
-  "homepage": "https://github.com/firecow/node-filebeat-logger#readme"
+  "homepage": "https://github.com/firecow/gitlab-ci-local#readme"
 }
