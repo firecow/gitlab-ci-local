@@ -43,7 +43,7 @@ export class Parser {
     }
 
     private async initGitlabUser(): Promise<{ GITLAB_USER_EMAIL: string, GITLAB_USER_LOGIN: string, GITLAB_USER_NAME: string }> {
-        let gitlabUserEmail, gitlabUserName, gitlabUserLogin;
+        let gitlabUserEmail, gitlabUserName;
 
         try {
             const res = await cpExec(`git config user.email`, {cwd: this.cwd});
@@ -53,7 +53,7 @@ export class Parser {
             gitlabUserEmail = 'local@gitlab.com';
         }
 
-        gitlabUserLogin = gitlabUserEmail.replace(/@.*/, '');
+        const gitlabUserLogin = gitlabUserEmail.replace(/@.*/, '');
 
         try {
             const res = await cpExec(`git config user.name`, {cwd: this.cwd});
