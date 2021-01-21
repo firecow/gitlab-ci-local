@@ -1,12 +1,5 @@
 ## Introduction
 
-[![Lines](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)](https://npmjs.org/package/gitlab-ci-local)
-[![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://npmjs.org/package/gitlab-ci-local)
-[![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
-[![dependencies](https://img.shields.io/librariesio/release/npm/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
-[![npm](https://img.shields.io/npm/v/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
-[![license](https://img.shields.io/github/license/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
-
 Tired of pushing commits to test your .gitlab-ci.yml?
 
 Then this is the tool for you.
@@ -14,6 +7,13 @@ Then this is the tool for you.
 Run gitlab pipelines on your local machine as shell executor or docker executor.
 
 Get rid of all those pesky dev workflow shell scripts and make files.
+
+[![Lines](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)](https://npmjs.org/package/gitlab-ci-local)
+[![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://npmjs.org/package/gitlab-ci-local)
+[![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
+[![dependencies](https://img.shields.io/librariesio/release/npm/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
+[![npm](https://img.shields.io/npm/v/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
+[![license](https://img.shields.io/github/license/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 
 ## Table of contents
 * [Introduction](#introduction)
