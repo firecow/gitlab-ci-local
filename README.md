@@ -88,10 +88,9 @@ gitlab-ci-local --completion >> ~/.bashrc
 #### @Description decorator
 
 Adds descriptive text to `gitlab-ci-local --list`
-```
+```yml
 # @Description Install npm packages
 npm-install:
-  stage: .pre
   image: node
   artifacts:
   paths:
