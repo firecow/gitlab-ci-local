@@ -98,6 +98,8 @@ npm-install:
   script:
     - npm install --no-audit
 ```
+![description-decorator](./docs/images/description-decorator.png)
+
 
 ### Artifacts
 Shell executor just place files in host directory
@@ -112,7 +114,7 @@ npm run build
 npm start
 ```
 
-![output](./docs/images/example.png)
+![example](./docs/images/example.png)
 
 ### Package binaries
 ```bash
