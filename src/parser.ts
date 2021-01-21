@@ -42,21 +42,32 @@ export class Parser {
         return parser;
     }
 
-    private async initLocalGitlabUser() {
-        const gitlabUser: { [key: string]: string } = {};
+    private async initGitlabUser(): Promise<{ GITLAB_USER_EMAIL: string, GITLAB_USER_LOGIN: string, GITLAB_USER_NAME: string }> {
+        let gitlabUserEmail, gitlabUserName, gitlabUserLogin;
 
         try {
             const res = await cpExec(`git config user.email`, {cwd: this.cwd});
-            gitlabUser['GITLAB_USER_LOGIN'] = res.stdout.trimEnd().replace(/@.*/, '');
-            gitlabUser['GITLAB_USER_EMAIL'] = res.stdout.trimEnd();
-        } catch (e) {}
+            gitlabUserEmail = res.stdout.trimEnd();
+        } catch (e) {
+            process.stderr.write(`${c.yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`)
+            gitlabUserEmail = 'local@gitlab.com';
+        }
+
+        gitlabUserLogin = gitlabUserEmail.replace(/@.*/, '');
 
         try {
             const res = await cpExec(`git config user.name`, {cwd: this.cwd});
-            gitlabUser['GITLAB_USER_NAME'] = res.stdout.trimEnd();
-        } catch (e) {}
+            gitlabUserName = res.stdout.trimEnd();
+        } catch (e) {
+            process.stderr.write(`${c.yellow("git config user.name is undefined, defaulting to `Bob Local`")}`)
+            gitlabUserName = 'Bob Local';
+        }
 
-        return gitlabUser;
+        return {
+            GITLAB_USER_LOGIN: gitlabUserLogin,
+            GITLAB_USER_EMAIL: gitlabUserEmail,
+            GITLAB_USER_NAME: gitlabUserName
+        };
     }
 
     async init() {
@@ -114,7 +125,7 @@ export class Parser {
         const pipelineIid = this.pipelineIid;
         const cwd = this.cwd;
         const gitlabData = this.gitlabData;
-        const gitlabUser = await this.initLocalGitlabUser();
+        const gitlabUser = await this.initGitlabUser();
 
         // Generate jobs and put them into stages
         for (const [key, value] of Object.entries(gitlabData)) {
@@ -140,23 +151,38 @@ export class Parser {
     }
 
     static async loadYaml(filePath: string): Promise<any> {
-        const gitlabCiLocalYmlPath = `${filePath}`;
-        if (!await fs.existsSync(gitlabCiLocalYmlPath)) {
+        const ymlPath = `${filePath}`;
+        if (!await fs.existsSync(ymlPath)) {
             return {};
         }
 
         const fileContent = await fs.readFile(`${filePath}`, "utf8");
-        const descRegEx = /#.*?@Description\s?(.*)\s(.*)?:/gm;
-        const parse: any = yaml.load(fileContent) || {};
+        const fileSplit = fileContent.split(/\r?\n/g);
+        const fileSplitClone = fileSplit.slice();
 
-        let match;
-        while (match = descRegEx.exec(fileContent)) {
-            if (match[1] && match[2]) {
-                parse[match[2]].description = match[1];
+        let interactiveMatch = null;
+        let descriptionMatch = null
+        let index = 0;
+        for (const line of fileSplit) {
+            interactiveMatch = !interactiveMatch ? line.match(/#[\s]?@[\s]?[Ii]nteractive/) : interactiveMatch;
+            descriptionMatch = !descriptionMatch ? line.match(/#[\s]?@[\s]?[Dd]escription (?<description>.*)/) : descriptionMatch;
+            const jobMatch = line.match(/(?<jobname>\w):/);
+            if (jobMatch && (interactiveMatch || descriptionMatch)) {
+                if (interactiveMatch) {
+                    fileSplitClone.splice(index + 1, 0, '  interactive: true');
+                    index++;
+                }
+                if (descriptionMatch) {
+                    fileSplitClone.splice(index + 1, 0, `  description: ${descriptionMatch?.groups?.description ?? ''}`);
+                    index++;
+                }
+                interactiveMatch = null;
+                descriptionMatch = null;
             }
+            index++;
         }
 
-        return parse;
+        return yaml.load(fileSplitClone.join('\n')) || {};
     }
 
     getJobByName(name: string): Job {

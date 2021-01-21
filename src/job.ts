@@ -30,6 +30,7 @@ export class Job {
     public readonly allowFailure: boolean;
     public readonly when: string;
     public readonly description: string;
+    public readonly interactive: boolean;
 
     get preScriptsExitCode() { return this._prescriptsExitCode }
     private _prescriptsExitCode = 0;
@@ -88,6 +89,7 @@ export class Job {
         this.stageIndex = stages.indexOf(this.stage);
 
         const ciDefault = globals.default || {};
+        this.interactive = jobData.interactive;
         this.when = jobData.when || "on_success";
         this.allowFailure = jobData.allow_failure || false;
         this.scripts = [].concat(jobData.script || []);
@@ -150,6 +152,10 @@ export class Job {
             this.allowFailure = ruleResult.allowFailure
         }
 
+        if (this.interactive && (this.when !== 'manual' || this.image !== null)) {
+            process.stderr.write(`${this.getJobNameString()} ${c.red("@Interactive decorator cannot have image: and must be when:manual")}\n`);
+            process.exit(1);
+        }
     }
 
     private async initEnvFile() {
@@ -209,7 +215,9 @@ export class Job {
 
         await fs.ensureFile(this.getOutputFilesPath());
         await fs.truncate(this.getOutputFilesPath());
-        process.stdout.write(`${this.getStartingString()} ${this.image ? c.magentaBright("in docker...") : c.magentaBright("in shell...")}\n`);
+        if (!this.interactive) {
+            process.stdout.write(`${this.getStartingString()} ${this.image ? c.magentaBright("in docker...") : c.magentaBright("in shell...")}\n`);
+        }
 
         await this.pullImage();
 
@@ -315,7 +323,19 @@ export class Job {
         return await this.executeCommandHandleOutputStreams(scriptPath);
     }
 
+
+
     private async executeCommandHandleOutputStreams(command: string): Promise<number> {
+        if (this.interactive) {
+            return new Promise((_, reject) => {
+                const cp = childProcess.spawn('bash', ["-c", command], {stdio: 'inherit', cwd: this.cwd, env: {...this.expandedVariables, ...process.env}});
+                cp.on('exit', (code) => {
+                    process.exit(code ?? 0);
+                });
+                cp.on("error", (err) => reject(err));
+            });
+        }
+
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
         const outFunc = (e: any, stream: NodeJS.WriteStream, colorize: (str: string) => string) => {
