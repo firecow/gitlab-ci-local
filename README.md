@@ -92,12 +92,12 @@ Adds descriptive text to `gitlab-ci-local --list`
 # @Description Install npm packages
 npm-install:
   stage: .pre
-image: node
-artifacts:
-paths:
-- node_modules/
-script:
-- npm install --no-audit
+  image: node
+  artifacts:
+  paths:
+    - node_modules/
+  script:
+    - npm install --no-audit
 ```
 
 ### Artifacts
