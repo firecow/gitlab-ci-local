@@ -28,6 +28,7 @@ Get rid of all those pesky dev workflow shell scripts and make files.
     * [Bash alias](#bash-alias)
     * [Bash completion](#bash-completion)
 * [Quirks](#quirks)
+    * [Decorators](#decorators)
     * [Artifacts](#artifacts)
 * [Development](#development)
     * [Scripts](#scripts)
@@ -84,8 +85,8 @@ gitlab-ci-local --completion >> ~/.bashrc
 ```
 
 ## Quirks
-### Custom decorators
-#### @Description decorator
+### Decorators
+#### The `@Description` decorator
 
 Adds descriptive text to `gitlab-ci-local --list`
 ```yml
