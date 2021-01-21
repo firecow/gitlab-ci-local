@@ -84,6 +84,22 @@ gitlab-ci-local --completion >> ~/.bashrc
 ```
 
 ## Quirks
+### Custom decorators
+#### @Description decorator
+
+Adds descriptive text to `gitlab-ci-local --list`
+```
+# @Description Install npm packages
+npm-install:
+  stage: .pre
+image: node
+artifacts:
+paths:
+- node_modules/
+script:
+- npm install --no-audit
+```
+
 ### Artifacts
 Shell executor just place files in host directory
 
