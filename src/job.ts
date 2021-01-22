@@ -16,7 +16,6 @@ export class Job {
     public readonly dependencies: string[] | null;
     public readonly stage: string;
     public readonly maxJobNameLength: number;
-    public readonly stageIndex: number;
     public readonly environment?: { name: string, url: string|null };
     public readonly image: string | null;
     public readonly jobId: number;
@@ -44,7 +43,7 @@ export class Job {
     private running = false;
     private success = true;
 
-    constructor(jobData: any, name: string, stages: string[], cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitlabUser: { [key: string]: string }) {
+    constructor(jobData: any, name: string, cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitlabUser: { [key: string]: string }) {
         this.maxJobNameLength = maxJobNameLength;
         this.name = name;
         this.cwd = cwd;
@@ -86,7 +85,6 @@ export class Job {
         // If the stage name is not set, it should default to "test", see:
         // https://docs.gitlab.com/ee/ci/yaml/#configuration-parameters
         this.stage = jobData.stage || "test";
-        this.stageIndex = stages.indexOf(this.stage);
 
         const ciDefault = globals.default || {};
         this.interactive = jobData.interactive;
