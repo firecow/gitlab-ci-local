@@ -128,13 +128,13 @@ export class Parser {
         const gitlabUser = await this.initGitlabUser();
 
         // Generate jobs and put them into stages
-        for (const [key, value] of Object.entries(gitlabData)) {
-            if (this.illigalJobNames.includes(key) || key[0] === ".") {
+        for (const [jobName, value] of Object.entries(gitlabData)) {
+            if (this.illigalJobNames.includes(jobName) || jobName[0] === ".") {
                 continue;
             }
 
             const jobId = await state.getJobId(cwd);
-            const job = new Job(value, key, gitlabData.stages, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitlabUser);
+            const job = new Job(value, jobName, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitlabUser);
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
@@ -145,7 +145,7 @@ export class Parser {
             }
             await state.incrementJobId(cwd);
 
-            this.jobs.set(key, job);
+            this.jobs.set(jobName, job);
         }
 
     }
@@ -212,6 +212,7 @@ export class Parser {
     }
 
     private async validateNeedsTags() {
+        const stages = Array.from(this.stages.keys());
         const jobNames = Array.from(this.jobs.values()).map((j) => j.name);
         for (const job of this.jobs.values()) {
             if (job.needs === null || job.needs.length === 0) {
@@ -225,7 +226,7 @@ export class Parser {
 
             for (const need of job.needs) {
                 const needJob = this.jobs.get(need);
-                if (needJob && needJob.stageIndex >= job.stageIndex) {
+                if (needJob && stages.indexOf(needJob.stage) >= stages.indexOf(job.stage)) {
                     process.stderr.write(`${c.blueBright(`${job.name}`)} cannot need a job from same or future stage. need: ${c.blueBright(`${needJob.name}`)}\n`);
                     process.exit(1);
                 }
