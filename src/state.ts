@@ -15,7 +15,7 @@ const incrementPipelineIid = async (cwd: string) => {
     const ymlData = await Parser.loadYaml(stateFile);
 
     ymlData["pipelineIid"] = ymlData["pipelineIid"] !== undefined ? ymlData["pipelineIid"] + 1 : 0;
-    await fs.outputFile(stateFile, yaml.dump(ymlData));
+    await fs.outputFile(stateFile, `---\n${yaml.dump(ymlData)}`);
 };
 
 const getJobId = async (cwd: string) => {
@@ -30,7 +30,7 @@ const incrementJobId = async (cwd: string) => {
     const ymlData = await Parser.loadYaml(stateFile);
 
     ymlData["jobId"] = ymlData["jobId"] !== undefined ? ymlData["jobId"] + 1 : 100000;
-    await fs.outputFile(stateFile, yaml.dump(ymlData));
+    await fs.outputFile(stateFile, `---\n${yaml.dump(ymlData)}`);
 };
 
 export { getPipelineIid, incrementPipelineIid, getJobId, incrementJobId };
