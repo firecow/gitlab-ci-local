@@ -1,3 +1,6 @@
+---
+include:
+  - local: .gitlab-ci.deploy.yml
 
 # @Description Install npm packages
 npm-install:
@@ -9,41 +12,21 @@ npm-install:
   script:
     - npm install --no-audit
 
-# @Description Find security vulnerabilities in node_modules
-npm-audit:
+.test-parent-job:
   stage: test
   image: node
+  allow_failure: true
+
+# @Description Find security vulnerabilities in node_modules
+npm-audit:
+  extends: .test-parent-job
   needs: [ ]
   allow_failure: true
   script: npm audit
 
 # @Description Find outdated packages in node_modules
 npm-outdated:
-  stage: test
-  image: node
+  extends: [ .test-parent-job ]
   needs: [ npm-install ]
-  allow_failure: true
   script:
     - npx -s ncu -e2 --deprecated
-
-# @Description Up docker-compose services
-docker-compose-up:
-  stage: deploy
-  environment:
-    url: http://localhost:8891
-    name: local
-  script:
-    - docker-compose --no-ansi up -d
-
-# @Description Down docker-compose services
-docker-compose-down:
-  stage: .post
-  rules:
-    # Just job will only run locally, and only when manually startet
-    # gitlab-ci-local docker-compose-down
-    - { if: $GITLAB_CI == 'false', when: 'manual'}
-  environment:
-    url: http://localhost:8891
-    name: local
-  script:
-    - docker-compose --no-ansi down

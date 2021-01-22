@@ -1,6 +1,8 @@
+---
 name: build
 on: push
 jobs:
+
   tslint:
     runs-on: ubuntu-latest
     steps:
@@ -9,6 +11,7 @@ jobs:
         run: npm install
       - name: Run TSLint
         run: npm run lint
+
   typescript-compile:
     runs-on: ubuntu-latest
     steps:
@@ -17,6 +20,7 @@ jobs:
         run: npm install
       - name: Run Typescipt Compiler
         run: npm run build
+
   jest:
     runs-on: ubuntu-latest
     steps:

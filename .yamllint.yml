@@ -1,0 +1,14 @@
+---
+extends: default
+
+# For all rules
+ignore: |
+  .github/workflows/
+  node_modules/
+  examples/docker-compose-nodejs/node_modules/
+
+rules:
+  line-length: { max: 160 }
+  comments: disable
+  braces: { min-spaces-inside: 1, max-spaces-inside: 1 }
+  brackets: { min-spaces-inside: 1, max-spaces-inside: 1 }
