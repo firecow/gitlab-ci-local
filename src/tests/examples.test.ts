@@ -14,8 +14,8 @@ test('docker-compose-nodejs pipeline', async() => {
         manual: 'docker-compose-down'
     });
     expect(mockProcessExit).toBeCalledTimes(0);
-    expect(mockProcessStderr).toHaveBeenNthCalledWith(3, "Dependencies not up-to-date\n")
-    expect(mockProcessStdout).toHaveBeenNthCalledWith(52, "[94mdocker-compose-up[39m environment: { name: [1mlocal[22m, url: [1mhttp://localhost:8891[22m }\n");
+    expect(mockProcessStderr).toHaveBeenCalledWith("Dependencies not up-to-date\n")
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mdocker-compose-up[39m environment: { name: [1mlocal[22m, url: [1mhttp://localhost:8891[22m }\n");
 
     mockProcessStdout.mockRestore();
     mockProcessStderr.mockRestore();
@@ -33,7 +33,7 @@ test('docker-compose example single job', async() => {
         needs: true
     });
     expect(mockProcessExit).toBeCalledTimes(0);
-    expect(mockProcessStderr).toHaveBeenNthCalledWith(3, "Dependencies not up-to-date\n")
+    expect(mockProcessStderr).toHaveBeenCalledWith("Dependencies not up-to-date\n")
 
     mockProcessStdout.mockRestore();
     mockProcessStderr.mockRestore();
