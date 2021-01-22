@@ -87,7 +87,7 @@ export class Commander {
             if (stage.isFinished()) {
                 if (!stage.isSuccess()) {
                     await Commander.printReport(jobs);
-                    process.exit(2);
+                    process.exit(1);
                 }
                 stage = stages.shift();
             }
