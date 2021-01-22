@@ -8,7 +8,7 @@ Run gitlab pipelines on your local machine as shell executor or docker executor.
 
 Get rid of all those pesky dev workflow shell scripts and make files.
 
-[![Lines](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)](https://npmjs.org/package/gitlab-ci-local)
+[![lines](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)](https://npmjs.org/package/gitlab-ci-local)
 [![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://npmjs.org/package/gitlab-ci-local)
 [![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![dependencies](https://img.shields.io/librariesio/release/npm/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
@@ -100,6 +100,19 @@ npm-install:
     - npm install --no-audit
 ```
 ![description-decorator](./docs/images/description-decorator.png)
+
+#### The `@Interactive` decorator
+```yml
+# @Interactive
+interactive-shell:
+  rules:
+    - if: $GITLAB_CI == 'false'
+      when: manual
+  script:
+    - docker run -it debian bash
+```
+
+![description-decorator](./docs/images/interactive-decorator.png)
 
 
 ### Artifacts
