@@ -63,6 +63,27 @@
       "node14"
     ]
   },
+  "jest": {
+    "roots": [
+      "<rootDir>/src"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/index.ts",
+      "!src/yargs.ts"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.(ts|tsx)",
+      "**/?(*.)+(spec|test).+(ts|tsx)"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "coverageReporters": [
+      "json-summary",
+      "text-summary"
+    ]
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/firecow/gitlab-ci-local.git"

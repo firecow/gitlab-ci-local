@@ -25,9 +25,9 @@ exports.builder = (y: any) => {
         type: "string",
     });
 };
-exports.handler = async(argv: any) => {
-    const cwd = argv.cwd ? path.resolve(argv.cwd) : process.cwd();
 
+export async function handler(argv: any) {
+    const cwd = argv.cwd ? path.resolve(argv.cwd) : process.cwd();
     if (argv.completion !== undefined) {
         yargs.showCompletionScript();
     } else if (argv.list !== undefined) {
@@ -47,4 +47,6 @@ exports.handler = async(argv: any) => {
         const parser = await Parser.create(cwd, pipelineIid);
         await Commander.runPipeline(parser, argv.manual as string[] || []);
     }
-};
+}
+
+exports.handler = handler;
