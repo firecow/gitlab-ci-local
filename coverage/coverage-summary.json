@@ -1,0 +1,210 @@
+{
+  "total": {
+    "lines": {
+      "total": 631,
+      "covered": 473,
+      "skipped": 0,
+      "pct": 74.96
+    },
+    "statements": {
+      "total": 662,
+      "covered": 494,
+      "skipped": 0,
+      "pct": 74.62
+    },
+    "functions": {
+      "total": 91,
+      "covered": 74,
+      "skipped": 0,
+      "pct": 81.32
+    },
+    "branches": {
+      "total": 353,
+      "covered": 238,
+      "skipped": 0,
+      "pct": 67.42
+    }
+  },
+  "/home/mjn/Workspace/gitlab-ci-local/src/commander.ts": {
+    "lines": {
+      "total": 129,
+      "covered": 79,
+      "skipped": 0,
+      "pct": 61.24
+    },
+    "functions": {
+      "total": 13,
+      "covered": 6,
+      "skipped": 0,
+      "pct": 46.15
+    },
+    "statements": {
+      "total": 138,
+      "covered": 84,
+      "skipped": 0,
+      "pct": 60.87
+    },
+    "branches": {
+      "total": 82,
+      "covered": 55,
+      "skipped": 0,
+      "pct": 67.07
+    }
+  },
+  "/home/mjn/Workspace/gitlab-ci-local/src/default_cmd.ts": {
+    "lines": {
+      "total": 37,
+      "covered": 23,
+      "skipped": 0,
+      "pct": 62.16
+    },
+    "functions": {
+      "total": 3,
+      "covered": 2,
+      "skipped": 0,
+      "pct": 66.67
+    },
+    "statements": {
+      "total": 37,
+      "covered": 23,
+      "skipped": 0,
+      "pct": 62.16
+    },
+    "branches": {
+      "total": 14,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 57.14
+    }
+  },
+  "/home/mjn/Workspace/gitlab-ci-local/src/job.ts": {
+    "lines": {
+      "total": 219,
+      "covered": 177,
+      "skipped": 0,
+      "pct": 80.82
+    },
+    "functions": {
+      "total": 34,
+      "covered": 30,
+      "skipped": 0,
+      "pct": 88.24
+    },
+    "statements": {
+      "total": 230,
+      "covered": 185,
+      "skipped": 0,
+      "pct": 80.43
+    },
+    "branches": {
+      "total": 139,
+      "covered": 96,
+      "skipped": 0,
+      "pct": 69.06
+    }
+  },
+  "/home/mjn/Workspace/gitlab-ci-local/src/parser.ts": {
+    "lines": {
+      "total": 165,
+      "covered": 113,
+      "skipped": 0,
+      "pct": 68.48
+    },
+    "functions": {
+      "total": 18,
+      "covered": 13,
+      "skipped": 0,
+      "pct": 72.22
+    },
+    "statements": {
+      "total": 168,
+      "covered": 115,
+      "skipped": 0,
+      "pct": 68.45
+    },
+    "branches": {
+      "total": 73,
+      "covered": 42,
+      "skipped": 0,
+      "pct": 57.53
+    }
+  },
+  "/home/mjn/Workspace/gitlab-ci-local/src/stage.ts": {
+    "lines": {
+      "total": 8,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 9,
+      "covered": 9,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 11,
+      "covered": 11,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "/home/mjn/Workspace/gitlab-ci-local/src/state.ts": {
+    "lines": {
+      "total": 22,
+      "covered": 22,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 4,
+      "covered": 4,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 25,
+      "covered": 25,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 8,
+      "covered": 4,
+      "skipped": 0,
+      "pct": 50
+    }
+  },
+  "/home/mjn/Workspace/gitlab-ci-local/src/utils.ts": {
+    "lines": {
+      "total": 51,
+      "covered": 51,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 10,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 53,
+      "covered": 51,
+      "skipped": 0,
+      "pct": 96.23
+    },
+    "branches": {
+      "total": 37,
+      "covered": 33,
+      "skipped": 0,
+      "pct": 89.19
+    }
+  }
+}
