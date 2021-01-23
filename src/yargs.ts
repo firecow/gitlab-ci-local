@@ -7,7 +7,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 
 
-export async function runYargs(arg = process.argv.slice(2)) {
+export function runYargs(arg = process.argv.slice(2)) {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), "utf8"));
 
     yargs(arg)
@@ -27,6 +27,5 @@ export async function runYargs(arg = process.argv.slice(2)) {
             const pipelineIid = await state.getPipelineIid(cwd);
             const parser = await Parser.create(cwd, pipelineIid, true);
             return parser.getJobNames();
-        })
-        .argv;
+        }).argv;
 }

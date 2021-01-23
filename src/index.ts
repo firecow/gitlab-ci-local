@@ -4,7 +4,7 @@ import {runYargs} from "./yargs";
 
 sourceMapSupport.install();
 
-(async () => {
-    await runYargs();
+(() => {
+    runYargs();
 })();
 

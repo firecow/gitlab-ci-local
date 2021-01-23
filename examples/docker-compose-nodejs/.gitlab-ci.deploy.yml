@@ -15,7 +15,34 @@ docker-compose-down:
     # Just job will only run locally, and only when manually started
     - { if: $GITLAB_CI == 'false', when: 'manual' }
   environment:
-    url: http://localhost:8891
     name: local
   script:
     - docker-compose --no-ansi down
+
+# @Description Job that fail, after script also fails
+failure-job:
+  stage: .post
+  script:
+    - exit 1
+  after_script:
+    - exit 1
+
+# @Description Job only runs on remote
+remote-only:
+  stage: .post
+  rules:
+    # Just job will only run on "real" runners
+    - { if: $GITLAB_CI == 'true', when: 'on_success' }
+  script:
+    - echo Never gets run locally
+
+# @Description Job only runs on remote or manually
+remote-or-manual:
+  stage: .post
+  rules:
+    # Just job will only run on "real" runners
+    - { if: $GITLAB_CI == 'true', when: 'on_success' }
+    - { when: manual }
+  script:
+    - echo Always gets run on remote
+    - echo Never gets run locally, unless started manually
