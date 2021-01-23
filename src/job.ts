@@ -1,8 +1,6 @@
 import * as c from "ansi-colors";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
-import * as deepExtend from "deep-extend";
-import * as clone from "clone";
 import * as prettyHrtime from "pretty-hrtime";
 import * as util from "util";
 import * as path from "path";
@@ -49,38 +47,6 @@ export class Job {
         this.cwd = cwd;
         this.jobId = jobId;
         this.description = jobData['description'] || "";
-
-        // Parse extends recursively and deepExtend data.
-        if (jobData.extends) {
-            jobData.extends = typeof jobData.extends === "string" ? [ jobData.extends ] : jobData.extends;
-            let i;
-            let clonedData: any = clone(jobData);
-            const maxDepth = 50;
-            for (i = 0; i < maxDepth; i++) {
-                const parentDatas = []
-                if (!clonedData.extends) {
-                    break;
-                }
-
-                for (const parentName of clonedData.extends) {
-                    const parentData = globals[parentName];
-                    if (!parentData) {
-                        process.stderr.write(`${c.blueBright(parentName)} is used by ${c.blueBright(name)}, but is unspecified\n`)
-                        process.exit(1);
-                    }
-                    parentDatas.push(clone(globals[parentName]));
-                }
-
-                delete clonedData.extends;
-                clonedData = deepExtend.apply(this, parentDatas.concat(clonedData));
-            }
-            if (i === maxDepth) {
-                process.stderr.write(`You seem to have an infinite extends loop starting from ${c.blueBright(name)}\n`)
-                process.exit(1);
-            }
-
-            jobData = clonedData;
-        }
 
         // If the stage name is not set, it should default to "test", see:
         // https://docs.gitlab.com/ee/ci/yaml/#configuration-parameters
