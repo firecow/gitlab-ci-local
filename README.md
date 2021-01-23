@@ -33,7 +33,6 @@ Get rid of all those pesky dev workflow shell scripts and make files.
 * [Development](#development)
     * [Scripts](#scripts)
     * [Package binaries](#package-binaries)
-    * [Will not be implemented](#will-not-be-implemented)
 
 ## Examples
 - [docker-compose-nodejs](./examples/docker-compose-nodejs/README.md)
@@ -137,14 +136,3 @@ npm run pkg-win
 npm run pkg-macos
 npm run pkg-all
 ```
-
-### Will not be implemented
-- pages
-- resource_group
-- interruptible
-- only (deprecated)
-- except (deprecated)
-- parallel
-- trigger
-- retry (in case of failure)
-- timeout (job max execution time)
