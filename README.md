@@ -18,7 +18,8 @@ Get rid of all those pesky dev workflow shell scripts and make files.
 ## Table of contents
 * [Introduction](#introduction)
 * [Table of contents](#table-of-contents)
-* [Examples](#examples)
+* Examples
+  * [docker-compose-nodejs](./examples/docker-compose-nodejs/README.md)
 * [Installation](#installation)
     * [NPM](#npm)
     * [Linux](#linux)
@@ -33,9 +34,6 @@ Get rid of all those pesky dev workflow shell scripts and make files.
 * [Development](#development)
     * [Scripts](#scripts)
     * [Package binaries](#package-binaries)
-
-## Examples
-- [docker-compose-nodejs](./examples/docker-compose-nodejs/README.md)
 
 ## Installation
 ### NPM
