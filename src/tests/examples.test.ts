@@ -51,11 +51,11 @@ test('docker-compose example list', async() => {
     });
     expect(mockProcessExit).toBeCalledTimes(0);
     expect(mockProcessStdout.mock.calls).toEqual([
-        ["\u001b[94mnpm-install        \u001b[39m  Install npm packages                           \u001b[33m.pre  \u001b[39m  on_success         \n"],
-        ["\u001b[94mnpm-audit          \u001b[39m  Find security vulnerabilities in node_modules  \u001b[33mtest  \u001b[39m  on_success  warning  []\n"],
-        ["\u001b[94mnpm-outdated       \u001b[39m  Find outdated packages in node_modules         \u001b[33mtest  \u001b[39m  on_success  warning  [\u001b[94mnpm-install\u001b[39m]\n"],
-        ["\u001b[94mdocker-compose-up  \u001b[39m  Up docker-compose services                     \u001b[33mdeploy\u001b[39m  on_success         \n"],
-        ["\u001b[94mdocker-compose-down\u001b[39m  Down docker-compose services                   \u001b[33m.post \u001b[39m  manual             \n"]
+        ["[94mnpm-install        [39m  Install npm packages                           [33m.pre  [39m  on_success         \n"],
+        ["[94mnpm-audit          [39m  Find security vulnerabilities in node_modules  [33mtest  [39m  on_success  warning  []\n"],
+        ["[94mnpm-outdated       [39m  Find outdated packages in node_modules         [33mtest  [39m  on_success  warning  [[94mnpm-install[39m]\n"],
+        ["[94mdocker-compose-up  [39m  Up docker-compose services                     [33mdeploy[39m  on_success         \n"],
+        ["[94mdocker-compose-down[39m  Down docker-compose services                   [33m.post [39m  manual             \n"]
     ])
 
     mockProcessStdout.mockRestore();
