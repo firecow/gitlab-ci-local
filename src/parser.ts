@@ -1,4 +1,5 @@
 import * as c from "ansi-colors";
+import * as clone from "clone";
 import * as util from 'util';
 import * as childProcess from "child_process";
 import * as deepExtend from "deep-extend";
@@ -86,7 +87,13 @@ export class Parser {
         const gitlabCiLocalData = await Parser.loadYaml(path);
         yamlDataList = yamlDataList.concat(await this.prepareIncludes(gitlabCiLocalData));
 
-        const gitlabData = deepExtend.apply(this, yamlDataList);
+        let gitlabData = deepExtend.apply(this, yamlDataList);
+
+        // Iterate jobs to perform expand extend function
+        for (const jobName of Object.keys(gitlabData)) {
+            if (this.illigalJobNames.includes(jobName) || jobName[0] === ".") continue;
+            gitlabData = Parser.expandJobExtends(jobName, gitlabData);
+        }
 
         // Generate stages. We'll do our best to replicate what the gitlab-org runner does.
         // If there's no stages defined by the user, the following stages must be defined.
@@ -111,11 +118,9 @@ export class Parser {
         }
 
         // Find longest job name
-        for (const key of Object.keys(gitlabData)) {
-            if (this.illigalJobNames.includes(key) || key[0] === ".") {
-                continue;
-            }
-            this.maxJobNameLength = Math.max(this.maxJobNameLength, key.length);
+        for (const jobName of Object.keys(gitlabData)) {
+            if (this.illigalJobNames.includes(jobName) || jobName[0] === ".") continue;
+            this.maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
         }
 
         this.gitlabData = gitlabData;
@@ -128,13 +133,11 @@ export class Parser {
         const gitlabUser = await this.initGitlabUser();
 
         // Generate jobs and put them into stages
-        for (const [jobName, value] of Object.entries(gitlabData)) {
-            if (this.illigalJobNames.includes(jobName) || jobName[0] === ".") {
-                continue;
-            }
+        for (const [jobName, jobData] of Object.entries(gitlabData)) {
+            if (this.illigalJobNames.includes(jobName) || jobName[0] === ".") continue;
 
             const jobId = await state.getJobId(cwd);
-            const job = new Job(value, jobName, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitlabUser);
+            const job = new Job(jobData, jobName, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitlabUser);
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
@@ -215,9 +218,7 @@ export class Parser {
         const stages = Array.from(this.stages.keys());
         const jobNames = Array.from(this.jobs.values()).map((j) => j.name);
         for (const job of this.jobs.values()) {
-            if (job.needs === null || job.needs.length === 0) {
-                continue;
-            }
+            if (job.needs === null || job.needs.length === 0) continue;
 
             if (job.needs.filter((v) => (jobNames.indexOf(v) >= 0)).length !== job.needs.length) {
                 process.stderr.write(`${c.blueBright(`${job.name}`)} needs list contains unspecified jobs.\n`);
@@ -249,6 +250,41 @@ export class Parser {
         }
 
         return;
+    }
+
+    public static expandJobExtends(jobName: string, gitlabData: any): any {
+        const jobData = gitlabData[jobName];
+
+        // Parse extends recursively and deepExtend data.
+        jobData.extends = typeof jobData.extends === "string" ? [ jobData.extends ] : jobData.extends ?? [];
+        let i, clonedData: any = clone(jobData);
+        const maxDepth = 50;
+        for (i = 0; i < maxDepth; i++) {
+            const parentDatas = []
+            if (!clonedData.extends) {
+                break;
+            }
+
+            for (const parentName of clonedData.extends) {
+                const parentData = gitlabData[parentName];
+                if (!parentData) {
+                    process.stderr.write(`${c.blueBright(parentName)} is used by ${c.blueBright(jobName)}, but is unspecified\n`)
+                    process.exit(1);
+                }
+                parentDatas.push(clone(gitlabData[parentName]));
+            }
+
+            delete clonedData.extends;
+            clonedData = deepExtend.apply(this, parentDatas.concat(clonedData));
+        }
+        if (i === maxDepth) {
+            process.stderr.write(`You seem to have an infinite extends loop starting from ${c.blueBright(jobName)}\n`)
+            process.exit(1);
+        }
+
+        gitlabData[jobName] = clonedData;
+
+        return gitlabData;
     }
 
     private static async getGitDomain(cwd: string): Promise<string|null> {
