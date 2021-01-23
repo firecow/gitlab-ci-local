@@ -1,33 +1,41 @@
-import * as c from "ansi-colors";
+import {blueBright, green, greenBright, yellowBright, red, redBright, cyanBright, magenta, magentaBright} from "ansi-colors";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
+import * as path from "path";
 import * as prettyHrtime from "pretty-hrtime";
 import * as util from "util";
-import * as path from "path";
 import {Utils} from "./utils";
 
 const exec = util.promisify(childProcess.exec);
 
 export class Job {
+
+    public static readonly illigalJobNames = [
+        "include", "local_configuration", "image", "services",
+        "stages", "pages", "types", "before_script", "default",
+        "after_script", "variables", "cache", "workflow",
+    ];
+
     public readonly name: string;
     public readonly needs: string[] | null;
     public readonly dependencies: string[] | null;
-    public readonly stage: string;
     public readonly maxJobNameLength: number;
     public readonly environment?: { name: string, url: string|null };
-    public readonly image: string | null;
     public readonly jobId: number;
-    public readonly artifacts?: { paths: string[] };
-    public readonly afterScripts: string[] = [];
-    public readonly beforeScripts: string[] = [];
     public readonly cwd: string;
-    public readonly scripts: string[] = [];
     public readonly rules?: { if: string, when: string, allow_failure: boolean }[];
     public readonly expandedVariables: { [key: string]: string };
     public readonly allowFailure: boolean;
     public readonly when: string;
-    public readonly description: string;
-    public readonly interactive: boolean;
+
+    get image(): string | null { return this.jobData['image'] ?? null }
+    get stage(): string { return this.jobData['stage'] || "test" }
+    get interactive(): boolean { return this.jobData['interactive'] || false }
+    get description(): string { return this.jobData['description'] ?? '' }
+    get artifacts(): { paths: string[] } { return this.jobData['artifacts'] || { paths: [] } }
+    get beforeScripts(): string[] { return this.jobData['before_script'] || [] }
+    get afterScripts(): string[] { return this.jobData['after_script'] || [] }
+    get scripts(): string[] { return this.jobData['script'] }
 
     get preScriptsExitCode() { return this._prescriptsExitCode }
     private _prescriptsExitCode = 0;
@@ -35,6 +43,7 @@ export class Job {
     get afterScriptsExitCode() { return this._afterScriptsExitCode }
     private _afterScriptsExitCode = 0;
 
+    private readonly jobData: any;
     private containerId: string|null = null;
     private started = false;
     private finished = false;
@@ -46,30 +55,14 @@ export class Job {
         this.name = name;
         this.cwd = cwd;
         this.jobId = jobId;
-        this.description = jobData['description'] || "";
+        this.jobData = jobData;
 
-        // If the stage name is not set, it should default to "test", see:
-        // https://docs.gitlab.com/ee/ci/yaml/#configuration-parameters
-        this.stage = jobData.stage || "test";
-
-        const ciDefault = globals.default || {};
-        this.interactive = jobData.interactive;
         this.when = jobData.when || "on_success";
         this.allowFailure = jobData.allow_failure || false;
-        this.scripts = [].concat(jobData.script || []);
-        this.beforeScripts = [].concat(jobData.before_script || ciDefault.before_script || globals.before_script || []);
-        this.afterScripts = [].concat(jobData.after_script || ciDefault.after_script || globals.after_script || []);
-        this.image = jobData.image || ciDefault.image || globals.image || null;
-        this.artifacts = jobData.artifacts || ciDefault.artifacts || globals.artifacts || null;
         this.needs = jobData.needs || null;
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? { name: jobData.environment} : jobData.environment;
-
-        if (this.scripts.length === 0) {
-            process.stderr.write(`${this.getJobNameString()} ${c.red("must have script specified")}\n`);
-            process.exit(1);
-        }
 
         const predefinedVariables = {
             GITLAB_USER_LOGIN: gitlabUser["GITLAB_USER_LOGIN"] || "local",
@@ -117,7 +110,7 @@ export class Job {
         }
 
         if (this.interactive && (this.when !== 'manual' || this.image !== null)) {
-            process.stderr.write(`${this.getJobNameString()} ${c.red("@Interactive decorator cannot have image: and must be when:manual")}\n`);
+            process.stderr.write(`${this.getJobNameString()} ${red("@Interactive decorator cannot have image: and must be when:manual")}\n`);
             process.exit(1);
         }
     }
@@ -144,7 +137,7 @@ export class Job {
             const imagePlusTag = this.image.includes(':') ? this.image : `${this.image}:latest`;
             return await exec(`docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '${imagePlusTag}'`, {env: this.expandedVariables});
         } catch (e) {
-            process.stdout.write(`${this.getJobNameString()} ${c.cyanBright(`pulling ${this.image}`)}\n`)
+            process.stdout.write(`${this.getJobNameString()} ${cyanBright(`pulling ${this.image}`)}\n`)
             return await exec(`docker pull ${this.image}`, {env: this.expandedVariables});
         }
     }
@@ -180,7 +173,7 @@ export class Job {
         await fs.ensureFile(this.getOutputFilesPath());
         await fs.truncate(this.getOutputFilesPath());
         if (!this.interactive) {
-            process.stdout.write(`${this.getStartingString()} ${this.image ? c.magentaBright("in docker...") : c.magentaBright("in shell...")}\n`);
+            process.stdout.write(`${this.getStartingString()} ${this.image ? magentaBright("in docker...") : magentaBright("in shell...")}\n`);
         }
 
         await this.pullImage();
@@ -252,7 +245,7 @@ export class Job {
             const split = line.split(/\r?\n/);
             const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
             const text = split[0].replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
-            await fs.appendFile(scriptPath, `echo "${c.green(`\$ ${text}${multilineText}`)}"\n`);
+            await fs.appendFile(scriptPath, `echo "${green(`\$ ${text}${multilineText}`)}"\n`);
 
             // Print command to execute
             await fs.appendFile(scriptPath, `${line}\n`);
@@ -318,10 +311,10 @@ export class Job {
             const p = childProcess.exec(`${command}`, { env: {...this.expandedVariables, ...process.env}, cwd: this.cwd });
 
             if (p.stdout) {
-                p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => c.greenBright(s)));
+                p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => greenBright(s)));
             }
             if (p.stderr) {
-                p.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => c.redBright(s)));
+                p.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => redBright(s)));
             }
 
             p.on("error", (err) => reject(err));
@@ -332,10 +325,10 @@ export class Job {
     private getExitedString(startTime: [number, number], code: number, warning = false, prependString = "") {
         const finishedStr = this.getFinishedString(startTime);
         if (warning) {
-            return `${finishedStr} ${c.yellowBright(`warning with code ${code}`)} ${prependString}`;
+            return `${finishedStr} ${yellowBright(`warning with code ${code}`)} ${prependString}`;
         }
 
-        return `${finishedStr} ${c.red(`exited with code ${code}`)} ${prependString}`;
+        return `${finishedStr} ${red(`exited with code ${code}`)} ${prependString}`;
     }
 
     private getFinishedString(startTime: [number, number]) {
@@ -343,17 +336,17 @@ export class Job {
         const timeStr = prettyHrtime(endTime);
         const jobNameStr = this.getJobNameString();
 
-        return `${jobNameStr} ${c.magentaBright("finished")} in ${c.magenta(`${timeStr}`)}`;
+        return `${jobNameStr} ${magentaBright("finished")} in ${magenta(`${timeStr}`)}`;
     }
 
     private getStartingString() {
         const jobNameStr = this.getJobNameString();
 
-        return `${jobNameStr} ${c.magentaBright("starting")}`;
+        return `${jobNameStr} ${magentaBright("starting")}`;
     }
 
     getJobNameString() {
-        return `${c.blueBright(`${this.name.padEnd(this.maxJobNameLength)}`)}`;
+        return `${blueBright(`${this.name.padEnd(this.maxJobNameLength)}`)}`;
     }
 
     getOutputFilesPath() {

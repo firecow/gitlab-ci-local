@@ -1,4 +1,4 @@
-import * as c from "ansi-colors";
+import {magentaBright, blueBright, yellow, red, magenta, bold, green, yellowBright} from "ansi-colors";
 
 import {Job} from "./job";
 import {Parser} from "./parser";
@@ -28,11 +28,11 @@ export class Commander {
 
         if (skippingNever.length > 0) {
             skippingNever.forEach(Utils.printJobNames);
-            process.stdout.write(` ${c.magentaBright("skipped")} when:never\n`);
+            process.stdout.write(` ${magentaBright("skipped")} when:never\n`);
         }
         if (skippingManual.length > 0) {
             skippingManual.forEach(Utils.printJobNames);
-            process.stdout.write(` ${c.magentaBright("skipped")} when:manual\n`);
+            process.stdout.write(` ${magentaBright("skipped")} when:manual\n`);
         }
 
         let stage = stages.shift();
@@ -42,9 +42,9 @@ export class Commander {
 
             if (!stage.isRunning()) {
                 if (jobsInStage.length === 0 && !stage.isRunning()) {
-                    process.stdout.write(`=> ${c.yellow(`${stageName}`)} has no jobs\n`);
+                    process.stdout.write(`=> ${yellow(`${stageName}`)} has no jobs\n`);
                 } else {
-                    process.stdout.write(`=> ${c.yellow(`${stageName}`)} <=\n`);
+                    process.stdout.write(`=> ${yellow(`${stageName}`)} <=\n`);
                 }
             }
 
@@ -115,9 +115,9 @@ export class Commander {
             const needs = job.needs;
             const allowFailure = job.allowFailure ? 'warning' : '';
             let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
-            jobLine += `  ${c.yellow(`${job.stage.padEnd(stagePadEnd)}`)}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
+            jobLine += `  ${yellow(`${job.stage.padEnd(stagePadEnd)}`)}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
             if (needs) {
-                jobLine += `  [${c.blueBright(`${needs.join(',')}`)}]`;
+                jobLine += `  [${blueBright(`${needs.join(',')}`)}]`;
             }
             process.stdout.write(`${jobLine}\n`);
         }
@@ -185,31 +185,31 @@ export class Commander {
         }
 
         if (preScripts.never.length !== 0) {
-            process.stdout.write(`${c.magenta("not started")} `);
+            process.stdout.write(`${magenta("not started")} `);
             preScripts.never.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
         }
 
         if (preScripts.successful.length !== 0) {
-            process.stdout.write(`${c.green("successful")} `);
+            process.stdout.write(`${green("successful")} `);
             preScripts.successful.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
         }
 
         if (preScripts.warned.length !== 0) {
-            process.stdout.write(`${c.yellowBright("warning")} `);
+            process.stdout.write(`${yellowBright("warning")} `);
             preScripts.warned.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
         }
 
         if (afterScripts.warned.length !== 0) {
-            process.stdout.write(`${c.yellowBright("after script")} `);
+            process.stdout.write(`${yellowBright("after script")} `);
             afterScripts.warned.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
         }
 
         if (preScripts.failed.length !== 0) {
-            process.stdout.write(`${c.red("failure")} `);
+            process.stdout.write(`${red("failure")} `);
             preScripts.failed.forEach(Utils.printJobNames);
             process.stdout.write(`\n`);
         }
@@ -220,9 +220,9 @@ export class Commander {
             const name = Utils.expandText(e.name, job.expandedVariables);
             const url = Utils.expandText(e.url, job.expandedVariables);
             if (url !== 'undefined') {
-                process.stdout.write(`${c.blueBright(job.name)} environment: { name: ${c.bold(name)}, url: ${c.bold(url)} }\n`);
+                process.stdout.write(`${blueBright(job.name)} environment: { name: ${bold(name)}, url: ${bold(url)} }\n`);
             } else {
-                process.stdout.write(`${c.blueBright(job.name)} environment: { name: ${c.bold(name)} }\n`);
+                process.stdout.write(`${blueBright(job.name)} environment: { name: ${bold(name)} }\n`);
             }
 
         }
