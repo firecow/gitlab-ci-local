@@ -12,8 +12,7 @@ docker-compose-up:
 docker-compose-down:
   stage: .post
   rules:
-    # Just job will only run locally, and only when manually startet
-    # gitlab-ci-local docker-compose-down
+    # Just job will only run locally, and only when manually started
     - { if: $GITLAB_CI == 'false', when: 'manual' }
   environment:
     url: http://localhost:8891

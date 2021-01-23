@@ -1,10 +1,10 @@
-import * as c from "ansi-colors";
-import * as clone from "clone";
+import {blueBright, yellow, red} from "ansi-colors";
 import * as util from 'util';
 import * as childProcess from "child_process";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
+import * as jobExpanders from "./job-expanders";
 import {Job} from "./job";
 import * as state from "./state";
 import {Stage} from "./stage";
@@ -13,11 +13,6 @@ const cpExec = util.promisify(childProcess.exec);
 
 export class Parser {
 
-    private readonly illigalJobNames = [
-        "include", "local_configuration", "image", "services",
-        "stages", "pages", "types", "before_script", "default",
-        "after_script", "variables", "cache", "workflow",
-    ];
     private readonly jobs: Map<string, Job> = new Map();
     private readonly stages: Map<string, Stage> = new Map();
     private readonly cwd: string;
@@ -50,7 +45,7 @@ export class Parser {
             const res = await cpExec(`git config user.email`, {cwd: this.cwd});
             gitlabUserEmail = res.stdout.trimEnd();
         } catch (e) {
-            process.stderr.write(`${c.yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`)
+            process.stderr.write(`${yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`)
             gitlabUserEmail = 'local@gitlab.com';
         }
 
@@ -60,7 +55,7 @@ export class Parser {
             const res = await cpExec(`git config user.name`, {cwd: this.cwd});
             gitlabUserName = res.stdout.trimEnd();
         } catch (e) {
-            process.stderr.write(`${c.yellow("git config user.name is undefined, defaulting to `Bob Local`")}`)
+            process.stderr.write(`${yellow("git config user.name is undefined, defaulting to `Bob Local`")}`)
             gitlabUserName = 'Bob Local';
         }
 
@@ -74,8 +69,7 @@ export class Parser {
     async init() {
         const cwd = this.cwd;
 
-        let path;
-        let yamlDataList: any[] = [];
+        let path, yamlDataList: any[] = [];
 
         this.gitDomain = await Parser.getGitDomain(cwd);
 
@@ -87,30 +81,30 @@ export class Parser {
         const gitlabCiLocalData = await Parser.loadYaml(path);
         yamlDataList = yamlDataList.concat(await this.prepareIncludes(gitlabCiLocalData));
 
-        let gitlabData = deepExtend.apply(this, yamlDataList);
+        const gitlabData = deepExtend.apply(this, yamlDataList);
 
-        // Iterate jobs to perform expand extend function
-        for (const jobName of Object.keys(gitlabData)) {
-            if (this.illigalJobNames.includes(jobName) || jobName[0] === ".") continue;
-            gitlabData = Parser.expandJobExtends(jobName, gitlabData);
-        }
+        // Expand various fields in gitlabData
+        jobExpanders.jobExtends(gitlabData);
+        jobExpanders.artifacts(gitlabData);
+        jobExpanders.image(gitlabData);
+        jobExpanders.beforeScripts(gitlabData);
+        jobExpanders.afterScripts(gitlabData);
+        jobExpanders.scripts(gitlabData);
 
-        // Generate stages. We'll do our best to replicate what the gitlab-org runner does.
-        // If there's no stages defined by the user, the following stages must be defined.
-        // Please see: https://docs.gitlab.com/ee/ci/yaml/#stages
+        // If undefined set default array.
         if (!gitlabData.stages) {
             gitlabData.stages = ["build", "test", "deploy"];
         }
 
-        // Validate that 'stages:' is array
+        // 'stages:' must be an array
         if (gitlabData.stages && !Array.isArray(gitlabData.stages)) {
-            process.stderr.write(`${c.red(`'stages:' must be an array`)}\n`);
+            process.stderr.write(`${yellow('stages:')} ${red(`must be an array`)}\n`);
             process.exit(1);
         }
 
-        // ".pre" and ".post" are always present. See: https://docs.gitlab.com/ee/ci/yaml/#pre-and-post
-        gitlabData.stages.unshift(".pre");
-        gitlabData.stages.push(".post");
+        // Make sure stages includes ".pre" and ".post". See: https://docs.gitlab.com/ee/ci/yaml/#pre-and-post
+        if (!gitlabData.stages.includes(".pre")) gitlabData.stages.unshift(".pre")
+        if (!gitlabData.stages.includes(".post")) gitlabData.stages.push(".post")
 
         // Create stages and set into Map
         for (const value of gitlabData.stages || []) {
@@ -119,7 +113,7 @@ export class Parser {
 
         // Find longest job name
         for (const jobName of Object.keys(gitlabData)) {
-            if (this.illigalJobNames.includes(jobName) || jobName[0] === ".") continue;
+            if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") continue;
             this.maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
         }
 
@@ -134,7 +128,7 @@ export class Parser {
 
         // Generate jobs and put them into stages
         for (const [jobName, jobData] of Object.entries(gitlabData)) {
-            if (this.illigalJobNames.includes(jobName) || jobName[0] === ".") continue;
+            if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") continue;
 
             const jobId = await state.getJobId(cwd);
             const job = new Job(jobData, jobName, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitlabUser);
@@ -143,7 +137,7 @@ export class Parser {
                 stage.addJob(job);
             } else {
                 const stagesJoin = Array.from(this.stages.keys()).join(", ");
-                process.stderr.write(`${c.blueBright(`${job.name}`)} uses ${c.yellow(`stage:${job.stage}`)}. Stage cannot be found in [${c.yellow(`${stagesJoin}`)}]\n`);
+                process.stderr.write(`${blueBright(`${job.name}`)} uses ${yellow(`stage:${job.stage}`)}. Stage cannot be found in [${yellow(`${stagesJoin}`)}]\n`);
                 process.exit(1);
             }
             await state.incrementJobId(cwd);
@@ -191,7 +185,7 @@ export class Parser {
     getJobByName(name: string): Job {
         const job = this.jobs.get(name);
         if (!job) {
-            process.stderr.write(`${c.blueBright(`${name}`)} ${c.red(" could not be found")}\n`);
+            process.stderr.write(`${blueBright(`${name}`)} ${red(" could not be found")}\n`);
             process.exit(1);
         }
 
@@ -221,14 +215,14 @@ export class Parser {
             if (job.needs === null || job.needs.length === 0) continue;
 
             if (job.needs.filter((v) => (jobNames.indexOf(v) >= 0)).length !== job.needs.length) {
-                process.stderr.write(`${c.blueBright(`${job.name}`)} needs list contains unspecified jobs.\n`);
+                process.stderr.write(`${blueBright(`${job.name}`)} needs list contains unspecified jobs.\n`);
                 process.exit(1);
             }
 
             for (const need of job.needs) {
                 const needJob = this.jobs.get(need);
                 if (needJob && stages.indexOf(needJob.stage) >= stages.indexOf(job.stage)) {
-                    process.stderr.write(`${c.blueBright(`${job.name}`)} cannot need a job from same or future stage. need: ${c.blueBright(`${needJob.name}`)}\n`);
+                    process.stderr.write(`${blueBright(`${job.name}`)} cannot need a job from same or future stage. need: ${blueBright(`${needJob.name}`)}\n`);
                     process.exit(1);
                 }
             }
@@ -250,41 +244,6 @@ export class Parser {
         }
 
         return;
-    }
-
-    public static expandJobExtends(jobName: string, gitlabData: any): any {
-        const jobData = gitlabData[jobName];
-
-        // Parse extends recursively and deepExtend data.
-        jobData.extends = typeof jobData.extends === "string" ? [ jobData.extends ] : jobData.extends ?? [];
-        let i, clonedData: any = clone(jobData);
-        const maxDepth = 50;
-        for (i = 0; i < maxDepth; i++) {
-            const parentDatas = []
-            if (!clonedData.extends) {
-                break;
-            }
-
-            for (const parentName of clonedData.extends) {
-                const parentData = gitlabData[parentName];
-                if (!parentData) {
-                    process.stderr.write(`${c.blueBright(parentName)} is used by ${c.blueBright(jobName)}, but is unspecified\n`)
-                    process.exit(1);
-                }
-                parentDatas.push(clone(gitlabData[parentName]));
-            }
-
-            delete clonedData.extends;
-            clonedData = deepExtend.apply(this, parentDatas.concat(clonedData));
-        }
-        if (i === maxDepth) {
-            process.stderr.write(`You seem to have an infinite extends loop starting from ${c.blueBright(jobName)}\n`)
-            process.exit(1);
-        }
-
-        gitlabData[jobName] = clonedData;
-
-        return gitlabData;
     }
 
     private static async getGitDomain(cwd: string): Promise<string|null> {

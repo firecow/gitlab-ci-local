@@ -1,17 +1,17 @@
-import * as c from "ansi-colors";
+import {blueBright, red} from "ansi-colors";
 
 export class Utils {
     static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
         if (i === arr.length - 1) {
-            process.stdout.write(`${c.blueBright(`${job.name}`)}`);
+            process.stdout.write(`${blueBright(`${job.name}`)}`);
         } else {
-            process.stdout.write(`${c.blueBright(`${job.name}`)}, `);
+            process.stdout.write(`${blueBright(`${job.name}`)}, `);
         }
     }
 
     static printToStream(text: string, stream: 'stdout'|'stderr') {
         const colorize = (l: string) => {
-            return stream === 'stderr' ? c.red(l) : l;
+            return stream === 'stderr' ? red(l) : l;
         }
         const writeStream = stream === 'stdout' ? process.stdout : process.stderr
         for (const line of text.split(/\r?\n/)) {
