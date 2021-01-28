@@ -1,5 +1,5 @@
-import {Utils} from "../utils";
 import * as mockProcess from 'jest-mock-process';
+import {Utils} from "../utils";
 
 test('Print to stdout', () => {
     const mockStdout = mockProcess.mockProcessStdout();

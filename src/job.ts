@@ -1,4 +1,4 @@
-import {blueBright, green, greenBright, yellowBright, red, redBright, cyanBright, magenta, magentaBright} from "ansi-colors";
+import {blueBright, cyanBright, green, greenBright, magenta, magentaBright, red, redBright, yellowBright} from "ansi-colors";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -21,7 +21,7 @@ export class Job {
     readonly needs: string[] | null;
     readonly dependencies: string[] | null;
     readonly maxJobNameLength: number;
-    readonly environment?: { name: string, url: string|null };
+    readonly environment?: { name: string, url: string | null };
     readonly jobId: number;
     readonly cwd: string;
     readonly rules?: { if: string, when: string, allow_failure: boolean }[];
@@ -29,23 +29,52 @@ export class Job {
     readonly allowFailure: boolean;
     readonly when: string;
 
-    get image(): string | null { return this.jobData['image'] ?? null }
-    get stage(): string { return this.jobData['stage'] || "test" }
-    get interactive(): boolean { return this.jobData['interactive'] || false }
-    get description(): string { return this.jobData['description'] ?? '' }
-    get artifacts(): { paths: string[] } { return this.jobData['artifacts'] || { paths: [] } }
-    get beforeScripts(): string[] { return this.jobData['before_script'] || [] }
-    get afterScripts(): string[] { return this.jobData['after_script'] || [] }
-    get scripts(): string[] { return this.jobData['script'] }
+    get image(): string | null {
+        return this.jobData['image'] ?? null;
+    }
 
-    get preScriptsExitCode() { return this._prescriptsExitCode }
+    get stage(): string {
+        return this.jobData['stage'] || "test";
+    }
+
+    get interactive(): boolean {
+        return this.jobData['interactive'] || false;
+    }
+
+    get description(): string {
+        return this.jobData['description'] ?? '';
+    }
+
+    get artifacts(): { paths: string[] } {
+        return this.jobData['artifacts'] || {paths: []};
+    }
+
+    get beforeScripts(): string[] {
+        return this.jobData['before_script'] || [];
+    }
+
+    get afterScripts(): string[] {
+        return this.jobData['after_script'] || [];
+    }
+
+    get scripts(): string[] {
+        return this.jobData['script'];
+    }
+
+    get preScriptsExitCode() {
+        return this._prescriptsExitCode;
+    }
+
     private _prescriptsExitCode = 0;
 
-    get afterScriptsExitCode() { return this._afterScriptsExitCode }
+    get afterScriptsExitCode() {
+        return this._afterScriptsExitCode;
+    }
+
     private _afterScriptsExitCode = 0;
 
     private readonly jobData: any;
-    private containerId: string|null = null;
+    private containerId: string | null = null;
     private started = false;
     private finished = false;
     private running = false;
@@ -63,7 +92,7 @@ export class Job {
         this.needs = jobData.needs || null;
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
-        this.environment = typeof jobData.environment === "string" ? { name: jobData.environment} : jobData.environment;
+        this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
 
         const predefinedVariables = {
             GITLAB_USER_LOGIN: gitUser["GITLAB_USER_LOGIN"],
@@ -98,8 +127,8 @@ export class Job {
         };
 
         // Create expanded variables
-        const envs = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...process.env}
-        const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs)
+        const envs = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...process.env};
+        const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
 
         this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...userVariables, ...predefinedVariables};
@@ -108,7 +137,7 @@ export class Job {
         if (this.rules) {
             const ruleResult = Utils.getRulesResult(this.rules, this.expandedVariables);
             this.when = ruleResult.when;
-            this.allowFailure = ruleResult.allowFailure
+            this.allowFailure = ruleResult.allowFailure;
         }
 
         if (this.interactive && (this.when !== 'manual' || this.image !== null)) {
@@ -118,24 +147,30 @@ export class Job {
     }
 
     private getContainerName() {
-        return `gcl-${this.name.replace(/[^a-zA-Z0-9_.-]/g, '-')}-${this.jobId}`
+        return `gcl-${this.name.replace(/[^a-zA-Z0-9_.-]/g, '-')}-${this.jobId}`;
     }
 
     private async pullImage() {
-        if (!this.image) return;
+        if (!this.image) {
+            return;
+        }
 
         try {
             const imagePlusTag = this.image.includes(':') ? this.image : `${this.image}:latest`;
             return await exec(`docker image ls --format '{{.Repository}}:{{.Tag}}' | grep '${imagePlusTag}'`, {env: this.expandedVariables});
         } catch (e) {
-            process.stdout.write(`${this.getJobNameString()} ${cyanBright(`pulling ${this.image}`)}\n`)
+            process.stdout.write(`${this.getJobNameString()} ${cyanBright(`pulling ${this.image}`)}\n`);
             return await exec(`docker pull ${this.image}`, {env: this.expandedVariables});
         }
     }
 
-    private async removeContainer(containerId: string|null) {
-        if (!this.image) return;
-        if (!containerId) return;
+    private async removeContainer(containerId: string | null) {
+        if (!this.image) {
+            return;
+        }
+        if (!containerId) {
+            return;
+        }
         await exec(`docker rm -f ${containerId}`, {env: this.expandedVariables});
     }
 
@@ -148,9 +183,9 @@ export class Job {
 
         for (let artifactPath of this.artifacts.paths || []) {
             artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
-            const source = `${containerName}:/gcl-wrk/${artifactPath}`
+            const source = `${containerName}:/gcl-wrk/${artifactPath}`;
             const target = `${this.cwd}/${path.dirname(artifactPath)}`;
-            await fs.promises.mkdir(target, { recursive: true });
+            await fs.promises.mkdir(target, {recursive: true});
             await exec(`docker cp ${source} ${target}`);
         }
     }
@@ -235,14 +270,14 @@ export class Job {
                 Utils.printToStream(`${this.image} docker image doesn't contain /bin/bash or /bin/sh`, 'stderr');
                 process.exit(1);
             }
-            shebang = `#!/bin/${res.stdout}`
-        } else{
+            shebang = `#!/bin/${res.stdout}`;
+        } else {
             const res = await exec(`ls -1 /bin/ | grep -E '^bash$|^sh$' | head -n1`, {cwd: this.cwd});
             if (`${res.stdout}`.length === 0) {
                 Utils.printToStream(`Host PC doesn't contain /bin/bash or /bin/sh`, 'stderr');
                 process.exit(1);
             }
-            shebang = `#!/bin/${res.stdout}`
+            shebang = `#!/bin/${res.stdout}`;
         }
 
         await fs.appendFile(scriptPath, `${shebang}\n`);
@@ -268,7 +303,7 @@ export class Job {
             await fs.appendFile(entrypointPath, `#!/bin/sh\n`);
             await fs.appendFile(entrypointPath, `set -e\n\n`);
             const result = await exec(`docker inspect ${this.image} --format "{{ .Config.Entrypoint }}"`);
-            const originalEntrypoint = result.stdout.slice(1,-2);
+            const originalEntrypoint = result.stdout.slice(1, -2);
             if (originalEntrypoint !== '') {
                 await fs.appendFile(entrypointPath, `${originalEntrypoint}\n`);
             }
@@ -295,8 +330,6 @@ export class Job {
         return await this.executeCommandHandleOutputStreams(scriptPath);
     }
 
-
-
     private async executeCommandHandleOutputStreams(command: string): Promise<number> {
         if (this.interactive) {
             return new Promise((_, reject) => {
@@ -312,7 +345,9 @@ export class Job {
         const outputFilesPath = this.getOutputFilesPath();
         const outFunc = (e: any, stream: NodeJS.WriteStream, colorize: (str: string) => string) => {
             for (const line of `${e}`.split(/\r?\n/)) {
-                if (line.length === 0) continue;
+                if (line.length === 0) {
+                    continue;
+                }
                 stream.write(`${jobNameStr} `);
                 if (!line.startsWith('\u001b[32m$')) {
                     stream.write(`${colorize(">")} `);
@@ -320,10 +355,10 @@ export class Job {
                 stream.write(`${line}\n`);
                 fs.appendFileSync(outputFilesPath, `${line}\n`);
             }
-        }
+        };
 
         return new Promise((resolve, reject) => {
-            const p = childProcess.spawn(command, { shell:true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd });
+            const p = childProcess.spawn(command, {shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd});
 
             if (p.stdout) {
                 p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => greenBright(s)));

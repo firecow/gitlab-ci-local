@@ -1,9 +1,9 @@
-import * as defaultCmd from "../default-cmd";
 import * as mockProcess from "jest-mock-process";
+import * as defaultCmd from "../default-cmd";
 
 jest.setTimeout(90000);
 
-test('unknown directory', async() => {
+test('unknown directory', async () => {
     const mockProcessExit = mockProcess.mockProcessExit(new Error("Process exited"));
     const mockProcessStderr = mockProcess.mockProcessStderr();
     try {
@@ -18,7 +18,7 @@ test('unknown directory', async() => {
     mockProcessExit.mockRestore();
 });
 
-test('.gitlab-ci not found in directory', async() => {
+test('.gitlab-ci not found in directory', async () => {
     const mockProcessExit = mockProcess.mockProcessExit(new Error("Process exited"));
     const mockProcessStderr = mockProcess.mockProcessStderr();
     try {
@@ -33,7 +33,7 @@ test('.gitlab-ci not found in directory', async() => {
     mockProcessExit.mockRestore();
 });
 
-test('docker-compose-nodejs pipeline', async() => {
+test('docker-compose-nodejs pipeline', async () => {
 
     const mockProcessStdout = mockProcess.mockProcessStdout();
     const mockProcessStderr = mockProcess.mockProcessStderr();
@@ -44,7 +44,7 @@ test('docker-compose-nodejs pipeline', async() => {
         manual: 'docker-compose-down'
     });
     expect(mockProcessExit).toBeCalledTimes(1);
-    expect(mockProcessStderr).toHaveBeenCalledWith("Dependencies not up-to-date\n")
+    expect(mockProcessStderr).toHaveBeenCalledWith("Dependencies not up-to-date\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("[94mdocker-compose-up[39m environment: { name: [1mlocal[22m, url: [1mhttp://localhost:8891[22m }\n");
 
     mockProcessStdout.mockRestore();
@@ -52,7 +52,7 @@ test('docker-compose-nodejs pipeline', async() => {
     mockProcessExit.mockRestore();
 });
 
-test('docker-compose example single job', async() => {
+test('docker-compose example single job', async () => {
     const mockProcessStdout = mockProcess.mockProcessStdout();
     const mockProcessStderr = mockProcess.mockProcessStderr();
     const mockProcessExit = mockProcess.mockProcessExit();
@@ -63,14 +63,14 @@ test('docker-compose example single job', async() => {
         needs: true
     });
     expect(mockProcessExit).toBeCalledTimes(0);
-    expect(mockProcessStderr).toHaveBeenCalledWith("Dependencies not up-to-date\n")
+    expect(mockProcessStderr).toHaveBeenCalledWith("Dependencies not up-to-date\n");
 
     mockProcessStdout.mockRestore();
     mockProcessStderr.mockRestore();
     mockProcessExit.mockRestore();
 });
 
-test('docker-compose example list', async() => {
+test('docker-compose example list', async () => {
     const mockProcessStdout = mockProcess.mockProcessStdout();
     const mockProcessStderr = mockProcess.mockProcessStderr();
     const mockProcessExit = mockProcess.mockProcessExit();
@@ -91,7 +91,7 @@ test('docker-compose example list', async() => {
         ["[94mafter-script-fail  [39m  Job that fails, after script also fails        [33m.post [39m  on_success         \n"],
         ["[94mremote-only        [39m  Job only runs on remote                        [33m.post [39m  never              \n"],
         ["[94mremote-or-manual   [39m  Job only runs on remote or manually            [33m.post [39m  manual             \n"]
-    ])
+    ]);
 
     mockProcessStdout.mockRestore();
     mockProcessStderr.mockRestore();

@@ -2,7 +2,7 @@ import {Utils} from "../utils";
 
 test('GITLAB_CI on_success', () => {
     const rules = [
-        { if: "$GITLAB_CI == 'false'" }
+        {if: "$GITLAB_CI == 'false'"}
     ];
     const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: 'false'});
     expect(rulesResult).toEqual({when: 'on_success', allowFailure: false});
@@ -10,17 +10,16 @@ test('GITLAB_CI on_success', () => {
 
 test('GITLAB_CI fail and fallback', () => {
     const rules = [
-        { if: "$GITLAB_CI == 'true'" },
-        { when: "manual" }
+        {if: "$GITLAB_CI == 'true'"},
+        {when: "manual"}
     ];
     const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: 'false'});
     expect(rulesResult).toEqual({when: 'manual', allowFailure: false});
 });
 
-
 test('VAR exists positive', () => {
     const ruleIf = "$VAR";
-    const val = Utils.evaluateRuleIf(ruleIf, { VAR: 'set-value'});
+    const val = Utils.evaluateRuleIf(ruleIf, {VAR: 'set-value'});
     expect(val).toBe(true);
 });
 
