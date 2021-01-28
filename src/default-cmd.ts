@@ -4,15 +4,16 @@ import * as path from "path";
 import {Commander} from "./commander";
 import {Parser} from "./parser";
 import * as state from "./state";
+import {Utils} from "./utils";
 
 const checkFolderAndFile = (cwd: string) => {
     if (!fs.pathExistsSync(`${cwd}`)) {
-        process.stdout.write(`${cwd} is not a directory\n`);
+        Utils.printToStream(`${cwd} is not a directory\n`, 'stderr');
         process.exit(1);
     }
 
     if (!fs.existsSync(`${cwd}/.gitlab-ci.yml`)) {
-        process.stdout.write(`${cwd} does not contain .gitlab-ci.yml\n`);
+        Utils.printToStream(`${cwd} does not contain .gitlab-ci.yml\n`, 'stderr');
         process.exit(1);
     }
 }
@@ -28,9 +29,9 @@ exports.builder = (y: any) => {
 
 export async function handler(argv: any) {
     const cwd = argv.cwd ? path.resolve(argv.cwd) : process.cwd();
-    if (argv.completion !== undefined) {
+    if (argv.completion != null) {
         yargs.showCompletionScript();
-    } else if (argv.list !== undefined) {
+    } else if (argv.list != null) {
         checkFolderAndFile(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid);
@@ -39,13 +40,13 @@ export async function handler(argv: any) {
         checkFolderAndFile(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid);
-        await Commander.runSingleJob(parser, argv.job as string, argv.needs as boolean);
+        await Commander.runSingleJob(parser, argv.job, argv.needs);
     } else {
         checkFolderAndFile(cwd);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid);
-        await Commander.runPipeline(parser, argv.manual as string[] || []);
+        await Commander.runPipeline(parser, argv.manual || []);
     }
 }
 

@@ -36,7 +36,7 @@ export class Commander {
         }
 
         let stage = stages.shift();
-        while (stage !== undefined) {
+        while (stage != null) {
             const jobsInStage = stage.getJobs();
             const stageName = stage.name;
 
@@ -219,7 +219,7 @@ export class Commander {
             if (e == null) continue
             const name = Utils.expandText(e.name, job.expandedVariables);
             const url = Utils.expandText(e.url, job.expandedVariables);
-            if (url !== 'undefined') {
+            if (url != null) {
                 process.stdout.write(`${blueBright(job.name)} environment: { name: ${bold(name)}, url: ${bold(url)} }\n`);
             } else {
                 process.stdout.write(`${blueBright(job.name)} environment: { name: ${bold(name)} }\n`);

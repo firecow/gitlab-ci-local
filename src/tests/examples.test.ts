@@ -1,7 +1,37 @@
-import * as defaultCmd from "../default_cmd";
+import * as defaultCmd from "../default-cmd";
 import * as mockProcess from "jest-mock-process";
 
 jest.setTimeout(90000);
+
+test('unknown directory', async() => {
+    const mockProcessExit = mockProcess.mockProcessExit(new Error("Process exited"));
+    const mockProcessStderr = mockProcess.mockProcessStderr();
+    try {
+        await defaultCmd.handler({
+            cwd: 'totally-unknown-directory'
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m${process.cwd()}/totally-unknown-directory is not a directory[39m\n`);
+        expect(e.message).toBe("Process exited");
+    }
+    mockProcessStderr.mockRestore();
+    mockProcessExit.mockRestore();
+});
+
+test('.gitlab-ci not found in directory', async() => {
+    const mockProcessExit = mockProcess.mockProcessExit(new Error("Process exited"));
+    const mockProcessStderr = mockProcess.mockProcessStderr();
+    try {
+        await defaultCmd.handler({
+            cwd: 'docs'
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m${process.cwd()}/docs does not contain .gitlab-ci.yml[39m\n`);
+        expect(e.message).toBe("Process exited");
+    }
+    mockProcessStderr.mockRestore();
+    mockProcessExit.mockRestore();
+});
 
 test('docker-compose-nodejs pipeline', async() => {
 
@@ -57,7 +87,8 @@ test('docker-compose example list', async() => {
         ["[94mnpm-outdated       [39m  Find outdated packages in node_modules         [33mtest  [39m  on_success  warning  [[94mnpm-install[39m]\n"],
         ["[94mdocker-compose-up  [39m  Up docker-compose services                     [33mdeploy[39m  on_success         \n"],
         ["[94mdocker-compose-down[39m  Down docker-compose services                   [33m.post [39m  manual             \n"],
-        ["[94mfailure-job        [39m  Job that fail, after script also fails         [33m.post [39m  on_success         \n"],
+        ["[94mfailure-job        [39m  Job that succeeds, after script fails          [33m.post [39m  on_success         \n"],
+        ["[94mafter-script-fail  [39m  Job that fails, after script also fails        [33m.post [39m  on_success         \n"],
         ["[94mremote-only        [39m  Job only runs on remote                        [33m.post [39m  never              \n"],
         ["[94mremote-or-manual   [39m  Job only runs on remote or manually            [33m.post [39m  manual             \n"]
     ])

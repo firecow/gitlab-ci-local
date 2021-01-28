@@ -14,7 +14,7 @@ const incrementPipelineIid = async (cwd: string) => {
     const stateFile = `${cwd}/.gitlab-ci-local/state.yml`;
     const ymlData = await Parser.loadYaml(stateFile);
 
-    ymlData["pipelineIid"] = ymlData["pipelineIid"] !== undefined ? ymlData["pipelineIid"] + 1 : 0;
+    ymlData["pipelineIid"] = ymlData["pipelineIid"] != null ? ymlData["pipelineIid"] + 1 : 0;
     await fs.outputFile(stateFile, `---\n${yaml.dump(ymlData)}`);
 };
 
@@ -29,7 +29,7 @@ const incrementJobId = async (cwd: string) => {
     const stateFile = `${cwd}/.gitlab-ci-local/state.yml`;
     const ymlData = await Parser.loadYaml(stateFile);
 
-    ymlData["jobId"] = ymlData["jobId"] !== undefined ? ymlData["jobId"] + 1 : 100000;
+    ymlData["jobId"] = ymlData["jobId"] != null ? ymlData["jobId"] + 1 : 100000;
     await fs.outputFile(stateFile, `---\n${yaml.dump(ymlData)}`);
 };
 
