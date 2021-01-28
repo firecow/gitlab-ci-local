@@ -1,6 +1,6 @@
 import * as fs from "fs-extra";
-import * as yargs from "yargs";
 import * as path from "path";
+import * as yargs from "yargs";
 import {Commander} from "./commander";
 import {Parser} from "./parser";
 import * as state from "./state";
@@ -16,7 +16,7 @@ const checkFolderAndFile = (cwd: string) => {
         Utils.printToStream(`${cwd} does not contain .gitlab-ci.yml\n`, 'stderr');
         process.exit(1);
     }
-}
+};
 
 exports.command = "$0 [job]";
 exports.describe = "Runs the entire pipeline or a single [job]";
@@ -35,7 +35,7 @@ export async function handler(argv: any) {
         checkFolderAndFile(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid);
-        await Commander.runList(parser);
+        Commander.runList(parser);
     } else if (argv.job) {
         checkFolderAndFile(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);

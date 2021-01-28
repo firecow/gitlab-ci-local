@@ -1,4 +1,4 @@
-import {magentaBright, blueBright, yellow, red, magenta, bold, green, yellowBright} from "ansi-colors";
+import {blueBright, bold, green, magenta, magentaBright, red, yellow, yellowBright} from "ansi-colors";
 
 import {Job} from "./job";
 import {Parser} from "./parser";
@@ -216,7 +216,9 @@ export class Commander {
 
         for (const job of preScripts.successful) {
             const e = job.environment;
-            if (e == null) continue
+            if (e == null) {
+                continue;
+            }
             const name = Utils.expandText(e.name, job.expandedVariables);
             const url = Utils.expandText(e.url, job.expandedVariables);
             if (url != null) {

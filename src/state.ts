@@ -1,7 +1,7 @@
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 
-import { Parser } from "./parser";
+import {Parser} from "./parser";
 
 const getPipelineIid = async (cwd: string) => {
     const stateFile = `${cwd}/.gitlab-ci-local/state.yml`;
@@ -33,4 +33,4 @@ const incrementJobId = async (cwd: string) => {
     await fs.outputFile(stateFile, `---\n${yaml.dump(ymlData)}`);
 };
 
-export { getPipelineIid, incrementPipelineIid, getJobId, incrementJobId };
+export {getPipelineIid, incrementPipelineIid, getJobId, incrementJobId};

@@ -1,11 +1,10 @@
-import * as yargs from "yargs";
-import {CommandModule} from "yargs";
-import {Parser} from "./parser";
-import * as defaultCmd from "./default-cmd";
-import * as state from "./state";
 import * as fs from "fs-extra";
 import * as path from "path";
-
+import * as yargs from "yargs";
+import {CommandModule} from "yargs";
+import * as defaultCmd from "./default-cmd";
+import {Parser} from "./parser";
+import * as state from "./state";
 
 export function runYargs(arg = process.argv.slice(2)) {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), "utf8"));
@@ -27,5 +26,6 @@ export function runYargs(arg = process.argv.slice(2)) {
             const pipelineIid = await state.getPipelineIid(cwd);
             const parser = await Parser.create(cwd, pipelineIid, true);
             return parser.getJobNames();
-        }).argv;
+        })
+        .parse();
 }

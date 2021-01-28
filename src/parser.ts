@@ -23,7 +23,7 @@ export class Parser {
     private readonly bashCompletionPhase: boolean;
     private readonly pipelineIid: number;
 
-    private gitRemote: GitRemote|null;
+    private gitRemote: GitRemote | null;
     private gitUser: GitUser;
     private userVariables: any;
 
@@ -53,7 +53,7 @@ export class Parser {
             const res = await cpExec(`git config user.email`, {cwd});
             gitlabUserEmail = res.stdout.trimEnd();
         } catch (e) {
-            process.stderr.write(`${yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`)
+            process.stderr.write(`${yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`);
             gitlabUserEmail = 'local@gitlab.com';
         }
 
@@ -63,7 +63,7 @@ export class Parser {
             const res = await cpExec(`git config user.name`, {cwd});
             gitlabUserName = res.stdout.trimEnd();
         } catch (e) {
-            process.stderr.write(`${yellow("git config user.name is undefined, defaulting to `Bob Local`")}`)
+            process.stderr.write(`${yellow("git config user.name is undefined, defaulting to `Bob Local`")}`);
             gitlabUserName = 'Bob Local';
         }
 
@@ -74,28 +74,40 @@ export class Parser {
         };
     }
 
-    static async initUserVariables(cwd: string, homeDirectory = '', gitRemote: GitRemote|null): Promise<{ [key: string]: string }> {
+    static async initUserVariables(cwd: string, gitRemote: GitRemote | null, homeDirectory = ''): Promise<{ [key: string]: string }> {
         const variablesFile = `${path.resolve(homeDirectory)}/.gitlab-ci-local/variables.yml`;
-        if (!fs.existsSync(variablesFile)) return {}
+        if (!fs.existsSync(variablesFile)) {
+            return {};
+        }
 
         const data: any = yaml.load(await fs.readFile(variablesFile, 'utf8'));
-        let variables: {[key: string]: string} = {};
+        let variables: { [key: string]: string } = {};
 
         for (const [globalKey, globalEntry] of Object.entries(data?.global ?? [])) {
-            if (typeof globalEntry !== 'string') continue;
+            if (typeof globalEntry !== 'string') {
+                continue;
+            }
             variables[globalKey] = globalEntry;
         }
 
         for (const [groupKey, groupEntires] of Object.entries(data?.group ?? [])) {
-            if (!`${gitRemote?.domain}/${gitRemote?.group}/${gitRemote?.project}.git`.includes(groupKey)) continue;
-            if (typeof groupEntires !== 'object') continue;
-            variables = {...variables, ...groupEntires}
+            if (!`${gitRemote?.domain}/${gitRemote?.group}/${gitRemote?.project}.git`.includes(groupKey)) {
+                continue;
+            }
+            if (typeof groupEntires !== 'object') {
+                continue;
+            }
+            variables = {...variables, ...groupEntires};
         }
 
         for (const [projectKey, projectEntries] of Object.entries(data?.project ?? [])) {
-            if (!`${gitRemote?.domain}/${gitRemote?.group}/${gitRemote?.project}.git`.includes(projectKey)) continue;
-            if (typeof projectEntries !== 'object') continue;
-            variables = {...variables, ...projectEntries}
+            if (!`${gitRemote?.domain}/${gitRemote?.group}/${gitRemote?.project}.git`.includes(projectKey)) {
+                continue;
+            }
+            if (typeof projectEntries !== 'object') {
+                continue;
+            }
+            variables = {...variables, ...projectEntries};
         }
 
         // Generate files for file type variables
@@ -115,7 +127,7 @@ export class Parser {
 
         this.gitUser = await Parser.initGitUser(cwd);
         this.gitRemote = await Parser.initGitRemote(cwd);
-        this.userVariables = await Parser.initUserVariables(cwd, process.env.HOME, this.gitRemote);
+        this.userVariables = await Parser.initUserVariables(cwd, this.gitRemote, process.env.HOME);
 
         let path, yamlDataList: any[] = [];
         path = `${cwd}/.gitlab-ci.yml`;
@@ -148,8 +160,12 @@ export class Parser {
         }
 
         // Make sure stages includes ".pre" and ".post". See: https://docs.gitlab.com/ee/ci/yaml/#pre-and-post
-        if (!gitlabData.stages.includes(".pre")) gitlabData.stages.unshift(".pre")
-        if (!gitlabData.stages.includes(".post")) gitlabData.stages.push(".post")
+        if (!gitlabData.stages.includes(".pre")) {
+            gitlabData.stages.unshift(".pre");
+        }
+        if (!gitlabData.stages.includes(".post")) {
+            gitlabData.stages.push(".post");
+        }
 
         // Create stages and set into Map
         for (const value of gitlabData.stages || []) {
@@ -158,7 +174,9 @@ export class Parser {
 
         // Find longest job name
         for (const jobName of Object.keys(gitlabData)) {
-            if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") continue;
+            if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") {
+                continue;
+            }
             this.maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
         }
 
@@ -170,10 +188,11 @@ export class Parser {
         const cwd = this.cwd;
         const gitlabData = this.gitlabData;
 
-
         // Generate jobs and put them into stages
         for (const [jobName, jobData] of Object.entries(gitlabData)) {
-            if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") continue;
+            if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") {
+                continue;
+            }
 
             const jobId = await state.getJobId(cwd);
             const job = new Job(jobData, jobName, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, this.gitUser, this.userVariables);
@@ -203,7 +222,7 @@ export class Parser {
         const fileSplitClone = fileSplit.slice();
 
         let interactiveMatch = null;
-        let descriptionMatch = null
+        let descriptionMatch = null;
         let index = 0;
         for (const line of fileSplit) {
             interactiveMatch = !interactiveMatch ? line.match(/#[\s]?@[\s]?[Ii]nteractive/) : interactiveMatch;
@@ -257,7 +276,9 @@ export class Parser {
         const stages = Array.from(this.stages.keys());
         const jobNames = Array.from(this.jobs.values()).map((j) => j.name);
         for (const job of this.jobs.values()) {
-            if (job.needs === null || job.needs.length === 0) continue;
+            if (job.needs === null || job.needs.length === 0) {
+                continue;
+            }
 
             if (job.needs.filter((v) => (jobNames.indexOf(v) >= 0)).length !== job.needs.length) {
                 process.stderr.write(`${blueBright(`${job.name}`)} needs list contains unspecified jobs.\n`);
@@ -275,7 +296,7 @@ export class Parser {
         }
     }
 
-    static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemote: GitRemote): Promise<void>{
+    static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemote: GitRemote): Promise<void> {
         const gitlabCiLocalPath = `${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`;
         fs.ensureDirSync(gitlabCiLocalPath);
 
@@ -291,16 +312,16 @@ export class Parser {
         return;
     }
 
-    static async initGitRemote(cwd: string): Promise<GitRemote|null> {
+    static async initGitRemote(cwd: string): Promise<GitRemote | null> {
         try {
-            const {stdout} = await cpExec(`git remote -v`, { cwd });
-            const match = stdout.match(/@(?<domain>.*):(?<group>.*)\/(?<project>.*)\.git \(fetch\)/)
+            const {stdout} = await cpExec(`git remote -v`, {cwd});
+            const match = stdout.match(/@(?<domain>.*):(?<group>.*)\/(?<project>.*)\.git \(fetch\)/);
 
             return {
                 domain: match?.groups?.domain ?? '',
                 group: match?.groups?.group ?? '',
                 project: match?.groups?.project ?? '',
-            }
+            };
         } catch (e) {
             return null;
         }
@@ -313,8 +334,12 @@ export class Parser {
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of gitlabData["include"] || []) {
-            if (!value["file"]) continue
-            if (this.bashCompletionPhase) continue
+            if (!value["file"]) {
+                continue;
+            }
+            if (this.bashCompletionPhase) {
+                continue;
+            }
 
             if (this.gitRemote == null || this.gitRemote.domain == null) {
                 process.stderr.write(`Problem fetching git origin. You wanna add a remote if using include: { project: *, file: *} \n`);
