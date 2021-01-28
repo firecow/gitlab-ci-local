@@ -4,29 +4,30 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import * as prettyHrtime from "pretty-hrtime";
 import * as util from "util";
+import {GitUser} from "./git-user";
 import {Utils} from "./utils";
 
 const exec = util.promisify(childProcess.exec);
 
 export class Job {
 
-    public static readonly illigalJobNames = [
+    static readonly illigalJobNames = [
         "include", "local_configuration", "image", "services",
         "stages", "pages", "types", "before_script", "default",
         "after_script", "variables", "cache", "workflow",
     ];
 
-    public readonly name: string;
-    public readonly needs: string[] | null;
-    public readonly dependencies: string[] | null;
-    public readonly maxJobNameLength: number;
-    public readonly environment?: { name: string, url: string|null };
-    public readonly jobId: number;
-    public readonly cwd: string;
-    public readonly rules?: { if: string, when: string, allow_failure: boolean }[];
-    public readonly expandedVariables: { [key: string]: string };
-    public readonly allowFailure: boolean;
-    public readonly when: string;
+    readonly name: string;
+    readonly needs: string[] | null;
+    readonly dependencies: string[] | null;
+    readonly maxJobNameLength: number;
+    readonly environment?: { name: string, url: string|null };
+    readonly jobId: number;
+    readonly cwd: string;
+    readonly rules?: { if: string, when: string, allow_failure: boolean }[];
+    readonly expandedVariables: { [key: string]: string };
+    readonly allowFailure: boolean;
+    readonly when: string;
 
     get image(): string | null { return this.jobData['image'] ?? null }
     get stage(): string { return this.jobData['stage'] || "test" }
@@ -50,7 +51,7 @@ export class Job {
     private running = false;
     private success = true;
 
-    constructor(jobData: any, name: string, cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitlabUser: { [key: string]: string }) {
+    constructor(jobData: any, name: string, cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitUser: GitUser, userVariables: { [name: string]: string }) {
         this.maxJobNameLength = maxJobNameLength;
         this.name = name;
         this.cwd = cwd;
@@ -65,9 +66,9 @@ export class Job {
         this.environment = typeof jobData.environment === "string" ? { name: jobData.environment} : jobData.environment;
 
         const predefinedVariables = {
-            GITLAB_USER_LOGIN: gitlabUser["GITLAB_USER_LOGIN"] || "local",
-            GITLAB_USER_EMAIL: gitlabUser["GITLAB_USER_EMAIL"] || "local@gitlab.com",
-            GITLAB_USER_NAME: gitlabUser["GITLAB_USER_NAME"] || "Bob Local",
+            GITLAB_USER_LOGIN: gitUser["GITLAB_USER_LOGIN"],
+            GITLAB_USER_EMAIL: gitUser["GITLAB_USER_EMAIL"],
+            GITLAB_USER_NAME: gitUser["GITLAB_USER_NAME"],
             CI_COMMIT_SHORT_SHA: "a33bd89c", // Changes
             CI_COMMIT_SHA: "a33bd89c7b8fa3567524525308d8cafd7c0cd2ad",
             CI_PROJECT_NAME: "local-project",
@@ -100,7 +101,8 @@ export class Job {
         const envs = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...process.env}
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs)
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
-        this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...predefinedVariables};
+
+        this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...userVariables, ...predefinedVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
@@ -112,17 +114,6 @@ export class Job {
         if (this.interactive && (this.when !== 'manual' || this.image !== null)) {
             process.stderr.write(`${this.getJobNameString()} ${red("@Interactive decorator cannot have image: and must be when:manual")}\n`);
             process.exit(1);
-        }
-    }
-
-    private async initEnvFile() {
-        const envFile = `${this.cwd}/.gitlab-ci-local/envs/.env-${this.name}`;
-        await fs.ensureFile(envFile);
-        await fs.truncate(envFile);
-
-        // Append expanded variales to .env file
-        for (const [key, value] of Object.entries(this.expandedVariables)) {
-            await fs.appendFile(envFile, `${key}=${JSON.stringify(value).substr(1).slice(0, -1)}\n`);
         }
     }
 
@@ -237,7 +228,24 @@ export class Job {
         await fs.chmod(scriptPath, '777');
         await fs.truncate(scriptPath);
 
-        await fs.appendFile(scriptPath, `#!/bin/sh\n`);
+        let shebang;
+        if (this.image) {
+            const res = await exec(`docker run --entrypoint="" ${this.image} ls -1 /bin/ | grep -E '^bash$|^sh$' | head -n1`, {cwd: this.cwd});
+            if (`${res.stdout}`.length === 0) {
+                Utils.printToStream(`${this.image} docker image doesn't contain /bin/bash or /bin/sh`, 'stderr');
+                process.exit(1);
+            }
+            shebang = `#!/bin/${res.stdout}`
+        } else{
+            const res = await exec(`ls -1 /bin/ | grep -E '^bash$|^sh$' | head -n1`, {cwd: this.cwd});
+            if (`${res.stdout}`.length === 0) {
+                Utils.printToStream(`Host PC doesn't contain /bin/bash or /bin/sh`, 'stderr');
+                process.exit(1);
+            }
+            shebang = `#!/bin/${res.stdout}`
+        }
+
+        await fs.appendFile(scriptPath, `${shebang}\n`);
         await fs.appendFile(scriptPath, `set -e\n\n`);
 
         for (const line of scripts) {
@@ -250,8 +258,6 @@ export class Job {
             // Print command to execute
             await fs.appendFile(scriptPath, `${line}\n`);
         }
-
-        await this.initEnvFile();
 
         if (this.image) {
             // Generate custom entrypoint
@@ -266,14 +272,23 @@ export class Job {
             if (originalEntrypoint !== '') {
                 await fs.appendFile(entrypointPath, `${originalEntrypoint}\n`);
             }
-            await fs.appendFile(entrypointPath, `exec "$@"\n`);
+            // await fs.appendFile(entrypointPath, `export $(grep -v '^#' .gitlab-ci-local/envs/.env-${this.name} | xargs)\n`);
 
-            const envFile = `${this.cwd}/.gitlab-ci-local/envs/.env-${this.name}`
-            const {stdout} = await exec(`docker create -w /gcl-wrk/ --env-file ${envFile} --entrypoint "./gitlab-ci-local-entrypoint-${this.name}.sh" --name ${this.getContainerName()} ${this.image} ./gitlab-ci-local-shell-${this.name}`);
+            for (const [key, value] of Object.entries(this.expandedVariables)) {
+                await fs.appendFile(entrypointPath, `export ${key}="${value.trim()}"\n`);
+            }
+
+            await fs.appendFile(entrypointPath, `\nexec "$@"\n`);
+
+            const {stdout} = await exec(`docker create -w /gcl-wrk/ --entrypoint ".gitlab-ci-local/entrypoint/${this.name}.sh" --name ${this.getContainerName()} ${this.image} .gitlab-ci-local/shell/${this.name}.sh`);
             this.containerId = stdout ? stdout.replace(/\r?\n/g, '') : null;
-            await exec(`docker cp ${entrypointPath} ${this.getContainerName()}:/gcl-wrk/gitlab-ci-local-entrypoint-${this.name}.sh`);
-            await exec(`docker cp ${scriptPath} ${this.getContainerName()}:/gcl-wrk/gitlab-ci-local-shell-${this.name}`);
-            await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gcl-wrk/.`);
+            // TODO: Something like this should be implemented, we only want to copy tracked files into docker containers.
+            // Must be asyncronous
+            // const lsRes = await exec(`git ls-files`);
+            // for (const file of lsRes.stdout.split(/\r?\n/g)) {
+            //    await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}/${file}:/gcl-wrk/`);
+            // }
+            await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gcl-wrk/`);
 
             return await this.executeCommandHandleOutputStreams(`docker start --attach ${this.getContainerName()}`);
         }
@@ -285,7 +300,7 @@ export class Job {
     private async executeCommandHandleOutputStreams(command: string): Promise<number> {
         if (this.interactive) {
             return new Promise((_, reject) => {
-                const cp = childProcess.spawn('bash', ["-c", command], {stdio: 'inherit', cwd: this.cwd, env: {...this.expandedVariables, ...process.env}});
+                const cp = childProcess.spawn(command, {stdio: 'inherit', cwd: this.cwd, env: {...this.expandedVariables, ...process.env}});
                 cp.on('exit', (code) => {
                     process.exit(code ?? 0);
                 });
@@ -308,7 +323,7 @@ export class Job {
         }
 
         return new Promise((resolve, reject) => {
-            const p = childProcess.exec(`${command}`, { env: {...this.expandedVariables, ...process.env}, cwd: this.cwd });
+            const p = childProcess.spawn(command, { shell:true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd });
 
             if (p.stdout) {
                 p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => greenBright(s)));

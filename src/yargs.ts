@@ -1,7 +1,7 @@
 import * as yargs from "yargs";
 import {CommandModule} from "yargs";
 import {Parser} from "./parser";
-import * as defaultCmd from "./default_cmd";
+import * as defaultCmd from "./default-cmd";
 import * as state from "./state";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -23,7 +23,7 @@ export function runYargs(arg = process.argv.slice(2)) {
         .option("completion", {type: "string", description: "Generate bash completion script", requiresArg: false})
         .option("needs", {type: "boolean", description: "Run needed jobs, when executing a single job", requiresArg: false})
         .completion("completion", false, async (_, yargsArgv) => {
-            const cwd = yargsArgv.cwd as string || process.cwd();
+            const cwd = yargsArgv.cwd || process.cwd();
             const pipelineIid = await state.getPipelineIid(cwd);
             const parser = await Parser.create(cwd, pipelineIid, true);
             return parser.getJobNames();

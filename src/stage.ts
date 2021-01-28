@@ -2,7 +2,7 @@ import {Job} from "./job";
 
 export class Stage {
 
-    public readonly name: string;
+    readonly name: string;
     private readonly jobs: Job[] = [];
 
     constructor(name: string) {

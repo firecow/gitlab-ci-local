@@ -6,7 +6,7 @@ docker-compose-up:
     url: http://localhost:8891
     name: local
   script:
-    - docker-compose --no-ansi up -d
+    - docker-compose up -d
 
 # @Description Down docker-compose services
 docker-compose-down:
@@ -17,10 +17,18 @@ docker-compose-down:
   environment:
     name: local
   script:
-    - docker-compose --no-ansi down
+    - docker-compose down
 
-# @Description Job that fail, after script also fails
+# @Description Job that succeeds, after script fails
 failure-job:
+  stage: .post
+  script:
+    - exit 0
+  after_script:
+    - exit 1
+
+# @Description Job that fails, after script also fails
+after-script-fail:
   stage: .post
   script:
     - exit 1

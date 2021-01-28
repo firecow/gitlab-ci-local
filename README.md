@@ -8,7 +8,7 @@ Run gitlab pipelines on your local machine as shell executor or docker executor.
 
 Get rid of all those pesky dev workflow shell scripts and make files.
 
-[![Lines](https://img.shields.io/badge/Coverage-88.94%25-yellow.svg)](https://npmjs.org/package/gitlab-ci-local)
+[![Lines](https://img.shields.io/badge/Coverage-89.38%25-yellow.svg)](https://npmjs.org/package/gitlab-ci-local)
 [![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://npmjs.org/package/gitlab-ci-local)
 [![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![dependencies](https://img.shields.io/librariesio/release/npm/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
@@ -29,6 +29,7 @@ Get rid of all those pesky dev workflow shell scripts and make files.
     * [Bash alias](#bash-alias)
     * [Bash completion](#bash-completion)
 * [Quirks](#quirks)
+    * [User Variables](#user-variables)
     * [Decorators](#decorators)
     * [Artifacts](#artifacts)
 * [Development](#development)
@@ -82,6 +83,29 @@ gitlab-ci-local --completion >> ~/.bashrc
 ```
 
 ## Quirks
+
+### User variables
+Put a file like this in `$HOME/.gitlab-ci-local/variables.yml`
+
+```yaml
+---
+project:
+  gitlab.com/test-group/test-project.git:
+    # Will be type Variable and only available if remote is exact match
+    AUTHORIZATION_PASSWORD: djwqiod910321
+
+group:
+  gitlab.com/test-group/:
+    # Will be type Variable and only available for remotes that include group named 'test-group'
+    DOCKER_LOGIN_PASSWORD: dij3213n123n12in3
+
+global:
+  # Will be type File, because value is a path
+  SSH_PRIVATE_KEY: '~/.ssh/id_rsa'
+```
+
+Variables will now appear in your jobs, if project or group matches git remote, global's are always present
+
 ### Decorators
 #### The `@Description` decorator
 
