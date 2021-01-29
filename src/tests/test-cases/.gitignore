@@ -1,0 +1,2 @@
+.gitlab-ci-local
+artifacts/log.txt

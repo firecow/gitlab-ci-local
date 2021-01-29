@@ -1,20 +1,6 @@
 import * as mockProcess from 'jest-mock-process';
 import {Utils} from "../utils";
 
-test('Print to stdout', () => {
-    const mockStdout = mockProcess.mockProcessStdout();
-    Utils.printToStream("Hello, world!", 'stdout');
-    expect(mockStdout).toHaveBeenCalledWith('Hello, world!\n');
-    mockStdout.mockRestore();
-});
-
-test('Print to stderr', () => {
-    const mockStderr = mockProcess.mockProcessStderr();
-    Utils.printToStream("Hello, world!", 'stderr');
-    expect(mockStderr).toHaveBeenCalledWith('[31mHello, world![39m\n');
-    mockStderr.mockRestore();
-});
-
 test('Print job on first index', () => {
     const mockStdout = mockProcess.mockProcessStdout();
     Utils.printJobNames({name: "Hello"}, 0, [{name: "Hello"}, {name: "Hello"}, {name: "Hello"}]);

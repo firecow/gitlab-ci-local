@@ -1,4 +1,4 @@
-import {blueBright, red} from "ansi-colors";
+import {blueBright} from "ansi-colors";
 
 export class Utils {
     static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
@@ -6,19 +6,6 @@ export class Utils {
             process.stdout.write(`${blueBright(`${job.name}`)}`);
         } else {
             process.stdout.write(`${blueBright(`${job.name}`)}, `);
-        }
-    }
-
-    static printToStream(text: string, stream: 'stdout' | 'stderr') {
-        const colorize = (l: string) => {
-            return stream === 'stderr' ? red(l) : l;
-        };
-        const writeStream = stream === 'stdout' ? process.stdout : process.stderr;
-        for (const line of text.split(/\r?\n/)) {
-            if (line.length === 0) {
-                continue;
-            }
-            writeStream.write(`${colorize(`${line}`)}\n`);
         }
     }
 
@@ -90,7 +77,7 @@ export class Utils {
         subEvals.forEach((subEval, index) => {
             evalStr += subEval;
             evalStr += conditions && conditions[index] ? conditions[index] : '';
-        })
+        });
 
         return eval(evalStr);
     }

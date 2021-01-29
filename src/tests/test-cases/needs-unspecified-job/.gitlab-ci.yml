@@ -1,0 +1,5 @@
+---
+test-job:
+  needs: [ invalid ]
+  script:
+    - echo "Test something"

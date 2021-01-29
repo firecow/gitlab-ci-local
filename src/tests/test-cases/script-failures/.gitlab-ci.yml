@@ -1,0 +1,22 @@
+---
+test-job:
+  script:
+    - exit 1
+
+test-job-after-script:
+  script:
+    - exit 1
+  after_script:
+    - exit 1
+
+allow-failure-job:
+  allow_failure: true
+  script:
+    - exit 1
+
+allow-failure-after-script:
+  allow_failure: true
+  script:
+    - exit 1
+  after_script:
+    - exit 1

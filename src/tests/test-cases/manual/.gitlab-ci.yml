@@ -1,0 +1,12 @@
+---
+test-job:
+  rules:
+    - when: manual
+  script:
+    - echo "Hello, test job manual!"
+
+build-job:
+  rules:
+    - when: manual
+  script:
+    - echo "Hello, build job manual!"
