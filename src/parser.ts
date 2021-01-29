@@ -54,7 +54,7 @@ export class Parser {
             const res = await cpExec(`git config user.email`, {cwd});
             gitlabUserEmail = res.stdout.trimEnd();
         } catch (e) {
-            process.stderr.write(`${yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`);
+            // process.stderr.write(`${yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`);
             gitlabUserEmail = 'local@gitlab.com';
         }
 
@@ -64,7 +64,7 @@ export class Parser {
             const res = await cpExec(`git config user.name`, {cwd});
             gitlabUserName = res.stdout.trimEnd();
         } catch (e) {
-            process.stderr.write(`${yellow("git config user.name is undefined, defaulting to `Bob Local`")}`);
+            // process.stderr.write(`${yellow("git config user.name is undefined, defaulting to `Bob Local`")}`);
             gitlabUserName = 'Bob Local';
         }
 
