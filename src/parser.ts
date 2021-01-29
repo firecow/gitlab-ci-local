@@ -1,15 +1,16 @@
-import {blueBright, red, yellow} from "ansi-colors";
+import {blueBright, yellow} from "ansi-colors";
 import * as childProcess from "child_process";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as path from "path";
-import {GitRemote} from "./git-remote";
-import {GitUser} from "./git-user";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
 import {Stage} from "./stage";
 import * as state from "./state";
+import {ExitError} from "./types/exit-error";
+import {GitRemote} from "./types/git-remote";
+import {GitUser} from "./types/git-user";
 import untildify = require("untildify");
 import util = require('util');
 
@@ -23,8 +24,8 @@ export class Parser {
     private readonly bashCompletionPhase: boolean;
     private readonly pipelineIid: number;
 
-    private gitRemote: GitRemote | null;
-    private gitUser: GitUser;
+    private gitRemote: GitRemote | null = null;
+    // private gitUser: GitUser = null;
     private userVariables: any;
 
     private gitlabData: any;
@@ -125,20 +126,19 @@ export class Parser {
     async init() {
         const cwd = this.cwd;
 
-        this.gitUser = await Parser.initGitUser(cwd);
         this.gitRemote = await Parser.initGitRemote(cwd);
         this.userVariables = await Parser.initUserVariables(cwd, this.gitRemote, process.env.HOME);
 
-        let path, yamlDataList: any[] = [];
-        path = `${cwd}/.gitlab-ci.yml`;
-        const gitlabCiData = await Parser.loadYaml(path);
+        let ymlPath, yamlDataList: any[] = [];
+        ymlPath = `${cwd}/.gitlab-ci.yml`;
+        const gitlabCiData = await Parser.loadYaml(ymlPath);
         yamlDataList = yamlDataList.concat(await this.prepareIncludes(gitlabCiData));
 
-        path = `${cwd}/.gitlab-ci-local.yml`;
-        const gitlabCiLocalData = await Parser.loadYaml(path);
+        ymlPath = `${cwd}/.gitlab-ci-local.yml`;
+        const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
         yamlDataList = yamlDataList.concat(await this.prepareIncludes(gitlabCiLocalData));
 
-        const gitlabData = deepExtend.apply(this, yamlDataList);
+        const gitlabData: any = deepExtend({}, ...yamlDataList);
 
         // Expand various fields in gitlabData
         jobExpanders.jobExtends(gitlabData);
@@ -155,10 +155,8 @@ export class Parser {
 
         // 'stages:' must be an array
         if (gitlabData.stages && !Array.isArray(gitlabData.stages)) {
-            process.stderr.write(`${yellow('stages:')} ${red(`must be an array`)}\n`);
-            process.exit(1);
+            throw new ExitError(`${yellow('stages:')} must be an array`);
         }
-
         // Make sure stages includes ".pre" and ".post". See: https://docs.gitlab.com/ee/ci/yaml/#pre-and-post
         if (!gitlabData.stages.includes(".pre")) {
             gitlabData.stages.unshift(".pre");
@@ -188,6 +186,8 @@ export class Parser {
         const cwd = this.cwd;
         const gitlabData = this.gitlabData;
 
+        const gitUser = await Parser.initGitUser(cwd);
+
         // Generate jobs and put them into stages
         for (const [jobName, jobData] of Object.entries(gitlabData)) {
             if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") {
@@ -195,14 +195,12 @@ export class Parser {
             }
 
             const jobId = await state.getJobId(cwd);
-            const job = new Job(jobData, jobName, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, this.gitUser, this.userVariables);
+            const job = new Job(jobData, jobName, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitUser, this.userVariables);
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
             } else {
-                const stagesJoin = Array.from(this.stages.keys()).join(", ");
-                process.stderr.write(`${blueBright(`${job.name}`)} uses ${yellow(`stage:${job.stage}`)}. Stage cannot be found in [${yellow(`${stagesJoin}`)}]\n`);
-                process.exit(1);
+                throw new ExitError(`${yellow(`stage:${job.stage}`)} not found for ${blueBright(`${job.name}`)}`);
             }
             await state.incrementJobId(cwd);
 
@@ -249,10 +247,8 @@ export class Parser {
     getJobByName(name: string): Job {
         const job = this.jobs.get(name);
         if (!job) {
-            process.stderr.write(`${blueBright(`${name}`)} ${red(" could not be found")}\n`);
-            process.exit(1);
+            throw new ExitError(`${blueBright(`${name}`)} could not be found`);
         }
-
         return job;
     }
 
@@ -281,15 +277,13 @@ export class Parser {
             }
 
             if (job.needs.filter((v) => (jobNames.indexOf(v) >= 0)).length !== job.needs.length) {
-                process.stderr.write(`${blueBright(`${job.name}`)} needs list contains unspecified jobs.\n`);
-                process.exit(1);
+                throw new ExitError(`${blueBright(`${job.name}`)} cannot need unspecified jobs`);
             }
 
             for (const need of job.needs) {
                 const needJob = this.jobs.get(need);
                 if (needJob && stages.indexOf(needJob.stage) >= stages.indexOf(job.stage)) {
-                    process.stderr.write(`${blueBright(`${job.name}`)} cannot need a job from same or future stage. need: ${blueBright(`${needJob.name}`)}\n`);
-                    process.exit(1);
+                    throw new ExitError(`${blueBright(`${job.name}`)} cannot need job from same/future stage. needs: ${blueBright(`${needJob.name}`)}`);
                 }
             }
 
@@ -305,8 +299,7 @@ export class Parser {
         });
 
         if (!fs.existsSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`)) {
-            process.stderr.write(`Problem fetching git@${gitRemote.domain}:${project}.git ${ref} ${file} does it exist?\n`);
-            process.exit(1);
+            throw new ExitError(`Problem fetching git@${gitRemote.domain}:${project}.git ${ref} ${file} does it exist?`);
         }
 
         return;
@@ -334,16 +327,12 @@ export class Parser {
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of gitlabData["include"] || []) {
-            if (!value["file"]) {
-                continue;
-            }
-            if (this.bashCompletionPhase) {
+            if (!value["file"] || this.bashCompletionPhase) {
                 continue;
             }
 
             if (this.gitRemote == null || this.gitRemote.domain == null) {
-                process.stderr.write(`Problem fetching git origin. You wanna add a remote if using include: { project: *, file: *} \n`);
-                process.exit(1);
+                throw new ExitError(`Add a git remote if using include: [{ project: *, file: *}] syntax`);
             }
 
             promises.push(Parser.downloadIncludeFile(cwd, value["project"], value["ref"] || "master", value["file"], this.gitRemote));
@@ -359,7 +348,7 @@ export class Parser {
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
                 includeDatas = includeDatas.concat(await this.prepareIncludes(fileDoc));
             } else {
-                process.stderr.write(`Didn't understand include ${JSON.stringify(value)}\n`);
+                throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }
         }
 

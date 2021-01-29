@@ -1,0 +1,7 @@
+---
+include:
+  - { local: .gitlab-ci-base.yml }
+
+test-job:
+  script:
+    - echo "Test something"

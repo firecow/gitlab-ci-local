@@ -1,20 +1,19 @@
+import {red} from "ansi-colors";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as yargs from "yargs";
 import {Commander} from "./commander";
 import {Parser} from "./parser";
 import * as state from "./state";
-import {Utils} from "./utils";
+import {ExitError} from "./types/exit-error";
 
 const checkFolderAndFile = (cwd: string) => {
     if (!fs.pathExistsSync(`${cwd}`)) {
-        Utils.printToStream(`${cwd} is not a directory\n`, 'stderr');
-        process.exit(1);
+        throw new ExitError(`${cwd} is not a directory`);
     }
 
     if (!fs.existsSync(`${cwd}/.gitlab-ci.yml`)) {
-        Utils.printToStream(`${cwd} does not contain .gitlab-ci.yml\n`, 'stderr');
-        process.exit(1);
+        throw new ExitError(`${cwd} does not contain .gitlab-ci.yml`);
     }
 };
 
@@ -50,4 +49,14 @@ export async function handler(argv: any) {
     }
 }
 
-exports.handler = handler;
+exports.handler = async (argv: any) => {
+    try {
+        await handler(argv);
+    } catch (e) {
+        if (e instanceof ExitError) {
+            process.stderr.write(`${red(e.message)}\n`);
+            process.exit(1);
+        }
+        throw e;
+    }
+};

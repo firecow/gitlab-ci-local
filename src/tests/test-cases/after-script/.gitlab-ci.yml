@@ -1,0 +1,6 @@
+---
+test-job:
+  script:
+    - echo "Test something"
+  after_script:
+    - echo "Cleanup after test"

@@ -1,0 +1,8 @@
+---
+test-job:
+  image: alpine
+  artifacts:
+    paths:
+      - log.txt
+  script:
+    - echo "Test something" > log.txt

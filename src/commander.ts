@@ -1,4 +1,4 @@
-import {blueBright, bold, green, magenta, magentaBright, red, yellow, yellowBright} from "ansi-colors";
+import {blueBright, bold, green, magenta, red, yellow, yellowBright} from "ansi-colors";
 
 import {Job} from "./job";
 import {Parser} from "./parser";
@@ -9,31 +9,6 @@ export class Commander {
     static async runPipeline(parser: Parser, manualArgs: string[]) {
         const jobs = parser.getJobs();
         const stages = parser.getStages().concat();
-
-        const skippingNever = [];
-        const skippingManual = [];
-        for (const st of stages) {
-            const jobsInStage = st.getJobs();
-            for (const job of jobsInStage) {
-                if (job.isManual() && !manualArgs.includes(job.name) && !job.isFinished()) {
-                    skippingManual.push(job);
-                    continue;
-                }
-
-                if (job.isNever() && !job.isFinished()) {
-                    skippingNever.push(job);
-                }
-            }
-        }
-
-        if (skippingNever.length > 0) {
-            skippingNever.forEach(Utils.printJobNames);
-            process.stdout.write(` ${magentaBright("skipped")} when:never\n`);
-        }
-        if (skippingManual.length > 0) {
-            skippingManual.forEach(Utils.printJobNames);
-            process.stdout.write(` ${magentaBright("skipped")} when:manual\n`);
-        }
 
         let stage = stages.shift();
         while (stage != null) {

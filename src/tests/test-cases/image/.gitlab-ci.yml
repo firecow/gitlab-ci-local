@@ -1,0 +1,5 @@
+---
+test-job:
+  image: php
+  script:
+    - echo "Test something"

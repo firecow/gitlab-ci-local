@@ -1,0 +1,7 @@
+---
+stages: [ test ]
+
+test-job:
+  stage: invalid
+  script:
+    - echo "Hello, world!"

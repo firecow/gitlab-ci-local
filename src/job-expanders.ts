@@ -1,7 +1,8 @@
-import {blueBright, red} from "ansi-colors";
+import {blueBright} from "ansi-colors";
 import * as clone from "clone";
 import * as deepExtend from "deep-extend";
 import {Job} from "./job";
+import {ExitError} from "./types/exit-error";
 
 export function jobExtends(gitlabData: any) {
     for (const jobName of Object.keys(gitlabData)) {
@@ -11,9 +12,8 @@ export function jobExtends(gitlabData: any) {
 
         const jobData = gitlabData[jobName];
 
-        // Parse extends recursively and deepExtend data.
         jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
-        let i, clonedData: any = clone(jobData);
+        let clonedData: any = clone(jobData), i;
         const maxDepth = 50;
         for (i = 0; i < maxDepth; i++) {
             const parentDatas = [];
@@ -24,18 +24,16 @@ export function jobExtends(gitlabData: any) {
             for (const parentName of clonedData.extends) {
                 const parentData = gitlabData[parentName];
                 if (!parentData) {
-                    process.stderr.write(`${blueBright(parentName)} is used by ${blueBright(jobName)}, but is unspecified\n`);
-                    process.exit(1);
+                    throw new ExitError(`${blueBright(parentName)} is used by ${blueBright(jobName)}, but is unspecified`);
                 }
                 parentDatas.push(clone(gitlabData[parentName]));
             }
 
             delete clonedData.extends;
-            clonedData = deepExtend.apply(deepExtend, parentDatas.concat(clonedData));
+            clonedData = deepExtend({}, ...parentDatas.concat(clonedData));
         }
         if (i === maxDepth) {
-            process.stderr.write(`You seem to have an infinite extends loop starting from ${blueBright(jobName)}\n`);
-            process.exit(1);
+            throw new ExitError(`You have an infinite extends loop starting from ${blueBright(jobName)}`);
         }
 
         gitlabData[jobName] = clonedData;
@@ -81,8 +79,7 @@ export function afterScripts(gitlabData: any) {
 export function scripts(gitlabData: any) {
     forEachRealJob(gitlabData, (jobName, jobData) => {
         if (!jobData.script) {
-            process.stderr.write(`${blueBright(jobName)} ${red("must have script specified")}\n`);
-            process.exit(1);
+            throw new ExitError(`${blueBright(jobName)} must have script specified`);
         }
         jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
     });

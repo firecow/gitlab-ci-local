@@ -4,7 +4,8 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import * as prettyHrtime from "pretty-hrtime";
 import * as util from "util";
-import {GitUser} from "./git-user";
+import {ExitError} from "./types/exit-error";
+import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
 
 const exec = util.promisify(childProcess.exec);
@@ -141,8 +142,7 @@ export class Job {
         }
 
         if (this.interactive && (this.when !== 'manual' || this.image !== null)) {
-            process.stderr.write(`${this.getJobNameString()} ${red("@Interactive decorator cannot have image: and must be when:manual")}\n`);
-            process.exit(1);
+            throw new ExitError(`${this.getJobNameString()} @Interactive decorator cannot have image: and must be when:manual`);
         }
     }
 
@@ -265,17 +265,15 @@ export class Job {
 
         let shebang;
         if (this.image) {
-            const res = await exec(`docker run --entrypoint="" ${this.image} ls -1 /bin/ | grep -E '^bash$|^sh$' | head -n1`, {cwd: this.cwd});
+            const res = await exec(`docker history ${this.image} | grep -oE '[^A-Za-z0-9](sh|bash)[^A-Za-z0-9]' | grep -oE "(sh|bash)" | sort | head -n1`, {cwd: this.cwd});
             if (`${res.stdout}`.length === 0) {
-                Utils.printToStream(`${this.image} docker image doesn't contain /bin/bash or /bin/sh`, 'stderr');
-                process.exit(1);
+                throw new ExitError(`${this.image} docker image doesn't contain /bin/bash or /bin/sh`);
             }
             shebang = `#!/bin/${res.stdout}`;
         } else {
             const res = await exec(`ls -1 /bin/ | grep -E '^bash$|^sh$' | head -n1`, {cwd: this.cwd});
             if (`${res.stdout}`.length === 0) {
-                Utils.printToStream(`Host PC doesn't contain /bin/bash or /bin/sh`, 'stderr');
-                process.exit(1);
+                throw new ExitError(`Host PC doesn't contain /bin/bash or /bin/sh`);
             }
             shebang = `#!/bin/${res.stdout}`;
         }
@@ -287,7 +285,7 @@ export class Job {
             // Print command echo'ed in color
             const split = line.split(/\r?\n/);
             const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
-            const text = split[0].replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
+            const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
             await fs.appendFile(scriptPath, `echo "${green(`\$ ${text}${multilineText}`)}"\n`);
 
             // Print command to execute
@@ -307,7 +305,6 @@ export class Job {
             if (originalEntrypoint !== '') {
                 await fs.appendFile(entrypointPath, `${originalEntrypoint}\n`);
             }
-            // await fs.appendFile(entrypointPath, `export $(grep -v '^#' .gitlab-ci-local/envs/.env-${this.name} | xargs)\n`);
 
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 await fs.appendFile(entrypointPath, `export ${key}="${value.trim()}"\n`);
