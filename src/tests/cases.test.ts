@@ -5,6 +5,8 @@ const mockProcessExit = mockProcess.mockProcessExit(new Error("Test exited"));
 const mockProcessStdout = mockProcess.mockProcessStdout();
 const mockProcessStderr = mockProcess.mockProcessStderr();
 
+jest.setTimeout(90000);
+
 afterEach(() => {
     mockProcessStdout.mockClear();
     mockProcessStderr.mockClear();
