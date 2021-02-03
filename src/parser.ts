@@ -1,5 +1,4 @@
 import {blueBright, yellow} from "ansi-colors";
-import * as childProcess from "child_process";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
@@ -11,10 +10,8 @@ import * as state from "./state";
 import {ExitError} from "./types/exit-error";
 import {GitRemote} from "./types/git-remote";
 import {GitUser} from "./types/git-user";
+import {Utils} from "./utils";
 import untildify = require("untildify");
-import util = require('util');
-
-const cpExec = util.promisify(childProcess.exec);
 
 export class Parser {
 
@@ -51,8 +48,8 @@ export class Parser {
         let gitlabUserEmail, gitlabUserName;
 
         try {
-            const res = await cpExec(`git config user.email`, {cwd});
-            gitlabUserEmail = res.stdout.trimEnd();
+            const res = await Utils.spawn(`git config user.email`, {shell: true, cwd});
+            gitlabUserEmail = res.trimEnd();
         } catch (e) {
             // process.stderr.write(`${yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`);
             gitlabUserEmail = 'local@gitlab.com';
@@ -61,8 +58,8 @@ export class Parser {
         const gitlabUserLogin = gitlabUserEmail.replace(/@.*/, '');
 
         try {
-            const res = await cpExec(`git config user.name`, {cwd});
-            gitlabUserName = res.stdout.trimEnd();
+            const res = await Utils.spawn(`git config user.name`, {shell: true, cwd});
+            gitlabUserName = res.trimEnd();
         } catch (e) {
             // process.stderr.write(`${yellow("git config user.name is undefined, defaulting to `Bob Local`")}`);
             gitlabUserName = 'Bob Local';
@@ -294,7 +291,8 @@ export class Parser {
         const gitlabCiLocalPath = `${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`;
         fs.ensureDirSync(gitlabCiLocalPath);
 
-        await cpExec(`git archive --remote=git@${gitRemote.domain}:${project}.git ${ref} ${file} | tar -xC ${gitlabCiLocalPath}`, {
+        await Utils.spawn(`git archive --remote=git@${gitRemote.domain}:${project}.git ${ref} ${file} | tar -xC ${gitlabCiLocalPath}`, {
+            shell: true,
             cwd: gitlabCiLocalPath
         });
 
@@ -307,7 +305,7 @@ export class Parser {
 
     static async initGitRemote(cwd: string): Promise<GitRemote | null> {
         try {
-            const {stdout} = await cpExec(`git remote -v`, {cwd});
+            const stdout = await Utils.spawn(`git remote -v`, {shell: true, cwd});
             const match = stdout.match(/@(?<domain>.*):(?<group>.*)\/(?<project>.*)\.git \(fetch\)/);
 
             return {
@@ -321,7 +319,7 @@ export class Parser {
     }
 
     private async prepareIncludes(gitlabData: any): Promise<any[]> {
-        let includeDatas: any[] = [];
+        let includeData: any[] = [];
         const cwd = this.cwd;
         const promises = [];
 
@@ -343,16 +341,16 @@ export class Parser {
         for (const value of gitlabData["include"] || []) {
             if (value["local"]) {
                 const localDoc = await Parser.loadYaml(`${this.cwd}/${value.local}`);
-                includeDatas = includeDatas.concat(await this.prepareIncludes(localDoc));
+                includeData = includeData.concat(await this.prepareIncludes(localDoc));
             } else if (value["file"]) {
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
-                includeDatas = includeDatas.concat(await this.prepareIncludes(fileDoc));
+                includeData = includeData.concat(await this.prepareIncludes(fileDoc));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }
         }
 
-        includeDatas.push(gitlabData);
-        return includeDatas;
+        includeData.push(gitlabData);
+        return includeData;
     }
 }
