@@ -319,7 +319,7 @@ export class Parser {
     }
 
     private async prepareIncludes(gitlabData: any): Promise<any[]> {
-        let includesData: any[] = [];
+        let includeDatas: any[] = [];
         const cwd = this.cwd;
         const promises = [];
 
@@ -341,16 +341,16 @@ export class Parser {
         for (const value of gitlabData["include"] || []) {
             if (value["local"]) {
                 const localDoc = await Parser.loadYaml(`${this.cwd}/${value.local}`);
-                includesData = includesData.concat(await this.prepareIncludes(localDoc));
+                includeDatas = includeDatas.concat(await this.prepareIncludes(localDoc));
             } else if (value["file"]) {
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
-                includesData = includesData.concat(await this.prepareIncludes(fileDoc));
+                includeDatas = includeDatas.concat(await this.prepareIncludes(fileDoc));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }
         }
 
-        includesData.push(gitlabData);
-        return includesData;
+        includeDatas.push(gitlabData);
+        return includeDatas;
     }
 }
