@@ -281,7 +281,7 @@ export class Job {
             }
             shebang = `#!/bin/${res}`;
         } else {
-            const res = await this.spawn(`ls -1 /bin/ | grep -E '^bash$|^sh$' | head -n1`);
+            const res = await Utils.spawn(`ls -1 /bin/ | grep -E '^bash$|^sh$' | head -n1`, {shell: true});
             if (`${res}`.length === 0) {
                 throw new ExitError(`Host PC doesn't contain /bin/bash or /bin/sh`);
             }
