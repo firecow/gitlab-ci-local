@@ -1,14 +1,4 @@
-import {
-    blueBright,
-    cyanBright,
-    green,
-    greenBright,
-    magenta,
-    magentaBright,
-    red,
-    redBright,
-    yellowBright
-} from "ansi-colors";
+import {blueBright, cyanBright, green, greenBright, magenta, magentaBright, red, redBright, yellowBright} from "ansi-colors";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -16,7 +6,6 @@ import * as prettyHrtime from "pretty-hrtime";
 import {ExitError} from "./types/exit-error";
 import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
-
 
 export class Job {
 
@@ -135,7 +124,6 @@ export class Job {
             GITLAB_CI: "false",
         };
 
-
         // Create expanded variables
         const envs = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...process.env};
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
@@ -162,7 +150,7 @@ export class Job {
     private async spawn(command: string): Promise<string> {
         return Utils.spawn(command, {
             shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
-        })
+        });
     }
 
     private async pullImage() {
@@ -176,7 +164,7 @@ export class Job {
         const listOfImages = await this.spawn(command);
         const imageLines = listOfImages.split(/\r?\n/g);
 
-        const existingImage = imageLines.find(u => u.includes(imagePlusTag))
+        const existingImage = imageLines.find(u => u.includes(imagePlusTag));
 
         if (!existingImage) {
             process.stdout.write(`${this.getJobNameString()} ${cyanBright(`pulling ${imagePlusTag}`)}\n`);
