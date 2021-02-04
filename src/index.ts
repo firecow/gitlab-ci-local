@@ -22,19 +22,11 @@ process.on('unhandledRejection', error => {
         .command(defaultCmd)
         .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
         .strictOptions()
-        .option("manual", {
-            type: "array",
-            description: "One or more manual jobs to run during a pipeline",
-            requiresArg: true
-        })
+        .option("manual", {type: "array", description: "One or more manual jobs to run during a pipeline", requiresArg: true})
         .option("list", {type: "string", description: "List jobs and job information", requiresArg: false})
         .option("cwd", {type: "string", description: "Path to a gitlab-ci.yml", requiresArg: true})
         .option("completion", {type: "string", description: "Generate bash completion script", requiresArg: false})
-        .option("needs", {
-            type: "boolean",
-            description: "Run needed jobs, when executing a single job",
-            requiresArg: false
-        })
+        .option("needs", {type: "boolean", description: "Run needed jobs, when executing a single job", requiresArg: false})
         .completion("completion", false, async (_, yargsArgv) => {
             const cwd = yargsArgv.cwd || process.cwd();
             const pipelineIid = await state.getPipelineIid(cwd);
