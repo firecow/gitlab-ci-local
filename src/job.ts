@@ -321,11 +321,8 @@ export class Job {
             }
 
             await fs.appendFile(entrypointPath, `\nexec "$@"\n`);
-
-            const stdout =
-                await this.spawn(
-                    `docker create -w /gcl-wrk/ --entrypoint ".gitlab-ci-local/entrypoint/${this.name}.sh" --name ${this.getContainerName()} ${this.image} .gitlab-ci-local/shell/${this.name}.sh`
-                );
+            const command = `docker create -w /gcl-wrk/ --entrypoint ".gitlab-ci-local/entrypoint/${this.name}.sh" --name ${this.getContainerName()} ${this.image} .gitlab-ci-local/shell/${this.name}.sh`;
+            const stdout = await this.spawn(command);
             this.containerId = stdout ? stdout.replace(/\r?\n/g, '') : null;
             // TODO: Something like this should be implemented, we only want to copy tracked files into docker containers.
             // Must be asyncronous
