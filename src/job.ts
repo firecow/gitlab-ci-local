@@ -169,9 +169,7 @@ export class Job {
         if (!existingImage) {
             process.stdout.write(`${this.getJobNameString()} ${cyanBright(`pulling ${imagePlusTag}`)}\n`);
 
-            await Utils.spawn(`docker pull ${imagePlusTag}`, {
-                shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
-            });
+            await this.spawn(`docker pull ${imagePlusTag}`);
         }
     }
 
@@ -182,9 +180,7 @@ export class Job {
         if (!containerId) {
             return;
         }
-        await Utils.spawn(`docker rm -f ${containerId}`, {
-            shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
-        });
+        await this.spawn(`docker rm -f ${containerId}`);
     }
 
     private async copyArtifactsToHost() {
