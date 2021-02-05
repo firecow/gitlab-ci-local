@@ -147,12 +147,6 @@ export class Job {
         return `gcl-${this.name.replace(/[^a-zA-Z0-9_.-]/g, '-')}-${this.jobId}`;
     }
 
-    private async spawn(command: string): Promise<string> {
-        return Utils.spawn(command, {
-            shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
-        });
-    }
-
     private async pullImage() {
         if (!this.image) {
             return;
@@ -161,15 +155,18 @@ export class Job {
         const imagePlusTag = this.image.includes(':') ? this.image : `${this.image}:latest`;
         const command = `docker image ls --format '{{.Repository}}:{{.Tag}}'`;
 
-        const listOfImages = await this.spawn(command);
-        const imageLines = listOfImages.split(/\r?\n/g);
-
-        const existingImage = imageLines.find(u => u.includes(imagePlusTag));
+        const stdout = await Utils.spawn(command, {
+            shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
+        });
+        const images = stdout.split(/\r?\n/g);
+        const existingImage = images.find(u => u.includes(imagePlusTag));
 
         if (!existingImage) {
             process.stdout.write(`${this.getJobNameString()} ${cyanBright(`pulling ${imagePlusTag}`)}\n`);
 
-            await this.spawn(`docker pull ${imagePlusTag}`);
+            await Utils.spawn(`docker pull ${imagePlusTag}`, {
+                shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
+            });
         }
     }
 
@@ -180,7 +177,9 @@ export class Job {
         if (!containerId) {
             return;
         }
-        await this.spawn(`docker rm -f ${containerId}`);
+        await Utils.spawn(`docker rm -f ${containerId}`, {
+            shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
+        });
     }
 
     private async copyArtifactsToHost() {
@@ -195,7 +194,10 @@ export class Job {
             const source = `${containerName}:/gcl-wrk/${artifactPath}`;
             const target = `${this.cwd}/${path.dirname(artifactPath)}`;
             await fs.promises.mkdir(target, {recursive: true});
-            await this.spawn(`docker cp ${source} ${target}`);
+
+            await Utils.spawn(`docker cp ${source} ${target}`, {
+                shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
+            });
         }
     }
 
@@ -275,7 +277,9 @@ export class Job {
         let shebang;
         if (this.image) {
             const command = `docker history ${this.image} | grep -oE '[^A-Za-z0-9](sh|bash)[^A-Za-z0-9]' | grep -oE "(sh|bash)" | sort | head -n1`;
-            const res = await this.spawn(command);
+            const res = await Utils.spawn(command, {
+                shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
+            });
             if (`${res}`.length === 0) {
                 throw new ExitError(`${this.image} docker image doesn't contain /bin/bash or /bin/sh`);
             }
@@ -310,8 +314,10 @@ export class Job {
             await fs.truncate(entrypointPath);
             await fs.appendFile(entrypointPath, `#!/bin/sh\n`);
             await fs.appendFile(entrypointPath, `set -e\n\n`);
-            const result = await this.spawn(`docker inspect ${this.image} --format "{{ .Config.Entrypoint }}"`);
-            const originalEntrypoint = result.slice(1, -2);
+
+            const originalEntrypoint = (await Utils.spawn(`docker inspect ${this.image} --format "{{ .Config.Entrypoint }}"`, {
+                shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
+            })).slice(1, -2);
             if (originalEntrypoint !== '') {
                 await fs.appendFile(entrypointPath, `${originalEntrypoint}\n`);
             }
@@ -322,16 +328,18 @@ export class Job {
 
             await fs.appendFile(entrypointPath, `\nexec "$@"\n`);
             const command = `docker create -w /gcl-wrk/ --entrypoint ".gitlab-ci-local/entrypoint/${this.name}.sh" --name ${this.getContainerName()} ${this.image} .gitlab-ci-local/shell/${this.name}.sh`;
-            const stdout = await this.spawn(command);
-            this.containerId = stdout ? stdout.replace(/\r?\n/g, '') : null;
+            this.containerId = (await Utils.spawn(command, {
+                shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
+            })).replace(/\r?\n/g, '');
             // TODO: Something like this should be implemented, we only want to copy tracked files into docker containers.
             // Must be asyncronous
             // const lsRes = await exec(`git ls-files`);
             // for (const file of lsRes.stdout.split(/\r?\n/g)) {
             //    await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}/${file}:/gcl-wrk/`);
             // }
-            await this.spawn(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gcl-wrk/`);
-
+            await Utils.spawn(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gcl-wrk/`, {
+                shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
+            });
             return await this.executeCommandHandleOutputStreams(`docker start --attach ${this.getContainerName()}`);
         }
         return await this.executeCommandHandleOutputStreams(scriptPath);
