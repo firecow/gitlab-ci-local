@@ -9,8 +9,8 @@ import * as state from "./state";
 
 sourceMapSupport.install();
 process.on('unhandledRejection', error => {
-    // Will print "unhandledRejection err is not defined"
-    console.log('unhandledRejection', error);
+    console.error(error);
+    process.exit(1);
 });
 
 (() => {

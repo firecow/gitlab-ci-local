@@ -273,26 +273,7 @@ export class Job {
         await fs.ensureFile(scriptPath);
         await fs.chmod(scriptPath, '777');
         await fs.truncate(scriptPath);
-
-        let shebang;
-        if (this.image) {
-            const command = `docker history ${this.image} | grep -oE '[^A-Za-z0-9](sh|bash)[^A-Za-z0-9]' | grep -oE "(sh|bash)" | sort | head -n1`;
-            const res = await Utils.spawn(command, {
-                shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
-            });
-            if (`${res}`.length === 0) {
-                throw new ExitError(`${this.image} docker image doesn't contain /bin/bash or /bin/sh`);
-            }
-            shebang = `#!/bin/${res}`;
-        } else {
-            const res = await Utils.spawn(`ls -1 /bin/ | grep -E '^bash$|^sh$' | head -n1`, {shell: true});
-            if (`${res}`.length === 0) {
-                throw new ExitError(`Host PC doesn't contain /bin/bash or /bin/sh`);
-            }
-            shebang = `#!/bin/${res}`;
-        }
-
-        await fs.appendFile(scriptPath, `${shebang}\n`);
+        await fs.appendFile(scriptPath, `#!/bin/bash\n`);
         await fs.appendFile(scriptPath, `set -e\n\n`);
 
         for (const line of scripts) {
