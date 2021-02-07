@@ -50,16 +50,6 @@ chmod +x /usr/local/bin/gitlab-ci-local
 exit
 ```
 
-### Windows (Git bash)
-
-Install [gitbash](https://git-scm.com/downloads)
-
-Download and put binary in `C:\Program Files\Git\mingw64\bin`
-
-```bash
-curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
-```
-
 ### Macos
 
 Download and put binary in `/usr/local/bin`
