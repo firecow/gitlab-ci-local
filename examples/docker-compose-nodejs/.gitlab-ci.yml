@@ -2,7 +2,7 @@
 # @Description Install npm packages
 npm-install:
   stage: .pre
-  image: node
+  image: node:alpine
   artifacts:
     paths:
       - node_modules/
