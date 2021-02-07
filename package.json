@@ -84,5 +84,17 @@
   "bugs": {
     "url": "https://github.com/firecow/gitlab-ci-local/issues"
   },
-  "homepage": "https://github.com/firecow/gitlab-ci-local#readme"
+  "homepage": "https://github.com/firecow/gitlab-ci-local#readme",
+  "keywords": [
+    "git",
+    "gitlab",
+    "pipeline",
+    "local",
+    "ci",
+    "cd",
+    "push",
+    "untracked",
+    "uncomitted",
+    "gitlab-ci"
+  ]
 }
