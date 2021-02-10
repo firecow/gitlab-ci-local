@@ -13,16 +13,6 @@ export class Commander {
         let stage = stages.shift();
         while (stage != null) {
             const jobsInStage = stage.getJobs();
-            const stageName = stage.name;
-
-            if (!stage.isRunning()) {
-                if (jobsInStage.length === 0 && !stage.isRunning()) {
-                    process.stdout.write(`=> ${yellow(`${stageName}`)} has no jobs\n`);
-                } else {
-                    process.stdout.write(`=> ${yellow(`${stageName}`)} <=\n`);
-                }
-            }
-
             for (const job of jobsInStage) {
 
                 if (job.isManual() && !manualArgs.includes(job.name) && !job.isFinished()) {

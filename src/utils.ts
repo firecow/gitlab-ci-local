@@ -1,6 +1,41 @@
 import {blueBright} from "ansi-colors";
+import * as childProcess from "child_process";
+import {ExitError} from "./types/exit-error";
 
 export class Utils {
+
+    static spawn(command: string, cwd = process.cwd(), env: {[key: string]: string | undefined} = process.env): Promise<{stdout: string, stderr: string, output: string, status: number}> {
+        return new Promise((resolve, reject) => {
+            const cp = childProcess.spawn(command, { shell: Utils.getShell(), env, cwd});
+
+            let output = '';
+            let stdout = '';
+            let stderr = '';
+
+            cp.stderr.on("data", (buff) => {
+                stderr += buff.toString();
+                output += buff.toString();
+            });
+            cp.stdout.on("data", (buff) => {
+                stdout += buff.toString();
+                output += buff.toString();
+            });
+            cp.on("exit", (status) => {
+                if ((status ?? 0) > 0) {
+                    return reject(new ExitError(`'${command}' exited with ${status}\n\n${output}`));
+                }
+                return resolve({stdout, stderr, output, status: status ?? 0});
+            });
+            cp.on("error", (e) => {
+                reject(new ExitError(`'${command}' had errors\n\n${e}`));
+            });
+
+        });
+    }
+
+    static getShell() {
+        return process.env.EXE_PATH ? `${process.env.EXE_PATH}/bash.exe` : `bash`
+    }
 
     static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
         if (i === arr.length - 1) {

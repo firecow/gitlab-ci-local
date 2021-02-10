@@ -18,7 +18,7 @@ test('plain', async () => {
         cwd: 'src/tests/test-cases/plain',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(26);
+    expect(mockProcessStdout).toBeCalledTimes(22);
     expect(mockProcessStderr).toBeCalledTimes(3);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -81,7 +81,7 @@ test('image <test-job>', async () => {
         job: 'test-job'
     });
 
-    expect(mockProcessStdout).toHaveBeenCalledWith('[94mtest-job[39m [95mstarting[39m [95min docker...[39m\n');
+    expect(mockProcessStdout).toHaveBeenCalledWith('[94mtest-job[39m [95mstarting[39m [95mon docker-executor[39m in [33mtest[39m stage\n');
     // expect(mockProcessStdout).toBeCalledTimes(11);
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
@@ -125,6 +125,14 @@ test('artifacts <test-job>', async () => {
         cwd: 'src/tests/test-cases/artifacts',
         job: 'test-job'
     });
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
+test('extends', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/extends'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
