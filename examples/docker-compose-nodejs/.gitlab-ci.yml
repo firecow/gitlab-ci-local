@@ -24,6 +24,8 @@ npm-outdated:
   allow_failure: true
   needs: [ npm-install ]
   script:
+    - printenv
+    - ls -all
     - npx -s ncu -e2 --deprecated
 
 # @Description Up docker-compose services

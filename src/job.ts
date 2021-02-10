@@ -1,4 +1,4 @@
-import {blueBright, green, greenBright, magenta, magentaBright, red, redBright, yellowBright} from "ansi-colors";
+import {blueBright, green, greenBright, magenta, magentaBright, red, redBright, yellow, yellowBright} from "ansi-colors";
 import * as childProcess from "child_process";
 import {ChildProcessWithoutNullStreams} from "child_process";
 import * as fs from "fs-extra";
@@ -153,16 +153,19 @@ export class Job {
         await fs.ensureFile(this.getOutputFilesPath());
         await fs.truncate(this.getOutputFilesPath());
         if (!this.interactive) {
-            process.stdout.write(`${this.getStartingString()} ${this.image ? magentaBright("in docker...") : magentaBright("in shell...")}\n`);
+            process.stdout.write(`${this.getStartingString()} ${this.image ? magentaBright("on docker-executor") : magentaBright("on shell-executor")} in ${yellow(this.stage)} stage\n`);
         }
 
         const prescripts = this.beforeScripts.concat(this.scripts);
-        this._prescriptsExitCode = await this.execScripts(prescripts, true);
+        this._prescriptsExitCode = await this.execScripts(prescripts);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
             this.running = false;
             this.finished = true;
             this.success = false;
+            if (this.containerId) {
+                await Utils.spawn(`docker rm -f ${this.containerId}`);
+            }
             return;
         }
 
@@ -170,6 +173,9 @@ export class Job {
             process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
             this.running = false;
             this.finished = true;
+            if (this.containerId) {
+                await Utils.spawn(`docker rm -f ${this.containerId}`);
+            }
             return;
         }
 
@@ -194,24 +200,38 @@ export class Job {
             this.success = false;
         }
 
-        // await this.copyArtifactsToHost();
+        if (this.containerId && this.artifacts) {
+            for (let artifactPath of this.artifacts.paths) {
+                artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
+                const target = `${path.dirname(artifactPath)}`;
+                await fs.promises.mkdir(target, {recursive: true});
+                await Utils.spawn(`docker cp ${this.containerId}:/work/${artifactPath} .`, this.cwd);
+            }
+        }
         process.stdout.write(`${this.getFinishedString(startTime)}\n`);
 
         this.running = false;
         this.finished = true;
 
+        if (this.containerId) {
+            await Utils.spawn(`docker rm -f ${this.containerId}`);
+        }
         return;
     }
 
-    private async execScripts(scripts: string[], copyArtifactsToHost = false): Promise<number> {
+    private async execScripts(scripts: string[]): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
 
+        if (scripts.length === 0) {
+            return 0;
+        }
+
         if (this.image) {
-            const createCmd = `docker create --rm -w /work/ -i ${this.image} sh -c "if [ -x /usr/local/bin/bash ]; then\n\texec /usr/local/bin/bash \nelif [ -x /usr/bin/bash ]; then\n\texec /usr/bin/bash \nelif [ -x /bin/bash ]; then\n\texec /bin/bash \nelif [ -x /usr/local/bin/sh ]; then\n\texec /usr/local/bin/sh \nelif [ -x /usr/bin/sh ]; then\n\texec /usr/bin/sh \nelif [ -x /bin/sh ]; then\n\texec /bin/sh \nelif [ -x /busybox/sh ]; then\n\texec /busybox/sh \nelse\n\techo shell not found\n\texit 1\nfi\n\n"`
-            const {stdout} = childProcess.spawnSync(createCmd, {shell: true});
+            const createCmd = `docker create -i -w /work/ ${this.image} sh -c "if [ -x /usr/local/bin/bash ]; then\n\texec /usr/local/bin/bash \nelif [ -x /usr/bin/bash ]; then\n\texec /usr/bin/bash \nelif [ -x /bin/bash ]; then\n\texec /bin/bash \nelif [ -x /usr/local/bin/sh ]; then\n\texec /usr/local/bin/sh \nelif [ -x /usr/bin/sh ]; then\n\texec /usr/bin/sh \nelif [ -x /bin/sh ]; then\n\texec /bin/sh \nelif [ -x /busybox/sh ]; then\n\texec /busybox/sh \nelse\n\techo shell not found\n\texit 1\nfi\n\n"`
+            const {stdout} = await Utils.spawn(createCmd);
             this.containerId = stdout.toString().slice(0, -1);
-            childProcess.spawnSync(`docker cp . ${this.containerId}:/work/`, {shell: true, cwd: this.cwd});
+            await Utils.spawn(`docker cp . ${this.containerId}:/work/`, this.cwd);
         }
 
         let cp: ChildProcessWithoutNullStreams;
@@ -219,12 +239,12 @@ export class Job {
             // Reverse engineered directly from a gitlab-runner with docker-executor
             const command = `docker start -i --attach ${this.containerId}`;
             cp = childProcess.spawn(command, {
-                shell: true,
+                shell: Utils.getShell(),
                 stdio: ['pipe', 'pipe', 'pipe'],
             });
         } else {
             cp = childProcess.spawn("bash -e", {
-                shell: 'bash',
+                shell: Utils.getShell(),
                 stdio: ['pipe', 'pipe', 'pipe'],
                 cwd: this.cwd,
                 env: this.expandedVariables
@@ -269,19 +289,6 @@ export class Job {
                 // Execute actual script
                 cp.stdin.write(`${script}\n`);
             });
-
-            if (this.containerId && this.artifacts && copyArtifactsToHost) {
-                for (let artifactPath of this.artifacts.paths) {
-                    artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
-                    const source = `${this.containerId}:/work/${artifactPath}`;
-                    const target = `${path.dirname(artifactPath)}`;
-                    fs.mkdirpSync(target);
-                    console.log(`docker cp ${source} .`);
-                    // const spawnRes = childProcess.spawnSync(`docker cp ${source} .`, {shell: true, cwd: this.cwd})
-                    // console.log(spawnRes.stdout.toString(), spawnRes.stderr.toString(), spawnRes.status);
-                }
-                // process.exit(0);
-            }
 
             cp.stdin.write(`exit 0\n`);
         });

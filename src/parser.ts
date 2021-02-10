@@ -1,4 +1,4 @@
-import {blueBright, magenta, magentaBright, yellow} from "ansi-colors";
+import {blueBright, cyan, magenta, magentaBright, yellow} from "ansi-colors";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
@@ -42,7 +42,7 @@ export class Parser {
         await parser.initJobs();
         await parser.validateNeedsTags();
         const parsingTime = process.hrtime(time);
-        process.stdout.write(`${yellow(`${cwd}/.gitlab-ci.yml`)} ${magentaBright('parsed in')} ${magenta(prettyHrtime(parsingTime))}\n`);
+        process.stdout.write(`${cyan(`${cwd}/.gitlab-ci.yml`)} ${magentaBright('parsed in')} ${magenta(prettyHrtime(parsingTime))}\n`);
 
         return parser;
     }
@@ -51,8 +51,8 @@ export class Parser {
         let gitlabUserEmail, gitlabUserName;
 
         try {
-            const res = await Utils.spawn(`git config user.email`, {shell: true, cwd});
-            gitlabUserEmail = res.trimEnd();
+            const {stdout: gitConfigEmail} = await Utils.spawn(`git config user.email`, cwd);
+            gitlabUserEmail = gitConfigEmail.trimEnd();
         } catch (e) {
             // process.stderr.write(`${yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`);
             gitlabUserEmail = 'local@gitlab.com';
@@ -61,8 +61,8 @@ export class Parser {
         const gitlabUserLogin = gitlabUserEmail.replace(/@.*/, '');
 
         try {
-            const res = await Utils.spawn(`git config user.name`, {shell: true, cwd});
-            gitlabUserName = res.trimEnd();
+            const {stdout: gitConfigUserName} = await Utils.spawn(`git config user.name`, cwd);
+            gitlabUserName = gitConfigUserName.trimEnd();
         } catch (e) {
             // process.stderr.write(`${yellow("git config user.name is undefined, defaulting to `Bob Local`")}`);
             gitlabUserName = 'Bob Local';
@@ -294,10 +294,7 @@ export class Parser {
         const gitlabCiLocalPath = `${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`;
         fs.ensureDirSync(gitlabCiLocalPath);
 
-        await Utils.spawn(`git archive --remote=git@${gitRemote.domain}:${project}.git ${ref} ${file} | tar -xC ${gitlabCiLocalPath}`, {
-            shell: true,
-            cwd: gitlabCiLocalPath
-        });
+        await Utils.spawn(`git archive --remote=git@${gitRemote.domain}:${project}.git ${ref} ${file} | tar -xC ${gitlabCiLocalPath}`, gitlabCiLocalPath);
 
         if (!fs.existsSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`)) {
             throw new ExitError(`Problem fetching git@${gitRemote.domain}:${project}.git ${ref} ${file} does it exist?`);
@@ -308,8 +305,8 @@ export class Parser {
 
     static async initGitRemote(cwd: string): Promise<GitRemote | null> {
         try {
-            const stdout = await Utils.spawn(`git remote -v`, {shell: true, cwd});
-            const match = stdout.match(/@(?<domain>.*):(?<group>.*)\/(?<project>.*)\.git \(fetch\)/);
+            const {stdout: gitRemote} = await Utils.spawn(`git remote -v`, cwd);
+            const match = gitRemote.match(/@(?<domain>.*):(?<group>.*)\/(?<project>.*)\.git \(fetch\)/);
 
             return {
                 domain: match?.groups?.domain ?? '',

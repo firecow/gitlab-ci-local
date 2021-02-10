@@ -1,6 +1,4 @@
 ---
-stages: [ test ]
-
 test-job:
   stage: invalid
   script:
