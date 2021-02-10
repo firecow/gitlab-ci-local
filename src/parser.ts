@@ -276,14 +276,15 @@ export class Parser {
                 continue;
             }
 
-            if (job.needs.filter((v) => (jobNames.indexOf(v) >= 0)).length !== job.needs.length) {
-                throw new ExitError(`${blueBright(`${job.name}`)} cannot need unspecified jobs`);
+            const unspecifiedNeedsJob = job.needs.filter((v) => (jobNames.indexOf(v) === -1));
+            if (unspecifiedNeedsJob.length === job.needs.length) {
+                throw new ExitError(`[ ${blueBright(unspecifiedNeedsJob.join(','))} ] jobs are needed by ${blueBright(`${job.name}`)}, but they cannot be found`);
             }
 
             for (const need of job.needs) {
                 const needJob = this.jobs.get(need);
                 if (needJob && stages.indexOf(needJob.stage) >= stages.indexOf(job.stage)) {
-                    throw new ExitError(`${blueBright(`${job.name}`)} cannot need job from same/future stage. needs: ${blueBright(`${needJob.name}`)}`);
+                    throw new ExitError(`${blueBright(`${needJob.name}`)} is needed by ${blueBright(`${job.name}`)}, but it is in the same or a future stage`);
                 }
             }
 

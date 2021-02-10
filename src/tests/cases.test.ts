@@ -58,7 +58,7 @@ test('needs-invalid-stage <build-job> --needs', async () => {
     } catch (e) {
         expect(e.message).toBe("Test exited");
         expect(mockProcessStdout).toBeCalledTimes(0);
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mbuild-job[39m[31m cannot need job from same/future stage. needs: [94mtest-job[39m[31m[39m\n");
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[39m[31m is needed by [94mbuild-job[39m[31m, but it is in the same or a future stage[39m\n");
     }
 });
 
@@ -71,7 +71,7 @@ test('needs-unspecified-job <build-job> --needs', async () => {
     } catch (e) {
         expect(e.message).toBe("Test exited");
         expect(mockProcessStdout).toBeCalledTimes(0);
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[39m[31m cannot need unspecified jobs[39m\n");
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[ [94minvalid[39m[31m ] jobs are needed by [94mtest-job[39m[31m, but they cannot be found[39m\n");
     }
 });
 
