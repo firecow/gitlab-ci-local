@@ -304,7 +304,7 @@ export class Job {
             }
 
             for (const [key, value] of Object.entries(this.expandedVariables)) {
-                await fs.appendFile(entrypointPath, `export ${key}="${value.trim()}"\n`);
+                await fs.appendFile(entrypointPath, `export ${key}="${String(value).trim()}"\n`);
             }
 
             await fs.appendFile(entrypointPath, `\nexec "$@"\n`);
