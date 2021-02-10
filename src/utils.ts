@@ -1,29 +1,6 @@
 import {blueBright} from "ansi-colors";
-import * as childProcess from "child_process";
-import {SpawnOptionsWithoutStdio} from "child_process";
 
 export class Utils {
-
-    static async spawn(command: string, options?: SpawnOptionsWithoutStdio): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const p = childProcess.spawn(command, options);
-            let stdout = "";
-            let stderr = "";
-            p.stderr.on("data", (buff) => {
-                stderr += buff.toString();
-            });
-            p.stdout.on("data", (buff) => {
-                stdout += buff.toString();
-            });
-            p.on("exit", (exitCode) => {
-                (exitCode ?? 0) > 0 ? reject(new Error(stderr)) : resolve(stdout);
-            });
-
-            p.on("error", (e) => {
-                reject(e);
-            });
-        });
-    }
 
     static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
         if (i === arr.length - 1) {

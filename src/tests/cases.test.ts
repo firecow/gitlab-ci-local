@@ -18,7 +18,7 @@ test('plain', async () => {
         cwd: 'src/tests/test-cases/plain',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(25);
+    expect(mockProcessStdout).toBeCalledTimes(26);
     expect(mockProcessStderr).toBeCalledTimes(3);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -32,7 +32,7 @@ test('plain <notfound>', async () => {
     } catch (e) {
         expect(e.message).toBe("Test exited");
         expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mnotfound[39m[31m could not be found[39m\n");
-        expect(mockProcessStdout).toBeCalledTimes(0);
+        expect(mockProcessStdout).toBeCalledTimes(1);
         expect(mockProcessStderr).toBeCalledTimes(1);
     }
 });
@@ -44,7 +44,7 @@ test('needs <build-job> --needs', async () => {
         needs: true
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(19);
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -142,10 +142,10 @@ test('manual <build-job>', async () => {
         cwd: 'src/tests/test-cases/manual',
         manual: 'build-job'
     });
-    expect(mockProcessStdout).toHaveBeenNthCalledWith(14, "[35mnot started[39m ");
-    expect(mockProcessStdout).toHaveBeenNthCalledWith(15, "[94mtest-job[39m");
-    expect(mockProcessStdout).toHaveBeenNthCalledWith(17, "[32msuccessful[39m ");
-    expect(mockProcessStdout).toHaveBeenNthCalledWith(18, "[94mbuild-job[39m");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[35mnot started[39m ");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtest-job[39m");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[32msuccessful[39m ");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mbuild-job[39m");
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
@@ -181,7 +181,7 @@ test('script-failures <allow-failure-job>', async () => {
         job: 'allow-failure-job',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(7);
+    expect(mockProcessStdout).toBeCalledTimes(8);
     expect(mockProcessStderr).toBeCalledTimes(1);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -192,7 +192,7 @@ test('script-failures <allow-failure-after-scripts>', async () => {
         job: 'allow-failure-after-script',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(13);
+    expect(mockProcessStdout).toBeCalledTimes(14);
     expect(mockProcessStderr).toBeCalledTimes(2);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -226,10 +226,8 @@ test('plain --list', async () => {
         list: true
     });
 
-    expect(mockProcessStdout.mock.calls).toEqual([
-        ["[94mtest-job [39m  Run Tests  [33mtest [39m  on_success         \n"],
-        ["[94mbuild-job[39m             [33mbuild[39m  on_success         \n"],
-    ]);
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtest-job [39m  Run Tests  [33mtest [39m  on_success         \n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mbuild-job[39m             [33mbuild[39m  on_success         \n");
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -237,10 +235,10 @@ test('plain --list', async () => {
 test('--cwd unknown-directory/', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'unknown-directory'
+            cwd: 'something/unknown-directory'
         });
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m${process.cwd()}/unknown-directory is not a directory[39m\n`);
+        expect(mockProcessStderr).toHaveBeenCalledWith(`[31msomething/unknown-directory is not a directory[39m\n`);
         expect(e.message).toBe("Test exited");
     }
 });
@@ -251,7 +249,7 @@ test('--cwd docs/', async () => {
             cwd: 'docs'
         });
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m${process.cwd()}/docs does not contain .gitlab-ci.yml[39m\n`);
+        expect(mockProcessStderr).toHaveBeenCalledWith(`[31mdocs does not contain .gitlab-ci.yml[39m\n`);
         expect(e.message).toBe("Test exited");
     }
 });
