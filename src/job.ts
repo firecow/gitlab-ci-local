@@ -1,5 +1,6 @@
-import {blueBright, cyanBright, green, greenBright, magenta, magentaBright, red, redBright, yellowBright} from "ansi-colors";
+import {blueBright, green, greenBright, magenta, magentaBright, red, redBright, yellowBright} from "ansi-colors";
 import * as childProcess from "child_process";
+import {ChildProcessWithoutNullStreams} from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as prettyHrtime from "pretty-hrtime";
@@ -72,11 +73,11 @@ export class Job {
     private _afterScriptsExitCode = 0;
 
     private readonly jobData: any;
-    private containerId: string | null = null;
     private started = false;
     private finished = false;
     private running = false;
     private success = true;
+    private containerId: string|null = null;
 
     constructor(jobData: any, name: string, cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitUser: GitUser, userVariables: { [name: string]: string }) {
         this.maxJobNameLength = maxJobNameLength;
@@ -143,64 +144,6 @@ export class Job {
         }
     }
 
-    private getContainerName() {
-        return `gcl-${this.name.replace(/[^a-zA-Z0-9_.-]/g, '-')}-${this.jobId}`;
-    }
-
-    private async pullImage() {
-        if (!this.image) {
-            return;
-        }
-
-        const imagePlusTag = this.image.includes(':') ? this.image : `${this.image}:latest`;
-        const command = `docker image ls --format '{{.Repository}}:{{.Tag}}'`;
-
-        const stdout = await Utils.spawn(command, {
-            shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
-        });
-        const images = stdout.split(/\r?\n/g);
-        const existingImage = images.find(u => u.includes(imagePlusTag));
-
-        if (!existingImage) {
-            process.stdout.write(`${this.getJobNameString()} ${cyanBright(`pulling ${imagePlusTag}`)}\n`);
-
-            await Utils.spawn(`docker pull ${imagePlusTag}`, {
-                shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
-            });
-        }
-    }
-
-    private async removeContainer(containerId: string | null) {
-        if (!this.image) {
-            return;
-        }
-        if (!containerId) {
-            return;
-        }
-        await Utils.spawn(`docker rm -f ${containerId}`, {
-            shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
-        });
-    }
-
-    private async copyArtifactsToHost() {
-        if (!this.artifacts || !this.image) {
-            return;
-        }
-
-        const containerName = this.getContainerName();
-
-        for (let artifactPath of this.artifacts.paths || []) {
-            artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
-            const source = `${containerName}:/gcl-wrk/${artifactPath}`;
-            const target = `${this.cwd}/${path.dirname(artifactPath)}`;
-            await fs.promises.mkdir(target, {recursive: true});
-
-            await Utils.spawn(`docker cp ${source} ${target}`, {
-                shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd
-            });
-        }
-    }
-
     async start(): Promise<void> {
         const startTime = process.hrtime();
 
@@ -213,16 +156,13 @@ export class Job {
             process.stdout.write(`${this.getStartingString()} ${this.image ? magentaBright("in docker...") : magentaBright("in shell...")}\n`);
         }
 
-        await this.pullImage();
-
         const prescripts = this.beforeScripts.concat(this.scripts);
-        this._prescriptsExitCode = await this.execScripts(prescripts);
+        this._prescriptsExitCode = await this.execScripts(prescripts, true);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
             this.running = false;
             this.finished = true;
             this.success = false;
-            await this.removeContainer(this.containerId);
             return;
         }
 
@@ -230,7 +170,6 @@ export class Job {
             process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
             this.running = false;
             this.finished = true;
-            await this.removeContainer(this.containerId);
             return;
         }
 
@@ -255,9 +194,7 @@ export class Job {
             this.success = false;
         }
 
-        await this.copyArtifactsToHost();
-        await this.removeContainer(this.containerId);
-
+        // await this.copyArtifactsToHost();
         process.stdout.write(`${this.getFinishedString(startTime)}\n`);
 
         this.running = false;
@@ -266,83 +203,40 @@ export class Job {
         return;
     }
 
-    private async execScripts(scripts: string[]): Promise<number> {
-        const jobName = this.name;
-        const scriptPath = `${this.cwd}/.gitlab-ci-local/shell/${jobName}.sh`;
-
-        await fs.ensureFile(scriptPath);
-        await fs.chmod(scriptPath, '777');
-        await fs.truncate(scriptPath);
-        await fs.appendFile(scriptPath, `set -e\n\n`);
-
-        for (const line of scripts) {
-            // Print command echo'ed in color
-            const split = line.split(/\r?\n/);
-            const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
-            const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
-            await fs.appendFile(scriptPath, `echo "${green(`\$ ${text}${multilineText}`)}"\n`);
-
-            // Print command to execute
-            await fs.appendFile(scriptPath, `${line}\n`);
-        }
+    private async execScripts(scripts: string[], copyArtifactsToHost = false): Promise<number> {
+        const jobNameStr = this.getJobNameString();
+        const outputFilesPath = this.getOutputFilesPath();
 
         if (this.image) {
-            // Generate custom entrypoint
-            const entrypointPath = `${this.cwd}/.gitlab-ci-local/entrypoint/${jobName}.sh`;
-            await fs.ensureFile(entrypointPath);
-            await fs.chmod(entrypointPath, '777');
-            await fs.truncate(entrypointPath);
-            await fs.appendFile(entrypointPath, `#!/bin/sh\n`);
-            await fs.appendFile(entrypointPath, `set -e\n\n`);
-
-            const entryPointCommand = `docker inspect ${this.image} --format "{{ .Config.Entrypoint }}"`;
-            const originalEntrypoint = (await Utils.spawn(entryPointCommand, {shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd})).slice(1, -2);
-            if (originalEntrypoint !== '') {
-                await fs.appendFile(entrypointPath, `${originalEntrypoint}\n`);
-            }
-            for (const [key, value] of Object.entries(this.expandedVariables)) {
-                await fs.appendFile(entrypointPath, `export ${key}="${value.trim()}"\n`);
-            }
-            await fs.appendFile(entrypointPath, `\nexec "$@"\n`);
-
-            const createCommand = `docker create -w /gcl-wrk/ --entrypoint ".gitlab-ci-local/entrypoint/${this.name}.sh" --name ${this.getContainerName()} ${this.image} .gitlab-ci-local/shell/${this.name}.sh`;
-            this.containerId = (await Utils.spawn(createCommand, {shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd})).replace(/\r?\n/g, '');
-
-            // TODO: Something like this should be implemented, we only want to copy tracked files into docker containers.
-            // Must be asyncronous
-            // const lsRes = await exec(`git ls-files`);
-            // for (const file of lsRes.stdout.split(/\r?\n/g)) {
-            //    await exec(`docker cp ${this.cwd}/. ${this.getContainerName()}/${file}:/gcl-wrk/`);
-            // }
-            await Utils.spawn(`docker cp ${this.cwd}/. ${this.getContainerName()}:/gcl-wrk/`, {shell: true, env: {...this.expandedVariables, ...process.env}, cwd: this.cwd});
-
-            return await this.executeCommandHandleOutputStreams(`docker start --attach ${this.getContainerName()}`)
+            const createCmd = `docker create --rm -w /work/ -i ${this.image} sh -c "if [ -x /usr/local/bin/bash ]; then\n\texec /usr/local/bin/bash \nelif [ -x /usr/bin/bash ]; then\n\texec /usr/bin/bash \nelif [ -x /bin/bash ]; then\n\texec /bin/bash \nelif [ -x /usr/local/bin/sh ]; then\n\texec /usr/local/bin/sh \nelif [ -x /usr/bin/sh ]; then\n\texec /usr/bin/sh \nelif [ -x /bin/sh ]; then\n\texec /bin/sh \nelif [ -x /busybox/sh ]; then\n\texec /busybox/sh \nelse\n\techo shell not found\n\texit 1\nfi\n\n"`
+            const {stdout} = childProcess.spawnSync(createCmd, {shell: true});
+            this.containerId = stdout.toString().slice(0, -1);
+            childProcess.spawnSync(`docker cp . ${this.containerId}:/work/`, {shell: true, cwd: this.cwd});
         }
-        return await this.executeCommandHandleOutputStreams(scriptPath);
-    }
 
-    private async executeCommandHandleOutputStreams(command: string): Promise<number> {
-        if (this.interactive) {
-            return new Promise((_, reject) => {
-                const cp = childProcess.spawn(command, {
-                    stdio: 'inherit',
-                    cwd: this.cwd,
-                    env: {...this.expandedVariables, ...process.env}
-                });
-                cp.on('exit', (code) => {
-                    process.exit(code ?? 0);
-                });
-                cp.on("error", (err) => reject(err));
+        let cp: ChildProcessWithoutNullStreams;
+        if (this.containerId) {
+            // Reverse engineered directly from a gitlab-runner with docker-executor
+            const command = `docker start -i --attach ${this.containerId}`;
+            cp = childProcess.spawn(command, {
+                shell: true,
+                stdio: ['pipe', 'pipe', 'pipe'],
+            });
+        } else {
+            cp = childProcess.spawn("bash -e", {
+                shell: 'bash',
+                stdio: ['pipe', 'pipe', 'pipe'],
+                cwd: this.cwd,
+                env: this.expandedVariables
             });
         }
 
-        const jobNameStr = this.getJobNameString();
-        const outputFilesPath = this.getOutputFilesPath();
         const outFunc = (e: any, stream: NodeJS.WriteStream, colorize: (str: string) => string) => {
             for (const line of `${e}`.split(/\r?\n/)) {
                 if (line.length === 0) {
                     continue;
                 }
+
                 stream.write(`${jobNameStr} `);
                 if (!line.startsWith('\u001b[32m$')) {
                     stream.write(`${colorize(">")} `);
@@ -353,21 +247,43 @@ export class Job {
         };
 
         return new Promise((resolve, reject) => {
-            const p = childProcess.spawn(command, {
-                shell: true,
-                env: {...this.expandedVariables, ...process.env},
-                cwd: this.cwd
+            cp.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => greenBright(s)));
+            cp.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => redBright(s)));
+
+            cp.on('exit', (code) => resolve(code ?? 0));
+            cp.on("error", (err) => reject(err));
+
+            if (this.image) {
+                for (const [key, value] of Object.entries(this.expandedVariables)) {
+                    cp.stdin.write(`export ${key}="${value.trim()}"\n`);
+                }
+            }
+
+            scripts.forEach((script) => {
+                // Print command echo'ed in color
+                const split = script.split(/\r?\n/);
+                const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
+                const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
+                cp.stdin.write(`echo "${green(`\$ ${text}${multilineText}`)}"\n`);
+
+                // Execute actual script
+                cp.stdin.write(`${script}\n`);
             });
 
-            if (p.stdout) {
-                p.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => greenBright(s)));
-            }
-            if (p.stderr) {
-                p.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => redBright(s)));
+            if (this.containerId && this.artifacts && copyArtifactsToHost) {
+                for (let artifactPath of this.artifacts.paths) {
+                    artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
+                    const source = `${this.containerId}:/work/${artifactPath}`;
+                    const target = `${path.dirname(artifactPath)}`;
+                    fs.mkdirpSync(target);
+                    console.log(`docker cp ${source} .`);
+                    // const spawnRes = childProcess.spawnSync(`docker cp ${source} .`, {shell: true, cwd: this.cwd})
+                    // console.log(spawnRes.stdout.toString(), spawnRes.stderr.toString(), spawnRes.status);
+                }
+                // process.exit(0);
             }
 
-            p.on("error", (err) => reject(err));
-            p.on("close", (signal) => resolve(signal ? signal : 0));
+            cp.stdin.write(`exit 0\n`);
         });
     }
 

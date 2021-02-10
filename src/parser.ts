@@ -1,8 +1,9 @@
-import {blueBright, yellow} from "ansi-colors";
+import {blueBright, magenta, magentaBright, yellow} from "ansi-colors";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as path from "path";
+import * as prettyHrtime from "pretty-hrtime";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
 import {Stage} from "./stage";
@@ -22,7 +23,6 @@ export class Parser {
     private readonly pipelineIid: number;
 
     private gitRemote: GitRemote | null = null;
-    // private gitUser: GitUser = null;
     private userVariables: any;
 
     private gitlabData: any;
@@ -37,9 +37,12 @@ export class Parser {
     static async create(cwd: string, pipelineIid: number, bashCompletionPhase = false) {
         const parser = new Parser(cwd, pipelineIid, bashCompletionPhase);
 
+        const time = process.hrtime();
         await parser.init();
         await parser.initJobs();
         await parser.validateNeedsTags();
+        const parsingTime = process.hrtime(time);
+        process.stdout.write(`${yellow(`${cwd}/.gitlab-ci.yml`)} ${magentaBright('parsed in')} ${magenta(prettyHrtime(parsingTime))}\n`);
 
         return parser;
     }
