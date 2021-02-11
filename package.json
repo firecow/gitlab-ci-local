@@ -2,7 +2,7 @@
   "name": "gitlab-ci-local",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.9.3",
+  "version": "4.9.4",
   "scripts": {
     "prepublishOnly": "npm run check-all && chmod +x src/index.js",
     "pkg-linux": "pkg src/index.js --public -t linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "ansi-colors": "^4.1.1",
+    "clone": "^2.1.2",
     "deep-extend": "^0.6.0",
     "fs-extra": "^9.1.0",
     "js-yaml": "^4.0.0",
@@ -49,7 +50,7 @@
     "pkg": "^4.4.9",
     "ts-jest": "^26.5.1",
     "ts-node": "^9.1.1",
-    "typescript": "^4.1.4"
+    "typescript": "^4.1.5"
   },
   "pkg": {
     "assets": [
