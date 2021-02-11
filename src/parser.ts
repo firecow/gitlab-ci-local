@@ -292,10 +292,8 @@ export class Parser {
     }
 
     static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemote: GitRemote): Promise<void> {
-        const gitlabCiLocalPath = `${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`;
-        fs.ensureDirSync(gitlabCiLocalPath);
-
-        await Utils.spawn(`git archive --remote=git@${gitRemote.domain}:${project}.git ${ref} ${file} | tar -xC ${gitlabCiLocalPath}`, gitlabCiLocalPath);
+        fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`);
+        await Utils.spawn(`git archive --remote=git@${gitRemote.domain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${project}/${ref}/`, cwd);
 
         if (!fs.existsSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`)) {
             throw new ExitError(`Problem fetching git@${gitRemote.domain}:${project}.git ${ref} ${file} does it exist?`);
@@ -341,7 +339,7 @@ export class Parser {
 
         for (const value of gitlabData["include"] || []) {
             if (value["local"]) {
-                const localDoc = await Parser.loadYaml(`${this.cwd}/${value.local}`);
+                const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
                 includeDatas = includeDatas.concat(await this.prepareIncludes(localDoc));
             } else if (value["file"]) {
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
