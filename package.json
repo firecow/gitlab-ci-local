@@ -2,7 +2,7 @@
   "name": "gitlab-ci-local",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.9.3",
+  "version": "4.9.4-next.0",
   "scripts": {
     "prepublishOnly": "npm run check-all && chmod +x src/index.js",
     "pkg-linux": "pkg src/index.js --public -t linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
