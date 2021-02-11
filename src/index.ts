@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {red} from "ansi-colors";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as sourceMapSupport from "source-map-support";
@@ -6,10 +7,15 @@ import * as yargs from "yargs";
 import * as defaultCmd from "./default-cmd";
 import {Parser} from "./parser";
 import * as state from "./state";
+import {ExitError} from "./types/exit-error";
 
 sourceMapSupport.install();
-process.on('unhandledRejection', error => {
-    console.error(error);
+process.on('unhandledRejection', e => {
+    if (e instanceof ExitError) {
+        process.stderr.write(`${red(e.message)}\n`);
+        process.exit(1);
+    }
+    process.stderr.write(`${red(`${e}`)}\n`);
     process.exit(1);
 });
 
