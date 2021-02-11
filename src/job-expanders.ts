@@ -50,7 +50,7 @@ export function artifacts(gitlabData: any) {
     });
 }
 
-export function image(gitlabData: any, envs: {[key: string]: string}) {
+export function image(gitlabData: any, envs: { [key: string]: string }) {
     forEachRealJob(gitlabData, (_, jobData) => {
         const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
         if (expandedImage) {
