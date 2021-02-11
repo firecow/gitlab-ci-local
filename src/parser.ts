@@ -291,12 +291,11 @@ export class Parser {
         }
     }
 
-    static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemote: GitRemote): Promise<void> {
+    static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
         fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`);
-        await Utils.spawn(`git archive --remote=git@${gitRemote.domain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${project}/${ref}/`, cwd);
-
+        await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${project}/${ref}/`, cwd);
         if (!fs.existsSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`)) {
-            throw new ExitError(`Problem fetching git@${gitRemote.domain}:${project}.git ${ref} ${file} does it exist?`);
+            throw new ExitError(`Problem fetching git@${gitRemoteDomain}:${project}.git ${ref} ${file} does it exist?`);
         }
 
         return;
@@ -332,7 +331,7 @@ export class Parser {
                 throw new ExitError(`Add a git remote if using include: [{ project: *, file: *}] syntax`);
             }
 
-            promises.push(Parser.downloadIncludeFile(cwd, value["project"], value["ref"] || "master", value["file"], this.gitRemote));
+            promises.push(Parser.downloadIncludeFile(cwd, value["project"], value["ref"] || "master", value["file"], this.gitRemote.domain));
         }
 
         await Promise.all(promises);
