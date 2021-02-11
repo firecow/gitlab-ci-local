@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "ncu": "ncu --target latest -e 2",
     "test": "jest",
-    "coverage": "jest --coverage && istanbul-badges-readme --silent",
+    "coverage": "jest --coverage --runInBand && istanbul-badges-readme --silent",
     "start": "ts-node src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
@@ -31,7 +31,7 @@
   "devDependencies": {
     "@types/clone": "^2.1.0",
     "@types/deep-extend": "^0.4.31",
-    "@types/fs-extra": "^9.0.6",
+    "@types/fs-extra": "^9.0.7",
     "@types/js-yaml": "^4.0.0",
     "@types/mock-fs": "^4.13.0",
     "@types/pretty-hrtime": "^1.0.0",
