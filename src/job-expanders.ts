@@ -2,6 +2,7 @@ import {blueBright} from "ansi-colors";
 import * as deepExtend from "deep-extend";
 import {Job} from "./job";
 import {ExitError} from "./types/exit-error";
+import {Utils} from "./utils";
 
 export function jobExtends(gitlabData: any) {
     for (const jobName of Object.keys(gitlabData)) {
@@ -45,11 +46,11 @@ export function artifacts(gitlabData: any) {
     });
 }
 
-export function image(gitlabData: any) {
+export function image(gitlabData: any, envs: { [key: string]: string }) {
     forEachRealJob(gitlabData, (_, jobData) => {
         const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
         if (expandedImage) {
-            jobData.image = expandedImage;
+            jobData.image = Utils.expandText(expandedImage, envs);
         }
     });
 }
