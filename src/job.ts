@@ -75,7 +75,7 @@ export class Job {
     private finished = false;
     private running = false;
     private success = true;
-    // private containerId: string | null = null;
+    private containerId: string | null = null;
 
     constructor(jobData: any, name: string, cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitUser: GitUser, userVariables: { [name: string]: string }) {
         this.maxJobNameLength = maxJobNameLength;
@@ -210,61 +210,66 @@ export class Job {
 
         const time = process.hrtime();
         await Utils.spawn(`mkdir -p .gitlab-ci-local/builds/${this.name}`, this.cwd);
-        await Utils.spawn(`rsync -a . .gitlab-ci-local/builds/${this.name}/. --delete`, this.cwd);
-        await Utils.spawn(`chmod 777 -R .gitlab-ci-local/builds/${this.name}/`, this.cwd);
+        await Utils.spawn(`rsync -a . .gitlab-ci-local/builds/${this.name}/. --delete --exclude '.gitlab-ci-local/'`, this.cwd);
+        if (this.image) {
+            await Utils.spawn(`docker run -v $PWD:/app/ -w /app/ alpine sh -c "chmod a+w -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
+            await Utils.spawn(`docker run -v $PWD:/app/ -w /app/ alpine sh -c "chown root:root -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
+        }
+
         const endTime = process.hrtime(time);
         process.stdout.write(`${this.getJobNameString()} ${magentaBright(`rsync to ${this.cwd}/.gitlab-ci-local/builds/${this.name}`)} in ${magenta(prettyHrtime(endTime))}\n`);
 
-        let command = '';
         if (this.image) {
-            command += `docker run --rm -v "$PWD/.gitlab-ci-local/builds/${this.name}:/builds/" -v "$PWD/.gitlab-ci-local/shell/${this.name}:/script" -w /builds/ ${this.image} sh -c "if [ -x /usr/local/bin/bash ]; then`;
-            command += `\texec /usr/local/bin/bash /script\n`;
-            command += `elif [ -x /usr/bin/bash ]; then\n`;
-            command += `\texec /usr/bin/bash /script\n`
-            command += `elif [ -x /bin/bash ]; then\n`
-            command += `\texec /bin/bash /script\n`
-            command += `elif [ -x /usr/local/bin/sh ]; then\n`
-            command += `\texec /usr/local/bin/sh /script\n`
-            command += `elif [ -x /usr/bin/sh ]; then\n`;
-            command += `\texec /usr/bin/sh /script\n`;
-            command += `elif [ -x /bin/sh ]; then\n`
-            command += `\texec /bin/sh /script\n`
-            command += `elif [ -x /busybox/sh ]; then\n`;
-            command += `\texec /busybox/sh /script\n`;
-            command += `else\n`;
-            command += `\techo shell not found\n`;
-            command += `\texit 1`;
-            command += `\nfi"`
-            command += `\n\n`
-        } else {
-            command += `bash $PWD/.gitlab-ci-local/shell/${this.name}`
+            let dockerCmd = ``;
+            dockerCmd += `docker run -d -i -v "$PWD/.gitlab-ci-local/builds/${this.name}:/builds/" -w /builds/ ${this.image} `;
+            dockerCmd += `sh -c "\n`
+            dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
+            dockerCmd += `\texec /usr/local/bin/bash \n`;
+            dockerCmd += `elif [ -x /usr/bin/bash ]; then\n`;
+            dockerCmd += `\texec /usr/bin/bash \n`
+            dockerCmd += `elif [ -x /bin/bash ]; then\n`
+            dockerCmd += `\texec /bin/bash \n`
+            dockerCmd += `elif [ -x /usr/local/bin/sh ]; then\n`
+            dockerCmd += `\texec /usr/local/bin/sh \n`
+            dockerCmd += `elif [ -x /usr/bin/sh ]; then\n`;
+            dockerCmd += `\texec /usr/bin/sh \n`;
+            dockerCmd += `elif [ -x /bin/sh ]; then\n`
+            dockerCmd += `\texec /bin/sh \n`
+            dockerCmd += `elif [ -x /busybox/sh ]; then\n`;
+            dockerCmd += `\texec /busybox/sh \n`;
+            dockerCmd += `else\n`;
+            dockerCmd += `\techo shell not found\n`;
+            dockerCmd += `\texit 1\n`;
+            dockerCmd += `fi\n"`
+            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd);
+            this.containerId = containerId.replace("\n", "");
         }
 
-        let scriptContent = '';
+        const cp = childProcess.spawn(this.containerId ? `docker attach ${this.containerId}` : `bash`, {
+            shell: Utils.getShell(),
+            stdio: ['pipe', 'pipe', 'pipe'],
+            cwd: this.cwd,
+        });
+
         for (const [key, value] of Object.entries(this.expandedVariables)) {
-            scriptContent += `export ${key}="${value.trim()}"\n`;
+            cp.stdin.write(`export ${key}="${value.trim()}"\n`);
         }
+
+        cp.stdin.write(`ls -all\n`);
+        cp.stdin.write(`pwd\n`);
 
         scripts.forEach((script) => {
             // Print command echo'ed in color
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
             const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
-            scriptContent += `echo "${green(`\$ ${text}${multilineText}`)}"\n`;
+            cp.stdin.write(`echo "${green(`\$ ${text}${multilineText}`)}"\n`);
 
             // Execute actual script
-            scriptContent += `${script}\n`;
+            cp.stdin.write(`${script}\n`);
         });
 
-        scriptContent += `exit 0\n`;
-
-        fs.outputFileSync(`${this.cwd}/.gitlab-ci-local/shell/${this.name}`, scriptContent);
-
-        const cp = childProcess.spawn(command, {
-            shell: Utils.getShell(),
-            stdio: ['pipe', 'pipe', 'pipe'],
-            cwd: this.cwd,
-        });
+        cp.stdin.write(`exit 0\n`);
 
         const outFunc = (e: any, stream: NodeJS.WriteStream, colorize: (str: string) => string) => {
             for (const line of `${e}`.split(/\r?\n/)) {
@@ -291,10 +296,8 @@ export class Job {
 
         for (let artifactPath of this.artifacts.paths) {
             artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
-            console.log(`rsync -a .gitlab-ci-local/builds/${this.name}/${artifactPath} .`);
-            // await Utils.spawn(`rsync -ah .gitlab-ci-local/builds/${this.name}/${artifactPath} .`, this.cwd);
+            await Utils.spawn(`rsync -a --chmod 755 .gitlab-ci-local/builds/${this.name}/${artifactPath} ${artifactPath}`, this.cwd);
         }
-
 
         return exitCode;
     }
