@@ -24,10 +24,10 @@ export class Utils {
                 if ((status ?? 0) === 0) {
                     return resolve({stdout, stderr, output, status: status ?? 0});
                 }
-                return reject(new ExitError(`'${command}' exited with ${status}\n\n${output}`));
+                return reject(new ExitError(`'${command}' exited with ${status}\n${output}`));
             });
             cp.on("error", (e) => {
-                reject(new ExitError(`'${command}' had errors\n\n${e}`));
+                reject(new ExitError(`'${command}' had errors\n${e}`));
             });
 
         });

@@ -18,7 +18,7 @@ test('plain', async () => {
         cwd: 'src/tests/test-cases/plain',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(22);
+    expect(mockProcessStdout).toBeCalledTimes(24);
     expect(mockProcessStderr).toBeCalledTimes(3);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -81,7 +81,7 @@ test('image <test-job>', async () => {
         job: 'test-job'
     });
 
-    expect(mockProcessStdout).toHaveBeenCalledWith('[94mtest-job[39m [95mstarting[39m [95mon docker-executor[39m in [33mtest[39m stage\n');
+    expect(mockProcessStdout).toHaveBeenCalledWith('[94mtest-job[39m [95mstarting[39m php ([33mtest[39m)\n');
     // expect(mockProcessStdout).toBeCalledTimes(11);
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
@@ -189,7 +189,7 @@ test('script-failures <allow-failure-job>', async () => {
         job: 'allow-failure-job',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(8);
+    expect(mockProcessStdout).toHaveBeenCalledWith("[93mwarning[39m ");
     expect(mockProcessStderr).toBeCalledTimes(1);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -200,7 +200,7 @@ test('script-failures <allow-failure-after-scripts>', async () => {
         job: 'allow-failure-after-script',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(14);
+    expect(mockProcessStdout).toHaveBeenCalledWith("[93mwarning[39m ");
     expect(mockProcessStderr).toBeCalledTimes(2);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -224,6 +224,17 @@ test('invalid-stages', async () => {
         });
     } catch (e) {
         expect(mockProcessStderr).toHaveBeenCalledWith(`[31m[33mstages:[39m[31m must be an array[39m\n`);
+        expect(e.message).toBe("Test exited");
+    }
+});
+
+test('no-git-config', async () => {
+    try {
+        await defaultCmd.handler({
+            cwd: 'src/tests/test-cases/no-git-config',
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith(`[31mCould not locate.gitconfig or .git/config file[39m\n`);
         expect(e.message).toBe("Test exited");
     }
 });
