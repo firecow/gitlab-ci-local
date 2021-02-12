@@ -21,7 +21,7 @@ export class Utils {
                 output += buff.toString();
             });
             cp.on("exit", (status) => {
-                if ((status ?? 0) === 0 || (status ?? 0) === 24) {
+                if ((status ?? 0) === 0) {
                     return resolve({stdout, stderr, output, status: status ?? 0});
                 }
                 return reject(new ExitError(`'${command}' exited with ${status}\n\n${output}`));
