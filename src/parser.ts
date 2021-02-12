@@ -75,7 +75,7 @@ export class Parser {
         };
     }
 
-    static async initUserVariables(cwd: string, gitRemote: GitRemote | null, homeDirectory = ''): Promise<{ [key: string]: string }> {
+    static async initUserVariables(cwd: string, gitRemote: GitRemote, homeDirectory = ''): Promise<{ [key: string]: string }> {
         const variablesFile = `${path.resolve(homeDirectory)}/.gitlab-ci-local/variables.yml`;
         if (!fs.existsSync(variablesFile)) {
             return {};
@@ -92,7 +92,7 @@ export class Parser {
         }
 
         for (const [groupKey, groupEntires] of Object.entries(data?.group ?? [])) {
-            if (!`${gitRemote?.domain}/${gitRemote?.group}/${gitRemote?.project}.git`.includes(groupKey)) {
+            if (!`${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`.includes(groupKey)) {
                 continue;
             }
             if (typeof groupEntires !== 'object') {
@@ -102,7 +102,7 @@ export class Parser {
         }
 
         for (const [projectKey, projectEntries] of Object.entries(data?.project ?? [])) {
-            if (!`${gitRemote?.domain}/${gitRemote?.group}/${gitRemote?.project}.git`.includes(projectKey)) {
+            if (!`${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`.includes(projectKey)) {
                 continue;
             }
             if (typeof projectEntries !== 'object') {
@@ -296,19 +296,23 @@ export class Parser {
         await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${project}/${ref}/`, cwd);
     }
 
-    static async initGitRemote(cwd: string): Promise<GitRemote | null> {
-        try {
-            const {stdout: gitRemote} = await Utils.spawn(`git remote -v`, cwd);
-            const match = gitRemote.match(/@(?<domain>.*):(?<group>.*)\/(?<project>.*)\.git \(fetch\)/);
-
-            return {
-                domain: match?.groups?.domain ?? '',
-                group: match?.groups?.group ?? '',
-                project: match?.groups?.project ?? '',
-            };
-        } catch (e) {
-            return null;
+    static async initGitRemote(cwd: string): Promise<GitRemote> {
+        let gitConfig;
+        if (fs.existsSync(`${cwd}/.git/config`)) {
+            gitConfig = fs.readFileSync(`${cwd}/.git/config`, 'utf8')
+        } else if (fs.existsSync(`${cwd}/.gitconfig`)) {
+            gitConfig = fs.readFileSync(`${cwd}/.gitconfig`, 'utf8')
+        } else {
+            throw new ExitError(`Could not located .gitconfig or .git/config file\n\n`)
         }
+
+        const match = gitConfig.match(/url = .*@(?<domain>.*?)[:|\/](?<group>.*)\/(?<project>.*)/);
+
+        return {
+            domain: match?.groups?.domain ?? '',
+            group: match?.groups?.group ?? '',
+            project: match?.groups?.project ?? '',
+        };
     }
 
     private async prepareIncludes(gitlabData: any): Promise<any[]> {
