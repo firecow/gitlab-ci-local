@@ -151,7 +151,8 @@ export class Job {
         await fs.ensureFile(this.getOutputFilesPath());
         await fs.truncate(this.getOutputFilesPath());
         if (!this.interactive) {
-            process.stdout.write(`${this.getStartingString()} ${this.image ? magentaBright("on docker-executor") : magentaBright("on shell-executor")} in ${yellow(this.stage)} stage\n`);
+            const jobNameStr = this.getJobNameString();
+            process.stdout.write(`${jobNameStr} ${magentaBright("starting")} ${this.image ?? "shell"} (${yellow(this.stage)})\n`);
         }
 
         const prescripts = this.beforeScripts.concat(this.scripts);
@@ -161,6 +162,7 @@ export class Job {
             this.running = false;
             this.finished = true;
             this.success = false;
+            await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
             return;
         }
 
@@ -168,6 +170,7 @@ export class Job {
             process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
             this.running = false;
             this.finished = true;
+            await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
             return;
         }
 
@@ -196,6 +199,8 @@ export class Job {
 
         this.running = false;
         this.finished = true;
+
+        await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
 
         return;
     }
@@ -314,12 +319,6 @@ export class Job {
         const jobNameStr = this.getJobNameString();
 
         return `${jobNameStr} ${magentaBright("finished")} in ${magenta(`${timeStr}`)}`;
-    }
-
-    private getStartingString() {
-        const jobNameStr = this.getJobNameString();
-
-        return `${jobNameStr} ${magentaBright("starting")}`;
     }
 
     getJobNameString() {
