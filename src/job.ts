@@ -257,7 +257,7 @@ export class Job {
         });
 
         for (const [key, value] of Object.entries(this.expandedVariables)) {
-            cp.stdin.write(`export ${key}="${value.trim()}"\n`);
+            cp.stdin.write(`export ${key}="${String(value).trim()}"\n`);
         }
 
         scripts.forEach((script) => {
