@@ -209,15 +209,15 @@ export class Job {
         }
 
         const time = process.hrtime();
-        await Utils.spawn(`mkdir -p .gitlab-ci-local/builds/${this.name}`, this.cwd);
-        await Utils.spawn(`rsync -a . .gitlab-ci-local/builds/${this.name}/. --delete --exclude '.gitlab-ci-local/'`, this.cwd);
+        await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ debian:stable-slim bash -c "mkdir -p .gitlab-ci-local/builds/${this.name}"`, this.cwd);
+        await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "rsync -a . .gitlab-ci-local/builds/${this.name}/. --delete --exclude '.gitlab-ci-local/'"`, this.cwd);
         if (this.image) {
-            await Utils.spawn(`docker run -v $PWD:/app/ -w /app/ alpine sh -c "chmod a+w -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
-            await Utils.spawn(`docker run -v $PWD:/app/ -w /app/ alpine sh -c "chown root:root -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
+            await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ debian:stable-slim bash -c "chmod a+w -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
+            await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ debian:stable-slim bash -c "chown root:root -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
         }
 
         const endTime = process.hrtime(time);
-        process.stdout.write(`${this.getJobNameString()} ${magentaBright(`rsync to ${this.cwd}/.gitlab-ci-local/builds/${this.name}`)} in ${magenta(prettyHrtime(endTime))}\n`);
+        process.stdout.write(`${this.getJobNameString()} ${magentaBright(`rsync to build folder`)} in ${magenta(prettyHrtime(endTime))}\n`);
 
         if (this.image) {
             let dockerCmd = ``;
@@ -254,9 +254,6 @@ export class Job {
         for (const [key, value] of Object.entries(this.expandedVariables)) {
             cp.stdin.write(`export ${key}="${value.trim()}"\n`);
         }
-
-        cp.stdin.write(`ls -all\n`);
-        cp.stdin.write(`pwd\n`);
 
         scripts.forEach((script) => {
             // Print command echo'ed in color
