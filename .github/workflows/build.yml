@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install modules
         run: npm install
-      - name: Run TSLint
+      - name: Run ESLint
         run: npm --silent run lint
 
   typescript-compile:
