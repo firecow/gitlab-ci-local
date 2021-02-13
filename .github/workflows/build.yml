@@ -10,7 +10,7 @@ jobs:
       - name: Install modules
         run: npm install
       - name: Run TSLint
-        run: npm run lint
+        run: npm --silent run lint
 
   typescript-compile:
     runs-on: ubuntu-latest
@@ -19,7 +19,7 @@ jobs:
       - name: Install modules
         run: npm install
       - name: Run Typescipt Compiler
-        run: npm run build
+        run: npm --silent run build
 
   jest:
     runs-on: ubuntu-latest
@@ -27,7 +27,5 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install modules
         run: npm install
-      - name: Disable Host key verification
-        run: export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
       - name: Run tests
-        run: npm run test
+        run: GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" npm --silent run test
