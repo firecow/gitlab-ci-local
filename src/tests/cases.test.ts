@@ -1,5 +1,6 @@
 import * as mockProcess from "jest-mock-process";
 import * as defaultCmd from "../default-cmd";
+import * as fs from "fs-extra";
 
 const mockProcessExit = mockProcess.mockProcessExit(new Error("Test exited"));
 const mockProcessStdout = mockProcess.mockProcessStdout();
@@ -18,9 +19,19 @@ test('plain', async () => {
         cwd: 'src/tests/test-cases/plain',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(24);
+    expect(mockProcessStdout).toBeCalledTimes(22);
     expect(mockProcessStderr).toBeCalledTimes(3);
     expect(mockProcessExit).toBeCalledTimes(0);
+});
+
+test('plain-invalid-jobname', async () => {
+    try {
+        await defaultCmd.handler({
+            cwd: 'src/tests/test-cases/plain-invalid-jobname',
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31mJobs cannot include spaces, yet! 'test job'[39m\n");
+    }
 });
 
 test('plain <notfound>', async () => {
@@ -81,7 +92,7 @@ test('image <test-job>', async () => {
         job: 'test-job'
     });
 
-    expect(mockProcessStdout).toHaveBeenCalledWith('[94mtest-job[39m [95mstarting[39m php ([33mtest[39m)\n');
+    // expect(mockProcessStdout).toHaveBeenCalledWith('[94mtest-job[39m [95mstarting[39m php ([33mtest[39m)\n');
     // expect(mockProcessStdout).toBeCalledTimes(11);
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
@@ -120,12 +131,55 @@ test('after-script <test-job>', async () => {
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
-test('artifacts <test-job>', async () => {
+test('artifacts <test-root-file>', async () => {
     await defaultCmd.handler({
         cwd: 'src/tests/test-cases/artifacts',
-        job: 'test-job'
+        job: 'test-root-file'
     });
+    expect(fs.existsSync("src/tests/test-cases/artifacts/log.txt")).toBe(true);
     expect(mockProcessExit).toBeCalledTimes(0);
+    fs.unlinkSync("src/tests/test-cases/artifacts/log.txt");
+});
+
+test('artifacts <test-deep-file>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/artifacts',
+        job: 'test-deep-file'
+    });
+    expect(fs.existsSync("src/tests/test-cases/artifacts/path/log.txt")).toBe(true);
+    expect(mockProcessExit).toBeCalledTimes(0);
+    fs.rmdirSync("src/tests/test-cases/artifacts/path", {recursive: true});
+});
+
+test('artifacts <test-folder>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/artifacts',
+        job: 'test-folder'
+    });
+    expect(fs.existsSync("src/tests/test-cases/artifacts/folder/log.txt")).toBe(true);
+    expect(mockProcessExit).toBeCalledTimes(0);
+    fs.rmdirSync("src/tests/test-cases/artifacts/folder", {recursive: true});
+});
+
+test('artifacts <test-dir>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/artifacts',
+        job: 'test-dir'
+    });
+    expect(fs.existsSync("src/tests/test-cases/artifacts/dir/log.txt")).toBe(true);
+    expect(mockProcessExit).toBeCalledTimes(0);
+    fs.rmdirSync("src/tests/test-cases/artifacts/dir", {recursive: true});
+});
+
+test('artifacts-no-globstar', async () => {
+    try {
+        await defaultCmd.handler({
+            cwd: 'src/tests/test-cases/artifacts-no-globstar'
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31mArtfact paths cannot contain globstar, yet! 'test-job'[39m\n");
+        expect(e.message).toBe("Test exited");
+    }
 });
 
 test('extends', async () => {

@@ -1,0 +1,8 @@
+---
+test-job:
+  artifacts:
+    paths:
+      - path/**/*.txt
+  script:
+    - mkdir -p path/
+    - echo "Test something" > path/log.txt

@@ -6,7 +6,7 @@ Run gitlab pipelines locally as shell executor or docker executor.
 
 Get rid of all those dev specific shell scripts and make files.
 
-[![Lines](https://img.shields.io/badge/Coverage-93.14%25-brightgreen.svg)](https://npmjs.org/package/gitlab-ci-local)
+[![Lines](https://img.shields.io/badge/Coverage-93.03%25-brightgreen.svg)](https://npmjs.org/package/gitlab-ci-local)
 [![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://npmjs.org/package/gitlab-ci-local)
 [![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![dependencies](https://img.shields.io/librariesio/release/npm/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)

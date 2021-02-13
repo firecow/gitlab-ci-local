@@ -2,6 +2,7 @@ import {blueBright, green, greenBright, magenta, magentaBright, red, redBright, 
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as prettyHrtime from "pretty-hrtime";
+import * as path from "path";
 import {ExitError} from "./types/exit-error";
 import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
@@ -213,18 +214,20 @@ export class Job {
             return 0;
         }
 
-        const time = process.hrtime();
-        await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ debian:stable-slim bash -c "mkdir -p .gitlab-ci-local/builds/${this.name}"`, this.cwd);
-        await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "rsync -a . .gitlab-ci-local/builds/${this.name}/. --delete --exclude '.gitlab-ci-local/'"`, this.cwd);
         if (this.image) {
-            await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ debian:stable-slim bash -c "chmod a+w -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
-            await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ debian:stable-slim bash -c "chown root:root -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
-        }
+            const time = process.hrtime();
+            await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "mkdir -p .gitlab-ci-local/builds/${this.name}"`, this.cwd);
+            await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "rsync -a . .gitlab-ci-local/builds/${this.name}/. --delete --exclude '.gitlab-ci-local/'"`, this.cwd);
 
-        const endTime = process.hrtime(time);
-        process.stdout.write(`${this.getJobNameString()} ${magentaBright(`rsync to build folder`)} in ${magenta(prettyHrtime(endTime))}\n`);
+            await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ debian:stable-slim sh -c "chmod a+w -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
+            await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ debian:stable-slim sh -c "chown root:root -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
 
-        if (this.image) {
+            await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "mkdir -p .gitlab-ci-local/builds/${this.name}/.gitlab-ci-local/file-variables/"`, this.cwd);
+            await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "rsync -a .gitlab-ci-local/file-variables/. .gitlab-ci-local/builds/${this.name}/.gitlab-ci-local/file-variables/."`, this.cwd);
+
+            const endTime = process.hrtime(time);
+            process.stdout.write(`${this.getJobNameString()} ${magentaBright(`rsync to build folder`)} in ${magenta(prettyHrtime(endTime))}\n`);
+
             let dockerCmd = ``;
             dockerCmd += `docker run -d -i -v "$PWD/.gitlab-ci-local/builds/${this.name}:/builds/" -w /builds/ ${this.image} `;
             dockerCmd += `sh -c "\n`
@@ -259,6 +262,11 @@ export class Job {
         for (const [key, value] of Object.entries(this.expandedVariables)) {
             cp.stdin.write(`export ${key}="${String(value).trim()}"\n`);
         }
+
+        // cp.stdin.write(`env | grep ANSIBLE_SSH_PRIVATE_KEY\n`);
+        // cp.stdin.write(`cat $ANSIBLE_SSH_PRIVATE_KEY\n`);
+        // cp.stdin.write(`ls -all\n`);
+        // cp.stdin.write(`exit 1\n`);
 
         scripts.forEach((script) => {
             // Print command echo'ed in color
@@ -297,8 +305,22 @@ export class Job {
         });
 
         for (let artifactPath of this.artifacts.paths) {
-            artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
-            await Utils.spawn(`rsync -a --chmod 755 .gitlab-ci-local/builds/${this.name}/${artifactPath} ${artifactPath}`, this.cwd);
+            if (this.image) {
+                artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
+                if (!fs.existsSync(`${this.cwd}/.gitlab-ci-local/builds/${this.name}/${artifactPath}`)) {
+                    process.stderr.write(`${yellowBright(`Artifacts could not be found`)}`);
+                    continue;
+                }
+
+                if (fs.statSync(`${this.cwd}/.gitlab-ci-local/builds/${this.name}/${artifactPath}`).isDirectory()) {
+                    artifactPath = artifactPath.replace(/\/$/, '');
+                    await Utils.spawn(`mkdir -p ${artifactPath}`, this.cwd);
+                    await Utils.spawn(`rsync -a .gitlab-ci-local/builds/${this.name}/${artifactPath}/. ${artifactPath}/.`, this.cwd);
+                } else {
+                    await Utils.spawn(`mkdir -p ${path.dirname(artifactPath)}`, this.cwd);
+                    await Utils.spawn(`rsync -a .gitlab-ci-local/builds/${this.name}/${artifactPath} ${artifactPath}`, this.cwd);
+                }
+            }
         }
 
         return exitCode;
