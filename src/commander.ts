@@ -26,10 +26,8 @@ export class Commander {
                 }
 
                 if (!job.isRunning() && !job.isFinished()) {
-                    /* tslint:disable */
                     // noinspection ES6MissingAwait
                     job.start();
-                    /* tslint:enabled */
                 }
             }
 
