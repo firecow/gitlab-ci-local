@@ -222,7 +222,7 @@ export class Job {
             await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ debian:stable-slim sh -c "chmod a+w -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
             await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ debian:stable-slim sh -c "chown root:root -R .gitlab-ci-local/builds/${this.name}/"`, this.cwd);
 
-            if (fs.existsSync('.gitlab-ci-local/file-variables/')) {
+            if (fs.existsSync(`${this.cwd}/.gitlab-ci-local/file-variables/`)) {
                 await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "mkdir -p .gitlab-ci-local/builds/${this.name}/.gitlab-ci-local/file-variables/"`, this.cwd);
                 await Utils.spawn(`docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "rsync -a .gitlab-ci-local/file-variables/. .gitlab-ci-local/builds/${this.name}/.gitlab-ci-local/file-variables/."`, this.cwd);
             }
