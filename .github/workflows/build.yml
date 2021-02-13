@@ -29,7 +29,5 @@ jobs:
         run: npm install
       - name: Generate SSH key
         run: cat /dev/zero | ssh-keygen -q -N ""
-      - name: Git ignore host key verification
-        run: export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
       - name: Run tests
-        run: npm --silent run test
+        run: GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" npm --silent run test
