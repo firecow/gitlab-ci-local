@@ -87,15 +87,10 @@ test('needs-unspecified-job <build-job> --needs', async () => {
 });
 
 test('image <test-job>', async () => {
-    await defaultCmd.handler({
+    await defaultCmd.fake({
         cwd: 'src/tests/test-cases/image',
         job: 'test-job'
     });
-
-    expect(mockProcessStdout).toHaveBeenCalledWith('[94mtest-job[39m [95mstarting[39m php ([33mtest[39m)\n');
-    expect(mockProcessStdout).toHaveBeenCalledWith('Test something\n');
-    expect(mockProcessStderr).toBeCalledTimes(0);
-    expect(mockProcessExit).toBeCalledTimes(0);
 });
 
 test('no-script <test-job>', async () => {
