@@ -25,6 +25,10 @@ exports.builder = (y: any) => {
     });
 };
 
+export async function fake(argv: any) {
+    await handler(argv);
+}
+
 export async function handler(argv: any) {
     if (argv.cwd && typeof argv.cwd == "object") {
         throw new ExitError("--cwd option cannot be an array");
