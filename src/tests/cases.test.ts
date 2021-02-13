@@ -92,8 +92,7 @@ test('image <test-job>', async () => {
         job: 'test-job'
     });
 
-    // expect(mockProcessStdout).toHaveBeenCalledWith('[94mtest-job[39m [95mstarting[39m php ([33mtest[39m)\n');
-    // expect(mockProcessStdout).toBeCalledTimes(11);
+    expect(mockProcessStdout).toHaveBeenCalledWith('[94mtest-job[39m [95mstarting[39m php ([33mtest[39m)\n');
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
