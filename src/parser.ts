@@ -140,6 +140,24 @@ export class Parser {
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
+        // Make sure job name's doesn't contain spaces
+        // TODO: This deviates from gitlab ci behavior
+        jobExpanders.forEachRealJob(gitlabData, jobName => {
+            if (jobName.includes(' ')) {
+                throw new ExitError(`Jobs cannot include spaces, yet! '${jobName}'`);
+            }
+        });
+
+        // Make sure artifact paths doesn't contain globstar
+        // TODO: This deviates from gitlab ci behavior
+        jobExpanders.forEachRealJob(gitlabData, (jobName, jobData) => {
+            jobData?.artifacts?.paths?.forEach((path: any) => {
+                if (path.includes('*')) {
+                    throw new ExitError(`Artfact paths cannot contain globstar, yet! '${jobName}'`)
+                }
+            });
+        });
+
         // Expand various fields in gitlabData
         jobExpanders.jobExtends(gitlabData);
         jobExpanders.artifacts(gitlabData);

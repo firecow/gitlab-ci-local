@@ -1,8 +1,35 @@
 ---
-test-job:
+test-root-file:
   image: alpine
   artifacts:
     paths:
       - log.txt
   script:
-    - echo "Test something" > log.txt
+    - echo "Test root file" > log.txt
+
+test-deep-file:
+  image: alpine
+  artifacts:
+    paths:
+      - path/log.txt
+  script:
+    - mkdir -p path
+    - echo "Test deep file" > path/log.txt
+
+test-folder:
+  image: alpine
+  artifacts:
+    paths:
+      - folder/
+  script:
+    - mkdir -p folder/
+    - echo "Test folder" > folder/log.txt
+
+test-dir:
+  image: debian
+  artifacts:
+    paths:
+      - dir
+  script:
+    - mkdir -p dir/
+    - echo "Test dir" > dir/log.txt
