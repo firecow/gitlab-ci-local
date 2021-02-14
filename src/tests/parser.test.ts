@@ -17,3 +17,7 @@
 //         expect(e.message).toContain("exited with 2");
 //     }
 // });
+
+test.concurrent('fake test', async() => {
+    expect("Test").toBe("Test");
+});
