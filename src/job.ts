@@ -266,11 +266,6 @@ export class Job {
             cp.stdin.write(`export ${key}="${String(value).trim()}"\n`);
         }
 
-        // cp.stdin.write(`env | grep ANSIBLE_SSH_PRIVATE_KEY\n`);
-        // cp.stdin.write(`cat $ANSIBLE_SSH_PRIVATE_KEY\n`);
-        // cp.stdin.write(`ls -all\n`);
-        // cp.stdin.write(`exit 1\n`);
-
         scripts.forEach((script) => {
             // Print command echo'ed in color
             const split = script.split(/\r?\n/);
