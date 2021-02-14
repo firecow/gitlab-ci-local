@@ -2,11 +2,17 @@ import * as mockProcess from "jest-mock-process";
 import * as defaultCmd from "../default-cmd";
 import * as fs from "fs-extra";
 
-const mockProcessExit = mockProcess.mockProcessExit(new Error("Test exited"));
-const mockProcessStdout = mockProcess.mockProcessStdout();
-const mockProcessStderr = mockProcess.mockProcessStderr();
-
 jest.setTimeout(90000);
+
+let mockProcessExit: any;
+let mockProcessStdout: any;
+let mockProcessStderr: any;
+
+beforeEach(() => {
+    mockProcessExit = mockProcess.mockProcessExit(new Error("Test exited"));
+    mockProcessStdout = mockProcess.mockProcessStdout();
+    mockProcessStderr = mockProcess.mockProcessStderr();
+});
 
 afterEach(() => {
     mockProcessStdout.mockClear();
