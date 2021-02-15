@@ -220,13 +220,13 @@ export class Job {
             preCmd += `docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "\n`;
             preCmd += `mkdir -p .gitlab-ci-local/builds/${this.name}\n`
             preCmd += `rsync -a . .gitlab-ci-local/builds/${this.name}/. --delete --exclude '.gitlab-ci-local/'\n`
-            preCmd += `chmod a+w -R .gitlab-ci-local/builds/${this.name}/"\n`
-            preCmd += `chown root:root -R .gitlab-ci-local/builds/${this.name}/"\n`
-            preCmd += `"\n`;
+            preCmd += `chmod a+w -R .gitlab-ci-local/builds/${this.name}\n`
+            preCmd += `chown root:root -R .gitlab-ci-local/builds/${this.name}\n`
             if (fs.existsSync(`${this.cwd}/.gitlab-ci-local/file-variables/`)) {
-                preCmd += `mkdir -p .gitlab-ci-local/builds/${this.name}/.gitlab-ci-local/file-variables/"`;
-                preCmd += `rsync -a .gitlab-ci-local/file-variables/. .gitlab-ci-local/builds/${this.name}/.gitlab-ci-local/file-variables/."`;
+                preCmd += `mkdir -p .gitlab-ci-local/builds/${this.name}/.gitlab-ci-local/file-variables/\n`;
+                preCmd += `rsync -a .gitlab-ci-local/file-variables/ .gitlab-ci-local/builds/${this.name}/.gitlab-ci-local/\n`;
             }
+            preCmd += `"\n`;
             await Utils.spawn(preCmd, this.cwd);
             const endTime = process.hrtime(time);
             process.stdout.write(`${this.getJobNameString()} ${magentaBright(`rsync to build folder`)} in ${magenta(prettyHrtime(endTime))}\n`);
