@@ -209,6 +209,7 @@ export class Job {
     private async execScripts(scripts: string[]): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
+        const safeName = this.name.replace(/[ :\/]/g, '_');
 
         if (scripts.length === 0) {
             return 0;
@@ -218,13 +219,13 @@ export class Job {
             const time = process.hrtime();
             let preCmd = ``;
             preCmd += `docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "\n`;
-            preCmd += `mkdir -p .gitlab-ci-local/builds/${this.name}\n`
-            preCmd += `rsync -a . .gitlab-ci-local/builds/${this.name}/. --delete --exclude '.gitlab-ci-local/'\n`
-            preCmd += `chmod a+w -R .gitlab-ci-local/builds/${this.name}\n`
-            preCmd += `chown root:root -R .gitlab-ci-local/builds/${this.name}\n`
+            preCmd += `mkdir -p .gitlab-ci-local/builds/${safeName}\n`
+            preCmd += `rsync -a . .gitlab-ci-local/builds/${safeName}/. --delete --exclude '.gitlab-ci-local/'\n`
+            preCmd += `chmod a+w -R .gitlab-ci-local/builds/${safeName}\n`
+            preCmd += `chown root:root -R .gitlab-ci-local/builds/${safeName}\n`
             if (fs.existsSync(`${this.cwd}/.gitlab-ci-local/file-variables/`)) {
-                preCmd += `mkdir -p .gitlab-ci-local/builds/${this.name}/.gitlab-ci-local/file-variables/\n`;
-                preCmd += `rsync -a .gitlab-ci-local/file-variables/ .gitlab-ci-local/builds/${this.name}/.gitlab-ci-local/\n`;
+                preCmd += `mkdir -p .gitlab-ci-local/builds/${safeName}/.gitlab-ci-local/file-variables/\n`;
+                preCmd += `rsync -a .gitlab-ci-local/file-variables/. .gitlab-ci-local/builds/${safeName}/.gitlab-ci-local/file-variables/.\n`;
             }
             preCmd += `"\n`;
             await Utils.spawn(preCmd, this.cwd);
@@ -232,7 +233,7 @@ export class Job {
             process.stdout.write(`${this.getJobNameString()} ${magentaBright(`rsync to build folder`)} in ${magenta(prettyHrtime(endTime))}\n`);
 
             let dockerCmd = ``;
-            dockerCmd += `docker run -d -i -v "$PWD/.gitlab-ci-local/builds/${this.name}:/builds/" -w /builds/ ${this.image} `;
+            dockerCmd += `docker run -d -i -v "$PWD/.gitlab-ci-local/builds/${safeName}:/builds/" -w /builds/ ${this.image} `;
             dockerCmd += `sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
             dockerCmd += `\texec /usr/local/bin/bash \n`;
@@ -305,18 +306,18 @@ export class Job {
         for (let artifactPath of this.artifacts.paths) {
             if (this.image) {
                 artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
-                if (!fs.existsSync(`${this.cwd}/.gitlab-ci-local/builds/${this.name}/${artifactPath}`)) {
+                if (!fs.existsSync(`${this.cwd}/.gitlab-ci-local/builds/${safeName}/${artifactPath}`)) {
                     process.stderr.write(`${yellowBright(`Artifacts could not be found`)}`);
                     continue;
                 }
 
-                if (fs.statSync(`${this.cwd}/.gitlab-ci-local/builds/${this.name}/${artifactPath}`).isDirectory()) {
+                if (fs.statSync(`${this.cwd}/.gitlab-ci-local/builds/${safeName}/${artifactPath}`).isDirectory()) {
                     artifactPath = artifactPath.replace(/\/$/, '');
                     await Utils.spawn(`mkdir -p ${artifactPath}`, this.cwd);
-                    await Utils.spawn(`rsync -a .gitlab-ci-local/builds/${this.name}/${artifactPath}/. ${artifactPath}/.`, this.cwd);
+                    await Utils.spawn(`rsync -a .gitlab-ci-local/builds/${safeName}/${artifactPath}/. ${artifactPath}/.`, this.cwd);
                 } else {
                     await Utils.spawn(`mkdir -p ${path.dirname(artifactPath)}`, this.cwd);
-                    await Utils.spawn(`rsync -a .gitlab-ci-local/builds/${this.name}/${artifactPath} ${artifactPath}`, this.cwd);
+                    await Utils.spawn(`rsync -a .gitlab-ci-local/builds/${safeName}/${artifactPath} ${artifactPath}`, this.cwd);
                 }
             }
         }
