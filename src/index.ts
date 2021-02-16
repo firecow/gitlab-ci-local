@@ -34,10 +34,15 @@ process.on('unhandledRejection', e => {
         .option("completion", {type: "string", description: "Generate bash completion script", requiresArg: false})
         .option("needs", {type: "boolean", description: "Run needed jobs, when executing a single job", requiresArg: false})
         .completion("completion", false, async (_, yargsArgv) => {
-            const cwd = yargsArgv.cwd || process.cwd();
-            const pipelineIid = await state.getPipelineIid(cwd);
-            const parser = await Parser.create(cwd, pipelineIid, true);
-            return parser.getJobNames();
+            try {
+                const cwd = yargsArgv.cwd || process.cwd();
+                const pipelineIid = await state.getPipelineIid(cwd);
+                const parser = await Parser.create(cwd, pipelineIid, true);
+                return parser.getJobNames();
+            } catch (e) {
+                return ["Parser-Failed!"];
+            }
+
         })
         .parse();
 })();
