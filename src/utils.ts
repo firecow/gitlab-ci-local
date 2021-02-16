@@ -22,7 +22,7 @@ export class Utils {
             });
             cp.on("exit", (status) => {
                 if ((status ?? 0) === 0) {
-                    return resolve({stdout, stderr, output, status: status ?? 0});;
+                    return resolve({stdout, stderr, output, status: status ?? 0});
                 }
                 return reject(new ExitError(`${output}`));
             });
