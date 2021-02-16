@@ -54,7 +54,6 @@ export class Parser {
             const {stdout: gitConfigEmail} = await Utils.spawn(`git config user.email`, cwd);
             gitlabUserEmail = gitConfigEmail.trimEnd();
         } catch (e) {
-            // process.stderr.write(`${yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`);
             gitlabUserEmail = 'local@gitlab.com';
         }
 
@@ -64,7 +63,6 @@ export class Parser {
             const {stdout: gitConfigUserName} = await Utils.spawn(`git config user.name`, cwd);
             gitlabUserName = gitConfigUserName.trimEnd();
         } catch (e) {
-            // process.stderr.write(`${yellow("git config user.name is undefined, defaulting to `Bob Local`")}`);
             gitlabUserName = 'Bob Local';
         }
 

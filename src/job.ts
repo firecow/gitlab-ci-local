@@ -220,6 +220,33 @@ export class Job {
             return 0;
         }
 
+        if (this.interactive) {
+            let cmd = ``;
+            for (const [key, value] of Object.entries(this.expandedVariables)) {
+                cmd += `export ${key}="${String(value).trim()}"\n`;
+            }
+
+            scripts.forEach((script) => {
+                // Print command echo'ed in color
+                const split = script.split(/\r?\n/);
+                const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
+                const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
+                cmd += `echo "${green(`\$ ${text}${multilineText}`)}"\n`;
+
+                // Execute actual script
+                cmd += `${script}\n`;
+            });
+            const cp = childProcess.spawn(cmd, {
+                shell: Utils.getShell(),
+                stdio: ['inherit', 'inherit', 'inherit'],
+                cwd: this.cwd,
+            });
+            return await new Promise<number>((resolve, reject) => {
+                cp.on('exit', (code) => resolve(code ?? 0));
+                cp.on("error", (err) => reject(err));
+            });
+        }
+
         if (this.image) {
             const time = process.hrtime();
             let preCmd = ``;
@@ -258,7 +285,7 @@ export class Job {
             dockerCmd += `\techo shell not found\n`;
             dockerCmd += `\texit 1\n`;
             dockerCmd += `fi\n"`
-            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, { ...process.env, ...this.expandedVariables, });
+            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
             this.containerId = containerId.replace("\n", "");
         }
 
