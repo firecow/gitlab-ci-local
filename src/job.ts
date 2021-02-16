@@ -289,7 +289,7 @@ export class Job {
             this.containerId = containerId.replace("\n", "");
         }
 
-        const cp = childProcess.spawn(this.containerId ? `docker attach ${this.containerId}` : `bash`, {
+        const cp = childProcess.spawn(this.containerId ? `docker attach ${this.containerId}` : `bash -e`, {
             shell: Utils.getShell(),
             stdio: ['pipe', 'pipe', 'pipe'],
             cwd: this.cwd,
