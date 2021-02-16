@@ -29,7 +29,15 @@ test-dir:
   image: debian
   artifacts:
     paths:
+      - dir/deep
+  script:
+    - mkdir -p dir/deep
+    - echo "Test dir" > dir/deep/log.txt
+
+test-artifact-not-found:
+  image: debian
+  artifacts:
+    paths:
       - dir
   script:
-    - mkdir -p dir/
-    - echo "Test dir" > dir/log.txt
+    - echo "Don't generate"

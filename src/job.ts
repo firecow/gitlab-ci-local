@@ -163,7 +163,9 @@ export class Job {
             this.running = false;
             this.finished = true;
             this.success = false;
-            await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
+            if (this.containerId) {
+                await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
+            }
             return;
         }
 
@@ -171,7 +173,9 @@ export class Job {
             process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
             this.running = false;
             this.finished = true;
-            await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
+            if (this.containerId) {
+                await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
+            }
             return;
         }
 
@@ -201,8 +205,9 @@ export class Job {
         this.running = false;
         this.finished = true;
 
-        await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
-
+        if (this.containerId) {
+            await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
+        }
         return;
     }
 
@@ -253,7 +258,7 @@ export class Job {
             dockerCmd += `\techo shell not found\n`;
             dockerCmd += `\texit 1\n`;
             dockerCmd += `fi\n"`
-            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd);
+            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, { ...process.env, ...this.expandedVariables, });
             this.containerId = containerId.replace("\n", "");
         }
 
@@ -307,7 +312,7 @@ export class Job {
             if (this.image) {
                 artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
                 if (!fs.existsSync(`${this.cwd}/.gitlab-ci-local/builds/${safeName}/${artifactPath}`)) {
-                    process.stderr.write(`${yellowBright(`Artifacts could not be found`)}`);
+                    process.stderr.write(`${yellowBright(`Artifacts could not be found`)}\n`);
                     continue;
                 }
 
