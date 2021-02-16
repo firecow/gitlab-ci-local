@@ -93,10 +93,11 @@ test('needs-unspecified-job <build-job> --needs', async () => {
 });
 
 test('image <test-job>', async () => {
-    await defaultCmd.fake({
+    await defaultCmd.handler({
         cwd: 'src/tests/test-cases/image',
         job: 'test-job'
     });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
 });
 
 test('no-script <test-job>', async () => {
