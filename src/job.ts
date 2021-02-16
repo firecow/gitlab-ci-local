@@ -163,9 +163,7 @@ export class Job {
             this.running = false;
             this.finished = true;
             this.success = false;
-            if (this.containerId) {
-                await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
-            }
+            await this.removeContainer();
             return;
         }
 
@@ -173,9 +171,7 @@ export class Job {
             process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
             this.running = false;
             this.finished = true;
-            if (this.containerId) {
-                await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
-            }
+            await this.removeContainer();
             return;
         }
 
@@ -205,10 +201,14 @@ export class Job {
         this.running = false;
         this.finished = true;
 
-        if (this.containerId) {
-            await Utils.spawn(`docker rm -f ${this.containerId} > /dev/null`);
-        }
+        await this.removeContainer();
         return;
+    }
+
+    private async removeContainer() {
+        if (this.containerId) {
+            await Utils.spawn(`docker rm -f ${this.containerId}`);
+        }
     }
 
     private async execScripts(scripts: string[]): Promise<number> {
