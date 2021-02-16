@@ -167,9 +167,18 @@ test('artifacts <test-dir>', async () => {
         cwd: 'src/tests/test-cases/artifacts',
         job: 'test-dir'
     });
-    expect(fs.existsSync("src/tests/test-cases/artifacts/dir/log.txt")).toBe(true);
+    expect(fs.existsSync("src/tests/test-cases/artifacts/dir/deep/log.txt")).toBe(true);
     expect(mockProcessExit).toBeCalledTimes(0);
     fs.rmdirSync("src/tests/test-cases/artifacts/dir", {recursive: true});
+});
+
+test('artifacts <test-artifact-not-found>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/artifacts',
+        job: 'test-artifact-not-found'
+    });
+    expect(mockProcessStderr).toHaveBeenCalledWith("[93mArtifacts could not be found[39m\n");
+    expect(mockProcessExit).toBeCalledTimes(0);
 });
 
 test('artifacts-no-globstar', async () => {
