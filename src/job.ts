@@ -286,19 +286,19 @@ export class Job {
             dockerCmd += `docker run -d -i -v "${volume}:/builds/" -w /builds/ ${this.image} `;
             dockerCmd += `sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
-            dockerCmd += `\texec /usr/local/bin/bash -e \n`;
+            dockerCmd += `\texec /usr/local/bin/bash \n`;
             dockerCmd += `elif [ -x /usr/bin/bash ]; then\n`;
-            dockerCmd += `\texec /usr/bin/bash -e \n`
+            dockerCmd += `\texec /usr/bin/bash \n`
             dockerCmd += `elif [ -x /bin/bash ]; then\n`
-            dockerCmd += `\texec /bin/bash -e \n`
+            dockerCmd += `\texec /bin/bash \n`
             dockerCmd += `elif [ -x /usr/local/bin/sh ]; then\n`
-            dockerCmd += `\texec /usr/local/bin/sh -e \n`
+            dockerCmd += `\texec /usr/local/bin/sh \n`
             dockerCmd += `elif [ -x /usr/bin/sh ]; then\n`;
-            dockerCmd += `\texec /usr/bin/sh -e \n`;
+            dockerCmd += `\texec /usr/bin/sh \n`;
             dockerCmd += `elif [ -x /bin/sh ]; then\n`
-            dockerCmd += `\texec /bin/sh -e \n`
+            dockerCmd += `\texec /bin/sh \n`
             dockerCmd += `elif [ -x /busybox/sh ]; then\n`;
-            dockerCmd += `\texec /busybox/sh -e \n`;
+            dockerCmd += `\texec /busybox/sh \n`;
             dockerCmd += `else\n`;
             dockerCmd += `\techo shell not found\n`;
             dockerCmd += `\texit 1\n`;
@@ -312,6 +312,8 @@ export class Job {
             stdio: ['pipe', 'pipe', 'pipe'],
             cwd: this.cwd,
         });
+
+        cp.stdin.write(`set -eo pipefail\n`);
 
         for (const [key, value] of Object.entries(this.expandedVariables)) {
             cp.stdin.write(`export ${key}="${String(value).trim()}"\n`);
