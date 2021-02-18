@@ -216,9 +216,9 @@ export class Job {
     private async execScripts(scripts: string[]): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
-        // const safeName = this.name.replace(/[ :\/]/g, '_');
+        const safeName = this.name.replace(/[ :\/]/g, '_');
         const gitRemote = this.gitRemote;
-        const volume = `glc-${gitRemote.domain}-${gitRemote.group.replace('/', '-')}-${gitRemote.project.replace(/.git$/, '')}`
+        const volume = `glc-${gitRemote.domain}-${gitRemote.group.replace('/', '-')}-${gitRemote.project.replace(/.git$/, '')}-${safeName}`
         let time;
         let endTime;
 
@@ -355,7 +355,7 @@ export class Job {
 
         if (this.image) {
             for (let artifactPath of this.artifacts.paths) {
-                artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
+                artifactPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, '');
 
                 process.stdout.write(`${jobNameStr} ${magentaBright(`syncing artifacts to host`)}\n`);
                 const {stdout: uidOut} = await Utils.spawn(`echo $(id -u)`, this.cwd);
@@ -366,20 +366,14 @@ export class Job {
 
                 let artCmd = ``;
                 artCmd += `set -e\n`;
-                artCmd += `docker volume create ${volume}\n`;
+                artCmd += `docker volume create ${volume} &> /dev/null\n`;
                 artCmd += `docker run --rm -v ${volume}:/builds/ -v $PWD:/work/ -w /work/ firecow/gitlab-ci-local sh -c "\n`;
                 artCmd += `mkdir -p $(dirname ${artifactPath})\n`;
                 artCmd += `chown ${uid}:${gid} -R $(dirname ${artifactPath})\n`;
                 artCmd += `set -e\n`;
-                artCmd += `if [ -d ${artifactPath} ] || [ -f ${artifactPath} ]; then\n`
-                artCmd += `\t>&2 echo ${jobNameStr} could not find bla\n`
-                artCmd += '\texit 0\n'
-                artCmd += 'fi\n'
                 artCmd += `rsync -a --chown=${uid}:${gid} /builds/${artifactPath} /work/$(dirname ${artifactPath}) --exclude '.gitlab-ci-local/'\n`;
                 artCmd += `"\n`;
                 await Utils.spawn(artCmd, this.cwd);
-                const {stderr} = await Utils.spawn(artCmd, this.cwd);
-                process.stderr.write(stderr);
                 endTime = process.hrtime(time);
                 process.stdout.write(`${this.getJobNameString()} ${magentaBright(`synced artifacts to host`)} in ${magenta(prettyHrtime(endTime))}\n`);
             }
