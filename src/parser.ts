@@ -39,7 +39,10 @@ export class Parser {
 
         const time = process.hrtime();
         await parser.init();
-        await parser.initJobs();
+        if (!parser.gitRemote) {
+            throw new ExitError(`parser.gitRemote cannot be null, is git remote set?`);
+        }
+        await parser.initJobs(parser.gitRemote);
         await parser.validateNeedsTags();
         const parsingTime = process.hrtime(time);
         process.stdout.write(`${cyan(`${"yml files".padEnd(parser.maxJobNameLength)}`)} ${magentaBright('processed')} in ${magenta(prettyHrtime(parsingTime))}\n`);
@@ -197,7 +200,7 @@ export class Parser {
         this.gitlabData = gitlabData;
     }
 
-    async initJobs() {
+    async initJobs(gitRemote: GitRemote) {
         const pipelineIid = this.pipelineIid;
         const cwd = this.cwd;
         const gitlabData = this.gitlabData;
@@ -211,7 +214,7 @@ export class Parser {
             }
 
             const jobId = await state.getJobId(cwd);
-            const job = new Job(jobData, jobName, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitUser, this.userVariables);
+            const job = new Job(jobData, jobName, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitUser, gitRemote, this.userVariables);
             const stage = this.stages.get(job.stage);
             if (stage) {
                 stage.addJob(job);
