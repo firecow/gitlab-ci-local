@@ -2,10 +2,10 @@ import {blueBright, green, greenBright, magenta, magentaBright, red, redBright, 
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as prettyHrtime from "pretty-hrtime";
-import * as path from "path";
 import {ExitError} from "./types/exit-error";
 import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
+import {GitRemote} from "./types/git-remote";
 
 export class Job {
 
@@ -26,6 +26,7 @@ export class Job {
     readonly expandedVariables: { [key: string]: string };
     readonly allowFailure: boolean;
     readonly when: string;
+    readonly gitRemote: GitRemote;
 
     get image(): string | null {
         return this.jobData['image'] ?? null;
@@ -78,13 +79,14 @@ export class Job {
     private success = true;
     private containerId: string | null = null;
 
-    constructor(jobData: any, name: string, cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitUser: GitUser, userVariables: { [name: string]: string }) {
+    constructor(jobData: any, name: string, cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitUser: GitUser, gitRemote: GitRemote, userVariables: { [name: string]: string }) {
         this.maxJobNameLength = maxJobNameLength;
         this.name = name;
         this.cwd = cwd;
         this.jobId = jobId;
         this.jobData = jobData;
 
+        this.gitRemote = gitRemote;
         this.when = jobData.when || "on_success";
         this.allowFailure = jobData.allow_failure || false;
         this.needs = jobData.needs || null;
@@ -214,7 +216,11 @@ export class Job {
     private async execScripts(scripts: string[]): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
-        const safeName = this.name.replace(/[ :\/]/g, '_');
+        // const safeName = this.name.replace(/[ :\/]/g, '_');
+        const gitRemote = this.gitRemote;
+        const volume = `glc-${gitRemote.domain}-${gitRemote.group.replace('/', '-')}-${gitRemote.project.replace(/.git$/, '')}`
+        let time;
+        let endTime;
 
         if (scripts.length === 0) {
             return 0;
@@ -248,24 +254,36 @@ export class Job {
         }
 
         if (this.image) {
-            const time = process.hrtime();
-            let preCmd = ``;
-            preCmd += `docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "\n`;
-            preCmd += `mkdir -p .gitlab-ci-local/builds/${safeName}\n`
-            preCmd += `rsync -a . .gitlab-ci-local/builds/${safeName}/. --delete --exclude '.gitlab-ci-local/'\n`
-            preCmd += `chmod a+w -R .gitlab-ci-local/builds/${safeName}\n`
-            preCmd += `chown root:root -R .gitlab-ci-local/builds/${safeName}\n`
+            time = process.hrtime();
+            process.stdout.write(`${jobNameStr} ${magentaBright(`pulling`)} ${this.image}\n`);
+            let pullCmd = ``;
+            pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.image}$'\n`
+            pullCmd += `if [ "$?" -ne 0 ]; then\n`
+            pullCmd += `\techo "Pulling ${this.image}"\n`
+            pullCmd += `\tdocker pull ${this.image}\n`
+            pullCmd += `fi\n`
+            await Utils.spawn(pullCmd, this.cwd);
+            endTime = process.hrtime(time);
+            process.stdout.write(`${this.getJobNameString()} ${magentaBright(`pulled`)} in ${magenta(prettyHrtime(endTime))}\n`);
+
+            process.stdout.write(`${jobNameStr} ${magentaBright(`syncing build folder`)} ${volume} \n`);
+            time = process.hrtime();
+            let syncCmd = ``;
+            syncCmd += `set -e\n`
+            syncCmd += `docker volume create ${volume}\n`;
+            syncCmd += `docker run --rm -v ${volume}:/builds/ -v $PWD:/work/ -w /work/ firecow/gitlab-ci-local sh -c "\n`;
+            syncCmd += `rsync -a --chmod=a+w --chown=root:root /work/. /builds/. --delete --exclude '.gitlab-ci-local/'\n`
             if (fs.existsSync(`${this.cwd}/.gitlab-ci-local/file-variables/`)) {
-                preCmd += `mkdir -p .gitlab-ci-local/builds/${safeName}/.gitlab-ci-local/file-variables/\n`;
-                preCmd += `rsync -a .gitlab-ci-local/file-variables/. .gitlab-ci-local/builds/${safeName}/.gitlab-ci-local/file-variables/.\n`;
+                syncCmd += `mkdir -p /builds/.gitlab-ci-local/file-variables/\n`;
+                syncCmd += `rsync -a /work/.gitlab-ci-local/file-variables/. /builds/.gitlab-ci-local/file-variables/.\n`;
             }
-            preCmd += `"\n`;
-            await Utils.spawn(preCmd, this.cwd);
-            const endTime = process.hrtime(time);
-            process.stdout.write(`${this.getJobNameString()} ${magentaBright(`rsync to build folder`)} in ${magenta(prettyHrtime(endTime))}\n`);
+            syncCmd += `"\n`;
+            await Utils.spawn(syncCmd, this.cwd);
+            endTime = process.hrtime(time);
+            process.stdout.write(`${this.getJobNameString()} ${magentaBright(`synced`)} in ${magenta(prettyHrtime(endTime))}\n`);
 
             let dockerCmd = ``;
-            dockerCmd += `docker run -d -i -v "$PWD/.gitlab-ci-local/builds/${safeName}:/builds/" -w /builds/ ${this.image} `;
+            dockerCmd += `docker run -d -i -v "${volume}:/builds/" -w /builds/ ${this.image} `;
             dockerCmd += `sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
             dockerCmd += `\texec /usr/local/bin/bash -e \n`;
@@ -335,22 +353,35 @@ export class Job {
             cp.on("error", (err) => reject(err));
         });
 
-        for (let artifactPath of this.artifacts.paths) {
-            if (this.image) {
+        if (this.image) {
+            for (let artifactPath of this.artifacts.paths) {
                 artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
-                if (!fs.existsSync(`${this.cwd}/.gitlab-ci-local/builds/${safeName}/${artifactPath}`)) {
-                    process.stderr.write(`${yellowBright(`Artifacts could not be found`)}\n`);
-                    continue;
-                }
 
-                if (fs.statSync(`${this.cwd}/.gitlab-ci-local/builds/${safeName}/${artifactPath}`).isDirectory()) {
-                    artifactPath = artifactPath.replace(/\/$/, '');
-                    await Utils.spawn(`mkdir -p ${artifactPath}`, this.cwd);
-                    await Utils.spawn(`rsync -a .gitlab-ci-local/builds/${safeName}/${artifactPath}/. ${artifactPath}/.`, this.cwd);
-                } else {
-                    await Utils.spawn(`mkdir -p ${path.dirname(artifactPath)}`, this.cwd);
-                    await Utils.spawn(`rsync -a .gitlab-ci-local/builds/${safeName}/${artifactPath} ${artifactPath}`, this.cwd);
-                }
+                process.stdout.write(`${jobNameStr} ${magentaBright(`syncing artifacts to host`)}\n`);
+                const {stdout: uidOut} = await Utils.spawn(`echo $(id -u)`, this.cwd);
+                const uid = uidOut.replace(/\r?\n/, '');
+                const {stdout: gidOut} = await Utils.spawn(`echo $(id -g)`, this.cwd);
+                const gid = gidOut.replace(/\r?\n/, '');
+                time = process.hrtime();
+
+                let artCmd = ``;
+                artCmd += `set -e\n`;
+                artCmd += `docker volume create ${volume}\n`;
+                artCmd += `docker run --rm -v ${volume}:/builds/ -v $PWD:/work/ -w /work/ firecow/gitlab-ci-local sh -c "\n`;
+                artCmd += `mkdir -p $(dirname ${artifactPath})\n`;
+                artCmd += `chown ${uid}:${gid} -R $(dirname ${artifactPath})\n`;
+                artCmd += `set -e\n`;
+                artCmd += `if [ -d ${artifactPath} ] || [ -f ${artifactPath} ]; then\n`
+                artCmd += `\t>&2 echo ${jobNameStr} could not find bla\n`
+                artCmd += '\texit 0\n'
+                artCmd += 'fi\n'
+                artCmd += `rsync -a --chown=${uid}:${gid} /builds/${artifactPath} /work/$(dirname ${artifactPath}) --exclude '.gitlab-ci-local/'\n`;
+                artCmd += `"\n`;
+                await Utils.spawn(artCmd, this.cwd);
+                const {stderr} = await Utils.spawn(artCmd, this.cwd);
+                process.stderr.write(stderr);
+                endTime = process.hrtime(time);
+                process.stdout.write(`${this.getJobNameString()} ${magentaBright(`synced artifacts to host`)} in ${magenta(prettyHrtime(endTime))}\n`);
             }
         }
 
