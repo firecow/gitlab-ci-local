@@ -1,11 +1,18 @@
 import * as mockProcess from "jest-mock-process";
 import * as defaultCmd from "../default-cmd";
-
-const mockProcessExit = mockProcess.mockProcessExit(new Error("Test exited"));
-const mockProcessStdout = mockProcess.mockProcessStdout();
-const mockProcessStderr = mockProcess.mockProcessStderr();
+import * as fs from "fs-extra";
 
 jest.setTimeout(90000);
+
+let mockProcessExit: any;
+let mockProcessStdout: any;
+let mockProcessStderr: any;
+
+beforeEach(() => {
+    mockProcessExit = mockProcess.mockProcessExit(new Error("Test exited"));
+    mockProcessStdout = mockProcess.mockProcessStdout();
+    mockProcessStderr = mockProcess.mockProcessStderr();
+});
 
 afterEach(() => {
     mockProcessStdout.mockClear();
@@ -18,9 +25,19 @@ test('plain', async () => {
         cwd: 'src/tests/test-cases/plain',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(25);
+    expect(mockProcessStdout).toBeCalledTimes(22);
     expect(mockProcessStderr).toBeCalledTimes(3);
     expect(mockProcessExit).toBeCalledTimes(0);
+});
+
+test('plain-invalid-jobname', async () => {
+    try {
+        await defaultCmd.handler({
+            cwd: 'src/tests/test-cases/plain-invalid-jobname',
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31mJobs cannot include spaces, yet! 'test job'[39m\n");
+    }
 });
 
 test('plain <notfound>', async () => {
@@ -32,7 +49,7 @@ test('plain <notfound>', async () => {
     } catch (e) {
         expect(e.message).toBe("Test exited");
         expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mnotfound[39m[31m could not be found[39m\n");
-        expect(mockProcessStdout).toBeCalledTimes(0);
+        expect(mockProcessStdout).toBeCalledTimes(1);
         expect(mockProcessStderr).toBeCalledTimes(1);
     }
 });
@@ -44,7 +61,7 @@ test('needs <build-job> --needs', async () => {
         needs: true
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(19);
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -80,11 +97,7 @@ test('image <test-job>', async () => {
         cwd: 'src/tests/test-cases/image',
         job: 'test-job'
     });
-
-    expect(mockProcessStdout).toHaveBeenCalledWith('[94mtest-job[39m [95mstarting[39m [95min docker...[39m\n');
-    // expect(mockProcessStdout).toBeCalledTimes(11);
-    expect(mockProcessStderr).toBeCalledTimes(0);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
 });
 
 test('no-script <test-job>', async () => {
@@ -120,11 +133,71 @@ test('after-script <test-job>', async () => {
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
-test('artifacts <test-job>', async () => {
+test('artifacts <test-root-file>', async () => {
     await defaultCmd.handler({
         cwd: 'src/tests/test-cases/artifacts',
-        job: 'test-job'
+        job: 'test-root-file'
     });
+    expect(fs.existsSync("src/tests/test-cases/artifacts/log.txt")).toBe(true);
+    expect(mockProcessExit).toBeCalledTimes(0);
+    fs.unlinkSync("src/tests/test-cases/artifacts/log.txt");
+});
+
+test('artifacts <test-deep-file>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/artifacts',
+        job: 'test-deep-file'
+    });
+    expect(fs.existsSync("src/tests/test-cases/artifacts/path/log.txt")).toBe(true);
+    expect(mockProcessExit).toBeCalledTimes(0);
+    fs.rmdirSync("src/tests/test-cases/artifacts/path", {recursive: true});
+});
+
+test('artifacts <test-folder>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/artifacts',
+        job: 'test-folder'
+    });
+    expect(fs.existsSync("src/tests/test-cases/artifacts/folder/log.txt")).toBe(true);
+    expect(mockProcessExit).toBeCalledTimes(0);
+    fs.rmdirSync("src/tests/test-cases/artifacts/folder", {recursive: true});
+});
+
+test('artifacts <test-dir>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/artifacts',
+        job: 'test-dir'
+    });
+    expect(fs.existsSync("src/tests/test-cases/artifacts/dir/deep/log.txt")).toBe(true);
+    expect(mockProcessExit).toBeCalledTimes(0);
+    fs.rmdirSync("src/tests/test-cases/artifacts/dir", {recursive: true});
+});
+
+test('artifacts <test-artifact-not-found>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/artifacts',
+        job: 'test-artifact-not-found'
+    });
+    expect(mockProcessStderr).toHaveBeenCalledWith("[93mArtifacts could not be found[39m\n");
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
+test('artifacts-no-globstar', async () => {
+    try {
+        await defaultCmd.handler({
+            cwd: 'src/tests/test-cases/artifacts-no-globstar'
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31mArtfact paths cannot contain globstar, yet! 'test-job'[39m\n");
+        expect(e.message).toBe("Test exited");
+    }
+});
+
+test('extends', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/extends'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
@@ -142,10 +215,10 @@ test('manual <build-job>', async () => {
         cwd: 'src/tests/test-cases/manual',
         manual: 'build-job'
     });
-    expect(mockProcessStdout).toHaveBeenNthCalledWith(14, "[35mnot started[39m ");
-    expect(mockProcessStdout).toHaveBeenNthCalledWith(15, "[94mtest-job[39m");
-    expect(mockProcessStdout).toHaveBeenNthCalledWith(17, "[32msuccessful[39m ");
-    expect(mockProcessStdout).toHaveBeenNthCalledWith(18, "[94mbuild-job[39m");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[35mnot started[39m ");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtest-job[39m");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[32msuccessful[39m ");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mbuild-job[39m");
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
@@ -181,7 +254,7 @@ test('script-failures <allow-failure-job>', async () => {
         job: 'allow-failure-job',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(7);
+    expect(mockProcessStdout).toHaveBeenCalledWith("[93mwarning[39m ");
     expect(mockProcessStderr).toBeCalledTimes(1);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -192,7 +265,7 @@ test('script-failures <allow-failure-after-scripts>', async () => {
         job: 'allow-failure-after-script',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(13);
+    expect(mockProcessStdout).toHaveBeenCalledWith("[93mwarning[39m ");
     expect(mockProcessStderr).toBeCalledTimes(2);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -220,16 +293,25 @@ test('invalid-stages', async () => {
     }
 });
 
+test('no-git-config', async () => {
+    try {
+        await defaultCmd.handler({
+            cwd: 'src/tests/test-cases/no-git-config',
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith(`[31mCould not locate.gitconfig or .git/config file[39m\n`);
+        expect(e.message).toBe("Test exited");
+    }
+});
+
 test('plain --list', async () => {
     await defaultCmd.handler({
         cwd: 'src/tests/test-cases/plain',
         list: true
     });
 
-    expect(mockProcessStdout.mock.calls).toEqual([
-        ["[94mtest-job [39m  Run Tests  [33mtest [39m  on_success         \n"],
-        ["[94mbuild-job[39m             [33mbuild[39m  on_success         \n"],
-    ]);
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtest-job [39m  Run Tests  [33mtest [39m  on_success         \n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mbuild-job[39m             [33mbuild[39m  on_success         \n");
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -237,10 +319,10 @@ test('plain --list', async () => {
 test('--cwd unknown-directory/', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'unknown-directory'
+            cwd: 'something/unknown-directory'
         });
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m${process.cwd()}/unknown-directory is not a directory[39m\n`);
+        expect(mockProcessStderr).toHaveBeenCalledWith(`[31msomething/unknown-directory is not a directory[39m\n`);
         expect(e.message).toBe("Test exited");
     }
 });
@@ -251,7 +333,7 @@ test('--cwd docs/', async () => {
             cwd: 'docs'
         });
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m${process.cwd()}/docs does not contain .gitlab-ci.yml[39m\n`);
+        expect(mockProcessStderr).toHaveBeenCalledWith(`[31mdocs does not contain .gitlab-ci.yml[39m\n`);
         expect(e.message).toBe("Test exited");
     }
 });

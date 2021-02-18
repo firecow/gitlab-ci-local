@@ -3,14 +3,14 @@ name: build
 on: push
 jobs:
 
-  tslint:
+  eslint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Install modules
         run: npm install
-      - name: Run TSLint
-        run: npm run lint
+      - name: Run ESLint
+        run: npm --silent run lint
 
   typescript-compile:
     runs-on: ubuntu-latest
@@ -19,7 +19,7 @@ jobs:
       - name: Install modules
         run: npm install
       - name: Run Typescipt Compiler
-        run: npm run build
+        run: npm --silent run build
 
   jest:
     runs-on: ubuntu-latest
@@ -28,4 +28,4 @@ jobs:
       - name: Install modules
         run: npm install
       - name: Run tests
-        run: npm run test
+        run: npm --silent run test

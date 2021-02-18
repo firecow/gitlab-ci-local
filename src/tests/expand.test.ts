@@ -45,7 +45,7 @@ test('extends invalid job', () => {
             'test-job': {extends: ['build-job']}
         });
     } catch (e) {
-        expect(e.message).toBe(`${blueBright('build-job')} is used by ${blueBright('test-job')}, but is unspecified`);
+        expect(e.message).toBe(`${blueBright('build-job')} is extended from ${blueBright('test-job')}, but is unspecified`);
     }
 });
 

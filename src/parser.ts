@@ -1,8 +1,9 @@
-import {blueBright, yellow} from "ansi-colors";
+import {blueBright, cyan, magenta, magentaBright, yellow} from "ansi-colors";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as path from "path";
+import * as prettyHrtime from "pretty-hrtime";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
 import {Stage} from "./stage";
@@ -18,28 +19,30 @@ export class Parser {
     private readonly jobs: Map<string, Job> = new Map();
     private readonly stages: Map<string, Stage> = new Map();
     private readonly cwd: string;
-    private readonly bashCompletionPhase: boolean;
     private readonly pipelineIid: number;
 
     private gitRemote: GitRemote | null = null;
-    // private gitUser: GitUser = null;
     private userVariables: any;
 
     private gitlabData: any;
     private maxJobNameLength = 0;
+    private readonly bashCompletionPhase: boolean;
 
-    private constructor(cwd: string, pipelineIid: number, bashCompletionPhase = false) {
-        this.bashCompletionPhase = bashCompletionPhase;
+    private constructor(cwd: string, pipelineIid: number, bashCompletionPhase: boolean) {
         this.cwd = cwd;
         this.pipelineIid = pipelineIid;
+        this.bashCompletionPhase = bashCompletionPhase;
     }
 
     static async create(cwd: string, pipelineIid: number, bashCompletionPhase = false) {
         const parser = new Parser(cwd, pipelineIid, bashCompletionPhase);
 
+        const time = process.hrtime();
         await parser.init();
         await parser.initJobs();
         await parser.validateNeedsTags();
+        const parsingTime = process.hrtime(time);
+        process.stdout.write(`${cyan(`${"yml files".padEnd(parser.maxJobNameLength)}`)} ${magentaBright('processed')} in ${magenta(prettyHrtime(parsingTime))}\n`);
 
         return parser;
     }
@@ -48,20 +51,18 @@ export class Parser {
         let gitlabUserEmail, gitlabUserName;
 
         try {
-            const res = await Utils.spawn(`git config user.email`, {shell: true, cwd});
-            gitlabUserEmail = res.trimEnd();
+            const {stdout: gitConfigEmail} = await Utils.spawn(`git config user.email`, cwd);
+            gitlabUserEmail = gitConfigEmail.trimEnd();
         } catch (e) {
-            // process.stderr.write(`${yellow("git config user.email is undefined, defaulting to `local@gitlab.com`")}`);
             gitlabUserEmail = 'local@gitlab.com';
         }
 
         const gitlabUserLogin = gitlabUserEmail.replace(/@.*/, '');
 
         try {
-            const res = await Utils.spawn(`git config user.name`, {shell: true, cwd});
-            gitlabUserName = res.trimEnd();
+            const {stdout: gitConfigUserName} = await Utils.spawn(`git config user.name`, cwd);
+            gitlabUserName = gitConfigUserName.trimEnd();
         } catch (e) {
-            // process.stderr.write(`${yellow("git config user.name is undefined, defaulting to `Bob Local`")}`);
             gitlabUserName = 'Bob Local';
         }
 
@@ -72,7 +73,7 @@ export class Parser {
         };
     }
 
-    static async initUserVariables(cwd: string, gitRemote: GitRemote | null, homeDirectory = ''): Promise<{ [key: string]: string }> {
+    static async initUserVariables(cwd: string, gitRemote: GitRemote, homeDirectory = ''): Promise<{ [key: string]: string }> {
         const variablesFile = `${path.resolve(homeDirectory)}/.gitlab-ci-local/variables.yml`;
         if (!fs.existsSync(variablesFile)) {
             return {};
@@ -89,7 +90,7 @@ export class Parser {
         }
 
         for (const [groupKey, groupEntires] of Object.entries(data?.group ?? [])) {
-            if (!`${gitRemote?.domain}/${gitRemote?.group}/${gitRemote?.project}.git`.includes(groupKey)) {
+            if (!`${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`.includes(groupKey)) {
                 continue;
             }
             if (typeof groupEntires !== 'object') {
@@ -99,7 +100,7 @@ export class Parser {
         }
 
         for (const [projectKey, projectEntries] of Object.entries(data?.project ?? [])) {
-            if (!`${gitRemote?.domain}/${gitRemote?.group}/${gitRemote?.project}.git`.includes(projectKey)) {
+            if (!`${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`.includes(projectKey)) {
                 continue;
             }
             if (typeof projectEntries !== 'object') {
@@ -129,13 +130,31 @@ export class Parser {
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await this.prepareIncludes(gitlabCiData));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, this.gitRemote, this.bashCompletionPhase));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await this.prepareIncludes(gitlabCiLocalData));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, this.gitRemote, this.bashCompletionPhase));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
+
+        // Make sure job name's doesn't contain spaces
+        // TODO: This deviates from gitlab ci behavior
+        jobExpanders.forEachRealJob(gitlabData, jobName => {
+            if (jobName.includes(' ')) {
+                throw new ExitError(`Jobs cannot include spaces, yet! '${jobName}'`);
+            }
+        });
+
+        // Make sure artifact paths doesn't contain globstar
+        // TODO: This deviates from gitlab ci behavior
+        jobExpanders.forEachRealJob(gitlabData, (jobName, jobData) => {
+            jobData?.artifacts?.paths?.forEach((path: any) => {
+                if (path.includes('*')) {
+                    throw new ExitError(`Artfact paths cannot contain globstar, yet! '${jobName}'`)
+                }
+            });
+        });
 
         // Expand various fields in gitlabData
         jobExpanders.jobExtends(gitlabData);
@@ -288,64 +307,52 @@ export class Parser {
         }
     }
 
-    static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemote: GitRemote): Promise<void> {
-        const gitlabCiLocalPath = `${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`;
-        fs.ensureDirSync(gitlabCiLocalPath);
-
-        await Utils.spawn(`git archive --remote=git@${gitRemote.domain}:${project}.git ${ref} ${file} | tar -xC ${gitlabCiLocalPath}`, {
-            shell: true,
-            cwd: gitlabCiLocalPath
-        });
-
-        if (!fs.existsSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/${file}`)) {
-            throw new ExitError(`Problem fetching git@${gitRemote.domain}:${project}.git ${ref} ${file} does it exist?`);
-        }
-
-        return;
+    static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
+        fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`);
+        await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${project}/${ref}/`, cwd);
     }
 
-    static async initGitRemote(cwd: string): Promise<GitRemote | null> {
-        try {
-            const stdout = await Utils.spawn(`git remote -v`, {shell: true, cwd});
-            const match = stdout.match(/@(?<domain>.*):(?<group>.*)\/(?<project>.*)\.git \(fetch\)/);
-
-            return {
-                domain: match?.groups?.domain ?? '',
-                group: match?.groups?.group ?? '',
-                project: match?.groups?.project ?? '',
-            };
-        } catch (e) {
-            return null;
+    static async initGitRemote(cwd: string): Promise<GitRemote> {
+        let gitConfig;
+        if (fs.existsSync(`${cwd}/.git/config`)) {
+            gitConfig = fs.readFileSync(`${cwd}/.git/config`, 'utf8')
+        } else if (fs.existsSync(`${cwd}/.gitconfig`)) {
+            gitConfig = fs.readFileSync(`${cwd}/.gitconfig`, 'utf8')
+        } else {
+            throw new ExitError(`Could not locate.gitconfig or .git/config file`)
         }
+
+        const match = gitConfig.match(/url = .*@(?<domain>.*?)[:|\/](?<group>.*)\/(?<project>.*)/);
+
+        return {
+            domain: match?.groups?.domain ?? '',
+            group: match?.groups?.group ?? '',
+            project: match?.groups?.project ?? '',
+        };
     }
 
-    private async prepareIncludes(gitlabData: any): Promise<any[]> {
+    static async prepareIncludes(gitlabData: any, cwd: string, gitRemote: GitRemote, bashCompletionPhase: boolean): Promise<any[]> {
         let includeDatas: any[] = [];
-        const cwd = this.cwd;
         const promises = [];
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of gitlabData["include"] || []) {
-            if (!value["file"] || this.bashCompletionPhase) {
+            if (!value["file"] || bashCompletionPhase) {
                 continue;
             }
 
-            if (this.gitRemote == null || this.gitRemote.domain == null) {
-                throw new ExitError(`Add a git remote if using include: [{ project: *, file: *}] syntax`);
-            }
-
-            promises.push(Parser.downloadIncludeFile(cwd, value["project"], value["ref"] || "master", value["file"], this.gitRemote));
+            promises.push(Parser.downloadIncludeFile(cwd, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
         }
 
         await Promise.all(promises);
 
         for (const value of gitlabData["include"] || []) {
             if (value["local"]) {
-                const localDoc = await Parser.loadYaml(`${this.cwd}/${value.local}`);
-                includeDatas = includeDatas.concat(await this.prepareIncludes(localDoc));
+                const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(localDoc, cwd, gitRemote, bashCompletionPhase));
             } else if (value["file"]) {
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
-                includeDatas = includeDatas.concat(await this.prepareIncludes(fileDoc));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, bashCompletionPhase));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }
