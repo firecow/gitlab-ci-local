@@ -1,0 +1,13 @@
+---
+.parent1:
+  stage: test
+  script:
+    - echo "Should not be printed"
+
+.parent2:
+  extends: .parent1
+  script:
+    - echo "Test something"
+
+test-job:
+  extends: .parent2

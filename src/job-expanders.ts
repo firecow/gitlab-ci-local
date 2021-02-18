@@ -1,5 +1,4 @@
 import {blueBright} from "ansi-colors";
-import * as clone from "clone";
 import * as deepExtend from "deep-extend";
 import {Job} from "./job";
 import {ExitError} from "./types/exit-error";
@@ -11,33 +10,30 @@ export function jobExtends(gitlabData: any) {
             continue;
         }
 
-        const jobData = gitlabData[jobName];
-
-        jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
-        let clonedData: any = clone(jobData), i;
+        let i = 0;
         const maxDepth = 50;
         for (i = 0; i < maxDepth; i++) {
-            const parentDatas = [];
-            if (!clonedData.extends) {
+            const jobData = gitlabData[jobName];
+            jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
+            if (gitlabData[jobName].extends.length === 0) {
+                delete jobData.extends;
                 break;
             }
 
-            for (const parentName of clonedData.extends) {
-                const parentData = gitlabData[parentName];
-                if (!parentData) {
-                    throw new ExitError(`${blueBright(parentName)} is used by ${blueBright(jobName)}, but is unspecified`);
-                }
-                parentDatas.push(clone(gitlabData[parentName]));
+            const parentName = jobData.extends.pop();
+            const parentData = gitlabData[parentName];
+            if (!parentData) {
+                throw new ExitError(`${blueBright(parentName)} is extended from ${blueBright(jobName)}, but is unspecified`);
+            }
+            if (jobData.extends.length === 0) {
+                delete jobData.extends;
             }
 
-            delete clonedData.extends;
-            clonedData = deepExtend({}, ...parentDatas.concat(clonedData));
+            gitlabData[jobName] = deepExtend({}, parentData, jobData);
         }
         if (i === maxDepth) {
             throw new ExitError(`You have an infinite extends loop starting from ${blueBright(jobName)}`);
         }
-
-        gitlabData[jobName] = clonedData;
     }
 }
 

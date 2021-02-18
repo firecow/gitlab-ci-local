@@ -2,7 +2,6 @@ node_modules/
 bin/
 .idea/
 *.sh
-test_copy_to_usr_bin.sh
 TOC.md
 
 src/**/*.js

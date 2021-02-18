@@ -1,28 +1,40 @@
 import {blueBright} from "ansi-colors";
 import * as childProcess from "child_process";
-import {SpawnOptionsWithoutStdio} from "child_process";
+import {ExitError} from "./types/exit-error";
 
 export class Utils {
 
-    static async spawn(command: string, options?: SpawnOptionsWithoutStdio): Promise<string> {
+    static spawn(command: string, cwd = process.cwd(), env: { [key: string]: string | undefined } = process.env): Promise<{ stdout: string, stderr: string, output: string, status: number }> {
         return new Promise((resolve, reject) => {
-            const p = childProcess.spawn(command, options);
-            let stdout = "";
-            let stderr = "";
-            p.stderr.on("data", (buff) => {
+            const cp = childProcess.spawn(command, {shell: Utils.getShell(), env, cwd});
+
+            let output = '';
+            let stdout = '';
+            let stderr = '';
+
+            cp.stderr.on("data", (buff) => {
                 stderr += buff.toString();
+                output += buff.toString();
             });
-            p.stdout.on("data", (buff) => {
+            cp.stdout.on("data", (buff) => {
                 stdout += buff.toString();
+                output += buff.toString();
             });
-            p.on("exit", (exitCode) => {
-                (exitCode ?? 0) > 0 ? reject(new Error(stderr)) : resolve(stdout);
+            cp.on("exit", (status) => {
+                if ((status ?? 0) === 0) {
+                    return resolve({stdout, stderr, output, status: status ?? 0});
+                }
+                return reject(new ExitError(`${output}`));
+            });
+            cp.on("error", (e) => {
+                reject(new ExitError(`'${command}' had errors\n${e}`));
             });
 
-            p.on("error", (e) => {
-                reject(e);
-            });
         });
+    }
+
+    static getShell() {
+        return process.env.EXE_PATH ? `${process.env.EXE_PATH}/bash.exe` : `bash`;
     }
 
     static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {

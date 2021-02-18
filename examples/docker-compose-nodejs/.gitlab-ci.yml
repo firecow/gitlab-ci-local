@@ -24,7 +24,7 @@ npm-outdated:
   allow_failure: true
   needs: [ npm-install ]
   script:
-    - npx -s ncu -e2 --deprecated
+    - npx -s ncu -e2 --deprecated --packageFile package.json
 
 # @Description Up docker-compose services
 docker-compose-up:

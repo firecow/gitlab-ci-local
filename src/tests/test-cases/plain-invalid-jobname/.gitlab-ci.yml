@@ -1,0 +1,5 @@
+---
+# @Description Run Tests
+test job:
+  script:
+    - echo "Test something"

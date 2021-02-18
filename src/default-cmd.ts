@@ -1,6 +1,5 @@
 import {red} from "ansi-colors";
 import * as fs from "fs-extra";
-import * as path from "path";
 import * as yargs from "yargs";
 import {Commander} from "./commander";
 import {Parser} from "./parser";
@@ -27,7 +26,10 @@ exports.builder = (y: any) => {
 };
 
 export async function handler(argv: any) {
-    const cwd = argv.cwd ? path.resolve(argv.cwd) : process.cwd();
+    if (argv.cwd && typeof argv.cwd == "object") {
+        throw new ExitError("--cwd option cannot be an array");
+    }
+    const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
     if (argv.completion != null) {
         yargs.showCompletionScript();
     } else if (argv.list != null) {
