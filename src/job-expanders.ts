@@ -59,7 +59,7 @@ export function beforeScripts(gitlabData: any) {
     forEachRealJob(gitlabData, (_, jobData) => {
         const expandedBeforeScripts = [].concat(jobData.before_script || (gitlabData.default || {}).before_script || gitlabData.before_script || []);
         if (expandedBeforeScripts.length > 0) {
-            jobData.beforeScripts = expandedBeforeScripts;
+            jobData.before_script = expandedBeforeScripts;
         }
     });
 }
@@ -68,7 +68,7 @@ export function afterScripts(gitlabData: any) {
     forEachRealJob(gitlabData, (_, jobData) => {
         const expandedAfterScripts = [].concat(jobData.after_script || (gitlabData.default || {}).after_script || gitlabData.after_script || []);
         if (expandedAfterScripts.length > 0) {
-            jobData.afterScripts = expandedAfterScripts;
+            jobData.after_script = expandedAfterScripts;
         }
     });
 }

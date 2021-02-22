@@ -1,0 +1,8 @@
+---
+default:
+  before_script:
+    - echo "Before test"
+
+test-job:
+  script:
+    - echo "Test something"
