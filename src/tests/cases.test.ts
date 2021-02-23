@@ -183,10 +183,10 @@ test('artifacts <test-folder>', async () => {
     fs.rmdirSync("src/tests/test-cases/artifacts/folder", {recursive: true});
 });
 
-test('artifacts <test-dir>', async () => {
+test('artifacts <test-deep-dir>', async () => {
     await defaultCmd.handler({
         cwd: 'src/tests/test-cases/artifacts',
-        job: 'test-dir'
+        job: 'test-deep-dir'
     });
     expect(fs.existsSync("src/tests/test-cases/artifacts/dir/deep/log.txt")).toBe(true);
     expect(mockProcessExit).toBeCalledTimes(0);
