@@ -123,9 +123,29 @@ test('before-script <test-job>', async () => {
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
+test('before-script-default <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/before-script-default',
+        job: 'test-job'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Before test\n");
+    expect(mockProcessStderr).toBeCalledTimes(0);
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
 test('after-script <test-job>', async () => {
     await defaultCmd.handler({
         cwd: 'src/tests/test-cases/after-script',
+        job: 'test-job'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Cleanup after test\n");
+    expect(mockProcessStderr).toBeCalledTimes(0);
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
+test('after-script-default <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/after-script-default',
         job: 'test-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Cleanup after test\n");

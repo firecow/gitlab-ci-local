@@ -26,16 +26,16 @@ export class Parser {
 
     private gitlabData: any;
     private maxJobNameLength = 0;
-    private readonly bashCompletionPhase: boolean;
+    private readonly tabCompletionPhase: boolean;
 
-    private constructor(cwd: string, pipelineIid: number, bashCompletionPhase: boolean) {
+    private constructor(cwd: string, pipelineIid: number, tabCompletionPhase: boolean) {
         this.cwd = cwd;
         this.pipelineIid = pipelineIid;
-        this.bashCompletionPhase = bashCompletionPhase;
+        this.tabCompletionPhase = tabCompletionPhase;
     }
 
-    static async create(cwd: string, pipelineIid: number, bashCompletionPhase = false) {
-        const parser = new Parser(cwd, pipelineIid, bashCompletionPhase);
+    static async create(cwd: string, pipelineIid: number, tabCompletionPhase = false) {
+        const parser = new Parser(cwd, pipelineIid, tabCompletionPhase);
 
         const time = process.hrtime();
         await parser.init();
@@ -45,7 +45,9 @@ export class Parser {
         await parser.initJobs(parser.gitRemote);
         await parser.validateNeedsTags();
         const parsingTime = process.hrtime(time);
-        process.stdout.write(`${cyan(`${"yml files".padEnd(parser.maxJobNameLength)}`)} ${magentaBright('processed')} in ${magenta(prettyHrtime(parsingTime))}\n`);
+        if (!tabCompletionPhase) {
+            process.stdout.write(`${cyan(`${"yml files".padEnd(parser.maxJobNameLength)}`)} ${magentaBright('processed')} in ${magenta(prettyHrtime(parsingTime))}\n`);
+        }
 
         return parser;
     }
@@ -133,11 +135,11 @@ export class Parser {
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, this.gitRemote, this.bashCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, this.gitRemote, this.tabCompletionPhase));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, this.gitRemote, this.bashCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, this.gitRemote, this.tabCompletionPhase));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
@@ -334,13 +336,13 @@ export class Parser {
         };
     }
 
-    static async prepareIncludes(gitlabData: any, cwd: string, gitRemote: GitRemote, bashCompletionPhase: boolean): Promise<any[]> {
+    static async prepareIncludes(gitlabData: any, cwd: string, gitRemote: GitRemote, tabCompletionPhase: boolean): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of gitlabData["include"] || []) {
-            if (!value["file"] || bashCompletionPhase) {
+            if (!value["file"] || tabCompletionPhase) {
                 continue;
             }
 
@@ -352,10 +354,10 @@ export class Parser {
         for (const value of gitlabData["include"] || []) {
             if (value["local"]) {
                 const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(localDoc, cwd, gitRemote, bashCompletionPhase));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(localDoc, cwd, gitRemote, tabCompletionPhase));
             } else if (value["file"]) {
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, bashCompletionPhase));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, tabCompletionPhase));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }
