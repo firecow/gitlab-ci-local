@@ -25,7 +25,7 @@ test-folder:
     - mkdir -p folder/
     - echo "Test folder" > folder/log.txt
 
-test-dir:
+test-deep-dir:
   image: debian
   artifacts:
     paths:
