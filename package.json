@@ -2,7 +2,7 @@
   "name": "gitlab-ci-local",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.9.6",
+  "version": "4.9.7",
   "scripts": {
     "prepublishOnly": "npm run check-all && chmod +x src/index.js",
     "pkg-linux": "pkg src/index.js --public -t linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
@@ -49,9 +49,9 @@
     "mock-fs": "^4.13.0",
     "npm-check-updates": "^11.1.8",
     "pkg": "^4.4.9",
-    "ts-jest": "^26.5.1",
+    "ts-jest": "^26.5.2",
     "ts-node": "^9.1.1",
-    "typescript": "^4.1.5"
+    "typescript": "^4.2.2"
   },
   "pkg": {
     "assets": [
