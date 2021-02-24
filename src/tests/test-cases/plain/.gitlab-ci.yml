@@ -1,5 +1,5 @@
 ---
-stages: [ test, build ]
+stages: [test, build]
 
 # @Description Run Tests
 test-job:

@@ -1,5 +1,7 @@
 ---
 test-job:
-  image: php
+  variables:
+    PHP_IMAGE_URL: php
+  image: ${PHP_IMAGE_URL}
   script:
     - echo "Test something"

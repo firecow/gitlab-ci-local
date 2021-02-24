@@ -25,51 +25,7 @@ export class Job {
     readonly expandedVariables: { [key: string]: string };
     readonly allowFailure: boolean;
     readonly when: string;
-
-    get image(): string | null {
-        return this.jobData['image'] ?? null;
-    }
-
-    get stage(): string {
-        return this.jobData['stage'] || "test";
-    }
-
-    get interactive(): boolean {
-        return this.jobData['interactive'] || false;
-    }
-
-    get description(): string {
-        return this.jobData['description'] ?? '';
-    }
-
-    get artifacts(): { paths: string[] } {
-        return this.jobData['artifacts'] || {paths: []};
-    }
-
-    get beforeScripts(): string[] {
-        return this.jobData['before_script'] || [];
-    }
-
-    get afterScripts(): string[] {
-        return this.jobData['after_script'] || [];
-    }
-
-    get scripts(): string[] {
-        return this.jobData['script'];
-    }
-
-    get preScriptsExitCode() {
-        return this._prescriptsExitCode;
-    }
-
     private _prescriptsExitCode = 0;
-
-    get afterScriptsExitCode() {
-        return this._afterScriptsExitCode;
-    }
-
-    private _afterScriptsExitCode = 0;
-
     private readonly jobData: any;
     private started = false;
     private finished = false;
@@ -142,6 +98,54 @@ export class Job {
         }
     }
 
+    get image(): string | null {
+        let image = this.jobData['image']
+        if (!image) {
+            return null;
+        }
+
+        image = Utils.expandText(image, this.expandedVariables);
+        return image.includes(':') ? image : `${image}:latest`
+    }
+
+    get stage(): string {
+        return this.jobData['stage'] || "test";
+    }
+
+    get interactive(): boolean {
+        return this.jobData['interactive'] || false;
+    }
+
+    get description(): string {
+        return this.jobData['description'] ?? '';
+    }
+
+    get artifacts(): { paths: string[] } {
+        return this.jobData['artifacts'] || {paths: []};
+    }
+
+    get beforeScripts(): string[] {
+        return this.jobData['before_script'] || [];
+    }
+
+    get afterScripts(): string[] {
+        return this.jobData['after_script'] || [];
+    }
+
+    get scripts(): string[] {
+        return this.jobData['script'];
+    }
+
+    get preScriptsExitCode() {
+        return this._prescriptsExitCode;
+    }
+
+    private _afterScriptsExitCode = 0;
+
+    get afterScriptsExitCode() {
+        return this._afterScriptsExitCode;
+    }
+
     async start(): Promise<void> {
         const startTime = process.hrtime();
 
@@ -202,6 +206,42 @@ export class Job {
 
         await this.removeContainer();
         return;
+    }
+
+    getJobNameString() {
+        return `${blueBright(`${this.name.padEnd(this.maxJobNameLength)}`)}`;
+    }
+
+    getOutputFilesPath() {
+        return `${this.cwd}/.gitlab-ci-local/output/${this.name}.log`;
+    }
+
+    isFinished() {
+        return this.finished;
+    }
+
+    isStarted() {
+        return this.started;
+    }
+
+    isManual() {
+        return this.when === "manual";
+    }
+
+    isNever() {
+        return this.when === "never";
+    }
+
+    isRunning() {
+        return this.running;
+    }
+
+    isSuccess() {
+        return this.success;
+    }
+
+    setFinished(finished: boolean) {
+        this.finished = finished;
     }
 
     private async removeContainer() {
@@ -377,41 +417,5 @@ export class Job {
         const jobNameStr = this.getJobNameString();
 
         return `${jobNameStr} ${magentaBright("finished")} in ${magenta(`${timeStr}`)}`;
-    }
-
-    getJobNameString() {
-        return `${blueBright(`${this.name.padEnd(this.maxJobNameLength)}`)}`;
-    }
-
-    getOutputFilesPath() {
-        return `${this.cwd}/.gitlab-ci-local/output/${this.name}.log`;
-    }
-
-    isFinished() {
-        return this.finished;
-    }
-
-    isStarted() {
-        return this.started;
-    }
-
-    isManual() {
-        return this.when === "manual";
-    }
-
-    isNever() {
-        return this.when === "never";
-    }
-
-    isRunning() {
-        return this.running;
-    }
-
-    isSuccess() {
-        return this.success;
-    }
-
-    setFinished(finished: boolean) {
-        this.finished = finished;
     }
 }

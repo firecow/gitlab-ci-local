@@ -51,7 +51,6 @@ export function image(gitlabData: any, envs: { [key: string]: string }) {
         const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
         if (expandedImage) {
             jobData.image = Utils.expandText(expandedImage, envs);
-            jobData.image = jobData.image.includes(':') ? jobData.image : `${jobData.image}:latest`;
         }
     });
 }
