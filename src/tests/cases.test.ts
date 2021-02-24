@@ -173,6 +173,16 @@ test('artifacts <test-deep-file>', async () => {
     fs.rmdirSync("src/tests/test-cases/artifacts/path", {recursive: true});
 });
 
+test('artifacts <test-deep-file-folder-only>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/artifacts',
+        job: 'test-deep-file-folder-only'
+    });
+    expect(fs.existsSync("src/tests/test-cases/artifacts/bin/app.exe")).toBe(true);
+    expect(mockProcessExit).toBeCalledTimes(0);
+    fs.rmdirSync("src/tests/test-cases/artifacts/bin", {recursive: true});
+});
+
 test('artifacts <test-folder>', async () => {
     await defaultCmd.handler({
         cwd: 'src/tests/test-cases/artifacts',

@@ -352,10 +352,9 @@ export class Job {
                 time = process.hrtime();
                 process.stdout.write(`${jobNameStr} ${magentaBright(`copying artifacts to host`)}\n`);
                 if (`${artifactPath}`.match(/(.*)\/(.*)/)) {
-                    console.log(`${artifactPath.replace(/(.*)\/(.*)/, '$1')}`);
                     await fs.mkdirp(`${this.cwd}/${artifactPath.replace(/(.*)\/(.*)/, '$1')}`);
                 }
-                await Utils.spawn(`docker cp ${this.containerId}:/builds/${artifactPath} ${artifactPath}`, this.cwd);
+                await Utils.spawn(`docker cp ${this.containerId}:/builds/${artifactPath} ${artifactPath.replace(/(.*)\/(.*)/, '$1')}`, this.cwd);
                 endTime = process.hrtime(time);
                 process.stdout.write(`${this.getJobNameString()} ${magentaBright(`copied artifacts to host`)} in ${magenta(prettyHrtime(endTime))}\n`);
             }
