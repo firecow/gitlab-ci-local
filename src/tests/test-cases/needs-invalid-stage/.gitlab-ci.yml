@@ -4,6 +4,6 @@ test-job:
     - echo "Test something"
 
 build-job:
-  needs: [ test-job ]
+  needs: [test-job]
   script:
     - echo "Build something"

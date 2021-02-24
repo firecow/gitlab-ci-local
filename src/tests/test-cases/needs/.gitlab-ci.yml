@@ -1,5 +1,5 @@
 ---
-stages: [ test, build ]
+stages: [test, build]
 
 test-job:
   stage: test
@@ -8,6 +8,6 @@ test-job:
 
 build-job:
   stage: build
-  needs: [ test-job ]
+  needs: [test-job]
   script:
     - echo "Build something"

@@ -14,7 +14,7 @@ npm-audit:
   stage: test
   image: node
   allow_failure: true
-  needs: [ ]
+  needs: []
   script: npm audit
 
 # @Description Find outdated packages in node_modules
@@ -22,7 +22,7 @@ npm-outdated:
   stage: test
   image: node
   allow_failure: true
-  needs: [ npm-install ]
+  needs: [npm-install]
   script:
     - npx -s ncu -e2 --deprecated --packageFile package.json
 
