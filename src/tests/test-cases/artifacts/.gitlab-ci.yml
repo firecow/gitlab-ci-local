@@ -16,6 +16,15 @@ test-deep-file:
     - mkdir -p path
     - echo "Test deep file" > path/log.txt
 
+test-deep-file-folder-only:
+  image: alpine
+  artifacts:
+    paths:
+      - bin
+  script:
+    - mkdir -p bin
+    - touch bin/app.exe
+
 test-folder:
   image: alpine
   artifacts:
