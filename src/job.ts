@@ -261,7 +261,7 @@ export class Job {
             process.stdout.write(`${this.getJobNameString()} ${magentaBright('pulled')} in ${magenta(prettyHrtime(endTime))}\n`);
 
             let dockerCmd = ``;
-            dockerCmd += `docker run -d -i -w /builds/ ${this.image} `;
+            dockerCmd += `docker run -u 0:0 -d -i -w /builds/ ${this.image} `;
             dockerCmd += `sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
             dockerCmd += `\texec /usr/local/bin/bash \n`;
