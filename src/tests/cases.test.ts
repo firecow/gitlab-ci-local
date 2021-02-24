@@ -173,6 +173,16 @@ test('artifacts <test-deep-file>', async () => {
     fs.rmdirSync("src/tests/test-cases/artifacts/path", {recursive: true});
 });
 
+test('artifacts <test-deep-file-folder-only>', async () => {
+    await defaultCmd.handler({
+        cwd: 'src/tests/test-cases/artifacts',
+        job: 'test-deep-file-folder-only'
+    });
+    expect(fs.existsSync("src/tests/test-cases/artifacts/bin/app.exe")).toBe(true);
+    expect(mockProcessExit).toBeCalledTimes(0);
+    fs.rmdirSync("src/tests/test-cases/artifacts/bin", {recursive: true});
+});
+
 test('artifacts <test-folder>', async () => {
     await defaultCmd.handler({
         cwd: 'src/tests/test-cases/artifacts',
@@ -183,23 +193,14 @@ test('artifacts <test-folder>', async () => {
     fs.rmdirSync("src/tests/test-cases/artifacts/folder", {recursive: true});
 });
 
-test('artifacts <test-dir>', async () => {
+test('artifacts <test-deep-dir>', async () => {
     await defaultCmd.handler({
         cwd: 'src/tests/test-cases/artifacts',
-        job: 'test-dir'
+        job: 'test-deep-dir'
     });
     expect(fs.existsSync("src/tests/test-cases/artifacts/dir/deep/log.txt")).toBe(true);
     expect(mockProcessExit).toBeCalledTimes(0);
     fs.rmdirSync("src/tests/test-cases/artifacts/dir", {recursive: true});
-});
-
-test('artifacts <test-artifact-not-found>', async () => {
-    await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/artifacts',
-        job: 'test-artifact-not-found'
-    });
-    expect(mockProcessStderr).toHaveBeenCalledWith("[93mArtifacts could not be found[39m\n");
-    expect(mockProcessExit).toBeCalledTimes(0);
 });
 
 test('artifacts-no-globstar', async () => {

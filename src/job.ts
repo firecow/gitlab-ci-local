@@ -2,7 +2,6 @@ import {blueBright, green, greenBright, magenta, magentaBright, red, redBright, 
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as prettyHrtime from "pretty-hrtime";
-import * as path from "path";
 import {ExitError} from "./types/exit-error";
 import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
@@ -214,7 +213,8 @@ export class Job {
     private async execScripts(scripts: string[]): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
-        const safeName = this.name.replace(/[ :\/]/g, '_');
+        let time;
+        let endTime;
 
         if (scripts.length === 0) {
             return 0;
@@ -248,24 +248,20 @@ export class Job {
         }
 
         if (this.image) {
-            const time = process.hrtime();
-            let preCmd = ``;
-            preCmd += `docker run --rm -v $PWD:/app/ -w /app/ eeacms/rsync sh -c "\n`;
-            preCmd += `mkdir -p .gitlab-ci-local/builds/${safeName}\n`
-            preCmd += `rsync -a . .gitlab-ci-local/builds/${safeName}/. --delete --exclude '.gitlab-ci-local/'\n`
-            preCmd += `chmod a+w -R .gitlab-ci-local/builds/${safeName}\n`
-            preCmd += `chown root:root -R .gitlab-ci-local/builds/${safeName}\n`
-            if (fs.existsSync(`${this.cwd}/.gitlab-ci-local/file-variables/`)) {
-                preCmd += `mkdir -p .gitlab-ci-local/builds/${safeName}/.gitlab-ci-local/file-variables/\n`;
-                preCmd += `rsync -a .gitlab-ci-local/file-variables/. .gitlab-ci-local/builds/${safeName}/.gitlab-ci-local/file-variables/.\n`;
-            }
-            preCmd += `"\n`;
-            await Utils.spawn(preCmd, this.cwd);
-            const endTime = process.hrtime(time);
-            process.stdout.write(`${this.getJobNameString()} ${magentaBright(`rsync to build folder`)} in ${magenta(prettyHrtime(endTime))}\n`);
+            time = process.hrtime();
+            process.stdout.write(`${jobNameStr} ${magentaBright('pulling')} ${this.image}\n`);
+            let pullCmd = ``;
+            pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.image}$'\n`
+            pullCmd += `if [ "$?" -ne 0 ]; then\n`
+            pullCmd += `\techo "Pulling ${this.image}"\n`
+            pullCmd += `\tdocker pull ${this.image}\n`
+            pullCmd += `fi\n`
+            await Utils.spawn(pullCmd, this.cwd);
+            endTime = process.hrtime(time);
+            process.stdout.write(`${this.getJobNameString()} ${magentaBright('pulled')} in ${magenta(prettyHrtime(endTime))}\n`);
 
             let dockerCmd = ``;
-            dockerCmd += `docker run -d -i -v "$PWD/.gitlab-ci-local/builds/${safeName}:/builds/" -w /builds/ ${this.image} `;
+            dockerCmd += `docker run -d -i -w /builds/ ${this.image} `;
             dockerCmd += `sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
             dockerCmd += `\texec /usr/local/bin/bash \n`;
@@ -287,6 +283,10 @@ export class Job {
             dockerCmd += `fi\n"`
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
             this.containerId = containerId.replace("\n", "");
+
+            process.stdout.write(`${jobNameStr} ${magentaBright('copying to container')} /builds/ \n`);
+            await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
+            process.stdout.write(`${this.getJobNameString()} ${magentaBright('copied')} in ${magenta(prettyHrtime(endTime))}\n`);
         }
 
         const cp = childProcess.spawn(this.containerId ? `docker attach ${this.containerId}` : `bash -e`, {
@@ -296,6 +296,11 @@ export class Job {
         });
 
         cp.stdin.write(`set -eo pipefail\n`);
+
+        if (this.image) {
+            cp.stdin.write(`chown root:root -R .\n`);
+            cp.stdin.write(`chmod a+w -R .\n`);
+        }
 
         for (const [key, value] of Object.entries(this.expandedVariables)) {
             cp.stdin.write(`export ${key}="${String(value).trim()}"\n`);
@@ -337,22 +342,18 @@ export class Job {
             cp.on("error", (err) => reject(err));
         });
 
-        for (let artifactPath of this.artifacts.paths) {
-            if (this.image) {
-                artifactPath = Utils.expandText(artifactPath, this.expandedVariables);
-                if (!fs.existsSync(`${this.cwd}/.gitlab-ci-local/builds/${safeName}/${artifactPath}`)) {
-                    process.stderr.write(`${yellowBright(`Artifacts could not be found`)}\n`);
-                    continue;
-                }
+        if (this.image) {
+            for (const artifactPath of this.artifacts.paths) {
+                const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, '');
 
-                if (fs.statSync(`${this.cwd}/.gitlab-ci-local/builds/${safeName}/${artifactPath}`).isDirectory()) {
-                    artifactPath = artifactPath.replace(/\/$/, '');
-                    await Utils.spawn(`mkdir -p ${artifactPath}`, this.cwd);
-                    await Utils.spawn(`rsync -a .gitlab-ci-local/builds/${safeName}/${artifactPath}/. ${artifactPath}/.`, this.cwd);
-                } else {
-                    await Utils.spawn(`mkdir -p ${path.dirname(artifactPath)}`, this.cwd);
-                    await Utils.spawn(`rsync -a .gitlab-ci-local/builds/${safeName}/${artifactPath} ${artifactPath}`, this.cwd);
+                time = process.hrtime();
+                process.stdout.write(`${jobNameStr} ${magentaBright('copying artifacts to host')}\n`);
+                if (`${expandedPath}`.match(/(.*)\/(.*)/)) {
+                    await fs.mkdirp(`${this.cwd}/${expandedPath.replace(/(.*)\/(.*)/, '$1')}`);
                 }
+                await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${expandedPath.replace(/(.*)\/(.*)/, '$1')}`, this.cwd);
+                endTime = process.hrtime(time);
+                process.stdout.write(`${this.getJobNameString()} ${magentaBright('copied artifacts to host')} in ${magenta(prettyHrtime(endTime))}\n`);
             }
         }
 

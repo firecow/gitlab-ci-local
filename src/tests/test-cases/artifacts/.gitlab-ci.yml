@@ -16,6 +16,15 @@ test-deep-file:
     - mkdir -p path
     - echo "Test deep file" > path/log.txt
 
+test-deep-file-folder-only:
+  image: alpine
+  artifacts:
+    paths:
+      - bin
+  script:
+    - mkdir -p bin
+    - touch bin/app.exe
+
 test-folder:
   image: alpine
   artifacts:
@@ -25,7 +34,7 @@ test-folder:
     - mkdir -p folder/
     - echo "Test folder" > folder/log.txt
 
-test-dir:
+test-deep-dir:
   image: debian
   artifacts:
     paths:
@@ -34,10 +43,11 @@ test-dir:
     - mkdir -p dir/deep
     - echo "Test dir" > dir/deep/log.txt
 
-test-artifact-not-found:
-  image: debian
-  artifacts:
-    paths:
-      - dir
-  script:
-    - echo "Don't generate"
+# TODO: Readd this, when we come up with a good way
+#test-artifact-not-found:
+#  image: debian
+#  artifacts:
+#    paths:
+#      - dir
+#  script:
+#    - echo "Don't generate"
