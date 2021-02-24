@@ -5,7 +5,6 @@ import * as prettyHrtime from "pretty-hrtime";
 import {ExitError} from "./types/exit-error";
 import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
-import {GitRemote} from "./types/git-remote";
 
 export class Job {
 
@@ -26,7 +25,6 @@ export class Job {
     readonly expandedVariables: { [key: string]: string };
     readonly allowFailure: boolean;
     readonly when: string;
-    readonly gitRemote: GitRemote;
 
     get image(): string | null {
         return this.jobData['image'] ?? null;
@@ -79,14 +77,13 @@ export class Job {
     private success = true;
     private containerId: string | null = null;
 
-    constructor(jobData: any, name: string, cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitUser: GitUser, gitRemote: GitRemote, userVariables: { [name: string]: string }) {
+    constructor(jobData: any, name: string, cwd: string, globals: any, pipelineIid: number, jobId: number, maxJobNameLength: number, gitUser: GitUser, userVariables: { [name: string]: string }) {
         this.maxJobNameLength = maxJobNameLength;
         this.name = name;
         this.cwd = cwd;
         this.jobId = jobId;
         this.jobData = jobData;
 
-        this.gitRemote = gitRemote;
         this.when = jobData.when || "on_success";
         this.allowFailure = jobData.allow_failure || false;
         this.needs = jobData.needs || null;
