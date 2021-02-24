@@ -249,7 +249,7 @@ export class Job {
 
         if (this.image) {
             time = process.hrtime();
-            process.stdout.write(`${jobNameStr} ${magentaBright(`pulling`)} ${this.image}\n`);
+            process.stdout.write(`${jobNameStr} ${magentaBright('pulling')} ${this.image}\n`);
             let pullCmd = ``;
             pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.image}$'\n`
             pullCmd += `if [ "$?" -ne 0 ]; then\n`
@@ -258,7 +258,7 @@ export class Job {
             pullCmd += `fi\n`
             await Utils.spawn(pullCmd, this.cwd);
             endTime = process.hrtime(time);
-            process.stdout.write(`${this.getJobNameString()} ${magentaBright(`pulled`)} in ${magenta(prettyHrtime(endTime))}\n`);
+            process.stdout.write(`${this.getJobNameString()} ${magentaBright('pulled')} in ${magenta(prettyHrtime(endTime))}\n`);
 
             let dockerCmd = ``;
             dockerCmd += `docker run -d -i -w /builds/ ${this.image} `;
@@ -284,9 +284,9 @@ export class Job {
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
             this.containerId = containerId.replace("\n", "");
 
-            process.stdout.write(`${jobNameStr} ${magentaBright(`copying to container`)} /builds/ \n`);
+            process.stdout.write(`${jobNameStr} ${magentaBright('copying to container')} /builds/ \n`);
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
-            process.stdout.write(`${this.getJobNameString()} ${magentaBright(`copied`)} in ${magenta(prettyHrtime(endTime))}\n`);
+            process.stdout.write(`${this.getJobNameString()} ${magentaBright('copied')} in ${magenta(prettyHrtime(endTime))}\n`);
         }
 
         const cp = childProcess.spawn(this.containerId ? `docker attach ${this.containerId}` : `bash -e`, {
@@ -343,17 +343,17 @@ export class Job {
         });
 
         if (this.image) {
-            for (let artifactPath of this.artifacts.paths) {
-                artifactPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, '');
+            for (const artifactPath of this.artifacts.paths) {
+                const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, '');
 
                 time = process.hrtime();
-                process.stdout.write(`${jobNameStr} ${magentaBright(`copying artifacts to host`)}\n`);
-                if (`${artifactPath}`.match(/(.*)\/(.*)/)) {
-                    await fs.mkdirp(`${this.cwd}/${artifactPath.replace(/(.*)\/(.*)/, '$1')}`);
+                process.stdout.write(`${jobNameStr} ${magentaBright('copying artifacts to host')}\n`);
+                if (`${expandedPath}`.match(/(.*)\/(.*)/)) {
+                    await fs.mkdirp(`${this.cwd}/${expandedPath.replace(/(.*)\/(.*)/, '$1')}`);
                 }
-                await Utils.spawn(`docker cp ${this.containerId}:/builds/${artifactPath} ${artifactPath.replace(/(.*)\/(.*)/, '$1')}`, this.cwd);
+                await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${expandedPath.replace(/(.*)\/(.*)/, '$1')}`, this.cwd);
                 endTime = process.hrtime(time);
-                process.stdout.write(`${this.getJobNameString()} ${magentaBright(`copied artifacts to host`)} in ${magenta(prettyHrtime(endTime))}\n`);
+                process.stdout.write(`${this.getJobNameString()} ${magentaBright('copied artifacts to host')} in ${magenta(prettyHrtime(endTime))}\n`);
             }
         }
 
