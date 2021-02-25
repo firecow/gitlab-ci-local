@@ -27,5 +27,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install modules
         run: npm install
+      - name: SSH Key
+        run: ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa
       - name: Run tests
         run: npm run test
