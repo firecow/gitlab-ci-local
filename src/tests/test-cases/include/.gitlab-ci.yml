@@ -1,7 +1,4 @@
 ---
 include:
   - { local: .gitlab-ci-base.yml }
-
-test-job:
-  script:
-    - echo "Test something"
+  - { project: firecow/gitlab-ci-local-includes, file: .gitlab-module.yml }
