@@ -29,5 +29,7 @@ jobs:
         run: npm install
       - name: SSH Key
         run: ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa
+      - name: SSH Hosts
+        run: ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
       - name: Run tests
         run: npm run test
