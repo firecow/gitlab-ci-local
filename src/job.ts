@@ -324,8 +324,10 @@ export class Job {
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
             this.containerId = containerId.replace("\n", "");
 
+            time = process.hrtime();
             process.stdout.write(`${jobNameStr} ${magentaBright('copying to container')} /builds/ \n`);
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
+            endTime = process.hrtime(time);
             process.stdout.write(`${this.getJobNameString()} ${magentaBright('copied')} in ${magenta(prettyHrtime(endTime))}\n`);
         }
 
