@@ -1,6 +1,6 @@
 import {blueBright} from "ansi-colors";
-import * as jobExpanders from "../job-expanders";
-import {Utils} from "../utils";
+import * as jobExpanders from "../src/job-expanders";
+import {Utils} from "../src/utils";
 
 test('GITLAB_USER_LOGIN positive', () => {
     const variables = {APP_ENV: '$GITLAB_USER_LOGIN', HOSTNAME: '${GITLAB_USER_LOGIN}-stage.domain.com'};

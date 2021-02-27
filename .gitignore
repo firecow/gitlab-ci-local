@@ -1,8 +1,11 @@
-node_modules/
-bin/
-.idea/
+/.idea/
+/node_modules/
+/bin/
+
 *.sh
-TOC.md
 
 src/**/*.js
 src/**/*.d.ts
+
+tests/**/*.js
+tests/**/*.d.ts

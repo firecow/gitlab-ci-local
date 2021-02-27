@@ -1,5 +1,5 @@
 import * as mockProcess from 'jest-mock-process';
-import {Utils} from "../utils";
+import {Utils} from "../src/utils";
 
 test('Print job on first index', () => {
     const mockStdout = mockProcess.mockProcessStdout();
