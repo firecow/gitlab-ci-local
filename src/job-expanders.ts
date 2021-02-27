@@ -12,7 +12,7 @@ export function jobExtends(gitlabData: any) {
 
         let i = 0;
         const maxDepth = 50;
-        for (i = 0; i < maxDepth; i++) {
+        for (i; i < maxDepth; i++) {
             const jobData = gitlabData[jobName];
             jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
             if (gitlabData[jobName].extends.length === 0) {
