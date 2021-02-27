@@ -10,9 +10,8 @@
     "pkg-all": "npm run pkg-linux && npm run pkg-macos",
     "pkg": "pkg",
     "build": "rm -f src/*.js src/*.d.ts && tsc",
-    "check-all": "npm run build && npm run lint && npm run ncu && npm run coverage && npm run audit",
+    "check-all": "npm run build && npm run ncu && npm run coverage && npm run audit",
     "audit": "npm audit --parseable",
-    "lint": "eslint .",
     "ncu": "ncu --target latest -e 2",
     "test": "jest",
     "coverage": "jest --coverage && istanbul-badges-readme --silent",
@@ -39,10 +38,6 @@
     "@types/source-map-support": "^0.5.3",
     "@types/yaml": "^1.9.7",
     "@types/yargs": "^16.0.0",
-    "@typescript-eslint/eslint-plugin": "^4.15.2",
-    "@typescript-eslint/parser": "^4.15.2",
-    "eslint": "^7.20.0",
-    "glob-promise": "^4.0.1",
     "istanbul-badges-readme": "^1.2.0",
     "jest": "^26.6.3",
     "jest-mock-process": "^1.4.0",
@@ -67,8 +62,7 @@
   "jest": {
     "preset": "ts-jest",
     "testMatch": [
-      "**/tests/**/*.test.(ts|tsx)",
-      "**/?(*.)+(spec|test).+(ts|tsx)"
+      "**/*.test.ts"
     ],
     "coverageReporters": [
       "json-summary",

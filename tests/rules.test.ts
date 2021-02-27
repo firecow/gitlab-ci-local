@@ -1,4 +1,4 @@
-import {Utils} from "../utils";
+import {Utils} from "../src/utils";
 
 test('GITLAB_CI on_success', () => {
     const rules = [
