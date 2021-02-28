@@ -6,8 +6,9 @@ Run gitlab pipelines locally as shell executor or docker executor.
 
 Get rid of all those dev specific shell scripts and make files.
 
-[![Lines](https://img.shields.io/badge/Coverage-91.16%25-brightgreen.svg)](https://npmjs.org/package/gitlab-ci-local)
-[![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://npmjs.org/package/gitlab-ci-local)
+[![Lines](https://img.shields.io/badge/Coverage-90.78%25-brightgreen.svg)](https://npmjs.org/package/gitlab-ci-local)
+[![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://github.com/firecow/gitlab-ci-local/actions)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=firecow_gitlab-ci-local&metric=alert_status)](https://sonarcloud.io/dashboard?id=firecow_gitlab-ci-local)
 [![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![dependencies](https://img.shields.io/librariesio/release/npm/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![npm](https://img.shields.io/npm/v/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
@@ -59,6 +60,16 @@ sudo su # must be installed as root, if placed in /usr/local/bin/
 curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/macOS.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
 chmod +x /usr/local/bin/gitlab-ci-local
 exit
+```
+
+### Windows (Git bash)
+
+Install [gitbash](https://git-scm.com/downloads)
+
+Download and put binary in `C:\Program Files\Git\mingw64\bin`
+
+```bash
+curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
 ```
 
 ## Convinience

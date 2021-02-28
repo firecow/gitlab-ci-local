@@ -310,8 +310,11 @@ export class Parser {
     }
 
     static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
+        const time = process.hrtime();
         fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`);
         await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${project}/${ref}/`, cwd);
+        const endTime = process.hrtime(time);
+        process.stdout.write(`${cyan(`downloaded`)} ${magentaBright(`${gitRemoteDomain}/${project}/${file}`)} in ${magenta(prettyHrtime(endTime))}\n`);
     }
 
     static async initGitRemote(cwd: string): Promise<GitRemote> {
@@ -324,7 +327,7 @@ export class Parser {
             throw new ExitError(`Could not locate.gitconfig or .git/config file`)
         }
 
-        const match = gitConfig.match(/url = .*@(?<domain>.*?)[:|\/](?<group>.*)\/(?<project>.*)/);
+        const match = gitConfig.match(/url = .*@(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*)/);
 
         return {
             domain: match?.groups?.domain ?? '',

@@ -1,5 +1,5 @@
 import * as mockProcess from "jest-mock-process";
-import * as defaultCmd from "../default-cmd";
+import * as defaultCmd from "../src/default-cmd";
 import * as fs from "fs-extra";
 
 jest.setTimeout(90000);
@@ -22,7 +22,7 @@ afterEach(() => {
 
 test('plain', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/plain',
+        cwd: 'tests/test-cases/plain',
     });
 
     expect(mockProcessStdout).toBeCalledTimes(22);
@@ -33,7 +33,7 @@ test('plain', async () => {
 test('plain-invalid-jobname', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/plain-invalid-jobname',
+            cwd: 'tests/test-cases/plain-invalid-jobname',
         });
     } catch (e) {
         expect(mockProcessStderr).toHaveBeenCalledWith("[31mJobs cannot include spaces, yet! 'test job'[39m\n");
@@ -43,7 +43,7 @@ test('plain-invalid-jobname', async () => {
 test('plain <notfound>', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/plain',
+            cwd: 'tests/test-cases/plain',
             job: 'notfound'
         });
     } catch (e) {
@@ -56,7 +56,7 @@ test('plain <notfound>', async () => {
 
 test('needs <build-job> --needs', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/needs',
+        cwd: 'tests/test-cases/needs',
         job: 'build-job',
         needs: true
     });
@@ -69,7 +69,7 @@ test('needs <build-job> --needs', async () => {
 test('needs-invalid-stage <build-job> --needs', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/needs-invalid-stage',
+            cwd: 'tests/test-cases/needs-invalid-stage',
             job: 'build-job',
         });
     } catch (e) {
@@ -82,7 +82,7 @@ test('needs-invalid-stage <build-job> --needs', async () => {
 test('needs-unspecified-job <build-job> --needs', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/needs-unspecified-job',
+            cwd: 'tests/test-cases/needs-unspecified-job',
             job: 'test-job',
         });
     } catch (e) {
@@ -94,7 +94,7 @@ test('needs-unspecified-job <build-job> --needs', async () => {
 
 test('image <test-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/image',
+        cwd: 'tests/test-cases/image',
         job: 'test-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
@@ -103,7 +103,7 @@ test('image <test-job>', async () => {
 test('no-script <test-job>', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/no-script',
+            cwd: 'tests/test-cases/no-script',
             job: 'test-job'
         });
     } catch (e) {
@@ -115,7 +115,7 @@ test('no-script <test-job>', async () => {
 
 test('before-script <test-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/before-script',
+        cwd: 'tests/test-cases/before-script',
         job: 'test-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Before test\n");
@@ -125,7 +125,7 @@ test('before-script <test-job>', async () => {
 
 test('before-script-default <test-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/before-script-default',
+        cwd: 'tests/test-cases/before-script-default',
         job: 'test-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Before test\n");
@@ -135,7 +135,7 @@ test('before-script-default <test-job>', async () => {
 
 test('after-script <test-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/after-script',
+        cwd: 'tests/test-cases/after-script',
         job: 'test-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Cleanup after test\n");
@@ -145,7 +145,7 @@ test('after-script <test-job>', async () => {
 
 test('after-script-default <test-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/after-script-default',
+        cwd: 'tests/test-cases/after-script-default',
         job: 'test-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Cleanup after test\n");
@@ -155,58 +155,58 @@ test('after-script-default <test-job>', async () => {
 
 test('artifacts <test-root-file>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/artifacts',
+        cwd: 'tests/test-cases/artifacts',
         job: 'test-root-file'
     });
-    expect(fs.existsSync("src/tests/test-cases/artifacts/log.txt")).toBe(true);
+    expect(fs.existsSync("tests/test-cases/artifacts/log.txt")).toBe(true);
     expect(mockProcessExit).toBeCalledTimes(0);
-    fs.unlinkSync("src/tests/test-cases/artifacts/log.txt");
+    fs.unlinkSync("tests/test-cases/artifacts/log.txt");
 });
 
 test('artifacts <test-deep-file>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/artifacts',
+        cwd: 'tests/test-cases/artifacts',
         job: 'test-deep-file'
     });
-    expect(fs.existsSync("src/tests/test-cases/artifacts/path/log.txt")).toBe(true);
+    expect(fs.existsSync("tests/test-cases/artifacts/path/log.txt")).toBe(true);
     expect(mockProcessExit).toBeCalledTimes(0);
-    fs.rmdirSync("src/tests/test-cases/artifacts/path", {recursive: true});
+    fs.rmdirSync("tests/test-cases/artifacts/path", {recursive: true});
 });
 
 test('artifacts <test-deep-file-folder-only>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/artifacts',
+        cwd: 'tests/test-cases/artifacts',
         job: 'test-deep-file-folder-only'
     });
-    expect(fs.existsSync("src/tests/test-cases/artifacts/bin/app.exe")).toBe(true);
+    expect(fs.existsSync("tests/test-cases/artifacts/bin/app.exe")).toBe(true);
     expect(mockProcessExit).toBeCalledTimes(0);
-    fs.rmdirSync("src/tests/test-cases/artifacts/bin", {recursive: true});
+    fs.rmdirSync("tests/test-cases/artifacts/bin", {recursive: true});
 });
 
 test('artifacts <test-folder>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/artifacts',
+        cwd: 'tests/test-cases/artifacts',
         job: 'test-folder'
     });
-    expect(fs.existsSync("src/tests/test-cases/artifacts/folder/log.txt")).toBe(true);
+    expect(fs.existsSync("tests/test-cases/artifacts/folder/log.txt")).toBe(true);
     expect(mockProcessExit).toBeCalledTimes(0);
-    fs.rmdirSync("src/tests/test-cases/artifacts/folder", {recursive: true});
+    fs.rmdirSync("tests/test-cases/artifacts/folder", {recursive: true});
 });
 
 test('artifacts <test-deep-dir>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/artifacts',
+        cwd: 'tests/test-cases/artifacts',
         job: 'test-deep-dir'
     });
-    expect(fs.existsSync("src/tests/test-cases/artifacts/dir/deep/log.txt")).toBe(true);
+    expect(fs.existsSync("tests/test-cases/artifacts/dir/deep/log.txt")).toBe(true);
     expect(mockProcessExit).toBeCalledTimes(0);
-    fs.rmdirSync("src/tests/test-cases/artifacts/dir", {recursive: true});
+    fs.rmdirSync("tests/test-cases/artifacts/dir", {recursive: true});
 });
 
 test('artifacts-no-globstar', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/artifacts-no-globstar'
+            cwd: 'tests/test-cases/artifacts-no-globstar'
         });
     } catch (e) {
         expect(mockProcessStderr).toHaveBeenCalledWith("[31mArtfact paths cannot contain globstar, yet! 'test-job'[39m\n");
@@ -216,7 +216,7 @@ test('artifacts-no-globstar', async () => {
 
 test('extends', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/extends'
+        cwd: 'tests/test-cases/extends'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
     expect(mockProcessExit).toBeCalledTimes(0);
@@ -224,7 +224,7 @@ test('extends', async () => {
 
 test('include <build-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/include',
+        cwd: 'tests/test-cases/include',
         job: 'build-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Build something\n");
@@ -242,7 +242,7 @@ test('include <deploy-job>', async () => {
 
 test('manual <build-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/manual',
+        cwd: 'tests/test-cases/manual',
         manual: 'build-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("[35mnot started[39m ");
@@ -255,7 +255,7 @@ test('manual <build-job>', async () => {
 test('script-failures <test-job>', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/script-failures',
+            cwd: 'tests/test-cases/script-failures',
             job: 'test-job',
         });
     } catch (e) {
@@ -268,7 +268,7 @@ test('script-failures <test-job>', async () => {
 test('script-failures <test-job-after-script>', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/script-failures',
+            cwd: 'tests/test-cases/script-failures',
             job: 'test-job-after-script',
         });
     } catch (e) {
@@ -280,7 +280,7 @@ test('script-failures <test-job-after-script>', async () => {
 
 test('script-failures <allow-failure-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/script-failures',
+        cwd: 'tests/test-cases/script-failures',
         job: 'allow-failure-job',
     });
 
@@ -291,7 +291,7 @@ test('script-failures <allow-failure-job>', async () => {
 
 test('script-failures <allow-failure-after-scripts>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/script-failures',
+        cwd: 'tests/test-cases/script-failures',
         job: 'allow-failure-after-script',
     });
 
@@ -303,7 +303,7 @@ test('script-failures <allow-failure-after-scripts>', async () => {
 test('stage-not-found <test-job>', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/stage-not-found',
+            cwd: 'tests/test-cases/stage-not-found',
             job: 'test-job'
         });
     } catch (e) {
@@ -315,7 +315,7 @@ test('stage-not-found <test-job>', async () => {
 test('invalid-stages', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/invalid-stages',
+            cwd: 'tests/test-cases/invalid-stages',
         });
     } catch (e) {
         expect(mockProcessStderr).toHaveBeenCalledWith(`[31m[33mstages:[39m[31m must be an array[39m\n`);
@@ -326,7 +326,7 @@ test('invalid-stages', async () => {
 test('no-git-config', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'src/tests/test-cases/no-git-config',
+            cwd: 'tests/test-cases/no-git-config',
         });
     } catch (e) {
         expect(mockProcessStderr).toHaveBeenCalledWith(`[31mCould not locate.gitconfig or .git/config file[39m\n`);
@@ -336,7 +336,7 @@ test('no-git-config', async () => {
 
 test('plain --list', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/plain',
+        cwd: 'tests/test-cases/plain',
         list: true
     });
 

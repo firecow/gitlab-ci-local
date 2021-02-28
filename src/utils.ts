@@ -6,7 +6,7 @@ export class Utils {
 
     static spawn(command: string, cwd = process.cwd(), env: { [key: string]: string | undefined } = process.env): Promise<{ stdout: string, stderr: string, output: string, status: number }> {
         return new Promise((resolve, reject) => {
-            const cp = childProcess.spawn(command, {shell: Utils.getShell(), env, cwd});
+            const cp = childProcess.spawn(command, {shell: 'bash', env, cwd});
 
             let output = '';
             let stdout = '';
@@ -31,10 +31,6 @@ export class Utils {
             });
 
         });
-    }
-
-    static getShell() {
-        return process.env.EXE_PATH ? `${process.env.EXE_PATH}/bash.exe` : `bash`;
     }
 
     static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
