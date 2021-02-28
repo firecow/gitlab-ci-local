@@ -271,7 +271,7 @@ export class Job {
                 const split = script.split(/\r?\n/);
                 const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
                 const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
-                cmd += `echo "${green(`\$ ${text}${multilineText}`)}"\n`;
+                cmd += `echo "${green(`$ ${text}${multilineText}`)}"\n`;
 
                 // Execute actual script
                 cmd += `${script}\n`;
@@ -353,7 +353,7 @@ export class Job {
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
             const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
-            cp.stdin.write(`echo "${green(`\$ ${text}${multilineText}`)}"\n`);
+            cp.stdin.write(`echo "${green(`$ ${text}${multilineText}`)}"\n`);
 
             // Execute actual script
             cp.stdin.write(`${script}\n`);
