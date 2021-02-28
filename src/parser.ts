@@ -196,7 +196,7 @@ export class Parser {
             this.maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
         }
 
-        // Check job variables isn't an invalid hash of key value pairs
+        // Check job variables for invalid hash of key value pairs
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             for (const [key, value] of Object.entries(jobData.variables || {})) {
                 if (typeof value !== "string" && typeof value !== "number") {
