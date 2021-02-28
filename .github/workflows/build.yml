@@ -10,7 +10,7 @@ jobs:
       - name: Install modules
         run: npm install
       - name: Run ESLint
-        run: npm --silent run lint
+        run: npm run lint
 
   typescript-compile:
     runs-on: ubuntu-latest
@@ -19,7 +19,7 @@ jobs:
       - name: Install modules
         run: npm install
       - name: Run Typescipt Compiler
-        run: npm --silent run build
+        run: npm run build
 
   jest:
     runs-on: ubuntu-latest
@@ -28,4 +28,4 @@ jobs:
       - name: Install modules
         run: npm install
       - name: Run tests
-        run: npm --silent run test
+        run: npm run test
