@@ -1,6 +1,7 @@
 import {blueBright} from "ansi-colors";
 import * as childProcess from "child_process";
 import {ExitError} from "./types/exit-error";
+import {Job} from "./job";
 
 export class Utils {
 
@@ -31,6 +32,15 @@ export class Utils {
             });
 
         });
+    }
+
+    static forEachRealJob(gitlabData: any, callback: (jobName: string, jobData: any) => void) {
+        for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+            if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") {
+                continue;
+            }
+            callback(jobName, jobData);
+        }
     }
 
     static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
