@@ -277,7 +277,7 @@ export class Job {
                 cmd += `${script}\n`;
             });
             const cp = childProcess.spawn(cmd, {
-                shell: Utils.getShell(),
+                shell: 'bash',
                 stdio: ['inherit', 'inherit', 'inherit'],
                 cwd: this.cwd,
             });
@@ -301,7 +301,7 @@ export class Job {
             process.stdout.write(`${this.getJobNameString()} ${magentaBright('pulled')} in ${magenta(prettyHrtime(endTime))}\n`);
 
             let dockerCmd = ``;
-            dockerCmd += `docker run -u 0:0 -d -i -w /builds/ ${this.image} `;
+            dockerCmd += `docker run -u 0:0 -d -i -w //builds/ ${this.image} `;
             dockerCmd += `sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
             dockerCmd += `\texec /usr/local/bin/bash \n`;
@@ -332,7 +332,7 @@ export class Job {
         }
 
         const cp = childProcess.spawn(this.containerId ? `docker attach ${this.containerId}` : `bash -e`, {
-            shell: Utils.getShell(),
+            shell: 'bash',
             stdio: ['pipe', 'pipe', 'pipe'],
             cwd: this.cwd,
         });
