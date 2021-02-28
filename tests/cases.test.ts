@@ -233,7 +233,7 @@ test('include <build-job>', async () => {
 
 test('include <deploy-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'src/tests/test-cases/include',
+        cwd: 'tests/test-cases/include',
         job: 'deploy-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Deploy something\n");
