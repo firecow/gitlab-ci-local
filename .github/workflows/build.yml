@@ -3,6 +3,15 @@ name: build
 on: push
 jobs:
 
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install modules
+        run: npm install
+      - name: Run ESLint
+        run: npm --silent run lint
+
   typescript-compile:
     runs-on: ubuntu-latest
     steps:
