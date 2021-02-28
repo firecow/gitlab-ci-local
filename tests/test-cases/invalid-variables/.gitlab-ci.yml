@@ -1,0 +1,6 @@
+---
+test-job:
+  variables:
+    INVALID: true
+  script:
+    - echo "Test something ${INVALID}"
