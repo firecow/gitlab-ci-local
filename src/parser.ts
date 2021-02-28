@@ -142,7 +142,7 @@ export class Parser {
 
         // Make sure job name's doesn't contain spaces
         // TODO: This deviates from gitlab ci behavior
-        jobExpanders.forEachRealJob(gitlabData, jobName => {
+        Utils.forEachRealJob(gitlabData, jobName => {
             if (jobName.includes(' ')) {
                 throw new ExitError(`Jobs cannot include spaces, yet! '${jobName}'`);
             }
@@ -150,7 +150,7 @@ export class Parser {
 
         // Make sure artifact paths doesn't contain globstar
         // TODO: This deviates from gitlab ci behavior
-        jobExpanders.forEachRealJob(gitlabData, (jobName, jobData) => {
+        Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             jobData?.artifacts?.paths?.forEach((path: any) => {
                 if (path.includes('*')) {
                     throw new ExitError(`Artfact paths cannot contain globstar, yet! '${jobName}'`)
@@ -195,6 +195,15 @@ export class Parser {
             }
             this.maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
         }
+
+        // Check job variables isn't an invalid hash of key value pairs
+        Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
+            for (const [key, value] of Object.entries(jobData.variables || {})) {
+                if (typeof value !== "string" && typeof value !== "number") {
+                    throw new ExitError(`${blueBright(jobName)} has invalid variables hash of key value pairs. ${key}=${value}`);
+                }
+            }
+        });
 
         this.gitlabData = gitlabData;
     }
