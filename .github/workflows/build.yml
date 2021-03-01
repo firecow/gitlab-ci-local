@@ -28,4 +28,4 @@ jobs:
       - name: Install modules
         run: npm install
       - name: Run tests
-        run: mkdir -p ~/.ssh/ && ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" && ssh-keyscan gitlab.com >> ~/.ssh/known_hosts && npm run test
+        run: mkdir -p ~/.ssh/ && ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" && ssh-keyscan 172.65.251.78 >> ~/.ssh/known_hosts && npm run test
