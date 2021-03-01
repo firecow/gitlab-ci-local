@@ -231,10 +231,9 @@ test('include <build-job>', async () => {
         expect(mockProcessStdout).toHaveBeenCalledWith("Build something\n");
         expect(mockProcessExit).toBeCalledTimes(0);
     } catch(e) {
-        console.log(mockProcessStderr);
+        console.log(mockProcessStderr.mock.calls.join("\n"));
         console.log(e);
     }
-
 });
 
 test('include <deploy-job>', async () => {
