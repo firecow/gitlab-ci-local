@@ -223,12 +223,18 @@ test('extends', async () => {
 });
 
 test('include <build-job>', async () => {
-    await defaultCmd.handler({
-        cwd: 'tests/test-cases/include',
-        job: 'build-job'
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Build something\n");
-    expect(mockProcessExit).toBeCalledTimes(0);
+    try {
+        await defaultCmd.handler({
+            cwd: 'tests/test-cases/include',
+            job: 'build-job'
+        });
+        expect(mockProcessStdout).toHaveBeenCalledWith("Build something\n");
+        expect(mockProcessExit).toBeCalledTimes(0);
+    } catch(e) {
+        console.log(mockProcessStderr);
+        console.log(e);
+    }
+
 });
 
 test('include <deploy-job>', async () => {
