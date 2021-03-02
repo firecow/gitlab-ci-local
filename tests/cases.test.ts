@@ -317,14 +317,26 @@ test('stage-not-found <test-job>', async () => {
     }
 });
 
-test('invalid-variables <bool-vars>', async () => {
+test('invalid-variables-bool <test-job>', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'tests/test-cases/invalid-variables',
-            job: 'bool-vars'
+            cwd: 'tests/test-cases/invalid-variables-bool',
+            job: 'test-job'
         });
     } catch (e) {
         expect(mockProcessStderr).toHaveBeenCalledWith(`[31m[94mtest-job[39m[31m has invalid variables hash of key value pairs. INVALID=true[39m\n`);
+        expect(e.message).toBe("Test exited");
+    }
+});
+
+test('invalid-variables-undef <test-job>', async () => {
+    try {
+        await defaultCmd.handler({
+            cwd: 'tests/test-cases/invalid-variables-null',
+            job: 'test-job'
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m[94mtest-job[39m[31m has invalid variables hash of key value pairs. INVALID=null[39m\n`);
         expect(e.message).toBe("Test exited");
     }
 });
