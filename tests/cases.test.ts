@@ -329,7 +329,7 @@ test('invalid-variables-bool <test-job>', async () => {
     }
 });
 
-test('invalid-variables-undef <test-job>', async () => {
+test('invalid-variables-null <test-job>', async () => {
     try {
         await defaultCmd.handler({
             cwd: 'tests/test-cases/invalid-variables-null',
