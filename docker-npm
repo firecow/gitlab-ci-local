@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+if [[ "${OSTYPE}" = darwin* ]]; then
+    HOST_SSH_AUTH_SOCK='/run/host-services/ssh-auth.sock'
+else
+    HOST_SSH_AUTH_SOCK="${SSH_AUTH_SOCK}"
+fi
+
+mkdir -p /tmp/.npm
+chmod 777 -R /tmp/.npm
+
+NPM_HOME=$(docker run -u "$(id -u):$(id -g)" node bash -c 'echo $HOME')
+
+docker run -it --rm \
+    -u "$(id -u):$(id -g)" \
+    -e SSH_AUTH_SOCK="${HOST_SSH_AUTH_SOCK}" \
+    -v "${HOST_SSH_AUTH_SOCK}:${HOST_SSH_AUTH_SOCK}" \
+    -v "/$PWD/:/app/" \
+    -v "/tmp/.npm/:/$NPM_HOME/.npm" \
+    -w /app/ \
+    node npm "$@"
+
