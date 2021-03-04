@@ -2,10 +2,12 @@
 /node_modules/
 /bin/
 
-*.sh
+/*.sh
 
-src/**/*.js
-src/**/*.d.ts
+/src/**/*.js
+/src/**/*.d.ts
 
-tests/**/*.js
-tests/**/*.d.ts
+/tests/**/*.js
+/tests/**/*.d.ts
+
+!/docker-npm
