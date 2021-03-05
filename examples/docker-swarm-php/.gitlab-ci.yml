@@ -1,0 +1,30 @@
+---
+---
+# @Description Install PHP packages
+composer-install:
+  stage: packages
+  image: php
+  needs: [ ]
+  artifacts:
+    paths: [ vendor/ ]
+  script:
+    - composer install --no-progress
+
+# @Description Find outdated PHP packages
+composer-outdated:
+  stage: check
+  needs: [ composer-install ]
+  allow_failure: true
+  script:
+    - composer outdated --strict --direct
+    - echo "PHP packages are up to date"
+
+## @Description Update PHP composer.lock
+#composer-update:
+#  stage: packages
+#  needs: [ ]
+#  rules:
+#    - { if: $GITLAB_CI == 'false', when: manual }
+#  script:
+#    - echo Running $PHP_IMAGE
+#    - docker run --rm -t -u $(id -u):$(id -g) -v tmp:/tmp/ -v $PWD/$PROJECT_ROOT/:/var/www/html/ $PHP_IMAGE composer update --no-progress
