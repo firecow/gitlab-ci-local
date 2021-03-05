@@ -100,6 +100,20 @@ test('image <test-job>', async () => {
     expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
 });
 
+test('image <test-entrypoint>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/image',
+        job: 'test-entrypoint'
+    });
+
+    expect(mockProcessStdout).toHaveBeenCalledWith("/\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Hello from 'firecow/gitlab-ci-local-test-image' image entrypoint\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("/builds\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test Entrypoint\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("I'm a test file\n");
+
+});
+
 test('no-script <test-job>', async () => {
     try {
         await defaultCmd.handler({
