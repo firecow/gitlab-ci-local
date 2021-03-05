@@ -28,6 +28,7 @@ process.on('unhandledRejection', e => {
         .command(defaultCmd)
         .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
         .strictOptions()
+        .env("GCL")
         .option("manual", {
             type: "array",
             description: "One or more manual jobs to run during a pipeline",
@@ -51,6 +52,12 @@ process.on('unhandledRejection', e => {
         .option("needs", {
             type: "boolean",
             description: "Run needed jobs, when executing a single job",
+            requiresArg: false
+        })
+        .option("privileged", {
+            type: "boolean",
+            default: false,
+            description: "Set docker executor to privileged mode",
             requiresArg: false
         })
         .completion("completion", false, async (_, yargsArgv) => {

@@ -6,7 +6,7 @@ import {Utils} from "./utils";
 
 export class Commander {
 
-    static async runPipeline(parser: Parser, manualArgs: string[]) {
+    static async runPipeline(parser: Parser, manualArgs: string[], privileged: boolean) {
         const jobs = parser.getJobs();
         const stages = parser.getStages().concat();
 
@@ -27,7 +27,7 @@ export class Commander {
 
                 if (!job.isRunning() && !job.isFinished()) {
                     // noinspection ES6MissingAwait
-                    job.start();
+                    job.start(privileged);
                 }
             }
 
@@ -41,7 +41,7 @@ export class Commander {
                 const needsConditionMet = job.needs.every((v) => (finishedJobNames.indexOf(v) >= 0));
                 if (needsConditionMet) {
                     // noinspection ES6MissingAwait
-                    job.start();
+                    job.start(privileged);
                 }
             }
 
@@ -86,7 +86,7 @@ export class Commander {
         }
     }
 
-    static async runSingleJob(parser: Parser, jobName: string, needs: boolean) {
+    static async runSingleJob(parser: Parser, jobName: string, needs: boolean, privileged: boolean) {
         const jobs: Job[] = [];
         const foundJob = parser.getJobByName(jobName);
         jobs.push(foundJob);
@@ -110,7 +110,7 @@ export class Commander {
         }
 
         for (const job of jobs) {
-            await job.start();
+            await job.start(privileged);
         }
 
         await Commander.printReport(jobs);

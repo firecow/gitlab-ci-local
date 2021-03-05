@@ -41,13 +41,13 @@ export async function handler(argv: any) {
         checkFolderAndFile(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid);
-        await Commander.runSingleJob(parser, argv.job, argv.needs);
+        await Commander.runSingleJob(parser, argv.job, argv.needs, argv.privileged);
     } else {
         checkFolderAndFile(cwd);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         const parser = await Parser.create(cwd, pipelineIid);
-        await Commander.runPipeline(parser, argv.manual || []);
+        await Commander.runPipeline(parser, argv.manual || [], argv.privileged);
     }
 }
 
