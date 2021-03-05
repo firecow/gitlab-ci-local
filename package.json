@@ -17,7 +17,7 @@
     "test": "jest",
     "lint": "npx eslint .",
     "coverage": "jest --coverage && istanbul-badges-readme --silent",
-    "start": "ts-node src/index.ts --cwd examples/docker-compose-nodejs"
+    "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
     "ansi-colors": "^4.1.1",
