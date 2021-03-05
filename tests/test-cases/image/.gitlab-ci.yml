@@ -5,3 +5,10 @@ test-job:
   image: ${PHP_IMAGE_URL}
   script:
     - echo "Test something"
+
+test-entrypoint:
+  image: firecow/gitlab-ci-local-test-image
+  script:
+    - pwd
+    - echo "Test Entrypoint"
+    - ls -all
