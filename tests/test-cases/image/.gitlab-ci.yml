@@ -11,4 +11,4 @@ test-entrypoint:
   script:
     - pwd
     - echo "Test Entrypoint"
-    - ls -all
+    - cat test-file.txt
