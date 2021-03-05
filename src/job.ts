@@ -301,7 +301,7 @@ export class Job {
             process.stdout.write(`${this.getJobNameString()} ${magentaBright('pulled')} in ${magenta(prettyHrtime(endTime))}\n`);
 
             let dockerCmd = ``;
-            dockerCmd += `docker run -u 0:0 -d -i -w //builds/ ${this.image} `;
+            dockerCmd += `docker create -u 0:0 -i ${this.image} `;
             dockerCmd += `sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
             dockerCmd += `\texec /usr/local/bin/bash \n`;
@@ -331,7 +331,7 @@ export class Job {
             process.stdout.write(`${this.getJobNameString()} ${magentaBright('copied')} in ${magenta(prettyHrtime(endTime))}\n`);
         }
 
-        const cp = childProcess.spawn(this.containerId ? `docker attach ${this.containerId}` : `bash -e`, {
+        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : `bash -e`, {
             shell: 'bash',
             stdio: ['pipe', 'pipe', 'pipe'],
             cwd: this.cwd,
@@ -340,6 +340,7 @@ export class Job {
         cp.stdin.write(`set -eo pipefail\n`);
 
         if (this.image) {
+            cp.stdin.write(`cd /builds/\n`);
             cp.stdin.write(`chown root:root -R .\n`);
             cp.stdin.write(`chmod a+w -R .\n`);
         }
