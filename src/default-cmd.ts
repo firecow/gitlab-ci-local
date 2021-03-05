@@ -6,13 +6,14 @@ import {Parser} from "./parser";
 import * as state from "./state";
 import {ExitError} from "./types/exit-error";
 
-const checkFolderAndFile = (cwd: string) => {
+const checkFolderAndFile = (cwd: string, file?: string) => {
     if (!fs.pathExistsSync(`${cwd}`)) {
         throw new ExitError(`${cwd} is not a directory`);
     }
 
-    if (!fs.existsSync(`${cwd}/.gitlab-ci.yml`)) {
-        throw new ExitError(`${cwd} does not contain .gitlab-ci.yml`);
+    const gitlabFilePath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
+    if (!fs.existsSync(gitlabFilePath)) {
+        throw new ExitError(`${cwd} does not contain ${file ?? ".gitlab-ci.yml"}`);
     }
 };
 
@@ -33,20 +34,20 @@ export async function handler(argv: any) {
     if (argv.completion != null) {
         yargs.showCompletionScript();
     } else if (argv.list != null) {
-        checkFolderAndFile(cwd);
+        checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
-        const parser = await Parser.create(cwd, pipelineIid);
+        const parser = await Parser.create(cwd, pipelineIid, false, argv.file);
         Commander.runList(parser);
     } else if (argv.job) {
-        checkFolderAndFile(cwd);
+        checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
-        const parser = await Parser.create(cwd, pipelineIid);
+        const parser = await Parser.create(cwd, pipelineIid, false, argv.file);
         await Commander.runSingleJob(parser, argv.job, argv.needs);
     } else {
-        checkFolderAndFile(cwd);
+        checkFolderAndFile(cwd, argv.file);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
-        const parser = await Parser.create(cwd, pipelineIid);
+        const parser = await Parser.create(cwd, pipelineIid, false, argv.file);
         await Commander.runPipeline(parser, argv.manual || []);
     }
 }
