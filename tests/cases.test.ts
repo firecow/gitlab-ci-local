@@ -110,6 +110,8 @@ test('image <test-entrypoint>', async () => {
     expect(mockProcessStdout).toHaveBeenCalledWith("Hello from 'firecow/gitlab-ci-local-test-image' image entrypoint\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("/builds\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("Test Entrypoint\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("I'm a test file\n");
+
 });
 
 test('no-script <test-job>', async () => {
