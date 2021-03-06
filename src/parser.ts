@@ -36,7 +36,7 @@ export class Parser {
         this.file = file;
     }
 
-    static async create(cwd: string, pipelineIid: number, tabCompletionPhase = false, file: string) {
+    static async create(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, file: string) {
         const parser = new Parser(cwd, pipelineIid, tabCompletionPhase, file);
 
         const time = process.hrtime();
