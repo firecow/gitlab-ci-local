@@ -281,7 +281,7 @@ export class Parser {
 
     getJobByName(name: string): Job {
         const job = this.jobs.get(name);
-        assert(job != null, `${blueBright(`${name}`)} could not be found`);
+        assert(job != null, `${blueBright(name)} could not be found`);
         return job;
     }
 
@@ -312,7 +312,7 @@ export class Parser {
             const unspecifiedNeedsJob = job.needs.filter((v) => (jobNames.indexOf(v) === -1));
             assert(
                 unspecifiedNeedsJob.length !== job.needs.length,
-                `[ ${blueBright(unspecifiedNeedsJob.join(','))} ] jobs are needed by ${blueBright(`${job.name}`)}, but they cannot be found`,
+                `[ ${blueBright(unspecifiedNeedsJob.join(','))} ] jobs are needed by ${blueBright(job.name)}, but they cannot be found`,
             );
 
 
@@ -322,7 +322,7 @@ export class Parser {
                 const jobStageIndex = stages.indexOf(job.stage);
                 assert(
                     needJobStageIndex < jobStageIndex,
-                    `${blueBright(`${needJob.name}`)} is needed by ${blueBright(`${job.name}`)}, but it is in the same or a future stage`,
+                    `${blueBright(needJob.name)} is needed by ${blueBright(job.name)}, but it is in the same or a future stage`,
                 );
             }
 
