@@ -13,6 +13,7 @@ import {GitRemote} from "./types/git-remote";
 import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
 import untildify = require("untildify");
+import {assert} from "./asserts";
 
 export class Parser {
 
@@ -143,18 +144,14 @@ export class Parser {
         // Make sure job name's doesn't contain spaces
         // TODO: This deviates from gitlab ci behavior
         Utils.forEachRealJob(gitlabData, jobName => {
-            if (jobName.includes(' ')) {
-                throw new ExitError(`Jobs cannot include spaces, yet! '${jobName}'`);
-            }
+            assert(!jobName.includes(' '), `Jobs cannot include spaces, yet! '${jobName}'`);
         });
 
         // Make sure artifact paths doesn't contain globstar
         // TODO: This deviates from gitlab ci behavior
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             jobData?.artifacts?.paths?.forEach((path: any) => {
-                if (path.includes('*')) {
-                    throw new ExitError(`Artfact paths cannot contain globstar, yet! '${jobName}'`)
-                }
+                assert(!path.includes('*'), `Artfact paths cannot contain globstar, yet! '${jobName}'`);
             });
         });
 
@@ -172,9 +169,8 @@ export class Parser {
         }
 
         // 'stages:' must be an array
-        if (gitlabData.stages && !Array.isArray(gitlabData.stages)) {
-            throw new ExitError(`${yellow('stages:')} must be an array`);
-        }
+        assert(gitlabData.stages && Array.isArray(gitlabData.stages), `${yellow('stages:')} must be an array`);
+
         // Make sure stages includes ".pre" and ".post". See: https://docs.gitlab.com/ee/ci/yaml/#pre-and-post
         if (!gitlabData.stages.includes(".pre")) {
             gitlabData.stages.unshift(".pre");
@@ -199,9 +195,10 @@ export class Parser {
         // Check job variables for invalid hash of key value pairs
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             for (const [key, value] of Object.entries(jobData.variables || {})) {
-                if (typeof value !== "string" && typeof value !== "number") {
-                    throw new ExitError(`${blueBright(jobName)} has invalid variables hash of key value pairs. ${key}=${value}`);
-                }
+                assert(
+                    typeof value === "string" || typeof value === "number",
+                    `${blueBright(jobName)} has invalid variables hash of key value pairs. ${key}=${value}`,
+                );
             }
         });
 
@@ -209,6 +206,8 @@ export class Parser {
     }
 
     async initJobs() {
+        assert(this.gitRemote != null, "GitRemote isn't set in parser initJobs function")
+
         const pipelineIid = this.pipelineIid;
         const cwd = this.cwd;
         const gitlabData = this.gitlabData;
@@ -222,13 +221,22 @@ export class Parser {
             }
 
             const jobId = await state.getJobId(cwd);
-            const job = new Job(jobData, jobName, cwd, gitlabData, pipelineIid, jobId, this.maxJobNameLength, gitUser, this.userVariables);
+            const job = new Job({
+                name: jobName,
+                maxJobNameLength: this.maxJobNameLength,
+                userVariables: this.userVariables,
+                jobData,
+                cwd,
+                globals: gitlabData,
+                pipelineIid,
+                jobId,
+                gitUser,
+                gitRemote: this.gitRemote,
+            });
             const stage = this.stages.get(job.stage);
-            if (stage) {
-                stage.addJob(job);
-            } else {
-                throw new ExitError(`${yellow(`stage:${job.stage}`)} not found for ${blueBright(`${job.name}`)}`);
-            }
+            const stageStr = `stage:${job.stage}`;
+            assert(stage != null, `${yellow(stageStr)} not found for ${blueBright(job.name)}`);
+            stage.addJob(job);
             await state.incrementJobId(cwd);
 
             this.jobs.set(jobName, job);
@@ -273,9 +281,7 @@ export class Parser {
 
     getJobByName(name: string): Job {
         const job = this.jobs.get(name);
-        if (!job) {
-            throw new ExitError(`${blueBright(`${name}`)} could not be found`);
-        }
+        assert(job != null, `${blueBright(name)} could not be found`);
         return job;
     }
 
@@ -304,15 +310,20 @@ export class Parser {
             }
 
             const unspecifiedNeedsJob = job.needs.filter((v) => (jobNames.indexOf(v) === -1));
-            if (unspecifiedNeedsJob.length === job.needs.length) {
-                throw new ExitError(`[ ${blueBright(unspecifiedNeedsJob.join(','))} ] jobs are needed by ${blueBright(`${job.name}`)}, but they cannot be found`);
-            }
+            assert(
+                unspecifiedNeedsJob.length !== job.needs.length,
+                `[ ${blueBright(unspecifiedNeedsJob.join(','))} ] jobs are needed by ${blueBright(job.name)}, but they cannot be found`,
+            );
+
 
             for (const need of job.needs) {
-                const needJob = this.jobs.get(need);
-                if (needJob && stages.indexOf(needJob.stage) >= stages.indexOf(job.stage)) {
-                    throw new ExitError(`${blueBright(`${needJob.name}`)} is needed by ${blueBright(`${job.name}`)}, but it is in the same or a future stage`);
-                }
+                const needJob = this.getJobByName(need);
+                const needJobStageIndex = stages.indexOf(needJob.stage);
+                const jobStageIndex = stages.indexOf(job.stage);
+                assert(
+                    needJobStageIndex < jobStageIndex,
+                    `${blueBright(needJob.name)} is needed by ${blueBright(job.name)}, but it is in the same or a future stage`,
+                );
             }
 
         }
