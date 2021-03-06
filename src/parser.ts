@@ -234,7 +234,8 @@ export class Parser {
                 gitRemote: this.gitRemote,
             });
             const stage = this.stages.get(job.stage);
-            assert(stage != null, `${yellow(`stage:${job.stage}`)} not found for ${blueBright(`${job.name}`)}`);
+            const stageStr = `stage:${job.stage}`;
+            assert(stage != null, `${yellow(stageStr)} not found for ${blueBright(job.name)}`);
             stage.addJob(job);
             await state.incrementJobId(cwd);
 
