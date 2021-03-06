@@ -7,18 +7,11 @@ import * as state from "./state";
 import {ExitError} from "./types/exit-error";
 import {assert} from "./asserts";
 
-const checkFolderAndFile = (cwd: string) => {
-    assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
-    assert(fs.existsSync(`${cwd}/.gitlab-ci.yml`), `${cwd} does not contain .gitlab-ci.yml`);
 const checkFolderAndFile = (cwd: string, file?: string) => {
-    if (!fs.pathExistsSync(`${cwd}`)) {
-        throw new ExitError(`${cwd} is not a directory`);
-    }
+    assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
 
     const gitlabFilePath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
-    if (!fs.existsSync(gitlabFilePath)) {
-        throw new ExitError(`${cwd} does not contain ${file ?? ".gitlab-ci.yml"}`);
-    }
+    assert(fs.existsSync(gitlabFilePath), `${cwd} does not contain ${file ?? ".gitlab-ci.yml"}`);
 };
 
 exports.command = "$0 [job]";
