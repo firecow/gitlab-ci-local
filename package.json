@@ -2,7 +2,7 @@
   "name": "gitlab-ci-local",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.9.8",
+  "version": "4.9.9",
   "scripts": {
     "prepublishOnly": "npm run check-all && chmod +x src/index.js",
     "pkg-linux": "pkg src/index.js --public -t node14-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz && rm -r bin/linux",
@@ -11,7 +11,8 @@
     "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win",
     "pkg": "pkg",
     "build": "rm -f src/*.js src/*.d.ts && tsc",
-    "check-all": "npm run build && npm run lint && npm run ncu && npm run coverage && npm run audit",
+    "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
+    "outdated": "npm run ncu",
     "audit": "npm audit --parseable",
     "ncu": "ncu --target latest -e 2",
     "test": "jest",
@@ -21,6 +22,7 @@
   },
   "dependencies": {
     "ansi-colors": "^4.1.1",
+    "camelcase": "^5.3.1",
     "clone": "^2.1.2",
     "deep-extend": "^0.6.0",
     "fs-extra": "^9.1.0",
