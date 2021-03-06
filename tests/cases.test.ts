@@ -54,6 +54,15 @@ test('plain <notfound>', async () => {
     }
 });
 
+test('trigger', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/trigger',
+    });
+
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtrigger_job[39m");
+});
+
+
 test('needs <build-job> --needs', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/needs',
