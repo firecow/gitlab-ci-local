@@ -3,6 +3,7 @@ import * as deepExtend from "deep-extend";
 import {Job} from "./job";
 import {ExitError} from "./types/exit-error";
 import {Utils} from "./utils";
+import {assert} from "./asserts";
 
 export function jobExtends(gitlabData: any) {
     for (const jobName of Object.keys(gitlabData)) {
@@ -22,18 +23,15 @@ export function jobExtends(gitlabData: any) {
 
             const parentName = jobData.extends.pop();
             const parentData = gitlabData[parentName];
-            if (!parentData) {
-                throw new ExitError(`${blueBright(parentName)} is extended from ${blueBright(jobName)}, but is unspecified`);
-            }
+            assert(parentData != null, `${blueBright(parentName)} is extended from ${blueBright(jobName)}, but is unspecified`);
             if (jobData.extends.length === 0) {
                 delete jobData.extends;
             }
 
             gitlabData[jobName] = deepExtend({}, parentData, jobData);
         }
-        if (i === maxDepth) {
-            throw new ExitError(`You have an infinite extends loop starting from ${blueBright(jobName)}`);
-        }
+
+        assert(i < maxDepth, `You have an infinite extends loop starting from ${blueBright(jobName)}`);
     }
 }
 

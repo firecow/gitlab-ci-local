@@ -5,7 +5,11 @@ import {Commander} from "./commander";
 import {Parser} from "./parser";
 import * as state from "./state";
 import {ExitError} from "./types/exit-error";
+import {assert} from "./asserts";
 
+const checkFolderAndFile = (cwd: string) => {
+    assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
+    assert(fs.existsSync(`${cwd}/.gitlab-ci.yml`), `${cwd} does not contain .gitlab-ci.yml`);
 const checkFolderAndFile = (cwd: string, file?: string) => {
     if (!fs.pathExistsSync(`${cwd}`)) {
         throw new ExitError(`${cwd} is not a directory`);
@@ -27,9 +31,7 @@ exports.builder = (y: any) => {
 };
 
 export async function handler(argv: any) {
-    if (argv.cwd && typeof argv.cwd == "object") {
-        throw new ExitError("--cwd option cannot be an array");
-    }
+    assert(argv.cwd && typeof argv.cwd != "object", '--cwd option cannot be an array');
     const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
     if (argv.completion != null) {
         yargs.showCompletionScript();
