@@ -73,9 +73,10 @@ export function afterScripts(gitlabData: any) {
 
 export function scripts(gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
-        if (!jobData.script) {
+        if (!jobData.script && !jobData.trigger) {
             throw new ExitError(`${blueBright(jobName)} must have script specified`);
         }
         jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
+        jobData.script = jobData.script ?? [];
     });
 }
