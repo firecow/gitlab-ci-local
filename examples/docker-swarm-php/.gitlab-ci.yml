@@ -1,30 +1,30 @@
 ---
----
 # @Description Install PHP packages
 composer-install:
-  stage: packages
-  image: php
+  stage: .pre
+  image: composer
   needs: [ ]
   artifacts:
     paths: [ vendor/ ]
   script:
     - composer install --no-progress
 
+# @Description Find PHP Code standard issues
+php-cs-fixer-dry-run:
+  stage: test
+  image: php
+  rules:
+    - { if: $GITLAB_CI == 'false', allow_failure: true, when: on_success }
+    - { if: $GITLAB_CI == 'true', allow_failure: false, when: on_success}
+  needs: [ composer-install ]
+  script:
+    - vendor/bin/php-cs-fixer fix --dry-run --diff
+
 # @Description Find outdated PHP packages
 composer-outdated:
-  stage: check
+  stage: test
   needs: [ composer-install ]
   allow_failure: true
   script:
     - composer outdated --strict --direct
     - echo "PHP packages are up to date"
-
-## @Description Update PHP composer.lock
-#composer-update:
-#  stage: packages
-#  needs: [ ]
-#  rules:
-#    - { if: $GITLAB_CI == 'false', when: manual }
-#  script:
-#    - echo Running $PHP_IMAGE
-#    - docker run --rm -t -u $(id -u):$(id -g) -v tmp:/tmp/ -v $PWD/$PROJECT_ROOT/:/var/www/html/ $PHP_IMAGE composer update --no-progress

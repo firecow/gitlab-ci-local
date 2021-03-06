@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3a05a1ec23af0bed51e02ddcd23e4e9b",
+    "content-hash": "730ef074c81d7aa7f97edbbe74003e8d",
     "packages": [
         {
             "name": "ua-parser/uap-php",
