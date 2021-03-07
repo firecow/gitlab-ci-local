@@ -22,7 +22,7 @@ Get rid of all those dev specific shell scripts and make files.
 ## Table of contents
 
 * [Table of contents](#table-of-contents)
-* Examples
+* [Examples](./examples/)
     * [docker-compose-nodejs](./examples/docker-compose-nodejs/README.md)
 * [Installation](#installation)
 * [Convinience](#convinience)
