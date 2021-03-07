@@ -45,9 +45,9 @@ export class Utils {
 
     static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
         if (i === arr.length - 1) {
-            process.stdout.write(`${blueBright(`${job.name}`)}`);
+            process.stdout.write(`${blueBright(job.name)}`);
         } else {
-            process.stdout.write(`${blueBright(`${job.name}`)}, `);
+            process.stdout.write(`${blueBright(job.name)}, `);
         }
     }
 
