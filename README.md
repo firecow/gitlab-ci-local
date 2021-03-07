@@ -1,5 +1,3 @@
-## Introduction
-
 Tired of pushing to test your .gitlab-ci.yml?
 
 Run gitlab pipelines locally as shell executor or docker executor.
@@ -23,7 +21,6 @@ Get rid of all those dev specific shell scripts and make files.
 
 ## Table of contents
 
-* [Introduction](#introduction)
 * [Table of contents](#table-of-contents)
 * Examples
     * [docker-compose-nodejs](./examples/docker-compose-nodejs/README.md)
