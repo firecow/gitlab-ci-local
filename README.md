@@ -5,6 +5,7 @@ Run gitlab pipelines locally as shell executor or docker executor.
 Get rid of all those dev specific shell scripts and make files.
 
 [![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://github.com/firecow/gitlab-ci-local/actions)
+[![Known Vulnerabilities](https://snyk.io/test/github/firecow/gitlab-ci-local/badge.svg)](https://snyk.io/test/github/firecow/gitlab-ci-local)
 [![npm](https://img.shields.io/npm/v/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![license](https://img.shields.io/github/license/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 
@@ -16,7 +17,6 @@ Get rid of all those dev specific shell scripts and make files.
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=firecow_gitlab-ci-local&metric=coverage)](https://sonarcloud.io/dashboard?id=firecow_gitlab-ci-local)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=firecow_gitlab-ci-local&metric=code_smells)](https://sonarcloud.io/dashboard?id=firecow_gitlab-ci-local)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=firecow_gitlab-ci-local&metric=duplicated_lines_density)](https://sonarcloud.io/dashboard?id=firecow_gitlab-ci-local)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=firecow_gitlab-ci-local&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=firecow_gitlab-ci-local)
 
 ## Table of contents
 
