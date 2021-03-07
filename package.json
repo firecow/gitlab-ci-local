@@ -24,7 +24,6 @@
   "dependencies": {
     "ansi-colors": "^4.1.1",
     "camelcase": "^5.3.1",
-    "clone": "^2.1.2",
     "deep-extend": "^0.6.0",
     "fs-extra": "^9.1.0",
     "js-yaml": "^4.0.0",
