@@ -1,0 +1,8 @@
+---
+include:
+  - local: .gitlab-ci-base.yml
+
+test:
+  script:
+    - !reference [.setup, script]
+    - echo running my own command
