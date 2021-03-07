@@ -1,0 +1,8 @@
+---
+version: '3.9'
+
+services:
+  webserver:
+    image: ${BUILD_PHP_IMAGE_URL}
+    ports:
+      - 8892:80
