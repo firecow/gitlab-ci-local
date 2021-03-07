@@ -21,6 +21,15 @@ jobs:
       - name: Run Typescipt Compiler
         run: npm run build
 
+  unused-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install modules
+        run: npm install
+      - name: Run depcheck
+        run: npx depcheck --ignores depcheck
+
   jest:
     runs-on: ubuntu-latest
     steps:
