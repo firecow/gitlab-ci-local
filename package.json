@@ -93,7 +93,6 @@
       "**/*.test.ts"
     ],
     "coverageReporters": [
-      "lcov",
       "json-summary",
       "text-summary"
     ]
