@@ -9,4 +9,6 @@ $ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
 $parser = Parser::create( );
 $result = $parser->parse($ua);
 
+header("Content-Type: application/json");
+
 echo json_encode($result, JSON_PRETTY_PRINT);
