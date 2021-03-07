@@ -1,5 +1,6 @@
 {
   "name": "gitlab-ci-local",
+  "description": "Tired of pushing to test your .gitlab-ci.yml?",
   "main": "src/index.js",
   "bin": "src/index.js",
   "version": "4.9.9",
