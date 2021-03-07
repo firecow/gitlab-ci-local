@@ -1,19 +1,20 @@
-# docker-compose nodejs example
+# docker swarm php example
 
-- Install npm packages
-    - Copy those packages to host and child jobs, because of the artifacts fields (npm-install)
-- Check for security vulnerbilities in npm packages (npm-audit)
-- Check for outdated packages via npm-check-updates package (npm-outdated)
-- Deploy a webserver container via docker-compose (docker-compose-up)
+- Install composer packages
+    - Expose vendor folder via artifacts (composer-install)
+- Build PHP image, via complex shell scripting and docker build commands using gitlab predefined variables (build-php)
+- Analyse PHP code for mistakes (php-cs-fixer-dry-run)
+    - Will warn locally, and fail remotely
+- Check for outdated packages (composer-outdated)
+    - Will only warn
+- Deploy swarm services via docker stack deploy (deploy)
 
+Start by calling.
 ```bash
-gitlab-ci-local --cwd examples/docker-compose-nodejs/
+gitlab-ci-local --cwd examples/docker-swarm-php/
 ```
 
-If you want to down docker-compose service call.
-
-This job is only run locally, and only when manually triggered
-
+If you want stop the stack services call. This is a local only job.
 ```bash
-gitlab-ci-local --cwd examples/docker-compose-nodejs/ docker-compose-down
+gitlab-ci-local --cwd examples/docker-swarm-php/ remove-stack
 ```
