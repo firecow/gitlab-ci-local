@@ -14,8 +14,11 @@ process.on('unhandledRejection', e => {
     if (e instanceof ExitError) {
         process.stderr.write(`${red(e.message)}\n`);
         process.exit(1);
+    } else if (e instanceof Error) {
+        process.stderr.write(`${red(e.stack ?? e.message)}\n`);
+    } else if (e) {
+        process.stderr.write(`${red(e.toString())}\n`);
     }
-    process.stderr.write(`${red(`${e}`)}\n`);
     process.exit(1);
 });
 

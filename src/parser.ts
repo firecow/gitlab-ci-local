@@ -336,7 +336,8 @@ export class Parser {
         fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`);
         await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${project}/${ref}/`, cwd);
         const endTime = process.hrtime(time);
-        process.stdout.write(`${cyan(`downloaded`)} ${magentaBright(`${gitRemoteDomain}/${project}/${file}`)} in ${magenta(prettyHrtime(endTime))}\n`);
+        const remoteUrl = `${gitRemoteDomain}/${project}/${file}`;
+        process.stdout.write(`${cyan('downloaded')} ${magentaBright(remoteUrl)} in ${magenta(prettyHrtime(endTime))}\n`);
     }
 
     static async initGitRemote(cwd: string): Promise<GitRemote> {

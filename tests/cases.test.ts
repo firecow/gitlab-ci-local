@@ -54,6 +54,15 @@ test('plain <notfound>', async () => {
     }
 });
 
+test('trigger', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/trigger',
+    });
+
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtrigger_job[39m");
+});
+
+
 test('needs <build-job> --needs', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/needs',
@@ -377,14 +386,14 @@ test('no-git-config', async () => {
     }
 });
 
-test('plain --list', async () => {
+test('list --list', async () => {
     await defaultCmd.handler({
-        cwd: 'tests/test-cases/plain',
+        cwd: 'tests/test-cases/list-case/',
         list: true
     });
 
     expect(mockProcessStdout).toHaveBeenCalledWith("[94mtest-job [39m  Run Tests  [33mtest [39m  on_success         \n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("[94mbuild-job[39m             [33mbuild[39m  on_success         \n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mbuild-job[39m             [33mbuild[39m  on_success  warning  [[94mtest-job[39m]\n");
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
 });

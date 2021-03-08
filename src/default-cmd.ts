@@ -24,7 +24,7 @@ exports.builder = (y: any) => {
 };
 
 export async function handler(argv: any) {
-    assert(argv.cwd && typeof argv.cwd != "object", '--cwd option cannot be an array');
+    assert(typeof argv.cwd != "object", '--cwd option cannot be an array');
     const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
     if (argv.completion != null) {
         yargs.showCompletionScript();
