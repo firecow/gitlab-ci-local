@@ -213,11 +213,10 @@ export class Job {
         this.finished = true;
 
         await this.removeContainer();
-        return;
     }
 
     getJobNameString() {
-        return `${blueBright(`${this.name.padEnd(this.maxJobNameLength)}`)}`;
+        return `${blueBright(this.name.padEnd(this.maxJobNameLength))}`;
     }
 
     getOutputFilesPath() {
@@ -289,7 +288,7 @@ export class Job {
                 stdio: ['inherit', 'inherit', 'inherit'],
                 cwd: this.cwd,
             });
-            return await new Promise<number>((resolve, reject) => {
+            return new Promise<number>((resolve, reject) => {
                 cp.on('exit', (code) => resolve(code ?? 0));
                 cp.on("error", (err) => reject(err));
             });

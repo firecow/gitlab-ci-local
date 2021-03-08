@@ -78,9 +78,9 @@ export class Commander {
             const needs = job.needs;
             const allowFailure = job.allowFailure ? 'warning' : '';
             let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
-            jobLine += `  ${yellow(`${job.stage.padEnd(stagePadEnd)}`)}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
+            jobLine += `  ${yellow(job.stage.padEnd(stagePadEnd))}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
             if (needs) {
-                jobLine += `  [${blueBright(`${needs.join(',')}`)}]`;
+                jobLine += `  [${blueBright(needs.join(','))}]`;
             }
             process.stdout.write(`${jobLine}\n`);
         }
