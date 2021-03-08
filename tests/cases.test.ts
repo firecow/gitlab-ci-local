@@ -112,7 +112,8 @@ test('image <test-job>', async () => {
 test('image <test-entrypoint>', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/image',
-        job: 'test-entrypoint'
+        job: 'test-entrypoint',
+        privileged: true
     });
 
     expect(mockProcessStdout).toHaveBeenCalledWith("/\n");
