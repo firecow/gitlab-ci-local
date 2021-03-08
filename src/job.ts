@@ -154,7 +154,7 @@ export class Job {
         return this._afterScriptsExitCode;
     }
 
-    async start(): Promise<void> {
+    async start(privileged: boolean): Promise<void> {
         const startTime = process.hrtime();
 
         this.running = true;
@@ -168,7 +168,7 @@ export class Job {
         }
 
         const prescripts = this.beforeScripts.concat(this.scripts);
-        this._prescriptsExitCode = await this.execScripts(prescripts);
+        this._prescriptsExitCode = await this.execScripts(prescripts, privileged);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
             this.running = false;
@@ -196,7 +196,7 @@ export class Job {
 
         this._afterScriptsExitCode = 0;
         if (this.afterScripts.length > 0) {
-            this._afterScriptsExitCode = await this.execScripts(this.afterScripts);
+            this._afterScriptsExitCode = await this.execScripts(this.afterScripts, privileged);
         }
 
         if (this._afterScriptsExitCode > 0) {
@@ -257,7 +257,7 @@ export class Job {
         }
     }
 
-    private async execScripts(scripts: string[]): Promise<number> {
+    private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
         let time;
@@ -308,7 +308,11 @@ export class Job {
             process.stdout.write(`${this.getJobNameString()} ${magentaBright('pulled')} in ${magenta(prettyHrtime(endTime))}\n`);
 
             let dockerCmd = ``;
-            dockerCmd += `docker create -u 0:0 -i ${this.image} `;
+            if (privileged) {
+                dockerCmd += `docker create --privileged -u 0:0 -i ${this.image} `;
+            } else {
+                dockerCmd += `docker create -u 0:0 -i ${this.image} `;
+            }
             dockerCmd += `sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
             dockerCmd += `\texec /usr/local/bin/bash \n`;
