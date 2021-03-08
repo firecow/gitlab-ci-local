@@ -7,9 +7,11 @@ import * as state from "./state";
 import {ExitError} from "./types/exit-error";
 import {assert} from "./asserts";
 
-const checkFolderAndFile = (cwd: string) => {
+const checkFolderAndFile = (cwd: string, file?: string) => {
     assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
-    assert(fs.existsSync(`${cwd}/.gitlab-ci.yml`), `${cwd} does not contain .gitlab-ci.yml`);
+
+    const gitlabFilePath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
+    assert(fs.existsSync(gitlabFilePath), `${cwd} does not contain ${file ?? ".gitlab-ci.yml"}`);
 };
 
 exports.command = "$0 [job]";
@@ -27,21 +29,21 @@ export async function handler(argv: any) {
     if (argv.completion != null) {
         yargs.showCompletionScript();
     } else if (argv.list != null) {
-        checkFolderAndFile(cwd);
+        checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
-        const parser = await Parser.create(cwd, pipelineIid);
+        const parser = await Parser.create(cwd, pipelineIid, false, argv.file);
         Commander.runList(parser);
     } else if (argv.job) {
-        checkFolderAndFile(cwd);
+        checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
-        const parser = await Parser.create(cwd, pipelineIid);
-        await Commander.runSingleJob(parser, argv.job, argv.needs);
+        const parser = await Parser.create(cwd, pipelineIid, false, argv.file);
+        await Commander.runSingleJob(parser, argv.job, argv.needs, argv.privileged);
     } else {
-        checkFolderAndFile(cwd);
+        checkFolderAndFile(cwd, argv.file);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
-        const parser = await Parser.create(cwd, pipelineIid);
-        await Commander.runPipeline(parser, argv.manual || []);
+        const parser = await Parser.create(cwd, pipelineIid, false, argv.file);
+        await Commander.runPipeline(parser, argv.manual || [], argv.privileged);
     }
 }
 

@@ -31,6 +31,7 @@ process.on('unhandledRejection', e => {
         .command(defaultCmd)
         .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
         .strictOptions()
+        .env("GCL")
         .option("manual", {
             type: "array",
             description: "One or more manual jobs to run during a pipeline",
@@ -43,7 +44,7 @@ process.on('unhandledRejection', e => {
         })
         .option("cwd", {
             type: "string",
-            description: "Path to a gitlab-ci.yml",
+            description: "Path to a current working directory",
             requiresArg: true
         })
         .option("completion", {
@@ -56,11 +57,22 @@ process.on('unhandledRejection', e => {
             description: "Run needed jobs, when executing a single job",
             requiresArg: false
         })
+        .option("file", {
+            type: "string",
+            description: "Specify custom location of the .gitlab-ci.yml. Relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
+            requiresArg: false
+        })
+        .option("privileged", {
+            type: "boolean",
+            default: false,
+            description: "Set docker executor to privileged mode",
+            requiresArg: false
+        })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
                 const cwd = yargsArgv.cwd || process.cwd();
                 const pipelineIid = await state.getPipelineIid(cwd);
-                const parser = await Parser.create(cwd, pipelineIid, true);
+                const parser = await Parser.create(cwd, pipelineIid, true, yargsArgv.file);
                 return parser.getJobNames();
             } catch (e) {
                 return ["Parser-Failed!"];
