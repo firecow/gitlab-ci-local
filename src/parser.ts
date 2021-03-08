@@ -20,6 +20,7 @@ export class Parser {
     private readonly jobs: Map<string, Job> = new Map();
     private readonly stages: Map<string, Stage> = new Map();
     private readonly cwd: string;
+    private readonly file?: string;
     private readonly pipelineIid: number;
 
     private gitRemote: GitRemote | null = null;
@@ -29,14 +30,15 @@ export class Parser {
     private maxJobNameLength = 0;
     private readonly tabCompletionPhase: boolean;
 
-    private constructor(cwd: string, pipelineIid: number, tabCompletionPhase: boolean) {
+    private constructor(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, file?: string) {
         this.cwd = cwd;
         this.pipelineIid = pipelineIid;
         this.tabCompletionPhase = tabCompletionPhase;
+        this.file = file;
     }
 
-    static async create(cwd: string, pipelineIid: number, tabCompletionPhase = false) {
-        const parser = new Parser(cwd, pipelineIid, tabCompletionPhase);
+    static async create(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, file: string) {
+        const parser = new Parser(cwd, pipelineIid, tabCompletionPhase, file);
 
         const time = process.hrtime();
         await parser.init();
@@ -131,7 +133,7 @@ export class Parser {
         this.userVariables = await Parser.initUserVariables(cwd, this.gitRemote, process.env.HOME);
 
         let ymlPath, yamlDataList: any[] = [];
-        ymlPath = `${cwd}/.gitlab-ci.yml`;
+        ymlPath = this.file ? `${cwd}/${this.file}` : `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
         yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, this.gitRemote, this.tabCompletionPhase));
 
