@@ -23,6 +23,7 @@
     "ansi-colors": "^4.1.1",
     "camelcase": "^6.2.0",
     "deep-extend": "^0.6.0",
+    "dotenv": "^8.2.0",
     "fs-extra": "^9.1.0",
     "js-yaml": "^4.0.0",
     "pretty-hrtime": "^1.0.3",
