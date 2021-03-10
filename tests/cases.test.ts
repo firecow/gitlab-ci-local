@@ -238,6 +238,14 @@ test('artifacts-no-globstar', async () => {
     }
 });
 
+test('dotenv <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/dotenv',
+        job: 'test-job'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
+});
+
 test('extends', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/extends'

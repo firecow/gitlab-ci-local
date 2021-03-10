@@ -6,6 +6,8 @@ import {Parser} from "./parser";
 import * as state from "./state";
 import {ExitError} from "./types/exit-error";
 import {assert} from "./asserts";
+import * as dotenv from "dotenv";
+import * as camelCase from "camelcase";
 
 const checkFolderAndFile = (cwd: string, file?: string) => {
     assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
@@ -26,6 +28,17 @@ exports.builder = (y: any) => {
 export async function handler(argv: any) {
     assert(typeof argv.cwd != "object", '--cwd option cannot be an array');
     const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
+
+    if (fs.existsSync(`${cwd}/.gitlab-ci-local-env`)) {
+        const config = dotenv.parse(fs.readFileSync(`${cwd}/.gitlab-ci-local-env`))
+        for (const [key, value] of Object.entries(config)) {
+            const argKey = camelCase(key);
+            if (argv[argKey] == null) {
+                argv[argKey] = value;
+            }
+        }
+    }
+
     if (argv.completion != null) {
         yargs.showCompletionScript();
     } else if (argv.list != null) {
