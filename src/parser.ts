@@ -350,7 +350,7 @@ export class Parser {
             throw new ExitError(`Could not locate.gitconfig or .git/config file`)
         }
 
-        const match = gitConfig.match(/url = .*@(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*)/);
+        const match = gitConfig.match(/url = .*@(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*)\.git/);
 
         return {
             domain: match?.groups?.domain ?? '',
