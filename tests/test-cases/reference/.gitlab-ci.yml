@@ -2,7 +2,7 @@
 include:
   - local: .gitlab-ci-base.yml
 
-test:
+test-job:
   script:
     - !reference [.setup, script]
-    - echo running my own command
+    - echo Test Something

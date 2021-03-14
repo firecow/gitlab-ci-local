@@ -1,4 +1,4 @@
 ---
 .setup:
   script:
-    - echo "Creating environment"
+    - echo "Setting something general up"

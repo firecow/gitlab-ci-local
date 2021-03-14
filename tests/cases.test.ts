@@ -289,6 +289,17 @@ test('manual <build-job>', async () => {
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
+test('reference <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/reference',
+        job: 'test-job',
+    });
+
+    expect(mockProcessStdout).toHaveBeenCalledWith("Setting something general up");
+    expect(mockProcessStderr).toBeCalledTimes(0);
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
 test('script-failures <test-job>', async () => {
     try {
         await defaultCmd.handler({
