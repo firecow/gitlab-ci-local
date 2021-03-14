@@ -109,7 +109,7 @@ group:
     DOCKER_LOGIN_PASSWORD: dij3213n123n12in3
 
 global:
-  # Will be type File, because value is a path
+  # Will be type File, because value is a file path
   SSH_PRIVATE_KEY: '~/.ssh/id_rsa'
 ```
 
@@ -126,8 +126,8 @@ Adds descriptive text to `gitlab-ci-local --list`
 npm-install:
   image: node
   artifacts:
-  paths:
-    - node_modules/
+    paths:
+      - node_modules/
   script:
     - npm install --no-audit
 ```

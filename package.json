@@ -28,7 +28,6 @@
     "js-yaml": "^4.0.0",
     "pretty-hrtime": "^1.0.3",
     "source-map-support": "^0.5.19",
-    "untildify": "^4.0.0",
     "yargs": "^16.2.0"
   },
   "devDependencies": {

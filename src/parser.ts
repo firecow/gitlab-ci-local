@@ -2,7 +2,6 @@ import {blueBright, cyan, magenta, magentaBright, yellow} from "ansi-colors";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
-import * as path from "path";
 import * as prettyHrtime from "pretty-hrtime";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
@@ -12,8 +11,8 @@ import {ExitError} from "./types/exit-error";
 import {GitRemote} from "./types/git-remote";
 import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
-import untildify = require("untildify");
 import {assert} from "./asserts";
+import * as path from "path";
 
 export class Parser {
 
@@ -21,6 +20,7 @@ export class Parser {
     private readonly stages: Map<string, Stage> = new Map();
     private readonly cwd: string;
     private readonly file?: string;
+    private readonly home?: string;
     private readonly pipelineIid: number;
 
     private gitRemote: GitRemote | null = null;
@@ -30,15 +30,16 @@ export class Parser {
     private maxJobNameLength = 0;
     private readonly tabCompletionPhase: boolean;
 
-    private constructor(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, file?: string) {
+    private constructor(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
         this.cwd = cwd;
         this.pipelineIid = pipelineIid;
         this.tabCompletionPhase = tabCompletionPhase;
         this.file = file;
+        this.home = home;
     }
 
-    static async create(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, file: string) {
-        const parser = new Parser(cwd, pipelineIid, tabCompletionPhase, file);
+    static async create(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
+        const parser = new Parser(cwd, pipelineIid, tabCompletionPhase, file, home);
 
         const time = process.hrtime();
         await parser.init();
@@ -78,8 +79,9 @@ export class Parser {
         };
     }
 
-    static async initUserVariables(cwd: string, gitRemote: GitRemote, homeDirectory = ''): Promise<{ [key: string]: string }> {
-        const variablesFile = `${path.resolve(homeDirectory)}/.gitlab-ci-local/variables.yml`;
+    static async initUserVariables(cwd: string, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
+        const homeDir = home.replace(/\/$/, '');
+        const variablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         if (!fs.existsSync(variablesFile)) {
             return {};
         }
@@ -116,10 +118,19 @@ export class Parser {
 
         // Generate files for file type variables
         for (const [key, value] of Object.entries(variables)) {
-            if (fs.existsSync(untildify(value))) {
+            if (!value.match(/^[/|~]/)) {
+                continue;
+            }
+
+            if (value.match(/\/$/)) {
+                continue;
+            }
+
+            const fromFilePath = value.replace(/^~\/(.*)/, `${homeDir}/$1`);
+            if (fs.existsSync(fromFilePath)) {
                 await fs.ensureDir(`${cwd}/.gitlab-ci-local/file-variables/`);
-                await fs.copyFile(untildify(value), `${cwd}/.gitlab-ci-local/file-variables/${path.basename(untildify(value))}`);
-                variables[key] = `.gitlab-ci-local/file-variables/${path.basename(untildify(value))}`;
+                await fs.copyFile(fromFilePath, `${cwd}/.gitlab-ci-local/file-variables/${path.basename(fromFilePath)}`);
+                variables[key] = `.gitlab-ci-local/file-variables/${path.basename(fromFilePath)}`;
             }
         }
 
@@ -130,7 +141,7 @@ export class Parser {
         const cwd = this.cwd;
 
         this.gitRemote = await Parser.initGitRemote(cwd);
-        this.userVariables = await Parser.initUserVariables(cwd, this.gitRemote, process.env.HOME);
+        this.userVariables = await Parser.initUserVariables(cwd, this.gitRemote, this.home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = this.file ? `${cwd}/${this.file}` : `${cwd}/.gitlab-ci.yml`;
