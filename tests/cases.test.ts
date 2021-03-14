@@ -54,6 +54,15 @@ test('plain <notfound>', async () => {
     }
 });
 
+test('trigger', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/trigger',
+    });
+
+    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtrigger_job[39m");
+});
+
+
 test('needs <build-job> --needs', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/needs',
@@ -103,7 +112,8 @@ test('image <test-job>', async () => {
 test('image <test-entrypoint>', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/image',
-        job: 'test-entrypoint'
+        job: 'test-entrypoint',
+        privileged: true
     });
 
     expect(mockProcessStdout).toHaveBeenCalledWith("/\n");
@@ -226,6 +236,14 @@ test('artifacts-no-globstar', async () => {
         expect(mockProcessStderr).toHaveBeenCalledWith("[31mArtfact paths cannot contain globstar, yet! 'test-job'[39m\n");
         expect(e.message).toBe("Test exited");
     }
+});
+
+test('dotenv <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/dotenv',
+        job: 'test-job'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
 });
 
 test('extends', async () => {
