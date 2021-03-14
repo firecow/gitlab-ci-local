@@ -62,6 +62,11 @@ process.on('unhandledRejection', e => {
             description: "Specify custom location of the .gitlab-ci.yml. Relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
             requiresArg: false
         })
+        .option("home", {
+            type: "string",
+            description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml",
+            requiresArg: false
+        })
         .option("privileged", {
             type: "boolean",
             default: false,

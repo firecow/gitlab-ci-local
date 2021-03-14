@@ -101,6 +101,19 @@ test('needs-unspecified-job <build-job> --needs', async () => {
     }
 });
 
+test('custom-home <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/custom-home',
+        job: 'test-job',
+        home: 'tests/test-cases/custom-home/.home',
+    });
+
+    expect(mockProcessStdout).toHaveBeenCalledWith("global-var-value\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("group-var-value\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("project-var-value\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Im content of a file variable\n");
+});
+
 test('image <test-job>', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/image',
