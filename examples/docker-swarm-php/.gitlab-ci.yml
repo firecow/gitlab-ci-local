@@ -1,0 +1,76 @@
+---
+# @Description Install PHP packages
+composer-install:
+  stage: .pre
+  image: composer
+  needs: [ ]
+  artifacts:
+    paths: [ vendor/ ]
+  script:
+    - composer install --no-progress
+
+# @Description Build/Push PHP image
+build-php:
+  needs: [ composer-install ]
+  stage: build
+  artifacts:
+    paths: [ .env-build-php ]
+  script:
+    - IMAGE_NAME=fake/php
+    - IMAGE_PIPELINE_URL=${IMAGE_NAME}:${CI_PIPELINE_IID}
+    - docker build . -q -t ${IMAGE_PIPELINE_URL}
+    - echo "Built ./Dockerfile ${IMAGE_PIPELINE_URL}"
+    - echo "BUILD_PHP_IMAGE_URL=${IMAGE_PIPELINE_URL}" > .env-build-php
+    - >
+      if [ "${GITLAB_CI}" == 'true' ]; then
+        docker push -q ${IMAGE_PIPELINE_URL}
+        echo "Pushed ${IMAGE_PIPELINE_URL}"
+      fi
+    - >
+      if [ -n "${CI_COMMIT_TAG}" ]; then
+        IMAGE_TAG_URL=${IMAGE_NAME}:${CI_COMMIT_TAG}
+        docker tag ${IMAGE_PIPELINE_URL} ${IMAGE_TAG_URL}
+        docker push -q ${IMAGE_TAG_URL}
+        echo "Pushed ${IMAGE_TAG_URL}"
+        echo "BUILD_PHP_IMAGE_URL=${IMAGE_TAG_URL}" > .env-build-php
+      fi
+
+# @Description Find PHP Code standard issues
+php-cs-fixer-dry-run:
+  stage: test
+  image: php
+  needs: [ composer-install ]
+  rules:
+    - { if: $GITLAB_CI == 'false', allow_failure: true, when: on_success }
+    - { if: $GITLAB_CI == 'true', allow_failure: false, when: on_success }
+  script:
+    - vendor/bin/php-cs-fixer fix --dry-run --diff
+
+# @Description Find outdated PHP packages
+composer-outdated:
+  stage: test
+  needs: [ composer-install ]
+  allow_failure: true
+  script:
+    - composer outdated --strict --direct
+    - echo "PHP packages are up to date"
+
+# @Description Deploy a docker swarm stack
+deploy:
+  dependencies: [ build-php ]
+  stage: deploy
+  script:
+    - export $(grep -vh '^#' .env* | xargs)
+    - docker stack deploy -c docker-compose.yml php-project
+  environment:
+    url: http://localhost:8892
+    name: local
+
+# @Description Remove the deployed swarm stack
+remove-stack:
+  stage: .post
+  rules:
+    - { if: $GITLAB_CI == 'false', allow_failure: true, when: manual }
+    - { if: $GITLAB_CI == 'true',  when: never }
+  script:
+    - docker stack rm php-project

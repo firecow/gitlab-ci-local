@@ -1,0 +1,9 @@
+{
+  "require": {
+    "ua-parser/uap-php": "v3.7.0",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^v2.18.2"
+  }
+}
