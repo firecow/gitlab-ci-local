@@ -1,0 +1,3 @@
+.gitlab-ci-local/
+vendor/
+.env-build-php
