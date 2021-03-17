@@ -290,6 +290,15 @@ test('include <deploy-job>', async () => {
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
+test('include-template <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/include-template',
+        job: 'test-job'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test Something\n");
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
 test('manual <build-job>', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/manual',
