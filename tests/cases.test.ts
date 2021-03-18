@@ -137,6 +137,15 @@ test('image <test-entrypoint>', async () => {
 
 });
 
+test('image <test-entrypoint-override>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/image',
+        job: 'test-entrypoint-override'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
 test('no-script <test-job>', async () => {
     try {
         await defaultCmd.handler({
