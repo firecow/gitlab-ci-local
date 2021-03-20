@@ -325,11 +325,17 @@ export class Job {
                 dockerCmd += `docker create -u 0:0 -i `;
             }
 
+            if (this.imageEntrypoint) {
+                this.imageEntrypoint.forEach((e) => {
+                    dockerCmd += `--entrypoint "${e}" `
+                });
+            }
+
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 dockerCmd += `-e ${key}="${String(value).trim()}" `
             }
 
-            dockerCmd += `${this.image} sh -c "\n`
+            dockerCmd += `${this.imageName} sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
             dockerCmd += `\texec /usr/local/bin/bash \n`;
             dockerCmd += `elif [ -x /usr/bin/bash ]; then\n`;
