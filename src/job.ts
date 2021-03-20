@@ -116,6 +116,17 @@ export class Job {
         return imageName.includes(':') ? imageName : `${imageName}:latest`;
     }
 
+    get imageEntrypoint(): string[] | null {
+        const image = this.jobData['image'];
+        if (!image) {
+            return null;
+        }
+        if (typeof image.entrypoint !== 'object') {
+            throw new ExitError(`image:entrypoint must be an array`);
+        }
+        return image.entrypoint;
+    }
+
     get stage(): string {
         return this.jobData['stage'] || "test";
     }
