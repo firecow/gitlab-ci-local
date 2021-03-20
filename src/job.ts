@@ -320,11 +320,16 @@ export class Job {
 
             let dockerCmd = ``;
             if (privileged) {
-                dockerCmd += `docker create --privileged -u 0:0 -i ${this.imageName} `;
+                dockerCmd += `docker create --privileged -u 0:0 -i `;
             } else {
-                dockerCmd += `docker create -u 0:0 -i ${this.imageName} `;
+                dockerCmd += `docker create -u 0:0 -i `;
             }
-            dockerCmd += `sh -c "\n`
+
+            for (const [key, value] of Object.entries(this.expandedVariables)) {
+                dockerCmd += `-e ${key}="${String(value).trim()}" `
+            }
+
+            dockerCmd += `${this.image} sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
             dockerCmd += `\texec /usr/local/bin/bash \n`;
             dockerCmd += `elif [ -x /usr/bin/bash ]; then\n`;
@@ -343,6 +348,7 @@ export class Job {
             dockerCmd += `\techo shell not found\n`;
             dockerCmd += `\texit 1\n`;
             dockerCmd += `fi\n"`
+
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
             this.containerId = containerId.replace("\n", "");
 

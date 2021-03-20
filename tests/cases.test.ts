@@ -131,6 +131,7 @@ test('image <test-entrypoint>', async () => {
 
     expect(mockProcessStdout).toHaveBeenCalledWith("/\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("Hello from 'firecow/gitlab-ci-local-test-image' image entrypoint\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("I am epic multiline value\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("/builds\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("Test Entrypoint\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("I'm a test file\n");
