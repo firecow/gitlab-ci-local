@@ -1,3 +1,4 @@
+---
 include:
   - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
 

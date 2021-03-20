@@ -44,10 +44,10 @@ test-deep-dir:
     - echo "Test dir" > dir/deep/log.txt
 
 # TODO: Readd this, when we come up with a good way
-#test-artifact-not-found:
-#  image: debian
-#  artifacts:
-#    paths:
-#      - dir
-#  script:
-#    - echo "Don't generate"
+# test-artifact-not-found:
+#   image: debian
+#   artifacts:
+#     paths:
+#       - dir
+#   script:
+#     - echo "Don't generate"

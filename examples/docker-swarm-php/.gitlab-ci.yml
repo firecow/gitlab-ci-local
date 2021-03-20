@@ -3,18 +3,18 @@
 composer-install:
   stage: .pre
   image: composer
-  needs: [ ]
+  needs: []
   artifacts:
-    paths: [ vendor/ ]
+    paths: [vendor/]
   script:
     - composer install --no-progress
 
 # @Description Build/Push PHP image
 build-php:
-  needs: [ composer-install ]
+  needs: [composer-install]
   stage: build
   artifacts:
-    paths: [ .env-build-php ]
+    paths: [.env-build-php]
   script:
     - IMAGE_NAME=fake/php
     - IMAGE_PIPELINE_URL=${IMAGE_NAME}:${CI_PIPELINE_IID}
@@ -39,7 +39,7 @@ build-php:
 php-cs-fixer-dry-run:
   stage: test
   image: php
-  needs: [ composer-install ]
+  needs: [composer-install]
   rules:
     - { if: $GITLAB_CI == 'false', allow_failure: true, when: on_success }
     - { if: $GITLAB_CI == 'true', allow_failure: false, when: on_success }
@@ -49,7 +49,7 @@ php-cs-fixer-dry-run:
 # @Description Find outdated PHP packages
 composer-outdated:
   stage: test
-  needs: [ composer-install ]
+  needs: [composer-install]
   allow_failure: true
   script:
     - composer outdated --strict --direct
@@ -57,7 +57,7 @@ composer-outdated:
 
 # @Description Deploy a docker swarm stack
 deploy:
-  dependencies: [ build-php ]
+  dependencies: [build-php]
   stage: deploy
   script:
     - export $(grep -vh '^#' .env* | xargs)
@@ -71,6 +71,6 @@ remove-stack:
   stage: .post
   rules:
     - { if: $GITLAB_CI == 'false', allow_failure: true, when: manual }
-    - { if: $GITLAB_CI == 'true',  when: never }
+    - { if: $GITLAB_CI == 'true', when: never }
   script:
     - docker stack rm php-project
