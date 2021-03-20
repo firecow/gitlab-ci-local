@@ -3,6 +3,13 @@ name: build
 on: push
 jobs:
 
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run YAMLLint
+        run: ./yamllint
+
   eslint:
     runs-on: ubuntu-latest
     steps:
