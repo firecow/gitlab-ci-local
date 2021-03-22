@@ -101,19 +101,30 @@ export class Job {
             this.allowFailure = ruleResult.allowFailure;
         }
 
-        if (this.interactive && (this.when !== 'manual' || this.image !== null)) {
+        if (this.interactive && (this.when !== 'manual' || this.imageName !== null)) {
             throw new ExitError(`${this.getJobNameString()} @Interactive decorator cannot have image: and must be when:manual`);
         }
     }
 
-    get image(): string | null {
-        let image = this.jobData['image']
+    get imageName(): string  | null {
+        const image = this.jobData['image'];
         if (!image) {
             return null;
         }
 
-        image = Utils.expandText(image, this.expandedVariables);
-        return image.includes(':') ? image : `${image}:latest`
+        const imageName = Utils.expandText(image.name, this.expandedVariables);
+        return imageName.includes(':') ? imageName : `${imageName}:latest`;
+    }
+
+    get imageEntrypoint(): string[] | null {
+        const image = this.jobData['image'];
+        if (!image) {
+            return null;
+        }
+        if (typeof image.entrypoint !== 'object') {
+            throw new ExitError(`image:entrypoint must be an array`);
+        }
+        return image.entrypoint;
     }
 
     get stage(): string {
@@ -164,7 +175,7 @@ export class Job {
         await fs.truncate(this.getOutputFilesPath());
         if (!this.interactive) {
             const jobNameStr = this.getJobNameString();
-            process.stdout.write(`${jobNameStr} ${magentaBright("starting")} ${this.image ?? "shell"} (${yellow(this.stage)})\n`);
+            process.stdout.write(`${jobNameStr} ${magentaBright("starting")} ${this.imageName ?? "shell"} (${yellow(this.stage)})\n`);
         }
 
         const prescripts = this.beforeScripts.concat(this.scripts);
@@ -294,14 +305,14 @@ export class Job {
             });
         }
 
-        if (this.image) {
+        if (this.imageName) {
             time = process.hrtime();
-            process.stdout.write(`${jobNameStr} ${magentaBright('pulling')} ${this.image}\n`);
+            process.stdout.write(`${jobNameStr} ${magentaBright('pulling')} ${this.imageName}\n`);
             let pullCmd = ``;
-            pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.image}$'\n`
+            pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.imageName}$'\n`
             pullCmd += `if [ "$?" -ne 0 ]; then\n`
-            pullCmd += `\techo "Pulling ${this.image}"\n`
-            pullCmd += `\tdocker pull ${this.image}\n`
+            pullCmd += `\techo "Pulling ${this.imageName}"\n`
+            pullCmd += `\tdocker pull ${this.imageName}\n`
             pullCmd += `fi\n`
             await Utils.spawn(pullCmd, this.cwd);
             endTime = process.hrtime(time);
@@ -314,11 +325,17 @@ export class Job {
                 dockerCmd += `docker create -u 0:0 -i `;
             }
 
+            if (this.imageEntrypoint) {
+                this.imageEntrypoint.forEach((e) => {
+                    dockerCmd += `--entrypoint "${e}" `
+                });
+            }
+
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 dockerCmd += `-e ${key}="${String(value).trim()}" `
             }
 
-            dockerCmd += `${this.image} sh -c "\n`
+            dockerCmd += `${this.imageName} sh -c "\n`
             dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
             dockerCmd += `\texec /usr/local/bin/bash \n`;
             dockerCmd += `elif [ -x /usr/bin/bash ]; then\n`;
@@ -356,7 +373,7 @@ export class Job {
 
         cp.stdin.write(`set -eo pipefail\n`);
 
-        if (this.image) {
+        if (this.imageName) {
             cp.stdin.write(`cd /builds/\n`);
             cp.stdin.write(`chown root:root -R .\n`);
             cp.stdin.write(`chmod a+w -R .\n`);
@@ -402,7 +419,7 @@ export class Job {
             cp.on("error", (err) => reject(err));
         });
 
-        if (this.image) {
+        if (this.imageName) {
             for (const artifactPath of this.artifacts.paths) {
                 const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, '');
 

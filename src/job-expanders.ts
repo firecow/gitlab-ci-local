@@ -44,11 +44,14 @@ export function artifacts(gitlabData: any) {
     });
 }
 
-export function image(gitlabData: any, envs: { [key: string]: string }) {
+export function image(gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
         if (expandedImage) {
-            jobData.image = Utils.expandText(expandedImage, envs);
+            jobData.image = {
+                name: typeof expandedImage === 'string' ? expandedImage : expandedImage.name,
+                entrypoint: typeof expandedImage === 'string' ? null : expandedImage.entrypoint,
+            }
         }
     });
 }
