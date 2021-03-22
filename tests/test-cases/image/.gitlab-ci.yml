@@ -19,3 +19,10 @@ test-entrypoint:
     - pwd
     - echo "Test Entrypoint"
     - cat test-file.txt
+
+test-entrypoint-override:
+  image:
+    name: firecow/gitlab-ci-local-test-image:entrypoint-with-exit
+    entrypoint: [""]
+  script:
+    echo "Test something"

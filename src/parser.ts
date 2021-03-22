@@ -171,7 +171,7 @@ export class Parser {
         // Expand various fields in gitlabData
         jobExpanders.jobExtends(gitlabData);
         jobExpanders.artifacts(gitlabData);
-        jobExpanders.image(gitlabData, gitlabData.variables || {});
+        jobExpanders.image(gitlabData);
         jobExpanders.beforeScripts(gitlabData);
         jobExpanders.afterScripts(gitlabData);
         jobExpanders.scripts(gitlabData);
