@@ -68,7 +68,7 @@ export class Utils {
         const headersColor = chalk.keyword(borderColor);
         const statusBackground = chalk.bgKeyword(borderColor);
 
-        let rows = [[headersColor.italic("Job name"),headersColor.italic("Stage"), headersColor.italic("Script Type"),headersColor.italic("Status")]];
+        const rows = [[headersColor.italic("Job name"),headersColor.italic("Stage"), headersColor.italic("Script Type"),headersColor.italic("Status")]];
         jobs.forEach((job) => {
             rows.push([
               job.name,
