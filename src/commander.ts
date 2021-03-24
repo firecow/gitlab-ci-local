@@ -1,4 +1,4 @@
-import {blueBright, bold, green, magenta, red, yellow, yellowBright} from "ansi-colors";
+import {blueBright, bold, yellow} from "ansi-colors";
 
 import {Job} from "./job";
 import {Parser} from "./parser";
@@ -147,34 +147,21 @@ export class Commander {
             }
         }
 
-        if (preScripts.never.length !== 0) {
-            process.stdout.write(`${magenta("not started")} `);
-            preScripts.never.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
-        }
-
         if (preScripts.successful.length !== 0) {
-            process.stdout.write(`${green("successful")} `);
-            preScripts.successful.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            Utils.renderJobStatusTable(preScripts.successful, "PASS", "Prescript", "green");
         }
 
         if (preScripts.warned.length !== 0) {
-            process.stdout.write(`${yellowBright("warning")} `);
-            preScripts.warned.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            Utils.renderJobStatusTable(preScripts.warned, "WARN", "Prescript", "yellow");
+
         }
 
         if (afterScripts.warned.length !== 0) {
-            process.stdout.write(`${yellowBright("after script")} `);
-            afterScripts.warned.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            Utils.renderJobStatusTable(afterScripts.warned, "WARN", "Afterscript", "yellow");
         }
 
         if (preScripts.failed.length !== 0) {
-            process.stdout.write(`${red("failure")} `);
-            preScripts.failed.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            Utils.renderJobStatusTable(preScripts.failed, "FAIL", "Prescript", "red");
         }
 
         for (const job of preScripts.successful) {
