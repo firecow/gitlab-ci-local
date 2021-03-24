@@ -2,6 +2,8 @@ import {blueBright} from "ansi-colors";
 import * as childProcess from "child_process";
 import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
+import * as chalk from "chalk";
+import * as Table from 'tty-table';
 
 export class Utils {
 
@@ -59,6 +61,25 @@ export class Utils {
             const sub = envs[match.replace(/^[$][{]?/, '').replace(/[}]?$/, '')];
             return sub || match;
         });
+    }
+
+    static renderJobStatusTable(jobs:Job[], status: string, type: string,borderColor: string){
+        const options = { borderColor, width: "75", marginLeft:-1};
+        const headersColor = chalk.keyword(borderColor);
+        const statusBackground = chalk.bgKeyword(borderColor);
+
+        let rows = [[headersColor.italic("Job name"),headersColor.italic("Stage"), headersColor.italic("Script Type"),headersColor.italic("Status")]];
+        jobs.forEach((job) => {
+            rows.push([
+              job.name,
+              job.stage,
+              type,
+              statusBackground.black.bold(status)
+            ]);
+          })
+
+        process.stdout.write(chalk.bgBlack.whiteBright(Table(rows, options).render()));
+        process.stdout.write(`\n`);
     }
 
     static expandVariables(variables: { [key: string]: string }, envs: { [key: string]: string }): { [key: string]: string } {
