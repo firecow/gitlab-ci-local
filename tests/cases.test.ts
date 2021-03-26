@@ -316,7 +316,7 @@ test('include <deploy-job>', async () => {
     const rows = [[headersColor.italic("Job name"),headersColor.italic("Stage"), headersColor.italic("Script Type"),headersColor.italic("Status")]];
     rows.push([
         "deploy-job",
-        "build",
+        "deploy",
         "Prescript",
         statusBackground.black.bold("PASS")
       ]);
