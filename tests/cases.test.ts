@@ -57,11 +57,27 @@ test('plain <notfound>', async () => {
 });
 
 test('trigger', async () => {
+    const options = { borderColor:"green" , width: "75", marginLeft:-1};
+    const headersColor = chalk.keyword("green");
+    const statusBackground = chalk.bgKeyword("green");
+    const rows = [[headersColor.italic("Job name"),headersColor.italic("Stage"), headersColor.italic("Script Type"),headersColor.italic("Status")]];
+    rows.push([
+        "pipe-gen-job",
+        "build",
+        "Prescript",
+        statusBackground.black.bold("PASS")
+      ]);
+    rows.push([
+        "trigger_job",
+        "test",
+        "Prescript",
+        statusBackground.black.bold("PASS")
+    ]);
     await defaultCmd.handler({
         cwd: 'tests/test-cases/trigger',
     });
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtrigger_job[39m");
+    expect(mockProcessStdout).toHaveBeenCalledWith(chalk.bgBlack.whiteBright(Table(rows, options).render()));
 });
 
 
@@ -294,11 +310,22 @@ test('include <build-job>', async () => {
 });
 
 test('include <deploy-job>', async () => {
+    const options = { borderColor:"green" , width: "75", marginLeft:-1};
+    const headersColor = chalk.keyword("green");
+    const statusBackground = chalk.bgKeyword("green");
+    const rows = [[headersColor.italic("Job name"),headersColor.italic("Stage"), headersColor.italic("Script Type"),headersColor.italic("Status")]];
+    rows.push([
+        "build-job",
+        "build",
+        "Prescript",
+        statusBackground.black.bold("PASS")
+      ]);
+
     await defaultCmd.handler({
         cwd: 'tests/test-cases/include',
         job: 'deploy-job'
     });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Deploy something\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith(chalk.bgBlack.whiteBright(Table(rows, options).render()));
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
@@ -312,14 +339,21 @@ test('include-template <test-job>', async () => {
 });
 
 test('manual <build-job>', async () => {
+    const options = { borderColor:"green" , width: "75", marginLeft:-1};
+    const headersColor = chalk.keyword("green");
+    const statusBackground = chalk.bgKeyword("green");
+    const rows = [[headersColor.italic("Job name"),headersColor.italic("Stage"), headersColor.italic("Script Type"),headersColor.italic("Status")]];
+    rows.push([
+        "build-job",
+        "test",
+        "Prescript",
+        statusBackground.black.bold("PASS")
+      ]);
     await defaultCmd.handler({
         cwd: 'tests/test-cases/manual',
         manual: 'build-job'
     });
-    expect(mockProcessStdout).toHaveBeenCalledWith("[35mnot started[39m ");
-    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtest-job[39m");
-    expect(mockProcessStdout).toHaveBeenCalledWith("[32msuccessful[39m ");
-    expect(mockProcessStdout).toHaveBeenCalledWith("[94mbuild-job[39m");
+    expect(mockProcessStdout).toHaveBeenCalledWith(chalk.bgBlack.whiteBright(Table(rows, options).render()));
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
@@ -349,14 +383,16 @@ test('script-failures <test-job-after-script>', async () => {
     }
 });
 
+
+
 test('script-failures <allow-failure-job>', async () => {
-    const options = { borderColor: "yellow", width: "75", marginLeft:-1};
+    const options = { borderColor:"yellow" , width: "75", marginLeft:-1};
     const headersColor = chalk.keyword("yellow");
     const statusBackground = chalk.bgKeyword("yellow");
     const rows = [[headersColor.italic("Job name"),headersColor.italic("Stage"), headersColor.italic("Script Type"),headersColor.italic("Status")]];
     rows.push([
         "allow-failure-job",
-        ".pre",
+        "test",
         "Prescript",
         statusBackground.black.bold("WARN")
       ]);
@@ -364,19 +400,31 @@ test('script-failures <allow-failure-job>', async () => {
         cwd: 'tests/test-cases/script-failures',
         job: 'allow-failure-job',
     });
-
+    
     expect(mockProcessStdout).toHaveBeenCalledWith(chalk.bgBlack.whiteBright(Table(rows, options).render()));
     expect(mockProcessStderr).toBeCalledTimes(1);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
 test('script-failures <allow-failure-after-scripts>', async () => {
+    const optionsWarning = { borderColor:"yellow" , width: "75", marginLeft:-1};
+    const headersColorWarning = chalk.keyword("yellow");
+    const statusBackgroundWarning = chalk.bgKeyword("yellow");   
+    const rowsPre = [[headersColorWarning.italic("Job name"),headersColorWarning.italic("Stage"), headersColorWarning.italic("Script Type"),headersColorWarning.italic("Status")]];
+
+      rowsPre.push([
+        "allow-failure-after-script",
+        "test",
+        "Prescript",
+        statusBackgroundWarning.black.bold("WARN")
+      ]);
+      
     await defaultCmd.handler({
         cwd: 'tests/test-cases/script-failures',
         job: 'allow-failure-after-script',
     });
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("[93mwarning[39m ");
+    expect(mockProcessStdout).toHaveBeenCalledWith(chalk.bgBlack.whiteBright(Table(rowsPre, optionsWarning).render()));
     expect(mockProcessStderr).toBeCalledTimes(2);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
