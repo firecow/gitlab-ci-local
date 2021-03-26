@@ -315,7 +315,7 @@ test('include <deploy-job>', async () => {
     const statusBackground = chalk.bgKeyword("green");
     const rows = [[headersColor.italic("Job name"),headersColor.italic("Stage"), headersColor.italic("Script Type"),headersColor.italic("Status")]];
     rows.push([
-        "build-job",
+        "deploy-job",
         "build",
         "Prescript",
         statusBackground.black.bold("PASS")
@@ -418,7 +418,7 @@ test('script-failures <allow-failure-after-scripts>', async () => {
         "Prescript",
         statusBackgroundWarning.black.bold("WARN")
       ]);
-      
+
     await defaultCmd.handler({
         cwd: 'tests/test-cases/script-failures',
         job: 'allow-failure-after-script',
