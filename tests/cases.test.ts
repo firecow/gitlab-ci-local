@@ -269,11 +269,15 @@ test('dotenv <test-job>', async () => {
     expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
 });
 
-test('extends', async () => {
+test('extends <test-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'tests/test-cases/extends'
+        cwd: 'tests/test-cases/extends',
+        job: 'test-job'
     });
+
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something (before_script)\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something (after_script)\n");
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
