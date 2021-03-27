@@ -274,7 +274,7 @@ export class Job {
         let time;
         let endTime;
 
-        if (scripts.length === 0) {
+        if (scripts.length === 0 || scripts[0] == null) {
             return 0;
         }
 
