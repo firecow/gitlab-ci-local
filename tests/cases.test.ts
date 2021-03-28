@@ -325,6 +325,7 @@ test('manual <build-job>', async () => {
         cwd: 'tests/test-cases/manual',
         manual: 'build-job'
     });
+    expect(mockProcessStdout).toHaveBeenCalledWith("[35mnot started[39m ");
     expect(mockProcessStdout).toHaveBeenCalledWith("[94mtest-job[39m");
     expect(mockProcessStdout).toHaveBeenCalledWith("[32msuccessful[39m ");
     expect(mockProcessStdout).toHaveBeenCalledWith("[94mbuild-job[39m");

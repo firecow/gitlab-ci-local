@@ -118,7 +118,8 @@ export class Commander {
     static printReport = async (jobs: ReadonlyArray<Job>) => {
         process.stdout.write(`\n`);
 
-        const preScripts: { successful: Job[], failed: Job[], warned: Job[] } = {
+        const preScripts: { never: Job[], successful: Job[], failed: Job[], warned: Job[] } = {
+            never: [],
             successful: [],
             failed: [],
             warned: []
@@ -135,7 +136,7 @@ export class Commander {
 
         for (const job of jobs) {
             if (!job.isStarted()) {
-                continue;
+                preScripts.never.push(job);
             } else if (job.preScriptsExitCode === 0) {
                 preScripts.successful.push(job);
             } else if (job.allowFailure) {
@@ -143,6 +144,12 @@ export class Commander {
             } else {
                 preScripts.failed.push(job);
             }
+        }
+
+        if (preScripts.never.length !== 0) {
+            process.stdout.write(chalk`{magenta not started} `);
+            preScripts.never.forEach(Utils.printJobNames);
+            process.stdout.write(`\n`);
         }
 
         if (preScripts.successful.length !== 0) {
