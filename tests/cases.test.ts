@@ -188,6 +188,17 @@ test('before-script <test-job>', async () => {
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
+test('script-multidimension <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/script-multidimension',
+        job: 'test-job'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something else\n");
+    expect(mockProcessStderr).toBeCalledTimes(0);
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
 test('before-script-default <test-job>', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/before-script-default',
