@@ -28,6 +28,10 @@ export function jobExtends(gitlabData: any) {
                 delete jobData.extends;
             }
 
+            if (parentData.extends) {
+                jobData.extends = (jobData.extends || []).concat(parentData.extends);
+            }
+
             gitlabData[jobName] = deepExtend({}, parentData, jobData);
         }
 
