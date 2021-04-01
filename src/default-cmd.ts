@@ -1,4 +1,4 @@
-import {red} from "ansi-colors";
+import chalk from "chalk";
 import * as fs from "fs-extra";
 import * as yargs from "yargs";
 import {Commander} from "./commander";
@@ -65,7 +65,7 @@ exports.handler = async (argv: any) => {
         await handler(argv);
     } catch (e) {
         if (e instanceof ExitError) {
-            process.stderr.write(`${red(e.message)}\n`);
+            process.stderr.write(chalk`{red ${e.message}}\n`);
             process.exit(1);
         }
         throw e;

@@ -184,9 +184,9 @@ export class Commander {
             const name = Utils.expandText(e.name, job.expandedVariables);
             const url = Utils.expandText(e.url, job.expandedVariables);
             if (url != null) {
-                process.stdout.write(chalk`{blueBright ${job.name} environment: { name: {bold ${name}}, url: {bold ${url}} }\n`);
+                process.stdout.write(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}}, url: {bold ${url}} \}\n`);
             } else {
-                process.stdout.write(chalk`{blueBright ${job.name}} environment: { name: {bold ${name}} }\n`);
+                process.stdout.write(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}} \}\n`);
             }
 
         }
