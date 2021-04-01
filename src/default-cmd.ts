@@ -9,6 +9,7 @@ import {assert} from "./asserts";
 import * as dotenv from "dotenv";
 import * as camelCase from "camelcase";
 
+let parser: Parser|null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
     assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
 
@@ -44,18 +45,18 @@ export async function handler(argv: any) {
     } else if (argv.list != null) {
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
-        const parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
+        parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
         Commander.runList(parser);
     } else if (argv.job) {
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
-        const parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
+        parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
         await Commander.runSingleJob(parser, argv.job, argv.needs, argv.privileged);
     } else {
         checkFolderAndFile(cwd, argv.file);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
-        const parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
+        parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
         await Commander.runPipeline(parser, argv.manual || [], argv.privileged);
     }
 }
@@ -71,3 +72,15 @@ exports.handler = async (argv: any) => {
         throw e;
     }
 };
+
+process.on('SIGINT', async(_: string, code: number) => {
+    if (!parser) {
+        return process.exit(code);
+    }
+    const promises = [];
+    for (const job of parser.getJobs()) {
+        promises.push(job.removeContainer());
+    }
+    await Promise.all(promises);
+    process.exit(code);
+});

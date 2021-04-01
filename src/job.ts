@@ -262,7 +262,7 @@ export class Job {
         this.finished = finished;
     }
 
-    private async removeContainer() {
+    public async removeContainer() {
         if (this.containerId) {
             await Utils.spawn(`docker rm -f ${this.containerId}`);
         }
