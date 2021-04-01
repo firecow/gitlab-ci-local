@@ -26,6 +26,7 @@
     "dotenv": "^8.2.0",
     "fs-extra": "^9.1.0",
     "js-yaml": "^4.0.0",
+    "node-fetch": "^2.6.1",
     "pretty-hrtime": "^1.0.3",
     "source-map-support": "^0.5.19",
     "yargs": "^16.2.0"

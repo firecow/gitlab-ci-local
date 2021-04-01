@@ -3,6 +3,7 @@ import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as prettyHrtime from "pretty-hrtime";
+import fetch from "node-fetch";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
 import {Stage} from "./stage";
@@ -342,15 +343,6 @@ export class Parser {
         }
     }
 
-    static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
-        const time = process.hrtime();
-        fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
-        await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
-        const endTime = process.hrtime(time);
-        const remoteUrl = `${gitRemoteDomain}/${project}/${file}`;
-        process.stdout.write(`${cyan('downloaded')} ${magentaBright(remoteUrl)} in ${magenta(prettyHrtime(endTime))}\n`);
-    }
-
     static async initGitRemote(cwd: string): Promise<GitRemote> {
         let gitConfig;
         if (fs.existsSync(`${cwd}/.git/config`)) {
@@ -370,6 +362,24 @@ export class Parser {
         };
     }
 
+    static async downloadIncludeRemote(cwd: string, url: string): Promise<void> {
+        const time = process.hrtime();
+        const fsUrl = Utils.fsUrl(url);
+        const res = await fetch(url);
+        fs.outputFileSync(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`, await res.text());
+        const endTime = process.hrtime(time);
+        process.stdout.write(`${cyan('downloaded')} ${magentaBright(url)} in ${magenta(prettyHrtime(endTime))}\n`);
+    }
+
+    static async downloadIncludeProjectFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
+        const time = process.hrtime();
+        fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
+        await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
+        const endTime = process.hrtime(time);
+        const remoteUrl = `${gitRemoteDomain}/${project}/${file}`;
+        process.stdout.write(`${cyan('downloaded')} ${magentaBright(remoteUrl)} in ${magenta(prettyHrtime(endTime))}\n`);
+    }
+
     static async prepareIncludes(gitlabData: any, cwd: string, gitRemote: GitRemote, tabCompletionPhase: boolean): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
@@ -380,10 +390,12 @@ export class Parser {
                 continue;
             }
             if (value["file"]) {
-                promises.push(Parser.downloadIncludeFile(cwd, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
+                promises.push(Parser.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value['template']);
-                promises.push(Parser.downloadIncludeFile(cwd, project, ref, file, domain));
+                promises.push(Parser.downloadIncludeProjectFile(cwd, project, ref, file, domain));
+            } else if (value['remote']) {
+                promises.push(Parser.downloadIncludeRemote(cwd, value['remote']));
             }
 
         }
@@ -400,6 +412,10 @@ export class Parser {
             } else if (value['template']) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value['template']);
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${domain}/${project}/${ref}/${file}`);
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, tabCompletionPhase));
+            } else if (value['remote']) {
+                const fsUrl = Utils.fsUrl(value['remote']);
+                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
                 includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, tabCompletionPhase));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
