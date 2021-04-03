@@ -169,6 +169,7 @@ export class Parser {
         });
 
         // Expand various fields in gitlabData
+        jobExpanders.reference(gitlabData, gitlabData);
         jobExpanders.jobExtends(gitlabData);
         jobExpanders.artifacts(gitlabData);
         jobExpanders.image(gitlabData);
@@ -289,7 +290,17 @@ export class Parser {
             index++;
         }
 
-        return yaml.load(fileSplitClone.join('\n')) || {};
+        // Find .reference
+        const GITLAB_SCHEMA = new yaml.Schema([
+            new yaml.Type('!reference', {
+                kind: 'sequence',
+                construct: function (data) {
+                    return {referenceData: data};
+                },
+            }),
+        ]);
+
+        return yaml.load(fileSplitClone.join('\n'), { schema: GITLAB_SCHEMA}) || {};
     }
 
     getJobByName(name: string): Job {

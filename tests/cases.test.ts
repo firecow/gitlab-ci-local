@@ -342,7 +342,8 @@ test('reference <test-job>', async () => {
         job: 'test-job',
     });
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("Setting something general up");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Setting something general up\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Yoyo\n");
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
 });

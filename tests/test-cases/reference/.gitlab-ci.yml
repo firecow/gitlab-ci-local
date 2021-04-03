@@ -3,6 +3,8 @@ include:
   - local: .gitlab-ci-base.yml
 
 test-job:
+  variables:
+    MYVAR: !reference [.setup, variables, MYVAR]
   script:
     - !reference [.setup, script]
-    - echo Test Something
+    - echo ${MYVAR}
