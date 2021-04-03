@@ -63,7 +63,7 @@ export class Job {
             CI_COMMIT_SHA: "a33bd89c7b8fa3567524525308d8cafd7c0cd2ad",
             CI_PROJECT_NAME: gitRemote.project,
             CI_PROJECT_TITLE: `${camelCase(gitRemote.project)}`,
-            CI_PROJECT_PATH_SLUG: `${gitRemote.group}/${gitRemote.project}`,
+            CI_PROJECT_PATH_SLUG: `${gitRemote.group}-${gitRemote.project}`,
             CI_PROJECT_NAMESPACE: `${gitRemote.group}/${camelCase(gitRemote.project)}`,
             CI_COMMIT_REF_PROTECTED: "false",
             CI_COMMIT_BRANCH: "local/branch", // Branch name, only when building branches

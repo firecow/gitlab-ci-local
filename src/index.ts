@@ -64,7 +64,7 @@ process.on('unhandledRejection', e => {
         })
         .option("home", {
             type: "string",
-            description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml",
+            description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml)",
             requiresArg: false
         })
         .option("privileged", {
