@@ -1,0 +1,7 @@
+---
+include:
+  - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
+
+test-job:
+  script:
+    - echo "Test Something"

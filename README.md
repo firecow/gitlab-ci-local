@@ -23,6 +23,7 @@ Get rid of all those dev specific shell scripts and make files.
 * [Table of contents](#table-of-contents)
 * [Examples](./examples/)
     * [docker-compose-nodejs](./examples/docker-compose-nodejs/README.md)
+    * [docker-swarm-php](./examples/docker-swarm-php/README.md)
 * [Installation](#installation)
 * [Convinience](#convinience)
     * [Bash alias](#bash-alias)
@@ -108,7 +109,7 @@ group:
     DOCKER_LOGIN_PASSWORD: dij3213n123n12in3
 
 global:
-  # Will be type File, because value is a path
+  # Will be type File, because value is a file path
   SSH_PRIVATE_KEY: '~/.ssh/id_rsa'
 ```
 
@@ -125,8 +126,8 @@ Adds descriptive text to `gitlab-ci-local --list`
 npm-install:
   image: node
   artifacts:
-  paths:
-    - node_modules/
+    paths:
+      - node_modules/
   script:
     - npm install --no-audit
 ```

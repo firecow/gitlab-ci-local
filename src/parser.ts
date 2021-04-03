@@ -2,7 +2,6 @@ import {blueBright, cyan, magenta, magentaBright, yellow} from "ansi-colors";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
-import * as path from "path";
 import * as prettyHrtime from "pretty-hrtime";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
@@ -12,8 +11,8 @@ import {ExitError} from "./types/exit-error";
 import {GitRemote} from "./types/git-remote";
 import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
-import untildify = require("untildify");
 import {assert} from "./asserts";
+import * as path from "path";
 
 export class Parser {
 
@@ -21,6 +20,7 @@ export class Parser {
     private readonly stages: Map<string, Stage> = new Map();
     private readonly cwd: string;
     private readonly file?: string;
+    private readonly home?: string;
     private readonly pipelineIid: number;
 
     private gitRemote: GitRemote | null = null;
@@ -30,15 +30,16 @@ export class Parser {
     private maxJobNameLength = 0;
     private readonly tabCompletionPhase: boolean;
 
-    private constructor(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, file?: string) {
+    private constructor(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
         this.cwd = cwd;
         this.pipelineIid = pipelineIid;
         this.tabCompletionPhase = tabCompletionPhase;
         this.file = file;
+        this.home = home;
     }
 
-    static async create(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, file: string) {
-        const parser = new Parser(cwd, pipelineIid, tabCompletionPhase, file);
+    static async create(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
+        const parser = new Parser(cwd, pipelineIid, tabCompletionPhase, file, home);
 
         const time = process.hrtime();
         await parser.init();
@@ -78,8 +79,9 @@ export class Parser {
         };
     }
 
-    static async initUserVariables(cwd: string, gitRemote: GitRemote, homeDirectory = ''): Promise<{ [key: string]: string }> {
-        const variablesFile = `${path.resolve(homeDirectory)}/.gitlab-ci-local/variables.yml`;
+    static async initUserVariables(cwd: string, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
+        const homeDir = home.replace(/\/$/, '');
+        const variablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         if (!fs.existsSync(variablesFile)) {
             return {};
         }
@@ -116,10 +118,19 @@ export class Parser {
 
         // Generate files for file type variables
         for (const [key, value] of Object.entries(variables)) {
-            if (fs.existsSync(untildify(value))) {
+            if (!value.match(/^[/|~]/)) {
+                continue;
+            }
+
+            if (value.match(/\/$/)) {
+                continue;
+            }
+
+            const fromFilePath = value.replace(/^~\/(.*)/, `${homeDir}/$1`);
+            if (fs.existsSync(fromFilePath)) {
                 await fs.ensureDir(`${cwd}/.gitlab-ci-local/file-variables/`);
-                await fs.copyFile(untildify(value), `${cwd}/.gitlab-ci-local/file-variables/${path.basename(untildify(value))}`);
-                variables[key] = `.gitlab-ci-local/file-variables/${path.basename(untildify(value))}`;
+                await fs.copyFile(fromFilePath, `${cwd}/.gitlab-ci-local/file-variables/${path.basename(fromFilePath)}`);
+                variables[key] = `.gitlab-ci-local/file-variables/${path.basename(fromFilePath)}`;
             }
         }
 
@@ -130,7 +141,7 @@ export class Parser {
         const cwd = this.cwd;
 
         this.gitRemote = await Parser.initGitRemote(cwd);
-        this.userVariables = await Parser.initUserVariables(cwd, this.gitRemote, process.env.HOME);
+        this.userVariables = await Parser.initUserVariables(cwd, this.gitRemote, this.home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = this.file ? `${cwd}/${this.file}` : `${cwd}/.gitlab-ci.yml`;
@@ -160,7 +171,7 @@ export class Parser {
         // Expand various fields in gitlabData
         jobExpanders.jobExtends(gitlabData);
         jobExpanders.artifacts(gitlabData);
-        jobExpanders.image(gitlabData, gitlabData.variables || {});
+        jobExpanders.image(gitlabData);
         jobExpanders.beforeScripts(gitlabData);
         jobExpanders.afterScripts(gitlabData);
         jobExpanders.scripts(gitlabData);
@@ -333,8 +344,8 @@ export class Parser {
 
     static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
         const time = process.hrtime();
-        fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${project}/${ref}/`);
-        await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${project}/${ref}/`, cwd);
+        fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
+        await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
         const endTime = process.hrtime(time);
         const remoteUrl = `${gitRemoteDomain}/${project}/${file}`;
         process.stdout.write(`${cyan('downloaded')} ${magentaBright(remoteUrl)} in ${magenta(prettyHrtime(endTime))}\n`);
@@ -365,11 +376,16 @@ export class Parser {
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of gitlabData["include"] || []) {
-            if (!value["file"] || tabCompletionPhase) {
+            if (tabCompletionPhase) {
                 continue;
             }
+            if (value["file"]) {
+                promises.push(Parser.downloadIncludeFile(cwd, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
+            } else if (value["template"]) {
+                const {project, ref, file, domain} = Parser.parseTemplateInclude(value['template']);
+                promises.push(Parser.downloadIncludeFile(cwd, project, ref, file, domain));
+            }
 
-            promises.push(Parser.downloadIncludeFile(cwd, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
         }
 
         await Promise.all(promises);
@@ -379,7 +395,11 @@ export class Parser {
                 const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
                 includeDatas = includeDatas.concat(await Parser.prepareIncludes(localDoc, cwd, gitRemote, tabCompletionPhase));
             } else if (value["file"]) {
-                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
+                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitRemote.domain}/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, tabCompletionPhase));
+            } else if (value['template']) {
+                const {project, ref, file, domain} = Parser.parseTemplateInclude(value['template']);
+                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${domain}/${project}/${ref}/${file}`);
                 includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, tabCompletionPhase));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
@@ -388,5 +408,14 @@ export class Parser {
 
         includeDatas.push(gitlabData);
         return includeDatas;
+    }
+
+    static parseTemplateInclude(template: string): {project: string, ref: string, file: string, domain: string} {
+        return {
+            domain: "gitlab.com",
+            project: "gitlab-org/gitlab",
+            ref: "master",
+            file: `lib/gitlab/ci/templates/${template}`
+        }
     }
 }

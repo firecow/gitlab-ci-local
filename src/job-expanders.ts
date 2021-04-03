@@ -28,6 +28,10 @@ export function jobExtends(gitlabData: any) {
                 delete jobData.extends;
             }
 
+            if (parentData.extends) {
+                jobData.extends = (jobData.extends || []).concat(parentData.extends);
+            }
+
             gitlabData[jobName] = deepExtend({}, parentData, jobData);
         }
 
@@ -44,20 +48,35 @@ export function artifacts(gitlabData: any) {
     });
 }
 
-export function image(gitlabData: any, envs: { [key: string]: string }) {
+export function image(gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
         if (expandedImage) {
-            jobData.image = Utils.expandText(expandedImage, envs);
+            jobData.image = {
+                name: typeof expandedImage === 'string' ? expandedImage : expandedImage.name,
+                entrypoint: typeof expandedImage === 'string' ? null : expandedImage.entrypoint,
+            }
         }
     });
 }
+
+const expandMultidimension = (inputArr: any) => {
+    const arr = [];
+    for (const line of inputArr) {
+        if (typeof line == "string") {
+            arr.push(line);
+        } else {
+            line.forEach((l: string) => arr.push(l));
+        }
+    }
+    return arr;
+};
 
 export function beforeScripts(gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedBeforeScripts = [].concat(jobData.before_script || (gitlabData.default || {}).before_script || gitlabData.before_script || []);
         if (expandedBeforeScripts.length > 0) {
-            jobData.before_script = expandedBeforeScripts;
+            jobData.before_script = expandMultidimension(expandedBeforeScripts);
         }
     });
 }
@@ -66,7 +85,7 @@ export function afterScripts(gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedAfterScripts = [].concat(jobData.after_script || (gitlabData.default || {}).after_script || gitlabData.after_script || []);
         if (expandedAfterScripts.length > 0) {
-            jobData.after_script = expandedAfterScripts;
+            jobData.after_script = expandMultidimension(expandedAfterScripts);
         }
     });
 }
@@ -77,6 +96,8 @@ export function scripts(gitlabData: any) {
             throw new ExitError(`${blueBright(jobName)} must have script specified`);
         }
         jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
-        jobData.script = jobData.script ?? [];
+        if (jobData.script) {
+            jobData.script = expandMultidimension(jobData.script);
+        }
     });
 }

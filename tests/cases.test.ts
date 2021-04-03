@@ -101,6 +101,19 @@ test('needs-unspecified-job <build-job> --needs', async () => {
     }
 });
 
+test('custom-home <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/custom-home',
+        job: 'test-job',
+        home: 'tests/test-cases/custom-home/.home',
+    });
+
+    expect(mockProcessStdout).toHaveBeenCalledWith("global-var-value\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("group-var-value\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("project-var-value\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Im content of a file variable\n");
+});
+
 test('image <test-job>', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/image',
@@ -118,10 +131,20 @@ test('image <test-entrypoint>', async () => {
 
     expect(mockProcessStdout).toHaveBeenCalledWith("/\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("Hello from 'firecow/gitlab-ci-local-test-image' image entrypoint\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("I am epic multiline value\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("/builds\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("Test Entrypoint\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("I'm a test file\n");
 
+});
+
+test('image <test-entrypoint-override>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/image',
+        job: 'test-entrypoint-override'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
+    expect(mockProcessExit).toBeCalledTimes(0);
 });
 
 test('no-script <test-job>', async () => {
@@ -143,6 +166,17 @@ test('before-script <test-job>', async () => {
         job: 'test-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Before test\n");
+    expect(mockProcessStderr).toBeCalledTimes(0);
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
+test('script-multidimension <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/script-multidimension',
+        job: 'test-job'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something else\n");
     expect(mockProcessStderr).toBeCalledTimes(0);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -246,11 +280,15 @@ test('dotenv <test-job>', async () => {
     expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
 });
 
-test('extends', async () => {
+test('extends <test-job>', async () => {
     await defaultCmd.handler({
-        cwd: 'tests/test-cases/extends'
+        cwd: 'tests/test-cases/extends',
+        job: 'test-job'
     });
+
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something (before_script)\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something (after_script)\n");
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
@@ -274,6 +312,15 @@ test('include <deploy-job>', async () => {
         job: 'deploy-job'
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Deploy something\n");
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
+test('include-template <test-job>', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/include-template',
+        job: 'test-job'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test Something\n");
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 

@@ -7,8 +7,22 @@ test-job:
     - echo "Test something"
 
 test-entrypoint:
+  # This image have an `echo ${MULTILINE_VARIABLE}` in its entry point
   image: firecow/gitlab-ci-local-test-image
+  variables:
+    MULTILINE_VARIABLE: |
+      I am
+      epic
+      multiline
+      value
   script:
     - pwd
     - echo "Test Entrypoint"
     - cat test-file.txt
+
+test-entrypoint-override:
+  image:
+    name: firecow/gitlab-ci-local-test-image:entrypoint-with-exit
+    entrypoint: [""]
+  script:
+    echo "Test something"
