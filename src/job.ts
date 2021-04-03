@@ -63,8 +63,9 @@ export class Job {
             CI_COMMIT_SHA: "a33bd89c7b8fa3567524525308d8cafd7c0cd2ad",
             CI_PROJECT_NAME: gitRemote.project,
             CI_PROJECT_TITLE: `${camelCase(gitRemote.project)}`,
-            CI_PROJECT_PATH_SLUG: `${gitRemote.group}-${gitRemote.project}`,
-            CI_PROJECT_NAMESPACE: `${gitRemote.group}/${camelCase(gitRemote.project)}`,
+            CI_PROJECT_PATH: `${gitRemote.group}/${camelCase(gitRemote.project)}`,
+            CI_PROJECT_PATH_SLUG: `${gitRemote.group.replace(/\//g, '-')}-${gitRemote.project}`,
+            CI_PROJECT_NAMESPACE: `${gitRemote.group}`,
             CI_COMMIT_REF_PROTECTED: "false",
             CI_COMMIT_BRANCH: "local/branch", // Branch name, only when building branches
             CI_COMMIT_REF_NAME: "local/branch", // Tag or branch name
@@ -78,7 +79,9 @@ export class Job {
             CI_JOB_ID: `${this.jobId}`, // Changes on rerun
             CI_PIPELINE_ID: `${pipelineIid + 1000}`,
             CI_PIPELINE_IID: `${pipelineIid}`,
-            CI_SERVER_URL: `https://${gitRemote.domain}`,
+            CI_SERVER_HOST: `https://${gitRemote.domain}`,
+            CI_SERVER_URL: `https://${gitRemote.domain}:443`,
+            CI_API_V4_URL: `https://${gitRemote.domain}/api/v4`,
             CI_PROJECT_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}`,
             CI_JOB_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}/-/jobs/${this.jobId}`, // Changes on rerun.
             CI_PIPELINE_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}/pipelines/${pipelineIid}`,
