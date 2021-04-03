@@ -106,7 +106,7 @@ export class Job {
         }
     }
 
-    get imageName(): string  | null {
+    get imageName(): string | null {
         const image = this.jobData['image'];
         if (!image) {
             return null;

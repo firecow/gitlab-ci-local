@@ -300,7 +300,7 @@ export class Parser {
             }),
         ]);
 
-        return yaml.load(fileSplitClone.join('\n'), { schema: GITLAB_SCHEMA}) || {};
+        return yaml.load(fileSplitClone.join('\n'), {schema: GITLAB_SCHEMA}) || {};
     }
 
     getJobByName(name: string): Job {
@@ -421,7 +421,7 @@ export class Parser {
         return includeDatas;
     }
 
-    static parseTemplateInclude(template: string): {project: string, ref: string, file: string, domain: string} {
+    static parseTemplateInclude(template: string): { project: string, ref: string, file: string, domain: string } {
         return {
             domain: "gitlab.com",
             project: "gitlab-org/gitlab",
