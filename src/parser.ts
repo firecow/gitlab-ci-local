@@ -1,4 +1,4 @@
-import {blueBright, cyan, magenta, magentaBright, yellow} from "ansi-colors";
+import chalk from "chalk";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
@@ -47,7 +47,7 @@ export class Parser {
         await parser.validateNeedsTags();
         const parsingTime = process.hrtime(time);
         if (!tabCompletionPhase) {
-            process.stdout.write(`${cyan(`${"yml files".padEnd(parser.maxJobNameLength)}`)} ${magentaBright('processed')} in ${magenta(prettyHrtime(parsingTime))}\n`);
+            process.stdout.write(chalk`{cyan ${"yml files".padEnd(parser.maxJobNameLength)}} {magentaBright processed} in {magenta ${prettyHrtime(parsingTime)}}\n`);
         }
 
         return parser;
@@ -183,7 +183,7 @@ export class Parser {
         }
 
         // 'stages:' must be an array
-        assert(gitlabData.stages && Array.isArray(gitlabData.stages), `${yellow('stages:')} must be an array`);
+        assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
 
         // Make sure stages includes ".pre" and ".post". See: https://docs.gitlab.com/ee/ci/yaml/#pre-and-post
         if (!gitlabData.stages.includes(".pre")) {
@@ -209,13 +209,14 @@ export class Parser {
         // Check job variables for invalid hash of key value pairs
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             for (const [key, value] of Object.entries(jobData.variables || {})) {
+                const valueStr = `${value}`
                 assert(
                     typeof value === "string" || typeof value === "number",
-                    `${blueBright(jobName)} has invalid variables hash of key value pairs. ${key}=${value}`,
+                    chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${valueStr}`
                 );
             }
         });
-
+        // chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${value}`}`
         this.gitlabData = gitlabData;
     }
 
@@ -249,7 +250,7 @@ export class Parser {
             });
             const stage = this.stages.get(job.stage);
             const stageStr = `stage:${job.stage}`;
-            assert(stage != null, `${yellow(stageStr)} not found for ${blueBright(job.name)}`);
+            assert(stage != null, chalk`{yellow ${stageStr}} not found for {blueBright ${job.name}}`);
             stage.addJob(job);
             await state.incrementJobId(cwd);
 
@@ -305,7 +306,7 @@ export class Parser {
 
     getJobByName(name: string): Job {
         const job = this.jobs.get(name);
-        assert(job != null, `${blueBright(name)} could not be found`);
+        assert(job != null, chalk`{blueBright ${name}} could not be found`);
         return job;
     }
 
@@ -336,7 +337,7 @@ export class Parser {
             const unspecifiedNeedsJob = job.needs.filter((v) => (jobNames.indexOf(v) === -1));
             assert(
                 unspecifiedNeedsJob.length !== job.needs.length,
-                `[ ${blueBright(unspecifiedNeedsJob.join(','))} ] jobs are needed by ${blueBright(job.name)}, but they cannot be found`,
+                chalk`[ {blueBright ${unspecifiedNeedsJob.join(',')}} ] jobs are needed by {blueBright ${job.name}}, but they cannot be found`,
             );
 
 
@@ -346,7 +347,7 @@ export class Parser {
                 const jobStageIndex = stages.indexOf(job.stage);
                 assert(
                     needJobStageIndex < jobStageIndex,
-                    `${blueBright(needJob.name)} is needed by ${blueBright(job.name)}, but it is in the same or a future stage`,
+                    chalk`{blueBright ${needJob.name}} is needed by {blueBright ${job.name}}, but it is in the same or a future stage`,
                 );
             }
 
@@ -359,7 +360,7 @@ export class Parser {
         await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
         const endTime = process.hrtime(time);
         const remoteUrl = `${gitRemoteDomain}/${project}/${file}`;
-        process.stdout.write(`${cyan('downloaded')} ${magentaBright(remoteUrl)} in ${magenta(prettyHrtime(endTime))}\n`);
+        process.stdout.write(chalk`{cyan downloaded} {magentaBright ${remoteUrl}} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
     static async initGitRemote(cwd: string): Promise<GitRemote> {
