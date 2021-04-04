@@ -79,7 +79,7 @@ export class Job {
             CI_JOB_ID: `${this.jobId}`, // Changes on rerun
             CI_PIPELINE_ID: `${pipelineIid + 1000}`,
             CI_PIPELINE_IID: `${pipelineIid}`,
-            CI_SERVER_HOST: `https://${gitRemote.domain}`,
+            CI_SERVER_HOST: `${gitRemote.domain}`,
             CI_SERVER_URL: `https://${gitRemote.domain}:443`,
             CI_API_V4_URL: `https://${gitRemote.domain}/api/v4`,
             CI_PROJECT_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}`,
