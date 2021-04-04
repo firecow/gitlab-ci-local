@@ -2,4 +2,4 @@
 
 set -e
 
-npx --silent ts-node --log-error src/index.ts "$@"
+npx ts-node src/index.ts "$@"
