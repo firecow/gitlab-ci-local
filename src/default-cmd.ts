@@ -9,7 +9,7 @@ import {assert} from "./asserts";
 import * as dotenv from "dotenv";
 import * as camelCase from "camelcase";
 
-let parser: Parser|null = null;
+let parser: Parser | null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
     assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
 
@@ -73,7 +73,7 @@ exports.handler = async (argv: any) => {
     }
 };
 
-process.on('SIGINT', async(_: string, code: number) => {
+process.on('SIGINT', async (_: string, code: number) => {
     if (!parser) {
         return process.exit(code);
     }
