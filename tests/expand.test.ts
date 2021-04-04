@@ -1,4 +1,4 @@
-import {blueBright} from "ansi-colors";
+import chalk from "chalk";
 import * as jobExpanders from "../src/job-expanders";
 import {Utils} from "../src/utils";
 
@@ -45,7 +45,7 @@ test('extends invalid job', () => {
             'test-job': {extends: ['build-job']}
         });
     } catch (e) {
-        expect(e.message).toBe(`${blueBright('build-job')} is extended from ${blueBright('test-job')}, but is unspecified`);
+        expect(e.message).toBe(chalk`{blueBright build-job} is extended from {blueBright test-job}, but is unspecified`);
     }
 });
 
@@ -56,7 +56,7 @@ test('extends infinite loop', () => {
             'test-job': {extends: ['build-job']}
         });
     } catch (e) {
-        expect(e.message).toBe(`You have an infinite extends loop starting from ${blueBright('build-job')}`);
+        expect(e.message).toBe(chalk`You have an infinite extends loop starting from {blueBright build-job}`);
     }
 });
 

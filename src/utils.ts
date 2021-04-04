@@ -1,4 +1,4 @@
-import {blueBright} from "ansi-colors";
+import chalk from "chalk";
 import * as childProcess from "child_process";
 import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
@@ -45,9 +45,9 @@ export class Utils {
 
     static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
         if (i === arr.length - 1) {
-            process.stdout.write(`${blueBright(job.name)}`);
+            process.stdout.write(chalk`{blueBright ${job.name}}`);
         } else {
-            process.stdout.write(`${blueBright(job.name)}, `);
+            process.stdout.write(chalk`{blueBright ${job.name}}, `);
         }
     }
 
