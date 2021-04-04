@@ -20,8 +20,8 @@
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
-    "ansi-colors": "^4.1.1",
     "camelcase": "^6.2.0",
+    "chalk": "^2.4.2",
     "deep-extend": "^0.6.0",
     "dotenv": "^8.2.0",
     "fs-extra": "^9.1.0",
@@ -32,6 +32,7 @@
     "yargs": "^16.2.0"
   },
   "devDependencies": {
+    "@types/chalk": "^2.2.0",
     "@types/deep-extend": "^0.4.31",
     "@types/fs-extra": "^9.0.9",
     "@types/js-yaml": "^4.0.0",

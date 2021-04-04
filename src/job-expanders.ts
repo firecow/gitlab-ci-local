@@ -1,4 +1,4 @@
-import {blueBright} from "ansi-colors";
+import chalk from "chalk";
 import * as deepExtend from "deep-extend";
 import {Job} from "./job";
 import {ExitError} from "./types/exit-error";
@@ -23,7 +23,7 @@ export function jobExtends(gitlabData: any) {
 
             const parentName = jobData.extends.pop();
             const parentData = gitlabData[parentName];
-            assert(parentData != null, `${blueBright(parentName)} is extended from ${blueBright(jobName)}, but is unspecified`);
+            assert(parentData != null, chalk`{blueBright ${parentName}} is extended from {blueBright ${jobName}}, but is unspecified`);
             if (jobData.extends.length === 0) {
                 delete jobData.extends;
             }
@@ -35,9 +35,27 @@ export function jobExtends(gitlabData: any) {
             gitlabData[jobName] = deepExtend({}, parentData, jobData);
         }
 
-        assert(i < maxDepth, `You have an infinite extends loop starting from ${blueBright(jobName)}`);
+        assert(i < maxDepth, chalk`You have an infinite extends loop starting from {blueBright ${jobName}}`);
     }
 }
+
+export function reference(gitlabData: any, recurseData: any) {
+    for (const [key, value] of Object.entries<any>(recurseData || {})) {
+        if (value && value.referenceData) {
+            recurseData[key] = getSubDataByReference(gitlabData, value.referenceData);
+        } else if (typeof value === 'object') {
+            reference(gitlabData, value);
+        }
+    }
+}
+
+const getSubDataByReference = (gitlabData: any, referenceData: string[]) => {
+    let gitlabSubData = gitlabData;
+    referenceData.forEach((referencePointer) => {
+        gitlabSubData = gitlabSubData[referencePointer];
+    });
+    return gitlabSubData;
+};
 
 export function artifacts(gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
@@ -93,7 +111,7 @@ export function afterScripts(gitlabData: any) {
 export function scripts(gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
         if (!jobData.script && !jobData.trigger) {
-            throw new ExitError(`${blueBright(jobName)} must have script specified`);
+            throw new ExitError(chalk`{blueBright ${jobName}} must have script specified`);
         }
         jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
         if (jobData.script) {

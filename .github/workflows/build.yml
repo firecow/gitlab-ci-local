@@ -51,7 +51,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOSTS }}
       - name: Run tests
-        run: npm run coverage
+        run: FORCE_COLOR=1 npm run coverage
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
         env:

@@ -1,4 +1,4 @@
-import {red} from "ansi-colors";
+import chalk from "chalk";
 import * as fs from "fs-extra";
 import * as yargs from "yargs";
 import {Commander} from "./commander";
@@ -9,7 +9,7 @@ import {assert} from "./asserts";
 import * as dotenv from "dotenv";
 import * as camelCase from "camelcase";
 
-let parser: Parser|null = null;
+let parser: Parser | null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
     assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
 
@@ -66,14 +66,14 @@ exports.handler = async (argv: any) => {
         await handler(argv);
     } catch (e) {
         if (e instanceof ExitError) {
-            process.stderr.write(`${red(e.message)}\n`);
+            process.stderr.write(chalk`{red ${e.message}}\n`);
             process.exit(1);
         }
         throw e;
     }
 };
 
-process.on('SIGINT', async(_: string, code: number) => {
+process.on('SIGINT', async (_: string, code: number) => {
     if (!parser) {
         return process.exit(code);
     }

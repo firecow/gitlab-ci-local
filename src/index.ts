@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import {red} from "ansi-colors";
+import chalk from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as sourceMapSupport from "source-map-support";
@@ -12,12 +12,12 @@ import {ExitError} from "./types/exit-error";
 sourceMapSupport.install();
 process.on('unhandledRejection', e => {
     if (e instanceof ExitError) {
-        process.stderr.write(`${red(e.message)}\n`);
+        process.stderr.write(chalk`{red ${e.message}}\n`);
         process.exit(1);
     } else if (e instanceof Error) {
-        process.stderr.write(`${red(e.stack ?? e.message)}\n`);
+        process.stderr.write(chalk`{red ${e.stack ?? e.message}}\n`);
     } else if (e) {
-        process.stderr.write(`${red(e.toString())}\n`);
+        process.stderr.write(chalk`{red ${e.toString()}}\n`);
     }
     process.exit(1);
 });
@@ -64,7 +64,7 @@ process.on('unhandledRejection', e => {
         })
         .option("home", {
             type: "string",
-            description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml",
+            description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml)",
             requiresArg: false
         })
         .option("privileged", {
