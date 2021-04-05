@@ -1,7 +1,7 @@
 import * as mockProcess from "jest-mock-process";
 import * as defaultCmd from "../src/default-cmd";
 import * as fs from "fs-extra";
-import chalk from "chalk";
+import * as chalk from "chalk";
 import * as Table from "tty-table";
 
 jest.setTimeout(90000);
