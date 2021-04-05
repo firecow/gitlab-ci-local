@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as chalk from "chalk";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as prettyHrtime from "pretty-hrtime";

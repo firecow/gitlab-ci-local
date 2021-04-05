@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import chalk from "chalk";
+import * as chalk from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as sourceMapSupport from "source-map-support";
