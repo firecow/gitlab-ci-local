@@ -1,8 +1,8 @@
 import * as mockProcess from "jest-mock-process";
 import * as defaultCmd from "../src/default-cmd";
 import * as fs from "fs-extra";
-import * as chalk from "chalk";
-import * as Table from 'tty-table';
+import chalk from "chalk";
+import * as Table from "tty-table";
 
 jest.setTimeout(90000);
 
@@ -436,7 +436,7 @@ test('script-failures <allow-failure-job>', async () => {
         cwd: 'tests/test-cases/script-failures',
         job: 'allow-failure-job',
     });
-    
+
     expect(mockProcessStdout).toHaveBeenCalledWith(chalk.bgBlack.whiteBright(Table(rows, options).render()));
     expect(mockProcessStderr).toBeCalledTimes(1);
     expect(mockProcessExit).toBeCalledTimes(0);
@@ -445,7 +445,7 @@ test('script-failures <allow-failure-job>', async () => {
 test('script-failures <allow-failure-after-scripts>', async () => {
     const optionsWarning = { borderColor:"yellow" , width: "75", marginLeft:-1};
     const headersColorWarning = chalk.keyword("yellow");
-    const statusBackgroundWarning = chalk.bgKeyword("yellow");   
+    const statusBackgroundWarning = chalk.bgKeyword("yellow");
     const rowsPre = [[headersColorWarning.italic("Job name"),headersColorWarning.italic("Stage"), headersColorWarning.italic("Script Type"),headersColorWarning.italic("Status")]];
 
       rowsPre.push([

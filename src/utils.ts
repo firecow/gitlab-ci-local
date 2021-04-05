@@ -2,7 +2,6 @@ import chalk from "chalk";
 import * as childProcess from "child_process";
 import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
-import * as chalk from "chalk";
 import * as Table from 'tty-table';
 
 export class Utils {
