@@ -1,5 +1,4 @@
-import {blueBright, bold, yellow} from "ansi-colors";
-
+import chalk from 'chalk';
 import {Job} from "./job";
 import {Parser} from "./parser";
 import {Utils} from "./utils";
@@ -78,9 +77,9 @@ export class Commander {
             const needs = job.needs;
             const allowFailure = job.allowFailure ? 'warning' : '';
             let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
-            jobLine += `  ${yellow(job.stage.padEnd(stagePadEnd))}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
+            jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
             if (needs) {
-                jobLine += `  [${blueBright(needs.join(','))}]`;
+                jobLine += chalk`  [{blueBright ${needs.join(',')}}]`;
             }
             process.stdout.write(`${jobLine}\n`);
         }
@@ -172,9 +171,9 @@ export class Commander {
             const name = Utils.expandText(e.name, job.expandedVariables);
             const url = Utils.expandText(e.url, job.expandedVariables);
             if (url != null) {
-                process.stdout.write(`${blueBright(job.name)} environment: { name: ${bold(name)}, url: ${bold(url)} }\n`);
+                process.stdout.write(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}}, url: {bold ${url}} \}\n`);
             } else {
-                process.stdout.write(`${blueBright(job.name)} environment: { name: ${bold(name)} }\n`);
+                process.stdout.write(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}} \}\n`);
             }
 
         }

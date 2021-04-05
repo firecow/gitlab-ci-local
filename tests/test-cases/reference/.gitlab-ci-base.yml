@@ -1,0 +1,6 @@
+---
+.setup:
+  variables:
+    MYVAR: Yoyo
+  script:
+    - echo "Setting something general up"

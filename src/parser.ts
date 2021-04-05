@@ -1,8 +1,9 @@
-import {blueBright, cyan, magenta, magentaBright, yellow} from "ansi-colors";
+import chalk from "chalk";
 import * as deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as prettyHrtime from "pretty-hrtime";
+import fetch from "node-fetch";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
 import {Stage} from "./stage";
@@ -47,7 +48,7 @@ export class Parser {
         await parser.validateNeedsTags();
         const parsingTime = process.hrtime(time);
         if (!tabCompletionPhase) {
-            process.stdout.write(`${cyan(`${"yml files".padEnd(parser.maxJobNameLength)}`)} ${magentaBright('processed')} in ${magenta(prettyHrtime(parsingTime))}\n`);
+            process.stdout.write(chalk`{cyan ${"yml files".padEnd(parser.maxJobNameLength)}} {magentaBright processed} in {magenta ${prettyHrtime(parsingTime)}}\n`);
         }
 
         return parser;
@@ -169,6 +170,7 @@ export class Parser {
         });
 
         // Expand various fields in gitlabData
+        jobExpanders.reference(gitlabData, gitlabData);
         jobExpanders.jobExtends(gitlabData);
         jobExpanders.artifacts(gitlabData);
         jobExpanders.image(gitlabData);
@@ -182,7 +184,7 @@ export class Parser {
         }
 
         // 'stages:' must be an array
-        assert(gitlabData.stages && Array.isArray(gitlabData.stages), `${yellow('stages:')} must be an array`);
+        assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
 
         // Make sure stages includes ".pre" and ".post". See: https://docs.gitlab.com/ee/ci/yaml/#pre-and-post
         if (!gitlabData.stages.includes(".pre")) {
@@ -208,13 +210,14 @@ export class Parser {
         // Check job variables for invalid hash of key value pairs
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             for (const [key, value] of Object.entries(jobData.variables || {})) {
+                const valueStr = `${value}`
                 assert(
                     typeof value === "string" || typeof value === "number",
-                    `${blueBright(jobName)} has invalid variables hash of key value pairs. ${key}=${value}`,
+                    chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${valueStr}`
                 );
             }
         });
-
+        // chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${value}`}`
         this.gitlabData = gitlabData;
     }
 
@@ -248,7 +251,7 @@ export class Parser {
             });
             const stage = this.stages.get(job.stage);
             const stageStr = `stage:${job.stage}`;
-            assert(stage != null, `${yellow(stageStr)} not found for ${blueBright(job.name)}`);
+            assert(stage != null, chalk`{yellow ${stageStr}} not found for {blueBright ${job.name}}`);
             stage.addJob(job);
             await state.incrementJobId(cwd);
 
@@ -289,12 +292,22 @@ export class Parser {
             index++;
         }
 
-        return yaml.load(fileSplitClone.join('\n')) || {};
+        // Find .reference
+        const GITLAB_SCHEMA = new yaml.Schema([
+            new yaml.Type('!reference', {
+                kind: 'sequence',
+                construct: function (data) {
+                    return {referenceData: data};
+                },
+            }),
+        ]);
+
+        return yaml.load(fileSplitClone.join('\n'), {schema: GITLAB_SCHEMA}) || {};
     }
 
     getJobByName(name: string): Job {
         const job = this.jobs.get(name);
-        assert(job != null, `${blueBright(name)} could not be found`);
+        assert(job != null, chalk`{blueBright ${name}} could not be found`);
         return job;
     }
 
@@ -325,7 +338,7 @@ export class Parser {
             const unspecifiedNeedsJob = job.needs.filter((v) => (jobNames.indexOf(v) === -1));
             assert(
                 unspecifiedNeedsJob.length !== job.needs.length,
-                `[ ${blueBright(unspecifiedNeedsJob.join(','))} ] jobs are needed by ${blueBright(job.name)}, but they cannot be found`,
+                chalk`[ {blueBright ${unspecifiedNeedsJob.join(',')}} ] jobs are needed by {blueBright ${job.name}}, but they cannot be found`,
             );
 
 
@@ -335,20 +348,11 @@ export class Parser {
                 const jobStageIndex = stages.indexOf(job.stage);
                 assert(
                     needJobStageIndex < jobStageIndex,
-                    `${blueBright(needJob.name)} is needed by ${blueBright(job.name)}, but it is in the same or a future stage`,
+                    chalk`{blueBright ${needJob.name}} is needed by {blueBright ${job.name}}, but it is in the same or a future stage`,
                 );
             }
 
         }
-    }
-
-    static async downloadIncludeFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
-        const time = process.hrtime();
-        fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
-        await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
-        const endTime = process.hrtime(time);
-        const remoteUrl = `${gitRemoteDomain}/${project}/${file}`;
-        process.stdout.write(`${cyan('downloaded')} ${magentaBright(remoteUrl)} in ${magenta(prettyHrtime(endTime))}\n`);
     }
 
     static async initGitRemote(cwd: string): Promise<GitRemote> {
@@ -370,6 +374,24 @@ export class Parser {
         };
     }
 
+    static async downloadIncludeRemote(cwd: string, url: string): Promise<void> {
+        const time = process.hrtime();
+        const fsUrl = Utils.fsUrl(url);
+        const res = await fetch(url);
+        fs.outputFileSync(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`, await res.text());
+        const endTime = process.hrtime(time);
+        process.stdout.write(chalk`{cyan downloaded} {magentaBright ${url}} in {magenta ${prettyHrtime(endTime)}}\n`);
+    }
+
+    static async downloadIncludeProjectFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
+        const time = process.hrtime();
+        fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
+        await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
+        const endTime = process.hrtime(time);
+        const remoteUrl = `${gitRemoteDomain}/${project}/${file}`;
+        process.stdout.write(chalk`{cyan downloaded} {magentaBright ${remoteUrl}} in {magenta ${prettyHrtime(endTime)}}\n`);
+    }
+
     static async prepareIncludes(gitlabData: any, cwd: string, gitRemote: GitRemote, tabCompletionPhase: boolean): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
@@ -380,10 +402,12 @@ export class Parser {
                 continue;
             }
             if (value["file"]) {
-                promises.push(Parser.downloadIncludeFile(cwd, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
+                promises.push(Parser.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value['template']);
-                promises.push(Parser.downloadIncludeFile(cwd, project, ref, file, domain));
+                promises.push(Parser.downloadIncludeProjectFile(cwd, project, ref, file, domain));
+            } else if (value['remote']) {
+                promises.push(Parser.downloadIncludeRemote(cwd, value['remote']));
             }
 
         }
@@ -401,6 +425,10 @@ export class Parser {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value['template']);
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${domain}/${project}/${ref}/${file}`);
                 includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, tabCompletionPhase));
+            } else if (value['remote']) {
+                const fsUrl = Utils.fsUrl(value['remote']);
+                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, tabCompletionPhase));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }
@@ -410,7 +438,7 @@ export class Parser {
         return includeDatas;
     }
 
-    static parseTemplateInclude(template: string): {project: string, ref: string, file: string, domain: string} {
+    static parseTemplateInclude(template: string): { project: string, ref: string, file: string, domain: string } {
         return {
             domain: "gitlab.com",
             project: "gitlab-org/gitlab",

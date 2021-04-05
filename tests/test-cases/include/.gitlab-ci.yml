@@ -2,3 +2,4 @@
 include:
   - { local: .gitlab-ci-base.yml }
   - { project: firecow/gitlab-ci-local-includes, file: .gitlab-module.yml }
+  - { remote: https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.gitlab-http.yml }

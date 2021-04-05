@@ -1,4 +1,4 @@
-import {blueBright} from "ansi-colors";
+import chalk from "chalk";
 import * as childProcess from "child_process";
 import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
@@ -36,6 +36,10 @@ export class Utils {
         });
     }
 
+    static fsUrl(url: string): string {
+        return url.replace(/^https:\/\//g, '').replace(/^http:\/\//g, '');
+    }
+
     static forEachRealJob(gitlabData: any, callback: (jobName: string, jobData: any) => void) {
         for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
             if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") {
@@ -47,9 +51,9 @@ export class Utils {
 
     static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
         if (i === arr.length - 1) {
-            process.stdout.write(`${blueBright(job.name)}`);
+            process.stdout.write(chalk`{blueBright ${job.name}}`);
         } else {
-            process.stdout.write(`${blueBright(job.name)}, `);
+            process.stdout.write(chalk`{blueBright ${job.name}}, `);
         }
     }
 

@@ -1,13 +1,21 @@
 ---
-.parent1:
+.after:
+  after_script:
+    - echo "Test something (after_script)"
+
+.before:
   stage: test
+  before_script:
+    - echo "Test something (before_script)"
   script:
     - echo "Should not be printed"
 
-.parent2:
-  extends: .parent1
+.parent:
+  extends: .before
   script:
     - echo "Test something"
 
 test-job:
-  extends: .parent2
+  extends:
+    - .after
+    - .parent

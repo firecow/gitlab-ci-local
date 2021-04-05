@@ -1,4 +1,4 @@
-import {blueBright, green, greenBright, magenta, magentaBright, red, redBright, yellow, yellowBright} from "ansi-colors";
+import chalk from "chalk";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as prettyHrtime from "pretty-hrtime";
@@ -63,8 +63,9 @@ export class Job {
             CI_COMMIT_SHA: "a33bd89c7b8fa3567524525308d8cafd7c0cd2ad",
             CI_PROJECT_NAME: gitRemote.project,
             CI_PROJECT_TITLE: `${camelCase(gitRemote.project)}`,
-            CI_PROJECT_PATH_SLUG: `${gitRemote.group}/${gitRemote.project}`,
-            CI_PROJECT_NAMESPACE: `${gitRemote.group}/${camelCase(gitRemote.project)}`,
+            CI_PROJECT_PATH: `${gitRemote.group}/${camelCase(gitRemote.project)}`,
+            CI_PROJECT_PATH_SLUG: `${gitRemote.group.replace(/\//g, '-')}-${gitRemote.project}`,
+            CI_PROJECT_NAMESPACE: `${gitRemote.group}`,
             CI_COMMIT_REF_PROTECTED: "false",
             CI_COMMIT_BRANCH: "local/branch", // Branch name, only when building branches
             CI_COMMIT_REF_NAME: "local/branch", // Tag or branch name
@@ -78,7 +79,9 @@ export class Job {
             CI_JOB_ID: `${this.jobId}`, // Changes on rerun
             CI_PIPELINE_ID: `${pipelineIid + 1000}`,
             CI_PIPELINE_IID: `${pipelineIid}`,
-            CI_SERVER_URL: `https://${gitRemote.domain}`,
+            CI_SERVER_HOST: `${gitRemote.domain}`,
+            CI_SERVER_URL: `https://${gitRemote.domain}:443`,
+            CI_API_V4_URL: `https://${gitRemote.domain}/api/v4`,
             CI_PROJECT_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}`,
             CI_JOB_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}/-/jobs/${this.jobId}`, // Changes on rerun.
             CI_PIPELINE_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}/pipelines/${pipelineIid}`,
@@ -106,7 +109,7 @@ export class Job {
         }
     }
 
-    get imageName(): string  | null {
+    get imageName(): string | null {
         const image = this.jobData['image'];
         if (!image) {
             return null;
@@ -175,7 +178,7 @@ export class Job {
         await fs.truncate(this.getOutputFilesPath());
         if (!this.interactive) {
             const jobNameStr = this.getJobNameString();
-            process.stdout.write(`${jobNameStr} ${magentaBright("starting")} ${this.imageName ?? "shell"} (${yellow(this.stage)})\n`);
+            process.stdout.write(chalk`${jobNameStr} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
         }
 
         const prescripts = this.beforeScripts.concat(this.scripts);
@@ -227,7 +230,7 @@ export class Job {
     }
 
     getJobNameString() {
-        return `${blueBright(this.name.padEnd(this.maxJobNameLength))}`;
+        return chalk`{blueBright ${this.name.padEnd(this.maxJobNameLength)}}`;
     }
 
     getOutputFilesPath() {
@@ -289,7 +292,7 @@ export class Job {
                 const split = script.split(/\r?\n/);
                 const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
                 const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
-                cmd += `echo "${green(`$ ${text}${multilineText}`)}"\n`;
+                cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
 
                 // Execute actual script
                 cmd += `${script}\n`;
@@ -307,7 +310,7 @@ export class Job {
 
         if (this.imageName) {
             time = process.hrtime();
-            process.stdout.write(`${jobNameStr} ${magentaBright('pulling')} ${this.imageName}\n`);
+            process.stdout.write(chalk`${jobNameStr} {magentaBright pulling} ${this.imageName}\n`);
             let pullCmd = ``;
             pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.imageName}$'\n`
             pullCmd += `if [ "$?" -ne 0 ]; then\n`
@@ -316,7 +319,7 @@ export class Job {
             pullCmd += `fi\n`
             await Utils.spawn(pullCmd, this.cwd);
             endTime = process.hrtime(time);
-            process.stdout.write(`${this.getJobNameString()} ${magentaBright('pulled')} in ${magenta(prettyHrtime(endTime))}\n`);
+            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright pulled} in {magenta ${prettyHrtime(endTime)}}\n`);
 
             let dockerCmd = ``;
             if (privileged) {
@@ -359,10 +362,10 @@ export class Job {
             this.containerId = containerId.replace("\n", "");
 
             time = process.hrtime();
-            process.stdout.write(`${jobNameStr} ${magentaBright('copying to container')} /builds/ \n`);
+            process.stdout.write(chalk`${jobNameStr} {magentaBright copying to container} /builds/ \n`);
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
             endTime = process.hrtime(time);
-            process.stdout.write(`${this.getJobNameString()} ${magentaBright('copied')} in ${magenta(prettyHrtime(endTime))}\n`);
+            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : `bash -e`, {
@@ -388,7 +391,7 @@ export class Job {
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
             const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
-            cp.stdin.write(`echo "${green(`$ ${text}${multilineText}`)}"\n`);
+            cp.stdin.write(chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`);
 
             // Execute actual script
             cp.stdin.write(`${script}\n`);
@@ -412,8 +415,8 @@ export class Job {
         };
 
         const exitCode = await new Promise<number>((resolve, reject) => {
-            cp.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => greenBright(s)));
-            cp.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => redBright(s)));
+            cp.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => chalk`{greenBright ${s}}`));
+            cp.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => chalk`{redBright ${s}}`));
 
             cp.on('exit', (code) => resolve(code ?? 0));
             cp.on("error", (err) => reject(err));
@@ -424,7 +427,7 @@ export class Job {
                 const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, '');
 
                 time = process.hrtime();
-                process.stdout.write(`${jobNameStr} ${magentaBright('copying artifacts to host')}\n`);
+                process.stdout.write(chalk`${jobNameStr} {magentaBright copying artifacts to host}\n`);
                 if (`${expandedPath}`.match(/(.*)\/(.+)/)) {
                     await fs.mkdirp(`${this.cwd}/${expandedPath.replace(/(.*)\/(.+)/, '$1')}`);
                     await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${expandedPath.replace(/(.*)\/(.+)/, '$1')}`, this.cwd);
@@ -432,7 +435,7 @@ export class Job {
                     await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} .`, this.cwd);
                 }
                 endTime = process.hrtime(time);
-                process.stdout.write(`${this.getJobNameString()} ${magentaBright('copied artifacts to host')} in ${magenta(prettyHrtime(endTime))}\n`);
+                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied artifacts to host} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
         }
 
@@ -442,10 +445,10 @@ export class Job {
     private getExitedString(startTime: [number, number], code: number, warning = false, prependString = "") {
         const finishedStr = this.getFinishedString(startTime);
         if (warning) {
-            return `${finishedStr} ${yellowBright(`warning with code ${code}`)} ${prependString}`;
+            return chalk`${finishedStr} {yellowBright warning with code ${code.toString()}} ${prependString}`;
         }
 
-        return `${finishedStr} ${red(`exited with code ${code}`)} ${prependString}`;
+        return chalk`${finishedStr} {red exited with code ${code.toString()}} ${prependString}`;
     }
 
     private getFinishedString(startTime: [number, number]) {
@@ -453,6 +456,6 @@ export class Job {
         const timeStr = prettyHrtime(endTime);
         const jobNameStr = this.getJobNameString();
 
-        return `${jobNameStr} ${magentaBright("finished")} in ${magenta(`${timeStr}`)}`;
+        return chalk`${jobNameStr} {magentaBright finished} in {magenta ${timeStr}}`;
     }
 }
