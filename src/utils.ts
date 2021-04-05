@@ -34,6 +34,10 @@ export class Utils {
         });
     }
 
+    static fsUrl(url: string): string {
+        return url.replace(/^https:\/\//g, '').replace(/^http:\/\//g, '');
+    }
+
     static forEachRealJob(gitlabData: any, callback: (jobName: string, jobData: any) => void) {
         for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
             if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") {
