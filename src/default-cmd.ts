@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as chalk from "chalk";
 import * as fs from "fs-extra";
 import * as yargs from "yargs";
 import {Commander} from "./commander";

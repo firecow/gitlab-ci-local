@@ -48,7 +48,7 @@ test('plain <notfound>', async () => {
         });
     } catch (e) {
         expect(e.message).toBe("Test exited");
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mnotfound[31m could not be found[39m\n");
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mnotfound[39m[31m could not be found[39m\n");
         expect(mockProcessStdout).toBeCalledTimes(1);
         expect(mockProcessStderr).toBeCalledTimes(1);
     }
@@ -84,7 +84,7 @@ test('needs-invalid-stage <build-job> --needs', async () => {
     } catch (e) {
         expect(e.message).toBe("Test exited");
         expect(mockProcessStdout).toBeCalledTimes(0);
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[31m is needed by [94mbuild-job[31m, but it is in the same or a future stage[39m\n");
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[39m[31m is needed by [94mbuild-job[39m[31m, but it is in the same or a future stage[39m\n");
     }
 });
 
@@ -97,7 +97,7 @@ test('needs-unspecified-job <build-job> --needs', async () => {
     } catch (e) {
         expect(e.message).toBe("Test exited");
         expect(mockProcessStdout).toBeCalledTimes(0);
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[ [94minvalid[31m ] jobs are needed by [94mtest-job[31m, but they cannot be found[39m\n");
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[ [94minvalid[39m[31m ] jobs are needed by [94mtest-job[39m[31m, but they cannot be found[39m\n");
     }
 });
 
@@ -156,7 +156,7 @@ test('no-script <test-job>', async () => {
     } catch (e) {
         expect(e.message).toBe("Test exited");
         expect(mockProcessStdout).toBeCalledTimes(0);
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[31m must have script specified[39m\n");
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[39m[31m must have script specified[39m\n");
     }
 });
 
@@ -412,7 +412,7 @@ test('stage-not-found <test-job>', async () => {
             job: 'test-job'
         });
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m[33mstage:invalid[31m not found for [94mtest-job[31m[39m\n`);
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[33mstage:invalid[39m[31m not found for [94mtest-job[39m[31m[39m\n");
         expect(e.message).toBe("Test exited");
     }
 });
@@ -436,7 +436,7 @@ test('invalid-variables-null <test-job>', async () => {
             job: 'test-job'
         });
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m[94mtest-job[31m has invalid variables hash of key value pairs. INVALID=null[39m\n`);
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[39m[31m has invalid variables hash of key value pairs. INVALID=null[39m\n");
         expect(e.message).toBe("Test exited");
     }
 });
@@ -447,7 +447,7 @@ test('invalid-stages', async () => {
             cwd: 'tests/test-cases/invalid-stages',
         });
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m[33mstages:[31m must be an array[39m\n`);
+        expect(mockProcessStderr).toHaveBeenCalledWith(`[31m[33mstages:[39m[31m must be an array[39m\n`);
         expect(e.message).toBe("Test exited");
     }
 });
