@@ -7,7 +7,7 @@ const getPipelineIid = async (cwd: string) => {
     const stateFile = `${cwd}/.gitlab-ci-local/state.yml`;
     const ymlData = await Parser.loadYaml(stateFile);
 
-    return ymlData["pipelineIid"] || 0;
+    return ymlData["pipelineIid"] ? Number(ymlData["pipelineIid"]) : 0;
 };
 
 const incrementPipelineIid = async (cwd: string) => {
@@ -22,7 +22,7 @@ const getJobId = async (cwd: string) => {
     const stateFile = `${cwd}/.gitlab-ci-local/state.yml`;
     const ymlData = await Parser.loadYaml(stateFile);
 
-    return ymlData["jobId"] || 0;
+    return ymlData["jobId"] ? Number(ymlData["jobId"]) : 0;
 };
 
 const incrementJobId = async (cwd: string) => {
