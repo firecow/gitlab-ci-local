@@ -1,3 +1,4 @@
 *
 !src/**/*.js
+!src/**/*.d.ts
 src/tests/**/*.js
