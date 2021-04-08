@@ -231,6 +231,16 @@ test('artifacts-no-globstar', async () => {
     }
 });
 
+test('artifacts <consume-cache> --needs', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/cache',
+        job: 'consume-cache',
+        needs: true
+    });
+    expect(mockProcessExit).toBeCalledTimes(0);
+    expect(mockProcessStderr).toBeCalledTimes(0);
+});
+
 test('dotenv <test-job>', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/dotenv',

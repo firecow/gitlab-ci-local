@@ -9,7 +9,7 @@ import {JobOptions} from "./types/job-options";
 
 export class Job {
 
-    static readonly illigalJobNames = [
+    static readonly illegalJobNames = [
         "include", "local_configuration", "image", "services",
         "stages", "pages", "types", "before_script", "default",
         "after_script", "variables", "cache", "workflow",
@@ -27,6 +27,9 @@ export class Job {
     readonly allowFailure: boolean;
     readonly when: string;
     readonly pipelineIid: number;
+    readonly cache: { key: string, paths: string[] };
+    // readonly cacheKey: string;
+    // readonly cachePaths: string[] | null;
     private _prescriptsExitCode = 0;
     private readonly jobData: any;
     private started = false;
@@ -55,6 +58,7 @@ export class Job {
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
+        this.cache = jobData.cache || null;
 
         const predefinedVariables = {
             GITLAB_USER_LOGIN: gitUser["GITLAB_USER_LOGIN"],
@@ -337,6 +341,14 @@ export class Job {
 
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 dockerCmd += `-e ${key}="${String(value).trim()}" `
+            }
+
+            if (this.cache && this.cache.key && this.cache.paths) {
+                this.cache.paths.forEach((path) => {
+                    process.stdout.write(chalk`${jobNameStr} {magentaBright mounting cache} for path ${path}\n`);
+                    // /tmp/ location instead of .gitlab-ci-local/cache avoids the (unneeded) inclusion of cache folders when docker copy all files into the container, thus saving time for all jobs
+                    dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `
+                });
             }
 
             dockerCmd += `${this.imageName} sh -c "\n`
