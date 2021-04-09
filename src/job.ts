@@ -28,8 +28,6 @@ export class Job {
     readonly when: string;
     readonly pipelineIid: number;
     readonly cache: { key: string, paths: string[] };
-    // readonly cacheKey: string;
-    // readonly cachePaths: string[] | null;
     private _prescriptsExitCode = 0;
     private readonly jobData: any;
     private started = false;
@@ -44,7 +42,7 @@ export class Job {
         const gitRemote = opt.gitRemote;
         const globals = opt.globals;
         const userVariables = opt.userVariables;
-        
+
         this.maxJobNameLength = opt.maxJobNameLength;
         this.name = opt.name;
         this.cwd = opt.cwd;
@@ -315,7 +313,6 @@ export class Job {
 
         if (this.imageName) {
             time = process.hrtime();
-            process.stdout.write(chalk`${jobNameStr} {magentaBright pulling} ${this.imageName}\n`);
             let pullCmd = ``;
             pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.imageName}$'\n`
             pullCmd += `if [ "$?" -ne 0 ]; then\n`
@@ -324,7 +321,7 @@ export class Job {
             pullCmd += `fi\n`
             await Utils.spawn(pullCmd, this.cwd);
             endTime = process.hrtime(time);
-            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright pulled} in {magenta ${prettyHrtime(endTime)}}\n`);
+            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright pulled} ${this.imageName} in {magenta ${prettyHrtime(endTime)}}\n`);
 
             let dockerCmd = ``;
             if (privileged) {
@@ -375,15 +372,17 @@ export class Job {
             this.containerId = containerId.replace("\n", "");
 
             time = process.hrtime();
-            process.stdout.write(chalk`${jobNameStr} {magentaBright copying to container} /builds/ \n`);
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
             endTime = process.hrtime(time);
-            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied} in {magenta ${prettyHrtime(endTime)}}\n`);
+            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copying source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
 
-            if (this.dependencies !== null && this.dependencies.length !== 0) {
+            const artifactsFrom = this.needs || this.dependencies;
+            if (artifactsFrom === null || artifactsFrom.length > 0) {
+                time = process.hrtime();
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
                 await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.containerId}:/builds/`);
-                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright getting artifacts} from .gitlab-ci-local/artifacts/${this.pipelineIid}/\n`);
+                endTime = process.hrtime(time);
+                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copying artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
         }
 
@@ -446,8 +445,7 @@ export class Job {
                 const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, '');
 
                 time = process.hrtime();
-                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright saving artifact} ${artifactPath} to .gitlab-ci-local/artifacts/${this.pipelineIid}/\n`);
-                
+
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
 
                 if (`${expandedPath}`.match(/(.*)\/(.+)/)) {
@@ -457,7 +455,7 @@ export class Job {
                 } else {
                     await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
                 }
-                
+
                 endTime = process.hrtime(time);
                 process.stdout.write(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
