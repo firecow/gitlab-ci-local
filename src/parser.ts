@@ -207,6 +207,9 @@ export class Parser {
             this.maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
         }
 
+        // Check that needs is larger and containers the same as dependencies.
+        // TODO: We need this check, to prevent jobs from copying artifacts that might not be needed.
+
         // Check job variables for invalid hash of key value pairs
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             for (const [key, value] of Object.entries(jobData.variables || {})) {

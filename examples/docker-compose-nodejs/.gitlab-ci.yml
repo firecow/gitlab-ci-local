@@ -3,6 +3,7 @@
 npm-install:
   stage: .pre
   image: node:alpine
+  dependencies: []
   artifacts:
     paths:
       - node_modules/
