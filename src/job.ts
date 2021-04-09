@@ -107,6 +107,10 @@ export class Job {
         if (this.interactive && (this.when !== 'manual' || this.imageName !== null)) {
             throw new ExitError(`${this.getJobNameString()} @Interactive decorator cannot have image: and must be when:manual`);
         }
+
+        if (this.injectSSHAgent && this.imageName === null) {
+            throw new ExitError(`${this.getJobNameString()} @InjectSSHAgent can only be used with image:`);
+        }
     }
 
     get imageName(): string | null {
@@ -136,6 +140,10 @@ export class Job {
 
     get interactive(): boolean {
         return this.jobData['interactive'] || false;
+    }
+
+    get injectSSHAgent(): boolean {
+        return this.jobData['injectSSHAgent'] || false;
     }
 
     get description(): string {
@@ -271,6 +279,13 @@ export class Job {
         }
     }
 
+    private getInjectSSHAgentOptions() {
+        if (!this.injectSSHAgent) {
+            return "";
+        }
+        return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`
+    }
+
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
@@ -323,9 +338,9 @@ export class Job {
 
             let dockerCmd = ``;
             if (privileged) {
-                dockerCmd += `docker create --privileged -u 0:0 -i `;
+                dockerCmd += `docker create --privileged -u 0:0 -i ${this.getInjectSSHAgentOptions()} `;
             } else {
-                dockerCmd += `docker create -u 0:0 -i `;
+                dockerCmd += `docker create -u 0:0 -i ${this.getInjectSSHAgentOptions()} `;
             }
 
             if (this.imageEntrypoint) {
