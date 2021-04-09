@@ -17,6 +17,31 @@ test('GITLAB_CI fail and fallback', () => {
     expect(rulesResult).toEqual({when: 'manual', allowFailure: false});
 });
 
+test('Undefined if', () => {
+    const rules = [
+        {when: 'on_success'}
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {});
+    expect(rulesResult).toEqual({when: 'on_success', allowFailure: false});
+});
+
+test('Undefined when', () => {
+    const rules = [
+        {if: '$GITLAB_CI', allow_failure: false}
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: 'false'});
+    expect(rulesResult).toEqual({when: 'on_success', allowFailure: false});
+});
+
+test('Early return', () => {
+    const rules = [
+        {if: "$GITLAB_CI", when: 'never'},
+        {when: "on_success"}
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: 'false'});
+    expect(rulesResult).toEqual({when: 'never', allowFailure: false});
+});
+
 test('VAR exists positive', () => {
     const ruleIf = "$VAR";
     const val = Utils.evaluateRuleIf(ruleIf, {VAR: 'set-value'});
