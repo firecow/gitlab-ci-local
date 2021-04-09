@@ -60,7 +60,7 @@ export async function handler(argv: any) {
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
         await Commander.runPipeline(parser, argv.manual || [], argv.privileged);
-        process.stdout.write(chalk`{grey \npipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+        process.stdout.write(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
 }
 
