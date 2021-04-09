@@ -17,7 +17,7 @@ test('GITLAB_CI fail and fallback', () => {
     expect(rulesResult).toEqual({when: 'manual', allowFailure: false});
 });
 
-test('when:never', () => {
+test('No if\'s', () => {
     const rules = [
         {when: 'never'}
     ];
@@ -25,7 +25,7 @@ test('when:never', () => {
     expect(rulesResult).toEqual({when: 'never', allowFailure: false});
 });
 
-test('https://github.com/firecow/gitlab-ci-local/issues/117', () => {
+test('Early return', () => {
     const rules = [
         {if: "$GITLAB_CI", when: 'never'},
         {if: "$GITLAB_CI == 'false'", when: 'never'},
