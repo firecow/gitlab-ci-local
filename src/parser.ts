@@ -378,6 +378,9 @@ export class Parser {
         const time = process.hrtime();
         const fsUrl = Utils.fsUrl(url);
         const res = await fetch(url);
+        if (res.status !== 200) {
+            throw new ExitError(`Remote include could not be fetched ${url}`);
+        }
         fs.outputFileSync(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`, await res.text());
         const endTime = process.hrtime(time);
         process.stdout.write(chalk`{cyan downloaded} {magentaBright ${url}} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -386,7 +389,12 @@ export class Parser {
     static async downloadIncludeProjectFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
         const time = process.hrtime();
         fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
-        await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
+        try {
+            await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${file} | tar -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
+        } catch (e) {
+            throw new ExitError(`Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${file} }`);
+        }
+
         const endTime = process.hrtime(time);
         const remoteUrl = `${gitRemoteDomain}/${project}/${file}`;
         process.stdout.write(chalk`{cyan downloaded} {magentaBright ${remoteUrl}} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -401,7 +409,12 @@ export class Parser {
             if (tabCompletionPhase) {
                 continue;
             }
-            if (value["file"]) {
+            if (value["local"]) {
+                const fileExists = fs.existsSync(`${cwd}/${value["local"]}`);
+                if (!fileExists) {
+                    throw new ExitError(`Local include file cannot be found ${value["local"]}`);
+                }
+            } else if (value["file"]) {
                 promises.push(Parser.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value['template']);
