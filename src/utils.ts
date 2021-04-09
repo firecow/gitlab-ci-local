@@ -80,7 +80,7 @@ export class Utils {
         for (const rule of rules) {
             if (Utils.evaluateRuleIf(rule.if || "true", variables)) {
                 when = rule.when ? rule.when : 'on_success';
-                allowFailure = rule.allow_failure ? rule.allow_failure : allowFailure;
+                allowFailure = rule.allow_failure ? rule.allow_failure : false;
                 break;
             }
         }
