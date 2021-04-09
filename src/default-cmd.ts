@@ -8,6 +8,7 @@ import {ExitError} from "./types/exit-error";
 import {assert} from "./asserts";
 import * as dotenv from "dotenv";
 import * as camelCase from "camelcase";
+import * as prettyHrtime from "pretty-hrtime";
 
 let parser: Parser | null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
@@ -62,8 +63,10 @@ export async function handler(argv: any) {
 }
 
 exports.handler = async (argv: any) => {
+    const time = process.hrtime();
     try {
         await handler(argv);
+        process.stdout.write(chalk`{grey \npipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     } catch (e) {
         if (e instanceof ExitError) {
             process.stderr.write(chalk`{red ${e.message}}\n`);
