@@ -1,0 +1,26 @@
+---
+produce-cache:
+  stage: build
+  image: alpine
+  cache:
+    key: maven
+    paths:
+      - .cache
+    policy: pull-push
+  script:
+    - rm -rf .cache/file1 || true
+    - mkdir -p .cache
+    - touch .cache/file1
+
+consume-cache:
+  stage: test
+  image: alpine
+  needs: [produce-cache]
+  dependencies: [produce-cache] # testing the absence of artifacts
+  cache:
+    key: maven
+    paths:
+      - .cache
+    policy: pull-push
+  script:
+    - if [ ! -f .cache/file1 ]; then exit 1; fi
