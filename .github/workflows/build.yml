@@ -50,6 +50,8 @@ jobs:
         with:
           key: ${{ secrets.SSH_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOSTS }}
+      - name: Start SSH Agent
+        run: eval $(ssh-agent -s) && ssh-add
       - name: Run tests
         run: FORCE_COLOR=1 npm run coverage
       - name: SonarCloud Scan
