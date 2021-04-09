@@ -78,11 +78,11 @@ export class Utils {
         let allowFailure = false;
 
         for (const rule of rules) {
-            if (!Utils.evaluateRuleIf(rule.if || "true", variables)) {
-                continue;
+            if (Utils.evaluateRuleIf(rule.if || "true", variables)) {
+                when = rule.when ? rule.when : 'on_success';
+                allowFailure = rule.allow_failure ? rule.allow_failure : allowFailure;
+                break;
             }
-            when = rule.when ? rule.when : 'on_success';
-            allowFailure = rule.allow_failure ? rule.allow_failure : allowFailure;
         }
 
         return {when, allowFailure};

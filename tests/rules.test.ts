@@ -17,6 +17,24 @@ test('GITLAB_CI fail and fallback', () => {
     expect(rulesResult).toEqual({when: 'manual', allowFailure: false});
 });
 
+test('when:never', () => {
+    const rules = [
+        {when: 'never'}
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {});
+    expect(rulesResult).toEqual({when: 'never', allowFailure: false});
+});
+
+test('https://github.com/firecow/gitlab-ci-local/issues/117', () => {
+    const rules = [
+        {if: "$GITLAB_CI", when: 'never'},
+        {if: "$GITLAB_CI == 'false'", when: 'never'},
+        {when: "on_success"}
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: 'false'});
+    expect(rulesResult).toEqual({when: 'never', allowFailure: false});
+});
+
 test('VAR exists positive', () => {
     const ruleIf = "$VAR";
     const val = Utils.evaluateRuleIf(ruleIf, {VAR: 'set-value'});
