@@ -333,6 +333,12 @@ test('include-template <test-job>', async () => {
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
+test('inject-ssh-agent', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/inject-ssh-agent',
+    });
+});
+
 test('manual <build-job>', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/manual',
