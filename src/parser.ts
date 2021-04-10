@@ -201,11 +201,14 @@ export class Parser {
 
         // Find longest job name
         for (const jobName of Object.keys(gitlabData)) {
-            if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") {
+            if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
                 continue;
             }
             this.maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
         }
+
+        // Check that needs is larger and containers the same as dependencies.
+        // TODO: We need this check, to prevent jobs from copying artifacts that might not be needed.
 
         // Check job variables for invalid hash of key value pairs
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
@@ -232,7 +235,7 @@ export class Parser {
 
         // Generate jobs and put them into stages
         for (const [jobName, jobData] of Object.entries(gitlabData)) {
-            if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") {
+            if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
                 continue;
             }
 

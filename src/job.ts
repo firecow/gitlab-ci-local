@@ -9,7 +9,7 @@ import {JobOptions} from "./types/job-options";
 
 export class Job {
 
-    static readonly illigalJobNames = [
+    static readonly illegalJobNames = [
         "include", "local_configuration", "image", "services",
         "stages", "pages", "types", "before_script", "default",
         "after_script", "variables", "cache", "workflow",
@@ -26,6 +26,8 @@ export class Job {
     readonly expandedVariables: { [key: string]: string };
     readonly allowFailure: boolean;
     readonly when: string;
+    readonly pipelineIid: number;
+    readonly cache: { key: string, paths: string[] };
     private _prescriptsExitCode = 0;
     private readonly jobData: any;
     private started = false;
@@ -38,7 +40,6 @@ export class Job {
         const jobData = opt.jobData
         const gitUser = opt.gitUser
         const gitRemote = opt.gitRemote;
-        const pipelineIid = opt.pipelineIid;
         const globals = opt.globals;
         const userVariables = opt.userVariables;
 
@@ -47,6 +48,7 @@ export class Job {
         this.cwd = opt.cwd;
         this.jobId = opt.jobId;
         this.jobData = opt.jobData;
+        this.pipelineIid = opt.pipelineIid;
 
         this.when = jobData.when || "on_success";
         this.allowFailure = jobData.allow_failure || false;
@@ -54,6 +56,7 @@ export class Job {
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
+        this.cache = jobData.cache || null;
 
         const predefinedVariables = {
             GITLAB_USER_LOGIN: gitUser["GITLAB_USER_LOGIN"],
@@ -77,14 +80,14 @@ export class Job {
             CI_COMMIT_DESCRIPTION: "More commit text",
             CI_PIPELINE_SOURCE: "push",
             CI_JOB_ID: `${this.jobId}`, // Changes on rerun
-            CI_PIPELINE_ID: `${pipelineIid + 1000}`,
-            CI_PIPELINE_IID: `${pipelineIid}`,
+            CI_PIPELINE_ID: `${this.pipelineIid + 1000}`,
+            CI_PIPELINE_IID: `${this.pipelineIid}`,
             CI_SERVER_HOST: `${gitRemote.domain}`,
             CI_SERVER_URL: `https://${gitRemote.domain}:443`,
             CI_API_V4_URL: `https://${gitRemote.domain}/api/v4`,
             CI_PROJECT_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}`,
             CI_JOB_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}/-/jobs/${this.jobId}`, // Changes on rerun.
-            CI_PIPELINE_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}/pipelines/${pipelineIid}`,
+            CI_PIPELINE_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}/pipelines/${this.pipelineIid}`,
             CI_JOB_NAME: `${this.name}`,
             CI_JOB_STAGE: `${this.stage}`,
             GITLAB_CI: "false",
@@ -289,6 +292,7 @@ export class Job {
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
+        const artifactsFrom = this.needs || this.dependencies;
         let time;
         let endTime;
 
@@ -325,7 +329,6 @@ export class Job {
 
         if (this.imageName) {
             time = process.hrtime();
-            process.stdout.write(chalk`${jobNameStr} {magentaBright pulling} ${this.imageName}\n`);
             let pullCmd = ``;
             pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.imageName}$'\n`
             pullCmd += `if [ "$?" -ne 0 ]; then\n`
@@ -334,7 +337,7 @@ export class Job {
             pullCmd += `fi\n`
             await Utils.spawn(pullCmd, this.cwd);
             endTime = process.hrtime(time);
-            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright pulled} in {magenta ${prettyHrtime(endTime)}}\n`);
+            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright pulled} ${this.imageName} in {magenta ${prettyHrtime(endTime)}}\n`);
 
             let dockerCmd = ``;
             if (privileged) {
@@ -351,6 +354,14 @@ export class Job {
 
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 dockerCmd += `-e ${key}="${String(value).trim()}" `
+            }
+
+            if (this.cache && this.cache.key && this.cache.paths) {
+                this.cache.paths.forEach((path) => {
+                    process.stdout.write(chalk`${jobNameStr} {magentaBright mounting cache} for path ${path}\n`);
+                    // /tmp/ location instead of .gitlab-ci-local/cache avoids the (unneeded) inclusion of cache folders when docker copy all files into the container, thus saving time for all jobs
+                    dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `
+                });
             }
 
             dockerCmd += `${this.imageName} sh -c "\n`
@@ -377,10 +388,25 @@ export class Job {
             this.containerId = containerId.replace("\n", "");
 
             time = process.hrtime();
-            process.stdout.write(chalk`${jobNameStr} {magentaBright copying to container} /builds/ \n`);
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
             endTime = process.hrtime(time);
-            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied} in {magenta ${prettyHrtime(endTime)}}\n`);
+            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
+
+            if (artifactsFrom === null || artifactsFrom.length > 0) {
+                time = process.hrtime();
+                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
+                await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.containerId}:/builds/`);
+                endTime = process.hrtime(time);
+                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
+            }
+        }
+
+        if (this.imageName === null && (artifactsFrom === null || artifactsFrom.length > 0)) {
+            time = process.hrtime();
+            await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
+            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.cwd}`);
+            endTime = process.hrtime(time);
+            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : `bash -e`, {
@@ -442,15 +468,19 @@ export class Job {
                 const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, '');
 
                 time = process.hrtime();
-                process.stdout.write(chalk`${jobNameStr} {magentaBright copying artifacts to host}\n`);
+
+                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
+
                 if (`${expandedPath}`.match(/(.*)\/(.+)/)) {
-                    await fs.mkdirp(`${this.cwd}/${expandedPath.replace(/(.*)\/(.+)/, '$1')}`);
-                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${expandedPath.replace(/(.*)\/(.+)/, '$1')}`, this.cwd);
+                    // in case of a folder, create the full path
+                    await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${expandedPath.replace(/(.*)\/(.+)/, '$1')}`);
+                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${expandedPath.replace(/(.*)\/(.+)/, '$1')}`);
                 } else {
-                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} .`, this.cwd);
+                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
                 }
+
                 endTime = process.hrtime(time);
-                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied artifacts to host} in {magenta ${prettyHrtime(endTime)}}\n`);
+                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
         }
 

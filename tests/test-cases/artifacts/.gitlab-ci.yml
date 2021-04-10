@@ -1,48 +1,30 @@
 ---
-test-root-file:
+produce-artifacts:
+  stage: build
   image: alpine
+  script:
+    - touch file1 file2
+    - mkdir -p path/to/deep/folder
+    - touch path/to/deep/folder/file3
+    - mkdir -p another-path/to/deep/empty-folder
   artifacts:
     paths:
-      - log.txt
-  script:
-    - echo "Test root file" > log.txt
+      - file1
+      - file2
+      - path/to/deep/folder
+      - another-path/to/deep/empty-folder
 
-test-deep-file:
+consume-artifacts:
+  stage: test
   image: alpine
-  artifacts:
-    paths:
-      - path/log.txt
+  needs: [produce-artifacts]
+  dependencies: [produce-artifacts]
   script:
-    - mkdir -p path
-    - echo "Test deep file" > path/log.txt
-
-test-deep-file-folder-only:
-  image: alpine
-  artifacts:
-    paths:
-      - bin
-  script:
-    - mkdir -p bin
-    - touch bin/app.exe
-
-test-folder:
-  image: alpine
-  artifacts:
-    paths:
-      - folder/
-  script:
-    - mkdir -p folder/
-    - echo "Test folder" > folder/log.txt
-
-test-deep-dir:
-  image: debian
-  artifacts:
-    paths:
-      - dir/deep
-  script:
-    - mkdir -p dir/deep
-    - echo "Test dir" > dir/deep/log.txt
-
+    - if [ ! -f file1 ]; then exit 1; fi
+    - if [ ! -f file2 ]; then exit 1; fi
+    - if [ ! -f path/to/deep/folder/file3 ]; then exit 1; fi
+    - if [ ! -d another-path/to/deep/empty-folder ]; then exit 1; fi
+#
 # TODO: Readd this, when we come up with a good way
 # test-artifact-not-found:
 #   image: debian

@@ -7,7 +7,7 @@ import {assert} from "./asserts";
 
 export function jobExtends(gitlabData: any) {
     for (const jobName of Object.keys(gitlabData)) {
-        if (Job.illigalJobNames.includes(jobName) || jobName[0] === ".") {
+        if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
             continue;
         }
 

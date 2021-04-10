@@ -1,6 +1,5 @@
 import * as mockProcess from "jest-mock-process";
 import * as defaultCmd from "../src/default-cmd";
-import * as fs from "fs-extra";
 
 jest.setTimeout(90000);
 
@@ -25,7 +24,7 @@ test('plain', async () => {
         cwd: 'tests/test-cases/plain',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(22);
+    expect(mockProcessStdout).toBeCalledTimes(25);
     expect(mockProcessStderr).toBeCalledTimes(3);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
@@ -211,54 +210,14 @@ test('after-script-default <test-job>', async () => {
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
-test('artifacts <test-root-file>', async () => {
+test('artifacts <consume-artifacts> --needs', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/artifacts',
-        job: 'test-root-file'
+        job: 'consume-artifacts',
+        needs: true
     });
-    expect(fs.existsSync("tests/test-cases/artifacts/log.txt")).toBe(true);
     expect(mockProcessExit).toBeCalledTimes(0);
-    fs.unlinkSync("tests/test-cases/artifacts/log.txt");
-});
-
-test('artifacts <test-deep-file>', async () => {
-    await defaultCmd.handler({
-        cwd: 'tests/test-cases/artifacts',
-        job: 'test-deep-file'
-    });
-    expect(fs.existsSync("tests/test-cases/artifacts/path/log.txt")).toBe(true);
-    expect(mockProcessExit).toBeCalledTimes(0);
-    fs.rmdirSync("tests/test-cases/artifacts/path", {recursive: true});
-});
-
-test('artifacts <test-deep-file-folder-only>', async () => {
-    await defaultCmd.handler({
-        cwd: 'tests/test-cases/artifacts',
-        job: 'test-deep-file-folder-only'
-    });
-    expect(fs.existsSync("tests/test-cases/artifacts/bin/app.exe")).toBe(true);
-    expect(mockProcessExit).toBeCalledTimes(0);
-    fs.rmdirSync("tests/test-cases/artifacts/bin", {recursive: true});
-});
-
-test('artifacts <test-folder>', async () => {
-    await defaultCmd.handler({
-        cwd: 'tests/test-cases/artifacts',
-        job: 'test-folder'
-    });
-    expect(fs.existsSync("tests/test-cases/artifacts/folder/log.txt")).toBe(true);
-    expect(mockProcessExit).toBeCalledTimes(0);
-    fs.rmdirSync("tests/test-cases/artifacts/folder", {recursive: true});
-});
-
-test('artifacts <test-deep-dir>', async () => {
-    await defaultCmd.handler({
-        cwd: 'tests/test-cases/artifacts',
-        job: 'test-deep-dir'
-    });
-    expect(fs.existsSync("tests/test-cases/artifacts/dir/deep/log.txt")).toBe(true);
-    expect(mockProcessExit).toBeCalledTimes(0);
-    fs.rmdirSync("tests/test-cases/artifacts/dir", {recursive: true});
+    expect(mockProcessStderr).toBeCalledTimes(0);
 });
 
 test('artifacts-no-globstar', async () => {
@@ -270,6 +229,16 @@ test('artifacts-no-globstar', async () => {
         expect(mockProcessStderr).toHaveBeenCalledWith("[31mArtfact paths cannot contain globstar, yet! 'test-job'[39m\n");
         expect(e.message).toBe("Test exited");
     }
+});
+
+test('artifacts <consume-cache> --needs', async () => {
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/cache',
+        job: 'consume-cache',
+        needs: true
+    });
+    expect(mockProcessExit).toBeCalledTimes(0);
+    expect(mockProcessStderr).toBeCalledTimes(0);
 });
 
 test('dotenv <test-job>', async () => {

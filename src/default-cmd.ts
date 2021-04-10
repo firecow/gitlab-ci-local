@@ -8,6 +8,7 @@ import {ExitError} from "./types/exit-error";
 import {assert} from "./asserts";
 import * as dotenv from "dotenv";
 import * as camelCase from "camelcase";
+import * as prettyHrtime from "pretty-hrtime";
 
 let parser: Parser | null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
@@ -53,11 +54,13 @@ export async function handler(argv: any) {
         parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
         await Commander.runSingleJob(parser, argv.job, argv.needs, argv.privileged);
     } else {
+        const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
         await Commander.runPipeline(parser, argv.manual || [], argv.privileged);
+        process.stdout.write(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
 }
 

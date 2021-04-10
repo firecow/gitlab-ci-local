@@ -6,9 +6,9 @@
   "version": "4.14.1",
   "scripts": {
     "prepublishOnly": "npm run check-all && chmod +x src/index.js",
-    "pkg-linux": "pkg src/index.js --public -t node14-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz && rm -r bin/linux",
-    "pkg-macos": "pkg src/index.js --public -t node14-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz && rm -r bin/macos",
-    "pkg-win": "pkg src/index.js --public -t node14-win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz && rm -r bin/win",
+    "pkg-linux": "rm -rf bin/linux && pkg src/index.js --public -t node14-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
+    "pkg-macos": "rm -rf bin/macos && pkg src/index.js --public -t node14-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
+    "pkg-win": "rm -rf bin/win && pkg src/index.js --public -t node14-win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
     "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win",
     "pkg": "pkg",
     "build": "rm -f src/*.js src/*.d.ts && tsc",
