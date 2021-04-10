@@ -29,10 +29,10 @@ test('plain', async () => {
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
-test('plain-invalid-jobname', async () => {
+test('invalid-jobname', async () => {
     try {
         await defaultCmd.handler({
-            cwd: 'tests/test-cases/plain-invalid-jobname',
+            cwd: 'tests/test-cases/invalid-jobname',
         });
     } catch (e) {
         expect(mockProcessStderr).toHaveBeenCalledWith("[31mJobs cannot include spaces, yet! 'test job'[39m\n");
