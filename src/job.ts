@@ -456,16 +456,22 @@ export class Job {
 
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
 
+                let pathReplacement = "";
                 if (`${expandedPath}`.match(/(.*)\/(.+)/)) {
                     // in case of a folder, create the full path
                     await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${expandedPath.replace(/(.*)\/(.+)/, '$1')}`);
-                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${expandedPath.replace(/(.*)\/(.+)/, '$1')}`);
-                } else {
-                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
+                    pathReplacement = `${expandedPath.replace(/(.*)\/(.+)/, '$1')}`
                 }
-
-                endTime = process.hrtime(time);
-                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+                
+                try {
+                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${pathReplacement}`);
+                    
+                    endTime = process.hrtime(time);
+                    process.stdout.write(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+                } catch (e) {
+                    // exact same message and color as Gitlab runner
+                    process.stdout.write(chalk`${this.getJobNameString()} {yellow WARNING: ${artifactPath}: no matching files}\n`);
+                }
             }
         }
 
