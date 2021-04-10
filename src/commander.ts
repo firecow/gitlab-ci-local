@@ -44,7 +44,7 @@ export class Commander {
                 }
             }
 
-            await new Promise((r) => setTimeout(r, 50));
+            await new Promise((r) => setTimeout(r, 5));
 
             if (stage.isFinished()) {
                 if (!stage.isSuccess()) {
