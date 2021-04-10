@@ -27,7 +27,7 @@ export class Job {
     readonly allowFailure: boolean;
     readonly when: string;
     readonly pipelineIid: number;
-    readonly cache: { key: string, paths: string[] };
+    readonly cache: { key: string | { files: string[] }, paths: string[] };
     private _prescriptsExitCode = 0;
     private readonly jobData: any;
     private started = false;
@@ -341,7 +341,7 @@ export class Job {
                 dockerCmd += `-e ${key}="${String(value).trim()}" `
             }
 
-            if (this.cache && this.cache.key && this.cache.paths) {
+            if (this.cache && this.cache.key && typeof this.cache.key === "string" && this.cache.paths) {
                 this.cache.paths.forEach((path) => {
                     process.stdout.write(chalk`${jobNameStr} {magentaBright mounting cache} for path ${path}\n`);
                     // /tmp/ location instead of .gitlab-ci-local/cache avoids the (unneeded) inclusion of cache folders when docker copy all files into the container, thus saving time for all jobs
