@@ -282,9 +282,12 @@ export class Job {
         }
     }
 
-    private getInjectSSHAgentOptions() {
+    private generateInjectSSHAgentOptions() {
         if (!this.injectSSHAgent) {
             return "";
+        }
+        if (process.env.OSTYPE === 'darwin') {
+            return `--env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock`
         }
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`
     }
@@ -341,9 +344,9 @@ export class Job {
 
             let dockerCmd = ``;
             if (privileged) {
-                dockerCmd += `docker create --privileged -u 0:0 -i ${this.getInjectSSHAgentOptions()} `;
+                dockerCmd += `docker create --privileged -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             } else {
-                dockerCmd += `docker create -u 0:0 -i ${this.getInjectSSHAgentOptions()} `;
+                dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             }
 
             if (this.imageEntrypoint) {
