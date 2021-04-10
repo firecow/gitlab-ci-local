@@ -150,9 +150,9 @@ interactive-shell:
 
 ### Artifacts
 
-Shell executor just place files in host directory
+Shell executor jobs copies artifacts to host/cwd directory
 
-Docker executor copies files specified via artifacts field to host
+Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
 
 ## Development
 
