@@ -432,7 +432,7 @@ test('no-git-config', async () => {
     }
 });
 
-test('list --list', async () => {
+test('list-case --list', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/list-case/',
         list: true
