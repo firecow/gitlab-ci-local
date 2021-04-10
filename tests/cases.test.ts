@@ -24,7 +24,7 @@ test('plain', async () => {
         cwd: 'tests/test-cases/plain',
     });
 
-    expect(mockProcessStdout).toBeCalledTimes(23);
+    expect(mockProcessStdout).toBeCalledTimes(25);
     expect(mockProcessStderr).toBeCalledTimes(3);
     expect(mockProcessExit).toBeCalledTimes(0);
 });
