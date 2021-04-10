@@ -231,7 +231,7 @@ test('artifacts-no-globstar', async () => {
     }
 });
 
-test('artifacts <consume-cache> --needs', async () => {
+test('cache <consume-cache> --needs', async () => {
     await defaultCmd.handler({
         cwd: 'tests/test-cases/cache',
         job: 'consume-cache',
