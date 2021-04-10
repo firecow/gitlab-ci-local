@@ -277,6 +277,7 @@ export class Job {
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
+        const artifactsFrom = this.needs || this.dependencies;
         let time;
         let endTime;
 
@@ -374,16 +375,23 @@ export class Job {
             time = process.hrtime();
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
             endTime = process.hrtime(time);
-            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copying source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
+            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
 
-            const artifactsFrom = this.needs || this.dependencies;
             if (artifactsFrom === null || artifactsFrom.length > 0) {
                 time = process.hrtime();
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
                 await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.containerId}:/builds/`);
                 endTime = process.hrtime(time);
-                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copying artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
+                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
+        }
+
+        if (this.imageName === null && (artifactsFrom === null || artifactsFrom.length > 0)) {
+            time = process.hrtime();
+            await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
+            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.cwd}`);
+            endTime = process.hrtime(time);
+            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : `bash -e`, {
