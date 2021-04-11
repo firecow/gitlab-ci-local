@@ -271,17 +271,12 @@ test('include <test-job>', async () => {
 });
 
 test('include <build-job>', async () => {
-    try {
-        await defaultCmd.handler({
-            cwd: 'tests/test-cases/include',
-            job: 'build-job'
-        });
-        expect(mockProcessStdout).toHaveBeenCalledWith("Build something\n");
-        expect(mockProcessExit).toBeCalledTimes(0);
-    } catch(e) {
-        console.log(mockProcessStderr.mock.calls.join("\n"));
-        console.log(e);
-    }
+    await defaultCmd.handler({
+        cwd: 'tests/test-cases/include',
+        job: 'build-job'
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Build something\n");
+    expect(mockProcessExit).toBeCalledTimes(0);
 });
 
 test('include <deploy-job>', async () => {
@@ -300,6 +295,36 @@ test('include-template <test-job>', async () => {
     });
     expect(mockProcessStdout).toHaveBeenCalledWith("Test Something\n");
     expect(mockProcessExit).toBeCalledTimes(0);
+});
+
+test('include-invalid-local', async () => {
+    try {
+        await defaultCmd.handler({
+            cwd: 'tests/test-cases/include-invalid-local',
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31mLocal include file cannot be found .gitlab-ci-invalid.yml[39m\n");
+    }
+});
+
+test('include-invalid-project', async () => {
+    try {
+        await defaultCmd.handler({
+            cwd: 'tests/test-cases/include-invalid-project',
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31mProject include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: master, file: .gitlab-modue.yml }[39m\n");
+    }
+});
+
+test('include-invalid-remote', async () => {
+    try {
+        await defaultCmd.handler({
+            cwd: 'tests/test-cases/include-invalid-remote',
+        });
+    } catch (e) {
+        expect(mockProcessStderr).toHaveBeenCalledWith("[31mRemote include could not be fetched https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml[39m\n");
+    }
 });
 
 test('manual <build-job>', async () => {
