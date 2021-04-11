@@ -1,0 +1,3 @@
+---
+include:
+  - { remote: https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml }
