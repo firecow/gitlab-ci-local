@@ -2,10 +2,11 @@ import * as chalk from 'chalk';
 import {Job} from "./job";
 import {Parser} from "./parser";
 import {Utils} from "./utils";
+import {WriteStreams} from "./types/write-streams";
 
 export class Commander {
 
-    static async runPipeline(parser: Parser, manualArgs: string[], privileged: boolean) {
+    static async runPipeline(parser: Parser, writeStreams: WriteStreams, manualArgs: string[], privileged: boolean) {
         const jobs = parser.getJobs();
         const stages = parser.getStages().concat();
 
@@ -48,17 +49,17 @@ export class Commander {
 
             if (stage.isFinished()) {
                 if (!stage.isSuccess()) {
-                    await Commander.printReport(jobs);
+                    await Commander.printReport(writeStreams, jobs);
                     process.exit(1);
                 }
                 stage = stages.shift();
             }
         }
 
-        await Commander.printReport(jobs);
+        await Commander.printReport(writeStreams, jobs);
     }
 
-    static runList(parser: Parser) {
+    static runList(parser: Parser, writeStreams: WriteStreams) {
         const stageNames = Array.from(parser.getStages()).map((s) => s.name);
         const jobs = Array.from(parser.getJobs()).sort((a, b) => {
             return stageNames.indexOf(a.stage) - stageNames.indexOf(b.stage);
@@ -81,11 +82,11 @@ export class Commander {
             if (needs) {
                 jobLine += chalk`  [{blueBright ${needs.join(',')}}]`;
             }
-            process.stdout.write(`${jobLine}\n`);
+            writeStreams.stdout(`${jobLine}\n`);
         }
     }
 
-    static async runSingleJob(parser: Parser, jobName: string, needs: boolean, privileged: boolean) {
+    static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobName: string, needs: boolean, privileged: boolean) {
         const jobs: Job[] = [];
         const foundJob = parser.getJobByName(jobName);
         jobs.push(foundJob);
@@ -112,11 +113,11 @@ export class Commander {
             await job.start(privileged);
         }
 
-        await Commander.printReport(jobs);
+        await Commander.printReport(writeStreams, jobs);
     }
 
-    static printReport = async (jobs: ReadonlyArray<Job>) => {
-        process.stdout.write(`\n`);
+    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>) => {
+        writeStreams.stdout(`\n`);
 
         const preScripts: { never: Job[], successful: Job[], failed: Job[], warned: Job[] } = {
             never: [],
@@ -147,33 +148,33 @@ export class Commander {
         }
 
         if (preScripts.never.length !== 0) {
-            process.stdout.write(chalk`{magenta not started} `);
-            preScripts.never.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            writeStreams.stdout(chalk`{magenta not started} `);
+            preScripts.never.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
+            writeStreams.stdout(`\n`);
         }
 
         if (preScripts.successful.length !== 0) {
-            process.stdout.write(chalk`{green successful} `);
-            preScripts.successful.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            writeStreams.stdout(chalk`{green successful} `);
+            preScripts.successful.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
+            writeStreams.stdout(`\n`);
         }
 
         if (preScripts.warned.length !== 0) {
-            process.stdout.write(chalk`{yellowBright warning} `);
-            preScripts.warned.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            writeStreams.stdout(chalk`{yellowBright warning} `);
+            preScripts.warned.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
+            writeStreams.stdout(`\n`);
         }
 
         if (afterScripts.warned.length !== 0) {
-            process.stdout.write(chalk`{yellowBright after script} `);
-            afterScripts.warned.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            writeStreams.stdout(chalk`{yellowBright after script} `);
+            afterScripts.warned.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
+            writeStreams.stdout(`\n`);
         }
 
         if (preScripts.failed.length !== 0) {
-            process.stdout.write(chalk`{red failure} `);
-            preScripts.failed.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            writeStreams.stdout(chalk`{red failure} `);
+            preScripts.failed.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout, job, i, arr));
+            writeStreams.stdout(`\n`);
         }
 
         for (const job of preScripts.successful) {
@@ -184,9 +185,9 @@ export class Commander {
             const name = Utils.expandText(e.name, job.expandedVariables);
             const url = Utils.expandText(e.url, job.expandedVariables);
             if (url != null) {
-                process.stdout.write(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}}, url: {bold ${url}} \}\n`);
+                writeStreams.stdout(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}}, url: {bold ${url}} \}\n`);
             } else {
-                process.stdout.write(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}} \}\n`);
+                writeStreams.stdout(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}} \}\n`);
             }
 
         }

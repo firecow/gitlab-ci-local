@@ -4,10 +4,11 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import * as sourceMapSupport from "source-map-support";
 import * as yargs from "yargs";
-import * as defaultCmd from "./default-cmd";
 import {Parser} from "./parser";
 import * as state from "./state";
 import {ExitError} from "./types/exit-error";
+import {ProcessWriteStreams} from "./process-write-streams";
+import {handler} from "./handler";
 
 sourceMapSupport.install();
 process.on('unhandledRejection', e => {
@@ -28,7 +29,27 @@ process.on('unhandledRejection', e => {
         .version(packageJson['version'])
         .showHelpOnFail(false)
         .wrap(yargs.terminalWidth())
-        .command(defaultCmd)
+        .command({
+            handler: async(argv) => {
+                try {
+                    await handler(argv, new ProcessWriteStreams());
+                } catch (e) {
+                    if (e instanceof ExitError) {
+                        process.stderr.write(chalk`{red ${e.message}}\n`);
+                        process.exit(1);
+                    }
+                    throw e;
+                }
+            },
+            builder: (y: any) => {
+                return y.positional("job", {
+                    describe: "Jobname to execute",
+                    type: "string",
+                });
+            },
+            command: "$0 [job]",
+            describe: "Runs the entire pipeline or a single [job]"
+        })
         .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
         .strictOptions()
         .env("GCL")
@@ -77,7 +98,7 @@ process.on('unhandledRejection', e => {
             try {
                 const cwd = yargsArgv.cwd || process.cwd();
                 const pipelineIid = await state.getPipelineIid(cwd);
-                const parser = await Parser.create(cwd, pipelineIid, true, yargsArgv.file);
+                const parser = await Parser.create(cwd, new ProcessWriteStreams(), pipelineIid, true, yargsArgv.file);
                 return parser.getJobNames();
             } catch (e) {
                 return ["Parser-Failed!"];
