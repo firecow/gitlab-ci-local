@@ -7,11 +7,11 @@ export class Utils {
 
     static spawn(command: string, cwd = process.cwd(), env: { [key: string]: string | undefined } = process.env): Promise<{ stdout: string, stderr: string, output: string, status: number }> {
         return new Promise((resolve, reject) => {
-            const cp = childProcess.spawn(command, {shell: 'bash', env, cwd});
+            const cp = childProcess.spawn(command, {shell: "bash", env, cwd});
 
-            let output = '';
-            let stdout = '';
-            let stderr = '';
+            let output = "";
+            let stdout = "";
+            let stderr = "";
 
             cp.stderr.on("data", (buff) => {
                 stderr += buff.toString();
@@ -35,7 +35,7 @@ export class Utils {
     }
 
     static fsUrl(url: string): string {
-        return url.replace(/^https:\/\//g, '').replace(/^http:\/\//g, '');
+        return url.replace(/^https:\/\//g, "").replace(/^http:\/\//g, "");
     }
 
     static forEachRealJob(gitlabData: any, callback: (jobName: string, jobData: any) => void) {
@@ -56,11 +56,11 @@ export class Utils {
     }
 
     static expandText(text?: any, envs: { [key: string]: string | undefined } = process.env) {
-        if (typeof text !== 'string') {
+        if (typeof text !== "string") {
             return text;
         }
         return text.replace(/[$][{]?\w*[}]?/g, (match) => {
-            const sub = envs[match.replace(/^[$][{]?/, '').replace(/[}]?$/, '')];
+            const sub = envs[match.replace(/^[$][{]?/, "").replace(/[}]?$/, "")];
             return sub || match;
         });
     }
@@ -74,12 +74,12 @@ export class Utils {
     }
 
     static getRulesResult(rules: { if?: string, when?: string, allow_failure?: boolean }[], variables: { [key: string]: string }): { when: string, allowFailure: boolean } {
-        let when = 'never';
+        let when = "never";
         let allowFailure = false;
 
         for (const rule of rules) {
             if (Utils.evaluateRuleIf(rule.if || "true", variables)) {
-                when = rule.when ? rule.when : 'on_success';
+                when = rule.when ? rule.when : "on_success";
                 allowFailure = rule.allow_failure ? rule.allow_failure : false;
                 break;
             }
@@ -90,8 +90,8 @@ export class Utils {
 
     static evaluateRuleIf(ruleIf: string, envs: { [key: string]: string }) {
         const expandedRule = ruleIf.replace(/[$]\w*/g, (match) => {
-            const sub = envs[match.replace(/^[$]/, '')];
-            return sub != null ? `'${sub}'` : 'null';
+            const sub = envs[match.replace(/^[$]/, "")];
+            return sub != null ? `'${sub}'` : "null";
         });
 
         const subRules = expandedRule.split(/&&|\|\|/g);
@@ -99,17 +99,17 @@ export class Utils {
         for (const subRule of subRules) {
             let subEval = subRule;
 
-            if (subRule.includes('!~')) {
-                subEval = subRule.replace(/\s*!~\s*(\/.*\/)/, `.match($1) == null`);
-            } else if (subRule.includes('=~')) {
-                subEval = subRule.replace(/\s*=~\s*(\/.*\/)/, `.match($1) != null`);
+            if (subRule.includes("!~")) {
+                subEval = subRule.replace(/\s*!~\s*(\/.*\/)/, ".match($1) == null");
+            } else if (subRule.includes("=~")) {
+                subEval = subRule.replace(/\s*=~\s*(\/.*\/)/, ".match($1) != null");
             } else if (!subRule.match(/(?:==)|(?:!=)/)) {
                 if (subRule.match(/null/)) {
-                    subEval = subRule.replace(/(\s*)\S*(\s*)/, '$1false$2');
+                    subEval = subRule.replace(/(\s*)\S*(\s*)/, "$1false$2");
                 } else if (subRule.match(/''/)) {
-                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, '$1false$2');
+                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, "$1false$2");
                 } else {
-                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, '$1true$2');
+                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, "$1true$2");
                 }
             }
 
@@ -118,11 +118,11 @@ export class Utils {
 
         const conditions = expandedRule.match(/&&|\|\|/g);
 
-        let evalStr = '';
+        let evalStr = "";
 
         subEvals.forEach((subEval, index) => {
             evalStr += subEval;
-            evalStr += conditions && conditions[index] ? conditions[index] : '';
+            evalStr += conditions && conditions[index] ? conditions[index] : "";
         });
 
         return eval(evalStr);
