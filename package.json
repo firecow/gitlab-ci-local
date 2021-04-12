@@ -81,6 +81,12 @@
       ],
       "@typescript-eslint/explicit-module-boundary-types": [
         "off"
+      ],
+      "@typescript-eslint/semi": [
+        "error"
+      ],
+      "@typescript-eslint/quotes": [
+        "error"
       ]
     }
   },
