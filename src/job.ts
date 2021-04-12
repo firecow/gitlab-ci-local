@@ -146,7 +146,7 @@ export class Job {
     }
 
     get injectSSHAgent(): boolean {
-        return this.jobData['injectSSHAgent'] || false;
+        return this.jobData["injectSSHAgent"] || false;
     }
 
     get description(): string {
@@ -286,10 +286,10 @@ export class Job {
         if (!this.injectSSHAgent) {
             return "";
         }
-        if (process.env.OSTYPE === 'darwin') {
-            return `--env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock`
+        if (process.env.OSTYPE === "darwin") {
+            return "--env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock";
         }
-        return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`
+        return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
     }
 
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {

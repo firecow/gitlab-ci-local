@@ -327,9 +327,9 @@ test("include-invalid-remote", async () => {
     }
 });
 
-test('inject-ssh-agent', async () => {
+test("inject-ssh-agent", async () => {
     await defaultCmd.handler({
-        cwd: 'tests/test-cases/inject-ssh-agent',
+        cwd: "tests/test-cases/inject-ssh-agent",
     });
 });
 

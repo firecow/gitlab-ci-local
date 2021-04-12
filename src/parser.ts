@@ -288,7 +288,7 @@ export class Parser {
                     index++;
                 }
                 if (injectSSHAgent) {
-                    fileSplitClone.splice(index + 1, 0, '  injectSSHAgent: true');
+                    fileSplitClone.splice(index + 1, 0, "  injectSSHAgent: true");
                     index++;
                 }
                 if (descriptionMatch) {
