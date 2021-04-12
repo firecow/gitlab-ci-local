@@ -1,4 +1,4 @@
-import * as chalk from 'chalk';
+import * as chalk from "chalk";
 import {Job} from "./job";
 import {Parser} from "./parser";
 import {Utils} from "./utils";
@@ -44,7 +44,7 @@ export class Commander {
                 }
             }
 
-            await new Promise((r) => setTimeout(r, 50));
+            await new Promise((r) => setTimeout(r, 5));
 
             if (stage.isFinished()) {
                 if (!stage.isSuccess()) {
@@ -75,11 +75,11 @@ export class Commander {
 
         for (const job of jobs) {
             const needs = job.needs;
-            const allowFailure = job.allowFailure ? 'warning' : '';
+            const allowFailure = job.allowFailure ? "warning" : "";
             let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
             jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
             if (needs) {
-                jobLine += chalk`  [{blueBright ${needs.join(',')}}]`;
+                jobLine += chalk`  [{blueBright ${needs.join(",")}}]`;
             }
             process.stdout.write(`${jobLine}\n`);
         }
@@ -116,7 +116,7 @@ export class Commander {
     }
 
     static printReport = async (jobs: ReadonlyArray<Job>) => {
-        process.stdout.write(`\n`);
+        process.stdout.write("\n");
 
         const preScripts: { never: Job[], successful: Job[], failed: Job[], warned: Job[] } = {
             never: [],
@@ -149,31 +149,31 @@ export class Commander {
         if (preScripts.never.length !== 0) {
             process.stdout.write(chalk`{magenta not started} `);
             preScripts.never.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            process.stdout.write("\n");
         }
 
         if (preScripts.successful.length !== 0) {
             process.stdout.write(chalk`{green successful} `);
             preScripts.successful.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            process.stdout.write("\n");
         }
 
         if (preScripts.warned.length !== 0) {
             process.stdout.write(chalk`{yellowBright warning} `);
             preScripts.warned.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            process.stdout.write("\n");
         }
 
         if (afterScripts.warned.length !== 0) {
             process.stdout.write(chalk`{yellowBright after script} `);
             afterScripts.warned.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            process.stdout.write("\n");
         }
 
         if (preScripts.failed.length !== 0) {
             process.stdout.write(chalk`{red failure} `);
             preScripts.failed.forEach(Utils.printJobNames);
-            process.stdout.write(`\n`);
+            process.stdout.write("\n");
         }
 
         for (const job of preScripts.successful) {

@@ -28,11 +28,11 @@ exports.builder = (y: any) => {
 };
 
 export async function handler(argv: any) {
-    assert(typeof argv.cwd != "object", '--cwd option cannot be an array');
+    assert(typeof argv.cwd != "object", "--cwd option cannot be an array");
     const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
 
     if (fs.existsSync(`${cwd}/.gitlab-ci-local-env`)) {
-        const config = dotenv.parse(fs.readFileSync(`${cwd}/.gitlab-ci-local-env`))
+        const config = dotenv.parse(fs.readFileSync(`${cwd}/.gitlab-ci-local-env`));
         for (const [key, value] of Object.entries(config)) {
             const argKey = camelCase(key);
             if (argv[argKey] == null) {
@@ -76,7 +76,7 @@ exports.handler = async (argv: any) => {
     }
 };
 
-process.on('SIGINT', async (_: string, code: number) => {
+process.on("SIGINT", async (_: string, code: number) => {
     if (!parser) {
         return process.exit(code);
     }
