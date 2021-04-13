@@ -73,14 +73,14 @@ export class Utils {
         return expandedVariables;
     }
 
-    static getRulesResult(rules: { if?: string, when?: string, allow_failure?: boolean }[], variables: { [key: string]: string }): { when: string, allowFailure: boolean } {
+    static getRulesResult(rules: { if?: string, when?: string, allow_failure?: string | boolean }[], variables: { [key: string]: string }): { when: string, allowFailure: boolean } {
         let when = "never";
         let allowFailure = false;
 
         for (const rule of rules) {
             if (Utils.evaluateRuleIf(rule.if || "true", variables)) {
                 when = rule.when ? rule.when : "on_success";
-                allowFailure = rule.allow_failure ? rule.allow_failure : false;
+                allowFailure = rule.allow_failure != null ? rule.allow_failure === "true" : false;
                 break;
             }
         }
