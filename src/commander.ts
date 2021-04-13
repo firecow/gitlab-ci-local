@@ -48,14 +48,14 @@ export class Commander {
 
             if (stage.isFinished()) {
                 if (!stage.isSuccess()) {
-                    await Commander.printReport(jobs);
+                    await Commander.printReport(jobs, parser.maxJobNameLength);
                     process.exit(1);
                 }
                 stage = stages.shift();
             }
         }
 
-        await Commander.printReport(jobs);
+        await Commander.printReport(jobs, parser.maxJobNameLength);
     }
 
     static runList(parser: Parser) {
@@ -112,14 +112,13 @@ export class Commander {
             await job.start(privileged);
         }
 
-        await Commander.printReport(jobs);
+        await Commander.printReport(jobs, parser.maxJobNameLength);
     }
 
-    static printReport = async (jobs: ReadonlyArray<Job>) => {
+    static printReport = async (jobs: ReadonlyArray<Job>, maxJobNameLength: number) => {
         process.stdout.write("\n");
 
-        const preScripts: { never: Job[], successful: Job[], failed: Job[], warned: Job[] } = {
-            never: [],
+        const preScripts: { successful: Job[], failed: Job[], warned: Job[] } = {
             successful: [],
             failed: [],
             warned: []
@@ -136,8 +135,10 @@ export class Commander {
 
         for (const job of jobs) {
             if (!job.isStarted()) {
-                preScripts.never.push(job);
-            } else if (job.preScriptsExitCode === 0) {
+                continue;
+            }
+
+            if (job.preScriptsExitCode === 0) {
                 preScripts.successful.push(job);
             } else if (job.allowFailure) {
                 preScripts.warned.push(job);
@@ -146,34 +147,32 @@ export class Commander {
             }
         }
 
-        if (preScripts.never.length !== 0) {
-            process.stdout.write(chalk`{magenta not started} `);
-            preScripts.never.forEach(Utils.printJobNames);
-            process.stdout.write("\n");
-        }
-
         if (preScripts.successful.length !== 0) {
-            process.stdout.write(chalk`{green successful} `);
-            preScripts.successful.forEach(Utils.printJobNames);
-            process.stdout.write("\n");
+            preScripts.successful.forEach(({name}) => {
+                const namePad = name.padEnd(maxJobNameLength);
+                process.stdout.write(chalk`{black.bgGreenBright  PASS }  {blueBright ${namePad}}\n`);
+            });
         }
 
         if (preScripts.warned.length !== 0) {
-            process.stdout.write(chalk`{yellowBright warning} `);
-            preScripts.warned.forEach(Utils.printJobNames);
-            process.stdout.write("\n");
+            preScripts.warned.forEach(({name}) => {
+                const namePad = name.padEnd(maxJobNameLength);
+                process.stdout.write(chalk`{black.bgYellowBright  WARN }  {blueBright ${namePad}}  pre_script\n`);
+            });
         }
 
         if (afterScripts.warned.length !== 0) {
-            process.stdout.write(chalk`{yellowBright after script} `);
-            afterScripts.warned.forEach(Utils.printJobNames);
-            process.stdout.write("\n");
+            afterScripts.warned.forEach(({name}) => {
+                const namePad = name.padEnd(maxJobNameLength);
+                process.stdout.write(chalk`{black.bgYellowBright  WARN }  {blueBright ${namePad}}  after_script\n`);
+            });
         }
 
         if (preScripts.failed.length !== 0) {
-            process.stdout.write(chalk`{red failure} `);
-            preScripts.failed.forEach(Utils.printJobNames);
-            process.stdout.write("\n");
+            preScripts.failed.forEach(({name}) => {
+                const namePad = name.padEnd(maxJobNameLength);
+                process.stdout.write(chalk`{black.bgRed  FAIL }  {blueBright ${namePad}}\n`);
+            });
         }
 
         for (const job of preScripts.successful) {

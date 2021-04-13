@@ -28,7 +28,7 @@ export class Parser {
     private userVariables: any;
 
     private gitlabData: any;
-    private maxJobNameLength = 0;
+    private _maxJobNameLength = 0;
     private readonly tabCompletionPhase: boolean;
 
     private constructor(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
@@ -37,6 +37,10 @@ export class Parser {
         this.tabCompletionPhase = tabCompletionPhase;
         this.file = file;
         this.home = home;
+    }
+
+    get maxJobNameLength(): number {
+        return this._maxJobNameLength;
     }
 
     static async create(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
@@ -204,7 +208,7 @@ export class Parser {
             if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
                 continue;
             }
-            this.maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
+            this._maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
         }
 
         // Check that needs is larger and containers the same as dependencies.

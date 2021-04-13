@@ -22,7 +22,7 @@ export class Job {
     readonly environment?: { name: string, url: string | null };
     readonly jobId: number;
     readonly cwd: string;
-    readonly rules?: { if: string, when: string, allow_failure: string|boolean }[];
+    readonly rules?: { if: string, when: string, allow_failure: string | boolean }[];
     readonly expandedVariables: { [key: string]: string };
     readonly allowFailure: boolean;
     readonly when: string;
@@ -225,7 +225,7 @@ export class Job {
         }
 
         if (this._afterScriptsExitCode > 0) {
-            process.stderr.write(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " (after_script)")}\n`);
+            process.stderr.write(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " after_script")}\n`);
         }
 
         if (this._prescriptsExitCode > 0 && !this.allowFailure) {
@@ -499,10 +499,10 @@ export class Job {
     private getExitedString(startTime: [number, number], code: number, warning = false, prependString = "") {
         const finishedStr = this.getFinishedString(startTime);
         if (warning) {
-            return chalk`${finishedStr} {yellowBright warning with code ${code.toString()}} ${prependString}`;
+            return chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }${prependString}`;
         }
 
-        return chalk`${finishedStr} {red exited with code ${code.toString()}} ${prependString}`;
+        return chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} } ${prependString}`;
     }
 
     private getFinishedString(startTime: [number, number]) {
