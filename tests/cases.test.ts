@@ -288,6 +288,15 @@ test("include <deploy-job>", async () => {
     expect(mockProcessExit).toBeCalledTimes(0);
 });
 
+test("include-remote-with-inner-local", async () => {
+    await defaultCmd.handler({
+        cwd: "tests/test-cases/include-remote-with-inner-local",
+    });
+    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("Deploy something\n");
+    expect(mockProcessExit).toBeCalledTimes(0);
+});
+
 test("include-template <test-job>", async () => {
     await defaultCmd.handler({
         cwd: "tests/test-cases/include-template",
