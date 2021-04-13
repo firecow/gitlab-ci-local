@@ -110,6 +110,10 @@ export class Job {
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
             throw new ExitError(`${this.getJobNameString()} @Interactive decorator cannot have image: and must be when:manual`);
         }
+
+        if (this.injectSSHAgent && this.imageName === null) {
+            throw new ExitError(`${this.getJobNameString()} @InjectSSHAgent can only be used with image:`);
+        }
     }
 
     get imageName(): string | null {
@@ -139,6 +143,10 @@ export class Job {
 
     get interactive(): boolean {
         return this.jobData["interactive"] || false;
+    }
+
+    get injectSSHAgent(): boolean {
+        return this.jobData["injectSSHAgent"] || false;
     }
 
     get description(): string {
@@ -274,6 +282,16 @@ export class Job {
         }
     }
 
+    private generateInjectSSHAgentOptions() {
+        if (!this.injectSSHAgent) {
+            return "";
+        }
+        if (process.env.OSTYPE === "darwin") {
+            return "--env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock";
+        }
+        return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
+    }
+
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
@@ -326,9 +344,9 @@ export class Job {
 
             let dockerCmd = "";
             if (privileged) {
-                dockerCmd += "docker create --privileged -u 0:0 -i ";
+                dockerCmd += `docker create --privileged -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             } else {
-                dockerCmd += "docker create -u 0:0 -i ";
+                dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             }
 
             if (this.imageEntrypoint) {
@@ -462,10 +480,10 @@ export class Job {
                     await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${expandedPath.replace(/(.*)\/(.+)/, "$1")}`);
                     pathReplacement = `${expandedPath.replace(/(.*)\/(.+)/, "$1")}`;
                 }
-                
+
                 try {
                     await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${pathReplacement}`);
-                    
+
                     endTime = process.hrtime(time);
                     process.stdout.write(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
                 } catch (e) {
