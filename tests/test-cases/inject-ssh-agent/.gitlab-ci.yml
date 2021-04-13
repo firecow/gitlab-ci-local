@@ -1,0 +1,6 @@
+---
+# @InjectSSHAgent
+test-job:
+  image: kroniak/ssh-client
+  script:
+    - ssh-add -L

@@ -275,14 +275,20 @@ export class Parser {
 
         let interactiveMatch = null;
         let descriptionMatch = null;
+        let injectSSHAgent = null;
         let index = 0;
         for (const line of fileSplit) {
             interactiveMatch = !interactiveMatch ? line.match(/#[\s]?@[\s]?[Ii]nteractive/) : interactiveMatch;
+            injectSSHAgent = !injectSSHAgent ? line.match(/#[\s]?@[\s]?[Ii]njectSSHAgent/) : injectSSHAgent;
             descriptionMatch = !descriptionMatch ? line.match(/#[\s]?@[\s]?[Dd]escription (?<description>.*)/) : descriptionMatch;
             const jobMatch = line.match(/(?<jobname>\w):/);
-            if (jobMatch && (interactiveMatch || descriptionMatch)) {
+            if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent)) {
                 if (interactiveMatch) {
                     fileSplitClone.splice(index + 1, 0, "  interactive: true");
+                    index++;
+                }
+                if (injectSSHAgent) {
+                    fileSplitClone.splice(index + 1, 0, "  injectSSHAgent: true");
                     index++;
                 }
                 if (descriptionMatch) {
@@ -291,6 +297,7 @@ export class Parser {
                 }
                 interactiveMatch = null;
                 descriptionMatch = null;
+                injectSSHAgent = null;
             }
             index++;
         }

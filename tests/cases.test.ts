@@ -107,8 +107,8 @@ test("custom-home <test-job>", async () => {
         home: "tests/test-cases/custom-home/.home",
     });
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("global-var-value\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("group-var-value\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("group-global-var-override-value\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("project-group-var-override-value\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("project-var-value\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("Im content of a file variable\n");
 });
@@ -334,6 +334,12 @@ test("include-invalid-remote", async () => {
     } catch (e) {
         expect(mockProcessStderr).toHaveBeenCalledWith("[31mRemote include could not be fetched https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml[39m\n");
     }
+});
+
+test("inject-ssh-agent", async () => {
+    await defaultCmd.handler({
+        cwd: "tests/test-cases/inject-ssh-agent",
+    });
 });
 
 test("manual <build-job>", async () => {

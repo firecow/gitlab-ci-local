@@ -110,7 +110,7 @@ group:
 
 global:
   # Will be type File, because value is a file path
-  SSH_PRIVATE_KEY: '~/.ssh/id_rsa'
+  KNOWN_HOSTS: '~/.ssh/known_hosts'
 ```
 
 Variables will now appear in your jobs, if project or group matches git remote, global's are always present
@@ -147,6 +147,16 @@ interactive-shell:
 ```
 
 ![description-decorator](./docs/images/interactive-decorator.png)
+
+#### The `@InjectSSHAgent` decorator
+
+```yml
+# @InjectSSHAgent
+need-ssh:
+  image: kroniak/ssh-client
+  script:
+    - ssh-add -L
+```
 
 ### Artifacts
 
