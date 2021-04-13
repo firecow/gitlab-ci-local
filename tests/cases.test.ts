@@ -107,8 +107,8 @@ test("custom-home <test-job>", async () => {
         home: "tests/test-cases/custom-home/.home",
     });
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("global-var-value\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("group-var-value\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("group-global-var-override-value\n");
+    expect(mockProcessStdout).toHaveBeenCalledWith("project-group-var-override-value\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("project-var-value\n");
     expect(mockProcessStdout).toHaveBeenCalledWith("Im content of a file variable\n");
 });
