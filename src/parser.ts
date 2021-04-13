@@ -445,9 +445,9 @@ export class Parser {
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitRemote.domain}/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
 
                 // Expand local includes inside a "project"-like include
-                (fileDoc["include"] || []).forEach((include: any, i: number) => {
-                    if (include["local"]) {
-                        fileDoc["include"][i] = { project: value["project"], file: include["local"].replace(/^\//, ""), ref: value["ref"]};
+                (fileDoc["include"] || []).forEach((inner: any, i: number) => {
+                    if (inner["local"]) {
+                        fileDoc["include"][i] = { project: value["project"], file: inner["local"].replace(/^\//, ""), ref: value["ref"]};
                     }
                 });
 
