@@ -282,6 +282,23 @@ export class Job {
         }
     }
 
+    private async waitForContainerUp(containerId: string) {
+        return new Promise((resolve, reject) => {
+            const timeoutKey = setTimeout(() => {
+                clearInterval(intervalKey);
+                throw new ExitError(`Container ${containerId} timed`);
+            }, 5000);
+
+            const intervalKey = setInterval(async() => {
+                const {stdout} = await Utils.spawn("docker container ls --format='{{json .}}' -a");
+                console.log(stdout);
+                const containers = JSON.parse(stdout);
+                // const found =
+                console.log(containers);
+            }, 5);
+        });
+    }
+
     private generateInjectSSHAgentOptions() {
         if (!this.injectSSHAgent) {
             return "";
@@ -389,6 +406,10 @@ export class Job {
 
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
             this.containerId = containerId.replace("\n", "");
+            // console.log(this.containerId);
+            // process.exit(1);
+
+            await this.waitForContainerUp(containerId);
 
             time = process.hrtime();
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
