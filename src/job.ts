@@ -410,8 +410,6 @@ export class Job {
 
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
             this.containerId = containerId.replace(/\r?\n/g, "");
-            // console.log(this.containerId);
-            // process.exit(1);
 
             await this.waitForContainerUp(containerId);
 
