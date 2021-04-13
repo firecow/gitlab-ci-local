@@ -148,6 +148,16 @@ interactive-shell:
 
 ![description-decorator](./docs/images/interactive-decorator.png)
 
+#### The `@InjectSSHAgent` decorator
+
+```yml
+# @InjectSSHAgent
+need-ssh:
+  image: kroniak/ssh-client
+  script:
+    - ssh-add -L
+```
+
 ### Artifacts
 
 Shell executor jobs copies artifacts to host/cwd directory
