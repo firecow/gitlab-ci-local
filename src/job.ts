@@ -283,18 +283,22 @@ export class Job {
     }
 
     private async waitForContainerUp(containerId: string) {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             const timeoutKey = setTimeout(() => {
                 clearInterval(intervalKey);
-                throw new ExitError(`Container ${containerId} timed`);
+                reject(new ExitError(`Container ${containerId} timed out`));
             }, 5000);
 
             const intervalKey = setInterval(async() => {
-                const {stdout} = await Utils.spawn("docker container ls --format='{{json .}}' -a");
-                console.log(stdout);
-                const containers = JSON.parse(stdout);
-                // const found =
-                console.log(containers);
+                const {stdout} = await Utils.spawn(`docker container ls --format='{{json .}}' -a -f id=${containerId}`);
+                if (stdout !== "") {
+                    const container = JSON.parse(stdout);
+                    if (container["Status"] === "Created") {
+                        clearTimeout(timeoutKey);
+                        clearInterval(intervalKey);
+                        resolve();
+                    }
+                }
             }, 5);
         });
     }
@@ -405,7 +409,7 @@ export class Job {
             dockerCmd += "fi\n\"";
 
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
-            this.containerId = containerId.replace("\n", "");
+            this.containerId = containerId.replace(/\r?\n/g, "");
             // console.log(this.containerId);
             // process.exit(1);
 
