@@ -173,7 +173,7 @@ export class Commander {
 
         if (preScripts.failed.length !== 0) {
             writeStreams.stdout(chalk`{red failure} `);
-            preScripts.failed.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout, job, i, arr));
+            preScripts.failed.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
             writeStreams.stdout(`\n`);
         }
 
