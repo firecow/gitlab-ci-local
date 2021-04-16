@@ -563,7 +563,7 @@ test("something/unknown-directory (non-existing dir)", async () => {
     }
 });
 
-test("docs/ (no .gitlab-ci.yml)", async () => {
+test("docs (no .gitlab-ci.yml)", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
