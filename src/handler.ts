@@ -19,7 +19,7 @@ const checkFolderAndFile = (cwd: string, file?: string) => {
 };
 
 export async function handler(argv: any, writeStreams: WriteStreams) {
-    assert(typeof argv.cwd != "object", '--cwd option cannot be an array');
+    assert(typeof argv.cwd != "object", "--cwd option cannot be an array");
     const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
 
     if (fs.existsSync(`${cwd}/.gitlab-ci-local-env`)) {

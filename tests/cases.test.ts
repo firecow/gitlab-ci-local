@@ -1,55 +1,55 @@
 import {MockWriteStreams} from "../src/mock-write-streams";
-import * as chalk from 'chalk';
+import * as chalk from "chalk";
 import {handler} from "../src/handler";
 
-test('plain', async () => {
+test("plain", async () => {
     const writeStream = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/plain',
+        cwd: "tests/test-cases/plain",
     }, writeStream);
 
     expect(writeStream.stdoutLines.length).toEqual(15);
     expect(writeStream.stderrLines.length).toEqual(1);
 });
 
-test('invalid-jobname', async () => {
+test("invalid-jobname", async () => {
     const mockWriteStreams = new MockWriteStreams();
     try {
         await handler({
-            cwd: 'tests/test-cases/invalid-jobname',
+            cwd: "tests/test-cases/invalid-jobname",
         }, mockWriteStreams);
     } catch (e) {
         expect(e.message).toBe("Jobs cannot include spaces, yet! 'test job'");
     }
 });
 
-test('plain <notfound>', async () => {
+test("plain <notfound>", async () => {
     const mockWriteStreams = new MockWriteStreams();
     try {
         await handler({
-            cwd: 'tests/test-cases/plain',
-            job: 'notfound'
+            cwd: "tests/test-cases/plain",
+            job: "notfound"
         }, mockWriteStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright notfound} could not be found`);
     }
 });
 
-test('trigger', async () => {
+test("trigger", async () => {
     const mockWriteStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/trigger',
+        cwd: "tests/test-cases/trigger",
     }, mockWriteStreams);
 
     const expected = [chalk`{green successful} {blueBright pipe-gen-job}, {blueBright trigger_job}`];
     expect(mockWriteStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('needs <build-job> --needs', async () => {
+test("needs <build-job> --needs", async () => {
     const mockWriteStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/needs',
-        job: 'build-job',
+        cwd: "tests/test-cases/needs",
+        job: "build-job",
         needs: true
     }, mockWriteStreams);
 
@@ -57,36 +57,36 @@ test('needs <build-job> --needs', async () => {
     expect(mockWriteStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('needs-invalid-stage <build-job> --needs', async () => {
+test("needs-invalid-stage <build-job> --needs", async () => {
     const mockWriteStreams = new MockWriteStreams();
     try {
         await handler({
-            cwd: 'tests/test-cases/needs-invalid-stage',
-            job: 'build-job',
+            cwd: "tests/test-cases/needs-invalid-stage",
+            job: "build-job",
         }, mockWriteStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright test-job} is needed by {blueBright build-job}, but it is in the same or a future stage`);
     }
 });
 
-test('needs-unspecified-job <build-job> --needs', async () => {
+test("needs-unspecified-job <build-job> --needs", async () => {
     const mockWriteStreams = new MockWriteStreams();
     try {
         await handler({
-            cwd: 'tests/test-cases/needs-unspecified-job',
-            job: 'test-job',
+            cwd: "tests/test-cases/needs-unspecified-job",
+            job: "test-job",
         }, mockWriteStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`[ {blueBright invalid} ] jobs are needed by {blueBright test-job}, but they cannot be found`);
     }
 });
 
-test('custom-home <test-job>', async () => {
+test("custom-home <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/custom-home',
-        job: 'test-job',
-        home: 'tests/test-cases/custom-home/.home',
+        cwd: "tests/test-cases/custom-home",
+        job: "test-job",
+        home: "tests/test-cases/custom-home/.home",
     }, writeStreams);
 
     const expected = [
@@ -98,21 +98,21 @@ test('custom-home <test-job>', async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('image <test-job>', async () => {
+test("image <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/image',
-        job: 'test-job'
+        cwd: "tests/test-cases/image",
+        job: "test-job"
     }, writeStreams);
     const expected = [chalk`{blueBright test-job                } {greenBright >} Test something`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('image <test-entrypoint>', async () => {
+test("image <test-entrypoint>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/image',
-        job: 'test-entrypoint',
+        cwd: "tests/test-cases/image",
+        job: "test-entrypoint",
         privileged: true
     }, writeStreams);
 
@@ -126,11 +126,11 @@ test('image <test-entrypoint>', async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('image <test-entrypoint-override>', async () => {
+test("image <test-entrypoint-override>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/image',
-        job: 'test-entrypoint-override'
+        cwd: "tests/test-cases/image",
+        job: "test-entrypoint-override"
     }, writeStreams);
 
     const expected = [
@@ -139,23 +139,23 @@ test('image <test-entrypoint-override>', async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('no-script <test-job>', async () => {
+test("no-script <test-job>", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
-            cwd: 'tests/test-cases/no-script',
-            job: 'test-job'
+            cwd: "tests/test-cases/no-script",
+            job: "test-job"
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright test-job} must have script specified`);
     }
 });
 
-test('before-script <test-job>', async () => {
+test("before-script <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/before-script',
-        job: 'test-job'
+        cwd: "tests/test-cases/before-script",
+        job: "test-job"
     }, writeStreams);
 
     const expected = [
@@ -165,11 +165,11 @@ test('before-script <test-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('script-multidimension <test-job>', async () => {
+test("script-multidimension <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/script-multidimension',
-        job: 'test-job'
+        cwd: "tests/test-cases/script-multidimension",
+        job: "test-job"
     }, writeStreams);
 
     const expected = [
@@ -180,11 +180,11 @@ test('script-multidimension <test-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('before-script-default <test-job>', async () => {
+test("before-script-default <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/before-script-default',
-        job: 'test-job'
+        cwd: "tests/test-cases/before-script-default",
+        job: "test-job"
     }, writeStreams);
 
     const expected = [
@@ -194,11 +194,11 @@ test('before-script-default <test-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('after-script <test-job>', async () => {
+test("after-script <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/after-script',
-        job: 'test-job'
+        cwd: "tests/test-cases/after-script",
+        job: "test-job"
     }, writeStreams);
 
     const expected = [
@@ -208,11 +208,11 @@ test('after-script <test-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('after-script-default <test-job>', async () => {
+test("after-script-default <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/after-script-default',
-        job: 'test-job'
+        cwd: "tests/test-cases/after-script-default",
+        job: "test-job"
     }, writeStreams);
 
     const expected = [
@@ -222,44 +222,44 @@ test('after-script-default <test-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('artifacts <consume-artifacts> --needs', async () => {
+test("artifacts <consume-artifacts> --needs", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/artifacts',
-        job: 'consume-artifacts',
+        cwd: "tests/test-cases/artifacts",
+        job: "consume-artifacts",
         needs: true
     }, writeStreams);
 
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('artifacts-no-globstar', async () => {
+test("artifacts-no-globstar", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
-            cwd: 'tests/test-cases/artifacts-no-globstar'
+            cwd: "tests/test-cases/artifacts-no-globstar"
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe("Artfact paths cannot contain globstar, yet! 'test-job'");
     }
 });
 
-test('cache <consume-cache> --needs', async () => {
+test("cache <consume-cache> --needs", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/cache',
-        job: 'consume-cache',
+        cwd: "tests/test-cases/cache",
+        job: "consume-cache",
         needs: true
     }, writeStreams);
 
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('dotenv <test-job>', async () => {
+test("dotenv <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/dotenv',
-        job: 'test-job'
+        cwd: "tests/test-cases/dotenv",
+        job: "test-job"
     }, writeStreams);
 
     const expected = [
@@ -269,11 +269,11 @@ test('dotenv <test-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('extends <test-job>', async () => {
+test("extends <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/extends',
-        job: 'test-job'
+        cwd: "tests/test-cases/extends",
+        job: "test-job"
     }, writeStreams);
 
     const expected = [
@@ -285,11 +285,11 @@ test('extends <test-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('include <test-job>', async () => {
+test("include <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/include',
-        job: 'test-job'
+        cwd: "tests/test-cases/include",
+        job: "test-job"
     }, writeStreams);
 
     const expected = [
@@ -299,11 +299,11 @@ test('include <test-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('include <build-job>', async () => {
+test("include <build-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/include',
-        job: 'build-job'
+        cwd: "tests/test-cases/include",
+        job: "build-job"
     }, writeStreams);
 
     const expected = [
@@ -313,11 +313,11 @@ test('include <build-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 //
-test('include <deploy-job>', async () => {
+test("include <deploy-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/include',
-        job: 'deploy-job'
+        cwd: "tests/test-cases/include",
+        job: "deploy-job"
     }, writeStreams);
 
     const expected = [
@@ -327,11 +327,11 @@ test('include <deploy-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('include-template <test-job>', async () => {
+test("include-template <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/include-template',
-        job: 'test-job'
+        cwd: "tests/test-cases/include-template",
+        job: "test-job"
     }, writeStreams);
 
     const expected = [
@@ -341,11 +341,11 @@ test('include-template <test-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('manual <build-job>', async () => {
+test("manual <build-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/manual',
-        manual: 'build-job'
+        cwd: "tests/test-cases/manual",
+        manual: "build-job"
     }, writeStreams);
 
     const expected = [
@@ -355,11 +355,11 @@ test('manual <build-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('reference <test-job>', async () => {
+test("reference <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/reference',
-        job: 'test-job',
+        cwd: "tests/test-cases/reference",
+        job: "test-job",
     }, writeStreams);
 
     const expected = [
@@ -370,11 +370,11 @@ test('reference <test-job>', async () => {
     expect(writeStreams.stderrLines.length).toBe(0);
 });
 
-test('script-failures <test-job>', async () => {
+test("script-failures <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/script-failures',
-        job: 'test-job',
+        cwd: "tests/test-cases/script-failures",
+        job: "test-job",
     }, writeStreams);
 
     const expected = [
@@ -383,11 +383,11 @@ test('script-failures <test-job>', async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('script-failures <test-job-after-script>', async () => {
+test("script-failures <test-job-after-script>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/script-failures',
-        job: 'test-job-after-script',
+        cwd: "tests/test-cases/script-failures",
+        job: "test-job-after-script",
     }, writeStreams);
 
     const expected = [
@@ -397,11 +397,11 @@ test('script-failures <test-job-after-script>', async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('script-failures <allow-failure-job>', async () => {
+test("script-failures <allow-failure-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/script-failures',
-        job: 'allow-failure-job',
+        cwd: "tests/test-cases/script-failures",
+        job: "allow-failure-job",
     }, writeStreams);
 
     const expected = [
@@ -410,11 +410,11 @@ test('script-failures <allow-failure-job>', async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('script-failures <allow-failure-after-scripts>', async () => {
+test("script-failures <allow-failure-after-scripts>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/script-failures',
-        job: 'allow-failure-after-script',
+        cwd: "tests/test-cases/script-failures",
+        job: "allow-failure-after-script",
     }, writeStreams);
 
     const expected = [
@@ -424,68 +424,68 @@ test('script-failures <allow-failure-after-scripts>', async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('stage-not-found <test-job>', async () => {
+test("stage-not-found <test-job>", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
-            cwd: 'tests/test-cases/stage-not-found',
-            job: 'test-job'
+            cwd: "tests/test-cases/stage-not-found",
+            job: "test-job"
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{yellow stage:invalid} not found for {blueBright test-job}`);
     }
 });
 
-test('invalid-variables-bool <test-job>', async () => {
+test("invalid-variables-bool <test-job>", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
-            cwd: 'tests/test-cases/invalid-variables-bool',
-            job: 'test-job'
+            cwd: "tests/test-cases/invalid-variables-bool",
+            job: "test-job"
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright test-job} has invalid variables hash of key value pairs. INVALID=true`);
     }
 });
 
-test('invalid-variables-null <test-job>', async () => {
+test("invalid-variables-null <test-job>", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
-            cwd: 'tests/test-cases/invalid-variables-null',
-            job: 'test-job'
+            cwd: "tests/test-cases/invalid-variables-null",
+            job: "test-job"
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright test-job} has invalid variables hash of key value pairs. INVALID=null`);
     }
 });
 
-test('invalid-stages', async () => {
+test("invalid-stages", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
-            cwd: 'tests/test-cases/invalid-stages',
+            cwd: "tests/test-cases/invalid-stages",
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{yellow stages:} must be an array`);
     }
 });
 
-test('no-git-config', async () => {
+test("no-git-config", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
-            cwd: 'tests/test-cases/no-git-config',
+            cwd: "tests/test-cases/no-git-config",
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe("Could not locate.gitconfig or .git/config file");
     }
 });
 
-test('list-case --list', async () => {
+test("list-case --list", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: 'tests/test-cases/list-case/',
+        cwd: "tests/test-cases/list-case/",
         list: true
     }, writeStreams);
 
@@ -496,22 +496,22 @@ test('list-case --list', async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test('--cwd unknown-directory/', async () => {
+test("--cwd unknown-directory/", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
-            cwd: 'something/unknown-directory'
+            cwd: "something/unknown-directory"
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`something/unknown-directory is not a directory`);
     }
 });
 
-test('--cwd docs/', async () => {
+test("--cwd docs/", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
-            cwd: 'docs'
+            cwd: "docs"
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`docs does not contain .gitlab-ci.yml`);

@@ -117,7 +117,7 @@ export class Commander {
     }
 
     static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>) => {
-        writeStreams.stdout(`\n`);
+        writeStreams.stdout("\n");
 
         const preScripts: { never: Job[], successful: Job[], failed: Job[], warned: Job[] } = {
             never: [],
@@ -150,31 +150,31 @@ export class Commander {
         if (preScripts.never.length !== 0) {
             writeStreams.stdout(chalk`{magenta not started} `);
             preScripts.never.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout(`\n`);
+            writeStreams.stdout("\n");
         }
 
         if (preScripts.successful.length !== 0) {
             writeStreams.stdout(chalk`{green successful} `);
             preScripts.successful.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout(`\n`);
+            writeStreams.stdout("\n");
         }
 
         if (preScripts.warned.length !== 0) {
             writeStreams.stdout(chalk`{yellowBright warning} `);
             preScripts.warned.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout(`\n`);
+            writeStreams.stdout("\n");
         }
 
         if (afterScripts.warned.length !== 0) {
             writeStreams.stdout(chalk`{yellowBright after script} `);
             afterScripts.warned.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout(`\n`);
+            writeStreams.stdout("\n");
         }
 
         if (preScripts.failed.length !== 0) {
             writeStreams.stdout(chalk`{red failure} `);
             preScripts.failed.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout(`\n`);
+            writeStreams.stdout("\n");
         }
 
         for (const job of preScripts.successful) {
