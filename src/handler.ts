@@ -4,11 +4,11 @@ import * as yargs from "yargs";
 import {Commander} from "./commander";
 import {Parser} from "./parser";
 import * as state from "./state";
-import {ExitError} from "./types/exit-error";
 import {assert} from "./asserts";
 import * as dotenv from "dotenv";
 import * as camelCase from "camelcase";
 import * as prettyHrtime from "pretty-hrtime";
+import {WriteStreams} from "./types/write-streams";
 
 let parser: Parser | null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
@@ -18,16 +18,7 @@ const checkFolderAndFile = (cwd: string, file?: string) => {
     assert(fs.existsSync(gitlabFilePath), `${cwd} does not contain ${file ?? ".gitlab-ci.yml"}`);
 };
 
-exports.command = "$0 [job]";
-exports.describe = "Runs the entire pipeline or a single [job]";
-exports.builder = (y: any) => {
-    y.positional("job", {
-        describe: "Jobname to execute",
-        type: "string",
-    });
-};
-
-export async function handler(argv: any) {
+export async function handler(argv: any, writeStreams: WriteStreams) {
     assert(typeof argv.cwd != "object", "--cwd option cannot be an array");
     const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
 
@@ -46,35 +37,24 @@ export async function handler(argv: any) {
     } else if (argv.list != null) {
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
-        parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
-        Commander.runList(parser);
+        parser = await Parser.create(cwd, writeStreams, pipelineIid, false, argv.file, argv.home);
+        Commander.runList(parser, writeStreams);
     } else if (argv.job) {
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
-        parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
-        await Commander.runSingleJob(parser, argv.job, argv.needs, argv.privileged);
+        parser = await Parser.create(cwd, writeStreams, pipelineIid, false, argv.file, argv.home);
+        await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs, argv.privileged);
     } else {
         const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
-        parser = await Parser.create(cwd, pipelineIid, false, argv.file, argv.home);
-        await Commander.runPipeline(parser, argv.manual || [], argv.privileged);
-        process.stdout.write(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+        parser = await Parser.create(cwd, writeStreams, pipelineIid, false, argv.file, argv.home);
+        await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged);
+        writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
+    writeStreams.flush();
 }
-
-exports.handler = async (argv: any) => {
-    try {
-        await handler(argv);
-    } catch (e) {
-        if (e instanceof ExitError) {
-            process.stderr.write(chalk`{red ${e.message}}\n`);
-            process.exit(1);
-        }
-        throw e;
-    }
-};
 
 process.on("SIGINT", async (_: string, code: number) => {
     if (!parser) {

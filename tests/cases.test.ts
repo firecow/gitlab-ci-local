@@ -1,507 +1,575 @@
-import * as mockProcess from "jest-mock-process";
-import * as defaultCmd from "../src/default-cmd";
+import {MockWriteStreams} from "../src/mock-write-streams";
+import * as chalk from "chalk";
+import {handler} from "../src/handler";
 
 jest.setTimeout(90000);
 
-let mockProcessExit: any;
-let mockProcessStdout: any;
-let mockProcessStderr: any;
-
-beforeEach(() => {
-    mockProcessExit = mockProcess.mockProcessExit(new Error("Test exited"));
-    mockProcessStdout = mockProcess.mockProcessStdout();
-    mockProcessStderr = mockProcess.mockProcessStderr();
-});
-
-afterEach(() => {
-    mockProcessStdout.mockClear();
-    mockProcessStderr.mockClear();
-    mockProcessExit.mockClear();
-});
-
 test("plain", async () => {
-    await defaultCmd.handler({
+    const writeStream = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/plain",
-    });
+    }, writeStream);
 
-    expect(mockProcessStdout).toBeCalledTimes(25);
-    expect(mockProcessStderr).toBeCalledTimes(3);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    expect(writeStream.stdoutLines.length).toEqual(15);
+    expect(writeStream.stderrLines.length).toEqual(1);
 });
 
 test("invalid-jobname", async () => {
+    const mockWriteStreams = new MockWriteStreams();
     try {
-        await defaultCmd.handler({
+        await handler({
             cwd: "tests/test-cases/invalid-jobname",
-        });
+        }, mockWriteStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31mJobs cannot include spaces, yet! 'test job'[39m\n");
+        expect(e.message).toBe("Jobs cannot include spaces, yet! 'test job'");
     }
 });
 
 test("plain <notfound>", async () => {
+    const mockWriteStreams = new MockWriteStreams();
     try {
-        await defaultCmd.handler({
+        await handler({
             cwd: "tests/test-cases/plain",
             job: "notfound"
-        });
+        }, mockWriteStreams);
     } catch (e) {
-        expect(e.message).toBe("Test exited");
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mnotfound[39m[31m could not be found[39m\n");
-        expect(mockProcessStdout).toBeCalledTimes(1);
-        expect(mockProcessStderr).toBeCalledTimes(1);
+        expect(e.message).toBe(chalk`{blueBright notfound} could not be found`);
     }
 });
 
 test("trigger", async () => {
-    await defaultCmd.handler({
+    const mockWriteStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/trigger",
-    });
+    }, mockWriteStreams);
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtrigger_job[39m");
+    const expected = [chalk`{green successful} {blueBright pipe-gen-job}, {blueBright trigger_job}`];
+    expect(mockWriteStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-
 test("needs <build-job> --needs", async () => {
-    await defaultCmd.handler({
+    const mockWriteStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/needs",
         job: "build-job",
         needs: true
-    });
+    }, mockWriteStreams);
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
-    expect(mockProcessStderr).toBeCalledTimes(0);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    const expected = [chalk`{blueBright test-job } {greenBright >} Test something`];
+    expect(mockWriteStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 test("needs-invalid-stage <build-job> --needs", async () => {
+    const mockWriteStreams = new MockWriteStreams();
     try {
-        await defaultCmd.handler({
+        await handler({
             cwd: "tests/test-cases/needs-invalid-stage",
             job: "build-job",
-        });
+        }, mockWriteStreams);
     } catch (e) {
-        expect(e.message).toBe("Test exited");
-        expect(mockProcessStdout).toBeCalledTimes(0);
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[39m[31m is needed by [94mbuild-job[39m[31m, but it is in the same or a future stage[39m\n");
+        expect(e.message).toBe(chalk`{blueBright test-job} is needed by {blueBright build-job}, but it is in the same or a future stage`);
     }
 });
 
 test("needs-unspecified-job <build-job> --needs", async () => {
+    const mockWriteStreams = new MockWriteStreams();
     try {
-        await defaultCmd.handler({
+        await handler({
             cwd: "tests/test-cases/needs-unspecified-job",
             job: "test-job",
-        });
+        }, mockWriteStreams);
     } catch (e) {
-        expect(e.message).toBe("Test exited");
-        expect(mockProcessStdout).toBeCalledTimes(0);
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[ [94minvalid[39m[31m ] jobs are needed by [94mtest-job[39m[31m, but they cannot be found[39m\n");
+        expect(e.message).toBe(chalk`[ {blueBright invalid} ] jobs are needed by {blueBright test-job}, but they cannot be found`);
     }
 });
 
 test("custom-home <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/custom-home",
         job: "test-job",
         home: "tests/test-cases/custom-home/.home",
-    });
+    }, writeStreams);
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("group-global-var-override-value\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("project-group-var-override-value\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("project-var-value\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("Im content of a file variable\n");
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} group-global-var-override-value`,
+        chalk`{blueBright test-job} {greenBright >} project-group-var-override-value`,
+        chalk`{blueBright test-job} {greenBright >} project-var-value`,
+        chalk`{blueBright test-job} {greenBright >} Im content of a file variable`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 test("image <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/image",
         job: "test-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
+    }, writeStreams);
+    const expected = [chalk`{blueBright test-job                } {greenBright >} Test something`];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 test("image <test-entrypoint>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/image",
         job: "test-entrypoint",
         privileged: true
-    });
+    }, writeStreams);
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("/\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("Hello from 'firecow/gitlab-ci-local-test-image' image entrypoint\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("I am epic multiline value\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("/builds\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test Entrypoint\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("I'm a test file\n");
-
+    const expected = [
+        chalk`{blueBright test-entrypoint         } {greenBright >} Hello from 'firecow/gitlab-ci-local-test-image' image entrypoint`,
+        chalk`{blueBright test-entrypoint         } {greenBright >} I am epic multiline value`,
+        chalk`{blueBright test-entrypoint         } {greenBright >} /builds`,
+        chalk`{blueBright test-entrypoint         } {greenBright >} Test Entrypoint`,
+        chalk`{blueBright test-entrypoint         } {greenBright >} I'm a test file`
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 test("image <test-entrypoint-override>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/image",
         job: "test-entrypoint-override"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
-    expect(mockProcessExit).toBeCalledTimes(0);
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-entrypoint-override} {greenBright >} Test something`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 test("no-script <test-job>", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "tests/test-cases/no-script",
             job: "test-job"
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(e.message).toBe("Test exited");
-        expect(mockProcessStdout).toBeCalledTimes(0);
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[39m[31m must have script specified[39m\n");
+        expect(e.message).toBe(chalk`{blueBright test-job} must have script specified`);
     }
 });
 
 test("before-script <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/before-script",
         job: "test-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Before test\n");
-    expect(mockProcessStderr).toBeCalledTimes(0);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} Before test`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("script-multidimension <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/script-multidimension",
         job: "test-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something else\n");
-    expect(mockProcessStderr).toBeCalledTimes(0);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} Test something`,
+        chalk`{blueBright test-job} {greenBright >} Test something else`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("before-script-default <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/before-script-default",
         job: "test-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Before test\n");
-    expect(mockProcessStderr).toBeCalledTimes(0);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} Before test`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("after-script <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/after-script",
         job: "test-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Cleanup after test\n");
-    expect(mockProcessStderr).toBeCalledTimes(0);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} Cleanup after test`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("after-script-default <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/after-script-default",
         job: "test-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Cleanup after test\n");
-    expect(mockProcessStderr).toBeCalledTimes(0);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} Cleanup after test`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("artifacts <consume-artifacts> --needs", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/artifacts",
         job: "consume-artifacts",
         needs: true
-    });
-    expect(mockProcessExit).toBeCalledTimes(0);
-    expect(mockProcessStderr).toBeCalledTimes(0);
+    }, writeStreams);
+
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("artifacts-no-globstar", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "tests/test-cases/artifacts-no-globstar"
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31mArtfact paths cannot contain globstar, yet! 'test-job'[39m\n");
-        expect(e.message).toBe("Test exited");
+        expect(e.message).toBe("Artfact paths cannot contain globstar, yet! 'test-job'");
     }
 });
 
 test("cache <consume-cache> --needs", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/cache",
         job: "consume-cache",
         needs: true
-    });
-    expect(mockProcessExit).toBeCalledTimes(0);
-    expect(mockProcessStderr).toBeCalledTimes(0);
+    }, writeStreams);
+
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("dotenv <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/dotenv",
         job: "test-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} Test something`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("extends <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/extends",
         job: "test-job"
-    });
+    }, writeStreams);
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something (before_script)\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something (after_script)\n");
-    expect(mockProcessExit).toBeCalledTimes(0);
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} Test something (before_script)`,
+        chalk`{blueBright test-job} {greenBright >} Test something`,
+        chalk`{blueBright test-job} {greenBright >} Test something (after_script)`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("include <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/include",
         job: "test-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
-    expect(mockProcessExit).toBeCalledTimes(0);
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job  } {greenBright >} Test something`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("include <build-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/include",
         job: "build-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Build something\n");
-    expect(mockProcessExit).toBeCalledTimes(0);
-});
+    }, writeStreams);
 
+    const expected = [
+        chalk`{blueBright build-job } {greenBright >} Build something`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
+});
+//
 test("include <deploy-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/include",
         job: "deploy-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Deploy something\n");
-    expect(mockProcessExit).toBeCalledTimes(0);
-});
+    }, writeStreams);
 
-test("include-remote-with-inner-local", async () => {
-    await defaultCmd.handler({
-        cwd: "tests/test-cases/include-remote-with-inner-local",
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test something\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("Deploy something\n");
-    expect(mockProcessExit).toBeCalledTimes(0);
+    const expected = [
+        chalk`{blueBright deploy-job} {greenBright >} Deploy something`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("include-template <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/include-template",
         job: "test-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("Test Something\n");
-    expect(mockProcessExit).toBeCalledTimes(0);
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} Test something`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("include-invalid-local", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "tests/test-cases/include-invalid-local",
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31mLocal include file cannot be found .gitlab-ci-invalid.yml[39m\n");
+        expect(e.message).toBe("Local include file cannot be found .gitlab-ci-invalid.yml");
     }
 });
 
 test("include-invalid-project", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "tests/test-cases/include-invalid-project",
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31mProject include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: master, file: .gitlab-modue.yml }[39m\n");
+        expect(e.message).toBe("Project include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: master, file: .gitlab-modue.yml }");
     }
 });
 
 test("include-invalid-remote", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "tests/test-cases/include-invalid-remote",
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31mRemote include could not be fetched https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml[39m\n");
+        expect(e.message).toBe("Remote include could not be fetched https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml");
     }
+});
+
+test("include-remote-with-inner-local", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/include-remote-with-inner-local",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job  } {greenBright >} Test something`,
+        chalk`{blueBright deploy-job} {greenBright >} Deploy something`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("inject-ssh-agent", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/inject-ssh-agent",
-    });
+    }, writeStreams);
 });
 
 test("manual <build-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/manual",
         manual: "build-job"
-    });
-    expect(mockProcessStdout).toHaveBeenCalledWith("[35mnot started[39m ");
-    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtest-job[39m");
-    expect(mockProcessStdout).toHaveBeenCalledWith("[32msuccessful[39m ");
-    expect(mockProcessStdout).toHaveBeenCalledWith("[94mbuild-job[39m");
-    expect(mockProcessExit).toBeCalledTimes(0);
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright build-job} {greenBright >} Hello, build job manual!`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("reference <test-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/reference",
         job: "test-job",
-    });
+    }, writeStreams);
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("Setting something general up\n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("Yoyo\n");
-    expect(mockProcessStderr).toBeCalledTimes(0);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} Setting something general up`,
+        chalk`{blueBright test-job} {greenBright >} Yoyo`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
 });
 
 test("script-failures <test-job>", async () => {
-    try {
-        await defaultCmd.handler({
-            cwd: "tests/test-cases/script-failures",
-            job: "test-job",
-        });
-    } catch (e) {
-        expect(mockProcessStdout).toBeCalledTimes(19);
-        expect(mockProcessStderr).toBeCalledTimes(2);
-        expect(e.message).toBe("Test exited");
-    }
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/script-failures",
+        job: "test-job",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{red failure} {blueBright test-job}`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 test("script-failures <test-job-after-script>", async () => {
-    try {
-        await defaultCmd.handler({
-            cwd: "tests/test-cases/script-failures",
-            job: "test-job-after-script",
-        });
-    } catch (e) {
-        expect(mockProcessStdout).toBeCalledTimes(19);
-        expect(mockProcessStderr).toBeCalledTimes(2);
-        expect(e.message).toBe("Test exited");
-    }
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/script-failures",
+        job: "test-job-after-script",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{yellowBright after script} {blueBright test-job-after-script}`,
+        chalk`{red failure} {blueBright test-job-after-script}`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 test("script-failures <allow-failure-job>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/script-failures",
         job: "allow-failure-job",
-    });
+    }, writeStreams);
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("[93mwarning[39m ");
-    expect(mockProcessStderr).toBeCalledTimes(1);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    const expected = [
+        chalk`{yellowBright warning} {blueBright allow-failure-job}`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 test("script-failures <allow-failure-after-scripts>", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/script-failures",
         job: "allow-failure-after-script",
-    });
+    }, writeStreams);
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("[93mwarning[39m ");
-    expect(mockProcessStderr).toBeCalledTimes(2);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    const expected = [
+        chalk`{yellowBright warning} {blueBright allow-failure-after-script}`,
+        chalk`{yellowBright after script} {blueBright allow-failure-after-script}`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 test("stage-not-found <test-job>", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "tests/test-cases/stage-not-found",
             job: "test-job"
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[33mstage:invalid[39m[31m not found for [94mtest-job[39m[31m[39m\n");
-        expect(e.message).toBe("Test exited");
+        expect(e.message).toBe(chalk`{yellow stage:invalid} not found for {blueBright test-job}`);
     }
 });
 
 test("invalid-variables-bool <test-job>", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "tests/test-cases/invalid-variables-bool",
             job: "test-job"
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[31m has invalid variables hash of key value pairs. INVALID=true[39m\n");
-        expect(e.message).toBe("Test exited");
+        expect(e.message).toBe(chalk`{blueBright test-job} has invalid variables hash of key value pairs. INVALID=true`);
     }
 });
 
 test("invalid-variables-null <test-job>", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "tests/test-cases/invalid-variables-null",
             job: "test-job"
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[94mtest-job[39m[31m has invalid variables hash of key value pairs. INVALID=null[39m\n");
-        expect(e.message).toBe("Test exited");
+        expect(e.message).toBe(chalk`{blueBright test-job} has invalid variables hash of key value pairs. INVALID=null`);
     }
 });
 
 test("invalid-stages", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "tests/test-cases/invalid-stages",
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31m[33mstages:[39m[31m must be an array[39m\n");
-        expect(e.message).toBe("Test exited");
+        expect(e.message).toBe(chalk`{yellow stages:} must be an array`);
     }
 });
 
 test("no-git-config", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "tests/test-cases/no-git-config",
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31mCould not locate.gitconfig or .git/config file[39m\n");
-        expect(e.message).toBe("Test exited");
+        expect(e.message).toBe("Could not locate.gitconfig or .git/config file");
     }
 });
 
 test("list-case --list", async () => {
-    await defaultCmd.handler({
+    const writeStreams = new MockWriteStreams();
+    await handler({
         cwd: "tests/test-cases/list-case/",
         list: true
-    });
+    }, writeStreams);
 
-    expect(mockProcessStdout).toHaveBeenCalledWith("[94mtest-job [39m  Run Tests  [33mtest [39m  on_success         \n");
-    expect(mockProcessStdout).toHaveBeenCalledWith("[94mbuild-job[39m             [33mbuild[39m  on_success  warning  [[94mtest-job[39m]\n");
-    expect(mockProcessStderr).toBeCalledTimes(0);
-    expect(mockProcessExit).toBeCalledTimes(0);
+    const expected = [
+        chalk`{blueBright test-job }  Run Tests  {yellow test }  on_success         `,
+        chalk`{blueBright build-job}             {yellow build}  on_success  warning  [{blueBright test-job}]`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("--cwd unknown-directory/", async () => {
+test("something/unknown-directory (non-existing dir)", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "something/unknown-directory"
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31msomething/unknown-directory is not a directory[39m\n");
-        expect(e.message).toBe("Test exited");
+        expect(e.message).toBe(chalk`something/unknown-directory is not a directory`);
     }
 });
 
-test("--cwd docs/", async () => {
+test("docs (no .gitlab-ci.yml)", async () => {
     try {
-        await defaultCmd.handler({
+        const writeStreams = new MockWriteStreams();
+        await handler({
             cwd: "docs"
-        });
+        }, writeStreams);
     } catch (e) {
-        expect(mockProcessStderr).toHaveBeenCalledWith("[31mdocs does not contain .gitlab-ci.yml[39m\n");
-        expect(e.message).toBe("Test exited");
+        expect(e.message).toBe(chalk`docs does not contain .gitlab-ci.yml`);
     }
 });

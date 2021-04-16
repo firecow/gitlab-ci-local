@@ -4,4 +4,4 @@ include:
 
 test-job:
   script:
-    - echo "Test Something"
+    - echo "Test something"

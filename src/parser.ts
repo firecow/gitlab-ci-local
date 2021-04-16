@@ -14,12 +14,14 @@ import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
 import * as path from "path";
+import {WriteStreams} from "./types/write-streams";
 
 export class Parser {
 
     private readonly jobs: Map<string, Job> = new Map();
     private readonly stages: Map<string, Stage> = new Map();
     private readonly cwd: string;
+    private readonly writeStreams: WriteStreams;
     private readonly file?: string;
     private readonly home?: string;
     private readonly pipelineIid: number;
@@ -31,16 +33,17 @@ export class Parser {
     private maxJobNameLength = 0;
     private readonly tabCompletionPhase: boolean;
 
-    private constructor(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
+    private constructor(cwd: string, writeStreams: WriteStreams, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
         this.cwd = cwd;
         this.pipelineIid = pipelineIid;
         this.tabCompletionPhase = tabCompletionPhase;
         this.file = file;
         this.home = home;
+        this.writeStreams = writeStreams;
     }
 
-    static async create(cwd: string, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
-        const parser = new Parser(cwd, pipelineIid, tabCompletionPhase, file, home);
+    static async create(cwd: string, writeStreams: WriteStreams, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
+        const parser = new Parser(cwd, writeStreams, pipelineIid, tabCompletionPhase, file, home);
 
         const time = process.hrtime();
         await parser.init();
@@ -48,7 +51,7 @@ export class Parser {
         await parser.validateNeedsTags();
         const parsingTime = process.hrtime(time);
         if (!tabCompletionPhase) {
-            process.stdout.write(chalk`{cyan ${"yml files".padEnd(parser.maxJobNameLength)}} {magentaBright processed} in {magenta ${prettyHrtime(parsingTime)}}\n`);
+            writeStreams.stdout(chalk`{cyan ${"yml files".padEnd(parser.maxJobNameLength)}} {magentaBright processed} in {magenta ${prettyHrtime(parsingTime)}}\n`);
         }
 
         return parser;
@@ -140,6 +143,7 @@ export class Parser {
 
     async init() {
         const cwd = this.cwd;
+        const writeStreams = this.writeStreams;
 
         this.gitRemote = await Parser.initGitRemote(cwd);
         this.userVariables = await Parser.initUserVariables(cwd, this.gitRemote, this.home ?? process.env.HOME ?? "");
@@ -147,11 +151,11 @@ export class Parser {
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = this.file ? `${cwd}/${this.file}` : `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, this.gitRemote, this.tabCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, writeStreams, this.gitRemote, this.tabCompletionPhase));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, this.gitRemote, this.tabCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, writeStreams, this.gitRemote, this.tabCompletionPhase));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
@@ -241,6 +245,7 @@ export class Parser {
 
             const jobId = await state.getJobId(cwd);
             const job = new Job({
+                writeStreams: this.writeStreams,
                 name: jobName,
                 maxJobNameLength: this.maxJobNameLength,
                 userVariables: this.userVariables,
@@ -384,7 +389,7 @@ export class Parser {
         };
     }
 
-    static async downloadIncludeRemote(cwd: string, url: string): Promise<void> {
+    static async downloadIncludeRemote(cwd: string, writeStreams: WriteStreams, url: string): Promise<void> {
         const time = process.hrtime();
         const fsUrl = Utils.fsUrl(url);
         const res = await fetch(url);
@@ -393,10 +398,10 @@ export class Parser {
         }
         fs.outputFileSync(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`, await res.text());
         const endTime = process.hrtime(time);
-        process.stdout.write(chalk`{cyan downloaded} {magentaBright ${url}} in {magenta ${prettyHrtime(endTime)}}\n`);
+        writeStreams.stdout(chalk`{cyan downloaded} {magentaBright ${url}} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
-    static async downloadIncludeProjectFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
+    static async downloadIncludeProjectFile(cwd: string, writeStreams: WriteStreams, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
         const time = process.hrtime();
         fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
         try {
@@ -407,10 +412,10 @@ export class Parser {
 
         const endTime = process.hrtime(time);
         const remoteUrl = `${gitRemoteDomain}/${project}/${file}`;
-        process.stdout.write(chalk`{cyan downloaded} {magentaBright ${remoteUrl}} in {magenta ${prettyHrtime(endTime)}}\n`);
+        writeStreams.stdout(chalk`{cyan downloaded} {magentaBright ${remoteUrl}} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
-    static async prepareIncludes(gitlabData: any, cwd: string, gitRemote: GitRemote, tabCompletionPhase: boolean): Promise<any[]> {
+    static async prepareIncludes(gitlabData: any, cwd: string, writeStreams: WriteStreams, gitRemote: GitRemote, tabCompletionPhase: boolean): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
 
@@ -425,12 +430,12 @@ export class Parser {
                     throw new ExitError(`Local include file cannot be found ${value["local"]}`);
                 }
             } else if (value["file"]) {
-                promises.push(Parser.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
+                promises.push(Parser.downloadIncludeProjectFile(cwd, writeStreams, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value["template"]);
-                promises.push(Parser.downloadIncludeProjectFile(cwd, project, ref, file, domain));
+                promises.push(Parser.downloadIncludeProjectFile(cwd, writeStreams, project, ref, file, domain));
             } else if (value["remote"]) {
-                promises.push(Parser.downloadIncludeRemote(cwd, value["remote"]));
+                promises.push(Parser.downloadIncludeRemote(cwd, writeStreams, value["remote"]));
             }
 
         }
@@ -440,7 +445,7 @@ export class Parser {
         for (const value of gitlabData["include"] || []) {
             if (value["local"]) {
                 const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(localDoc, cwd, gitRemote, tabCompletionPhase));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(localDoc, cwd, writeStreams, gitRemote, tabCompletionPhase));
             } else if (value["project"]) {
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitRemote.domain}/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
 
@@ -451,15 +456,15 @@ export class Parser {
                     }
                 });
 
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, tabCompletionPhase));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitRemote, tabCompletionPhase));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value["template"]);
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${domain}/${project}/${ref}/${file}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, tabCompletionPhase));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitRemote, tabCompletionPhase));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, gitRemote, tabCompletionPhase));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitRemote, tabCompletionPhase));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }
