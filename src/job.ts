@@ -6,6 +6,7 @@ import * as camelCase from "camelcase";
 import {ExitError} from "./types/exit-error";
 import {Utils} from "./utils";
 import {JobOptions} from "./types/job-options";
+import {WriteStreams} from "./types/write-streams";
 
 export class Job {
 
@@ -30,6 +31,7 @@ export class Job {
     readonly cache: { key: string | { files: string[] }, paths: string[] };
     private _prescriptsExitCode = 0;
     private readonly jobData: any;
+    private readonly writeStreams: WriteStreams;
     private started = false;
     private finished = false;
     private running = false;
@@ -43,6 +45,7 @@ export class Job {
         const globals = opt.globals;
         const userVariables = opt.userVariables;
 
+        this.writeStreams = opt.writeStreams;
         this.maxJobNameLength = opt.maxJobNameLength;
         this.name = opt.name;
         this.cwd = opt.cwd;
@@ -181,6 +184,7 @@ export class Job {
 
     async start(privileged: boolean): Promise<void> {
         const startTime = process.hrtime();
+        const writeStreams = this.writeStreams;
 
         this.running = true;
         this.started = true;
@@ -189,13 +193,13 @@ export class Job {
         await fs.truncate(this.getOutputFilesPath());
         if (!this.interactive) {
             const jobNameStr = this.getJobNameString();
-            process.stdout.write(chalk`${jobNameStr} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
+            writeStreams.stdout(chalk`${jobNameStr} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
         }
 
         const prescripts = this.beforeScripts.concat(this.scripts);
         this._prescriptsExitCode = await this.execScripts(prescripts, privileged);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
-            process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
+            writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
             this.running = false;
             this.finished = true;
             this.success = false;
@@ -204,7 +208,7 @@ export class Job {
         }
 
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
-            process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
+            writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
             this.running = false;
             this.finished = true;
             await this.removeContainer();
@@ -212,11 +216,11 @@ export class Job {
         }
 
         if (this._prescriptsExitCode > 0 && this.allowFailure) {
-            process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
+            writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
         }
 
         if (this._prescriptsExitCode > 0 && !this.allowFailure) {
-            process.stderr.write(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
+            writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
         }
 
         this._afterScriptsExitCode = 0;
@@ -225,14 +229,14 @@ export class Job {
         }
 
         if (this._afterScriptsExitCode > 0) {
-            process.stderr.write(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " (after_script)")}\n`);
+            writeStreams.stderr(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " (after_script)")}\n`);
         }
 
         if (this._prescriptsExitCode > 0 && !this.allowFailure) {
             this.success = false;
         }
 
-        process.stdout.write(`${this.getFinishedString(startTime)}\n`);
+        writeStreams.stdout(`${this.getFinishedString(startTime)}\n`);
 
         this.running = false;
         this.finished = true;
@@ -295,6 +299,7 @@ export class Job {
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
+        const writeStreams = this.writeStreams;
         const artifactsFrom = this.needs || this.dependencies;
         let time;
         let endTime;
@@ -340,7 +345,7 @@ export class Job {
             pullCmd += "fi\n";
             await Utils.spawn(pullCmd, this.cwd);
             endTime = process.hrtime(time);
-            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright pulled} ${this.imageName} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright pulled} ${this.imageName} in {magenta ${prettyHrtime(endTime)}}\n`);
 
             let dockerCmd = "";
             if (privileged) {
@@ -361,7 +366,7 @@ export class Job {
 
             if (this.cache && this.cache.key && typeof this.cache.key === "string" && this.cache.paths) {
                 this.cache.paths.forEach((path) => {
-                    process.stdout.write(chalk`${jobNameStr} {magentaBright mounting cache} for path ${path}\n`);
+                    writeStreams.stdout(chalk`${jobNameStr} {magentaBright mounting cache} for path ${path}\n`);
                     // /tmp/ location instead of .gitlab-ci-local/cache avoids the (unneeded) inclusion of cache folders when docker copy all files into the container, thus saving time for all jobs
                     dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `;
                 });
@@ -393,14 +398,14 @@ export class Job {
             time = process.hrtime();
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
             endTime = process.hrtime(time);
-            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
 
             if (artifactsFrom === null || artifactsFrom.length > 0) {
                 time = process.hrtime();
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
                 await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.containerId}:/builds/`);
                 endTime = process.hrtime(time);
-                process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
+                writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
         }
 
@@ -409,7 +414,7 @@ export class Job {
             await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
             await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.cwd}`);
             endTime = process.hrtime(time);
-            process.stdout.write(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : "bash -e", {
@@ -443,24 +448,24 @@ export class Job {
 
         cp.stdin.write("exit 0\n");
 
-        const outFunc = (e: any, stream: NodeJS.WriteStream, colorize: (str: string) => string) => {
+        const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
             for (const line of `${e}`.split(/\r?\n/)) {
                 if (line.length === 0) {
                     continue;
                 }
 
-                stream.write(`${jobNameStr} `);
+                stream(`${jobNameStr} `);
                 if (!line.startsWith("\u001b[32m$")) {
-                    stream.write(`${colorize(">")} `);
+                    stream(`${colorize(">")} `);
                 }
-                stream.write(`${line}\n`);
+                stream(`${line}\n`);
                 fs.appendFileSync(outputFilesPath, `${line}\n`);
             }
         };
 
         const exitCode = await new Promise<number>((resolve, reject) => {
-            cp.stdout.on("data", (e) => outFunc(e, process.stdout, (s) => chalk`{greenBright ${s}}`));
-            cp.stderr.on("data", (e) => outFunc(e, process.stderr, (s) => chalk`{redBright ${s}}`));
+            cp.stdout.on("data", (e) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
+            cp.stderr.on("data", (e) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
 
             cp.on("exit", (code) => resolve(code ?? 0));
             cp.on("error", (err) => reject(err));
@@ -483,12 +488,11 @@ export class Job {
 
                 try {
                     await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${pathReplacement}`);
-
                     endTime = process.hrtime(time);
-                    process.stdout.write(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+                    writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
                 } catch (e) {
                     // exact same message and color as Gitlab runner
-                    process.stdout.write(chalk`${this.getJobNameString()} {yellow WARNING: ${artifactPath}: no matching files}\n`);
+                    writeStreams.stdout(chalk`${this.getJobNameString()} {yellow WARNING: ${artifactPath}: no matching files}\n`);
                 }
             }
         }
