@@ -47,11 +47,11 @@ export class Utils {
         }
     }
 
-    static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
+    static printJobNames(stream: (txt: string) => void, job: { name: string }, i: number, arr: { name: string }[]) {
         if (i === arr.length - 1) {
-            process.stdout.write(chalk`{blueBright ${job.name}}`);
+            stream(chalk`{blueBright ${job.name}}`);
         } else {
-            process.stdout.write(chalk`{blueBright ${job.name}}, `);
+            stream(chalk`{blueBright ${job.name}}, `);
         }
     }
 
