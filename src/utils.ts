@@ -47,11 +47,11 @@ export class Utils {
         }
     }
 
-    static printJobNames(job: { name: string }, i: number, arr: { name: string }[]) {
+    static printJobNames(stream: (txt: string) => void, job: { name: string }, i: number, arr: { name: string }[]) {
         if (i === arr.length - 1) {
-            process.stdout.write(chalk`{blueBright ${job.name}}`);
+            stream(chalk`{blueBright ${job.name}}`);
         } else {
-            process.stdout.write(chalk`{blueBright ${job.name}}, `);
+            stream(chalk`{blueBright ${job.name}}, `);
         }
     }
 
@@ -101,9 +101,11 @@ export class Utils {
 
             if (subRule.includes("!~")) {
                 subEval = subRule.replace(/\s*!~\s*(\/.*\/)/, ".match($1) == null");
+                subEval = subEval.match(/^null/) ? "false" : subEval;
             } else if (subRule.includes("=~")) {
                 subEval = subRule.replace(/\s*=~\s*(\/.*\/)/, ".match($1) != null");
-            } else if (!subRule.match(/(?:==)|(?:!=)/)) {
+                subEval = subEval.match(/^null/) ? "false" : subEval;
+            } else if (!subRule.match(/==|!=/)) {
                 if (subRule.match(/null/)) {
                     subEval = subRule.replace(/(\s*)\S*(\s*)/, "$1false$2");
                 } else if (subRule.match(/''/)) {
