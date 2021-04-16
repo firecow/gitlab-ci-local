@@ -337,10 +337,64 @@ test("include-template <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job} {greenBright >} Test Something`,
+        chalk`{blueBright test-job} {greenBright >} Test something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
     expect(writeStreams.stderrLines.length).toBe(0);
+});
+
+test("include-invalid-local", async () => {
+    try {
+        const writeStreams = new MockWriteStreams();
+        await handler({
+            cwd: "tests/test-cases/include-invalid-local",
+        }, writeStreams);
+    } catch (e) {
+        expect(e.message).toBe("Local include file cannot be found .gitlab-ci-invalid.yml");
+    }
+});
+
+test("include-invalid-project", async () => {
+    try {
+        const writeStreams = new MockWriteStreams();
+        await handler({
+            cwd: "tests/test-cases/include-invalid-project",
+        }, writeStreams);
+    } catch (e) {
+        expect(e.message).toBe("Project include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: master, file: .gitlab-modue.yml }");
+    }
+});
+
+test("include-invalid-remote", async () => {
+    try {
+        const writeStreams = new MockWriteStreams();
+        await handler({
+            cwd: "tests/test-cases/include-invalid-remote",
+        }, writeStreams);
+    } catch (e) {
+        expect(e.message).toBe("Remote include could not be fetched https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml");
+    }
+});
+
+test("include-remote-with-inner-local", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/include-remote-with-inner-local",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job  } {greenBright >} Test something`,
+        chalk`{blueBright deploy-job} {greenBright >} Deploy something`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines.length).toBe(0);
+});
+
+test("inject-ssh-agent", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/inject-ssh-agent",
+    }, writeStreams);
 });
 
 test("manual <build-job>", async () => {
