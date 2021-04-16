@@ -552,7 +552,7 @@ test("list-case --list", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("--cwd unknown-directory/", async () => {
+test("something/unknown-directory (non-existing dir)", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
@@ -563,7 +563,7 @@ test("--cwd unknown-directory/", async () => {
     }
 });
 
-test("--cwd docs/", async () => {
+test("docs/ (no .gitlab-ci.yml)", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
