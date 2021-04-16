@@ -291,7 +291,7 @@ export class Job {
             const timeoutKey = setTimeout(() => {
                 clearInterval(intervalKey);
                 reject(new ExitError(`Container ${containerId} timed out`));
-            }, 5000);
+            }, 15000);
 
             const intervalKey = setInterval(async() => {
                 const {stdout} = await Utils.spawn(`docker container ls --format='{{json .}}' -a -f id=${containerId}`);
