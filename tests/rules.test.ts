@@ -8,6 +8,15 @@ test("GITLAB_CI on_success", () => {
     expect(rulesResult).toEqual({when: "on_success", allowFailure: false});
 });
 
+test("Regex on undef var", () => {
+    const rules = [
+        {if: "$CI_COMMIT_TAG =~ /^v\\d+.\\d+.\\d+/"},
+        {when: "manual"}
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false});
+});
+
 test("GITLAB_CI fail and fallback", () => {
     const rules = [
         {if: "$GITLAB_CI == 'true'"},
