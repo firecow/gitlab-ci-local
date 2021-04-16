@@ -90,8 +90,8 @@ test("custom-home <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job} {greenBright >} global-var-value`,
-        chalk`{blueBright test-job} {greenBright >} group-var-value`,
+        chalk`{blueBright test-job} {greenBright >} group-global-var-override-value`,
+        chalk`{blueBright test-job} {greenBright >} project-group-var-override-value`,
         chalk`{blueBright test-job} {greenBright >} project-var-value`,
         chalk`{blueBright test-job} {greenBright >} Im content of a file variable`,
     ];
