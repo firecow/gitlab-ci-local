@@ -35,7 +35,7 @@ jobs:
       - name: Install modules
         run: npm install
       - name: Run depcheck
-        run: npx depcheck --ignores depcheck
+        run: npx depcheck --ignores depcheck,@types/jest
 
   jest:
     runs-on: ubuntu-latest
@@ -51,7 +51,10 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOSTS }}
       - name: Run tests
-        run: FORCE_COLOR=1 npm run coverage
+        run: |
+          eval $(ssh-agent -s)
+          ssh-add
+          FORCE_COLOR=1 npm run coverage
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
         env:

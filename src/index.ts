@@ -11,7 +11,7 @@ import {ProcessWriteStreams} from "./process-write-streams";
 import {handler} from "./handler";
 
 sourceMapSupport.install();
-process.on('unhandledRejection', e => {
+process.on("unhandledRejection", e => {
     if (e instanceof ExitError) {
         process.stderr.write(chalk`{red ${e.message}}\n`);
         process.exit(1);
@@ -24,9 +24,9 @@ process.on('unhandledRejection', e => {
 });
 
 (() => {
-    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), "utf8"));
+    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
     yargs(process.argv.slice(2))
-        .version(packageJson['version'])
+        .version(packageJson["version"])
         .showHelpOnFail(false)
         .wrap(yargs.terminalWidth())
         .command({

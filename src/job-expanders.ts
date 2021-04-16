@@ -43,7 +43,7 @@ export function reference(gitlabData: any, recurseData: any) {
     for (const [key, value] of Object.entries<any>(recurseData || {})) {
         if (value && value.referenceData) {
             recurseData[key] = getSubDataByReference(gitlabData, value.referenceData);
-        } else if (typeof value === 'object') {
+        } else if (typeof value === "object") {
             reference(gitlabData, value);
         }
     }
@@ -71,9 +71,9 @@ export function image(gitlabData: any) {
         const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
         if (expandedImage) {
             jobData.image = {
-                name: typeof expandedImage === 'string' ? expandedImage : expandedImage.name,
-                entrypoint: typeof expandedImage === 'string' ? null : expandedImage.entrypoint,
-            }
+                name: typeof expandedImage === "string" ? expandedImage : expandedImage.name,
+                entrypoint: typeof expandedImage === "string" ? null : expandedImage.entrypoint,
+            };
         }
     });
 }

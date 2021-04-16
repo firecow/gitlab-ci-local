@@ -23,7 +23,7 @@ export class Job {
     readonly environment?: { name: string, url: string | null };
     readonly jobId: number;
     readonly cwd: string;
-    readonly rules?: { if: string, when: string, allow_failure: boolean }[];
+    readonly rules?: { if: string, when: string, allow_failure: string|boolean }[];
     readonly expandedVariables: { [key: string]: string };
     readonly allowFailure: boolean;
     readonly when: string;
@@ -39,8 +39,8 @@ export class Job {
     private containerId: string | null = null;
 
     constructor(opt: JobOptions) {
-        const jobData = opt.jobData
-        const gitUser = opt.gitUser
+        const jobData = opt.jobData;
+        const gitUser = opt.gitUser;
         const gitRemote = opt.gitRemote;
         const globals = opt.globals;
         const userVariables = opt.userVariables;
@@ -54,7 +54,7 @@ export class Job {
         this.pipelineIid = opt.pipelineIid;
 
         this.when = jobData.when || "on_success";
-        this.allowFailure = jobData.allow_failure || false;
+        this.allowFailure = jobData.allow_failure != null ? jobData.allow_failure == "true" : false;
         this.needs = jobData.needs || null;
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
@@ -70,7 +70,7 @@ export class Job {
             CI_PROJECT_NAME: gitRemote.project,
             CI_PROJECT_TITLE: `${camelCase(gitRemote.project)}`,
             CI_PROJECT_PATH: `${gitRemote.group}/${camelCase(gitRemote.project)}`,
-            CI_PROJECT_PATH_SLUG: `${gitRemote.group.replace(/\//g, '-')}-${gitRemote.project}`,
+            CI_PROJECT_PATH_SLUG: `${gitRemote.group.replace(/\//g, "-")}-${gitRemote.project}`,
             CI_PROJECT_NAMESPACE: `${gitRemote.group}`,
             CI_COMMIT_REF_PROTECTED: "false",
             CI_COMMIT_BRANCH: "local/branch", // Branch name, only when building branches
@@ -110,58 +110,66 @@ export class Job {
             this.allowFailure = ruleResult.allowFailure;
         }
 
-        if (this.interactive && (this.when !== 'manual' || this.imageName !== null)) {
+        if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
             throw new ExitError(`${this.getJobNameString()} @Interactive decorator cannot have image: and must be when:manual`);
+        }
+
+        if (this.injectSSHAgent && this.imageName === null) {
+            throw new ExitError(`${this.getJobNameString()} @InjectSSHAgent can only be used with image:`);
         }
     }
 
     get imageName(): string | null {
-        const image = this.jobData['image'];
+        const image = this.jobData["image"];
         if (!image) {
             return null;
         }
 
         const imageName = Utils.expandText(image.name, this.expandedVariables);
-        return imageName.includes(':') ? imageName : `${imageName}:latest`;
+        return imageName.includes(":") ? imageName : `${imageName}:latest`;
     }
 
     get imageEntrypoint(): string[] | null {
-        const image = this.jobData['image'];
+        const image = this.jobData["image"];
         if (!image) {
             return null;
         }
-        if (typeof image.entrypoint !== 'object') {
-            throw new ExitError(`image:entrypoint must be an array`);
+        if (typeof image.entrypoint !== "object") {
+            throw new ExitError("image:entrypoint must be an array");
         }
         return image.entrypoint;
     }
 
     get stage(): string {
-        return this.jobData['stage'] || "test";
+        return this.jobData["stage"] || "test";
     }
 
     get interactive(): boolean {
-        return this.jobData['interactive'] || false;
+        return this.jobData["interactive"] || false;
+    }
+
+    get injectSSHAgent(): boolean {
+        return this.jobData["injectSSHAgent"] || false;
     }
 
     get description(): string {
-        return this.jobData['description'] ?? '';
+        return this.jobData["description"] ?? "";
     }
 
     get artifacts(): { paths: string[] } {
-        return this.jobData['artifacts'] || {paths: []};
+        return this.jobData["artifacts"] || {paths: []};
     }
 
     get beforeScripts(): string[] {
-        return this.jobData['before_script'] || [];
+        return this.jobData["before_script"] || [];
     }
 
     get afterScripts(): string[] {
-        return this.jobData['after_script'] || [];
+        return this.jobData["after_script"] || [];
     }
 
     get scripts(): string[] {
-        return this.jobData['script'];
+        return this.jobData["script"];
     }
 
     get preScriptsExitCode() {
@@ -278,6 +286,16 @@ export class Job {
         }
     }
 
+    private generateInjectSSHAgentOptions() {
+        if (!this.injectSSHAgent) {
+            return "";
+        }
+        if (process.env.OSTYPE === "darwin") {
+            return "--env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock";
+        }
+        return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
+    }
+
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
@@ -291,7 +309,7 @@ export class Job {
         }
 
         if (this.interactive) {
-            let cmd = ``;
+            let cmd = "";
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 cmd += `export ${key}="${String(value).trim()}"\n`;
             }
@@ -299,80 +317,80 @@ export class Job {
             scripts.forEach((script) => {
                 // Print command echo'ed in color
                 const split = script.split(/\r?\n/);
-                const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
-                const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
+                const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
+                const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
                 cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
 
                 // Execute actual script
                 cmd += `${script}\n`;
             });
             const cp = childProcess.spawn(cmd, {
-                shell: 'bash',
-                stdio: ['inherit', 'inherit', 'inherit'],
+                shell: "bash",
+                stdio: ["inherit", "inherit", "inherit"],
                 cwd: this.cwd,
             });
             return new Promise<number>((resolve, reject) => {
-                cp.on('exit', (code) => resolve(code ?? 0));
+                cp.on("exit", (code) => resolve(code ?? 0));
                 cp.on("error", (err) => reject(err));
             });
         }
 
         if (this.imageName) {
             time = process.hrtime();
-            let pullCmd = ``;
-            pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.imageName}$'\n`
-            pullCmd += `if [ "$?" -ne 0 ]; then\n`
-            pullCmd += `\techo "Pulling ${this.imageName}"\n`
-            pullCmd += `\tdocker pull ${this.imageName}\n`
-            pullCmd += `fi\n`
+            let pullCmd = "";
+            pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.imageName}$'\n`;
+            pullCmd += "if [ \"$?\" -ne 0 ]; then\n";
+            pullCmd += `\techo "Pulling ${this.imageName}"\n`;
+            pullCmd += `\tdocker pull ${this.imageName}\n`;
+            pullCmd += "fi\n";
             await Utils.spawn(pullCmd, this.cwd);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright pulled} ${this.imageName} in {magenta ${prettyHrtime(endTime)}}\n`);
 
-            let dockerCmd = ``;
+            let dockerCmd = "";
             if (privileged) {
-                dockerCmd += `docker create --privileged -u 0:0 -i `;
+                dockerCmd += `docker create --privileged -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             } else {
-                dockerCmd += `docker create -u 0:0 -i `;
+                dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             }
 
             if (this.imageEntrypoint) {
                 this.imageEntrypoint.forEach((e) => {
-                    dockerCmd += `--entrypoint "${e}" `
+                    dockerCmd += `--entrypoint "${e}" `;
                 });
             }
 
             for (const [key, value] of Object.entries(this.expandedVariables)) {
-                dockerCmd += `-e ${key}="${String(value).trim()}" `
+                dockerCmd += `-e ${key}="${String(value).trim()}" `;
             }
 
             if (this.cache && this.cache.key && typeof this.cache.key === "string" && this.cache.paths) {
                 this.cache.paths.forEach((path) => {
                     writeStreams.stdout(chalk`${jobNameStr} {magentaBright mounting cache} for path ${path}\n`);
                     // /tmp/ location instead of .gitlab-ci-local/cache avoids the (unneeded) inclusion of cache folders when docker copy all files into the container, thus saving time for all jobs
-                    dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `
+                    dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `;
                 });
             }
 
-            dockerCmd += `${this.imageName} sh -c "\n`
-            dockerCmd += `if [ -x /usr/local/bin/bash ]; then\n`
-            dockerCmd += `\texec /usr/local/bin/bash \n`;
-            dockerCmd += `elif [ -x /usr/bin/bash ]; then\n`;
-            dockerCmd += `\texec /usr/bin/bash \n`
-            dockerCmd += `elif [ -x /bin/bash ]; then\n`
-            dockerCmd += `\texec /bin/bash \n`
-            dockerCmd += `elif [ -x /usr/local/bin/sh ]; then\n`
-            dockerCmd += `\texec /usr/local/bin/sh \n`
-            dockerCmd += `elif [ -x /usr/bin/sh ]; then\n`;
-            dockerCmd += `\texec /usr/bin/sh \n`;
-            dockerCmd += `elif [ -x /bin/sh ]; then\n`
-            dockerCmd += `\texec /bin/sh \n`
-            dockerCmd += `elif [ -x /busybox/sh ]; then\n`;
-            dockerCmd += `\texec /busybox/sh \n`;
-            dockerCmd += `else\n`;
-            dockerCmd += `\techo shell not found\n`;
-            dockerCmd += `\texit 1\n`;
-            dockerCmd += `fi\n"`
+            dockerCmd += `${this.imageName} sh -c "\n`;
+            dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
+            dockerCmd += "\texec /usr/local/bin/bash \n";
+            dockerCmd += "elif [ -x /usr/bin/bash ]; then\n";
+            dockerCmd += "\texec /usr/bin/bash \n";
+            dockerCmd += "elif [ -x /bin/bash ]; then\n";
+            dockerCmd += "\texec /bin/bash \n";
+            dockerCmd += "elif [ -x /usr/local/bin/sh ]; then\n";
+            dockerCmd += "\texec /usr/local/bin/sh \n";
+            dockerCmd += "elif [ -x /usr/bin/sh ]; then\n";
+            dockerCmd += "\texec /usr/bin/sh \n";
+            dockerCmd += "elif [ -x /bin/sh ]; then\n";
+            dockerCmd += "\texec /bin/sh \n";
+            dockerCmd += "elif [ -x /busybox/sh ]; then\n";
+            dockerCmd += "\texec /busybox/sh \n";
+            dockerCmd += "else\n";
+            dockerCmd += "\techo shell not found\n";
+            dockerCmd += "\texit 1\n";
+            dockerCmd += "fi\n\"";
 
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
             this.containerId = containerId.replace("\n", "");
@@ -399,18 +417,18 @@ export class Job {
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
-        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : `bash -e`, {
-            shell: 'bash',
-            stdio: ['pipe', 'pipe', 'pipe'],
+        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : "bash -e", {
+            shell: "bash",
+            stdio: ["pipe", "pipe", "pipe"],
             cwd: this.cwd,
         });
 
-        cp.stdin.write(`set -eo pipefail\n`);
+        cp.stdin.write("set -eo pipefail\n");
 
         if (this.imageName) {
-            cp.stdin.write(`cd /builds/\n`);
-            cp.stdin.write(`chown root:root -R .\n`);
-            cp.stdin.write(`chmod a+w -R .\n`);
+            cp.stdin.write("cd /builds/\n");
+            cp.stdin.write("chown root:root -R .\n");
+            cp.stdin.write("chmod a+w -R .\n");
         }
 
         for (const [key, value] of Object.entries(this.expandedVariables)) {
@@ -420,15 +438,15 @@ export class Job {
         scripts.forEach((script) => {
             // Print command echo'ed in color
             const split = script.split(/\r?\n/);
-            const multilineText = split.length > 1 ? ' # collapsed multi-line command' : '';
-            const text = split[0]?.replace(/["]/g, `\\"`).replace(/[$]/g, `\\$`);
+            const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
+            const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
             cp.stdin.write(chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`);
 
             // Execute actual script
             cp.stdin.write(`${script}\n`);
         });
 
-        cp.stdin.write(`exit 0\n`);
+        cp.stdin.write("exit 0\n");
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
             for (const line of `${e}`.split(/\r?\n/)) {
@@ -455,22 +473,27 @@ export class Job {
 
         if (this.imageName) {
             for (const artifactPath of this.artifacts.paths) {
-                const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, '');
+                const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, "");
 
                 time = process.hrtime();
 
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
 
+                let pathReplacement = "";
                 if (`${expandedPath}`.match(/(.*)\/(.+)/)) {
                     // in case of a folder, create the full path
-                    await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${expandedPath.replace(/(.*)\/(.+)/, '$1')}`);
-                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${expandedPath.replace(/(.*)\/(.+)/, '$1')}`);
-                } else {
-                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
+                    await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${expandedPath.replace(/(.*)\/(.+)/, "$1")}`);
+                    pathReplacement = `${expandedPath.replace(/(.*)\/(.+)/, "$1")}`;
                 }
 
-                endTime = process.hrtime(time);
-                writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+                try {
+                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${pathReplacement}`);
+                    endTime = process.hrtime(time);
+                    writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+                } catch (e) {
+                    // exact same message and color as Gitlab runner
+                    writeStreams.stdout(chalk`${this.getJobNameString()} {yellow WARNING: ${artifactPath}: no matching files}\n`);
+                }
             }
         }
 

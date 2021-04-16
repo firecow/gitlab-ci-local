@@ -1,4 +1,4 @@
-import * as chalk from 'chalk';
+import * as chalk from "chalk";
 import {Job} from "./job";
 import {Parser} from "./parser";
 import {Utils} from "./utils";
@@ -76,11 +76,11 @@ export class Commander {
 
         for (const job of jobs) {
             const needs = job.needs;
-            const allowFailure = job.allowFailure ? 'warning' : '';
+            const allowFailure = job.allowFailure ? "warning" : "";
             let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
             jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
             if (needs) {
-                jobLine += chalk`  [{blueBright ${needs.join(',')}}]`;
+                jobLine += chalk`  [{blueBright ${needs.join(",")}}]`;
             }
             writeStreams.stdout(`${jobLine}\n`);
         }
