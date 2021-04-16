@@ -2,6 +2,8 @@ import {MockWriteStreams} from "../src/mock-write-streams";
 import * as chalk from "chalk";
 import {handler} from "../src/handler";
 
+jest.setTimeout(90000);
+
 test("plain", async () => {
     const writeStream = new MockWriteStreams();
     await handler({
