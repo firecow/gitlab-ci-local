@@ -41,7 +41,7 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
         Commander.runList(parser, writeStreams);
     } else if (argv.job) {
         checkFolderAndFile(cwd, argv.file);
-        if (argv.needs) {
+        if (argv.needs === true) {
             await state.incrementPipelineIid(cwd);
         }
         const pipelineIid = await state.getPipelineIid(cwd);
