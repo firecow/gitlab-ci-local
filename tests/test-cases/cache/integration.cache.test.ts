@@ -6,7 +6,7 @@ test("cache <consume-cache> --needs", async () => {
     await handler({
         cwd: "tests/test-cases/cache",
         job: "consume-cache",
-        needs: true
+        needs: true,
     }, writeStreams);
 
     expect(writeStreams.stderrLines.length).toBe(0);

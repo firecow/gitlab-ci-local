@@ -6,7 +6,7 @@ test("manual <build-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/manual",
-        manual: "build-job"
+        manual: "build-job",
     }, writeStreams);
 
     const expected = [

@@ -49,14 +49,14 @@ export class Commander {
 
             if (stage.isFinished()) {
                 if (!stage.isSuccess()) {
-                    await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.maxJobNameLength);
+                    await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.jobNamePad);
                     process.exit(1);
                 }
                 stage = stages.shift();
             }
         }
 
-        await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.maxJobNameLength);
+        await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.jobNamePad);
     }
 
     static runList(parser: Parser, writeStreams: WriteStreams) {
@@ -113,19 +113,19 @@ export class Commander {
             await job.start(privileged);
         }
 
-        await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.maxJobNameLength);
+        await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.jobNamePad);
     }
 
-    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], maxJobNameLength: number) => {
+    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) => {
         writeStreams.stdout("\n");
 
-        const preScripts: { successful: Job[], failed: Job[], warned: Job[] } = {
+        const preScripts: { successful: Job[]; failed: Job[]; warned: Job[] } = {
             successful: [],
             failed: [],
-            warned: []
+            warned: [],
         };
         const afterScripts: { warned: Job[] } = {
-            warned: []
+            warned: [],
         };
 
         for (const job of jobs) {
@@ -151,7 +151,7 @@ export class Commander {
         if (preScripts.successful.length !== 0) {
             preScripts.successful.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
             preScripts.successful.forEach(({name}) => {
-                const namePad = name.padEnd(maxJobNameLength);
+                const namePad = name.padEnd(jobNamePad);
                 writeStreams.stdout(chalk`{black.bgGreenBright  PASS } {blueBright ${namePad}}\n`);
             });
         }
@@ -159,7 +159,7 @@ export class Commander {
         if (preScripts.warned.length !== 0) {
             preScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
             preScripts.warned.forEach(({name}) => {
-                const namePad = name.padEnd(maxJobNameLength);
+                const namePad = name.padEnd(jobNamePad);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  pre_script\n`);
             });
         }
@@ -167,7 +167,7 @@ export class Commander {
         if (afterScripts.warned.length !== 0) {
             afterScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
             afterScripts.warned.forEach(({name}) => {
-                const namePad = name.padEnd(maxJobNameLength);
+                const namePad = name.padEnd(jobNamePad);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  after_script\n`);
             });
         }
@@ -175,7 +175,7 @@ export class Commander {
         if (preScripts.failed.length !== 0) {
             preScripts.failed.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
             preScripts.failed.forEach(({name}) => {
-                const namePad = name.padEnd(maxJobNameLength);
+                const namePad = name.padEnd(jobNamePad);
                 writeStreams.stdout(chalk`{black.bgRed  FAIL } {blueBright ${namePad}}\n`);
             });
         }
@@ -187,12 +187,11 @@ export class Commander {
             }
             const name = Utils.expandText(e.name, job.expandedVariables);
             const url = Utils.expandText(e.url, job.expandedVariables);
+            writeStreams.stdout(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}}`);
             if (url != null) {
-                writeStreams.stdout(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}}, url: {bold ${url}} \}\n`);
-            } else {
-                writeStreams.stdout(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}} \}\n`);
+                writeStreams.stdout(chalk`, url: {bold ${url}}`);
             }
-
+            writeStreams.stdout(" }\n");
         }
 
     };
