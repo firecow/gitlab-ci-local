@@ -93,11 +93,22 @@ process.on("unhandledRejection", e => {
             description: "Set docker executor to privileged mode",
             requiresArg: false,
         })
+        .option("extra-host", {
+            type: "array",
+            description: "Add extra docker host entries",
+            requiresArg: false,
+        })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
                 const cwd = yargsArgv.cwd || process.cwd();
                 const pipelineIid = await state.getPipelineIid(cwd);
-                const parser = await Parser.create(cwd, new ProcessWriteStreams(), pipelineIid, true, yargsArgv.file);
+                const parser = await Parser.create({
+                    cwd,
+                    writeStreams: new ProcessWriteStreams(),
+                    pipelineIid,
+                    tabCompletionPhase: true,
+                    file: yargsArgv.file,
+                });
                 return parser.getJobs().map((j) => j.name);
             } catch (e) {
                 return ["Parser-Failed!"];

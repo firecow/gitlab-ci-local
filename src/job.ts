@@ -32,6 +32,7 @@ export class Job {
     private _prescriptsExitCode = 0;
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
+    private readonly extraHosts: string[];
     private started = false;
     private finished = false;
     private running = false;
@@ -45,6 +46,7 @@ export class Job {
         const globals = opt.globals;
         const homeVariables = opt.homeVariables;
 
+        this.extraHosts = opt.extraHosts;
         this.writeStreams = opt.writeStreams;
         this.jobNamePad = opt.namePad;
         this.name = opt.name;
@@ -352,6 +354,10 @@ export class Job {
                 dockerCmd += `docker create --privileged -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             } else {
                 dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
+            }
+
+            for (const extraHost of this.extraHosts) {
+                dockerCmd += `--add-host=${extraHost} `;
             }
 
             if (this.imageEntrypoint) {

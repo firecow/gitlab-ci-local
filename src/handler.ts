@@ -37,7 +37,9 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
     } else if (argv.list != null) {
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
-        parser = await Parser.create(cwd, writeStreams, pipelineIid, false, argv.file, argv.home);
+        parser = await Parser.create({
+            cwd, writeStreams, pipelineIid, tabCompletionPhase: false, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
+        });
         Commander.runList(parser, writeStreams);
     } else if (argv.job) {
         checkFolderAndFile(cwd, argv.file);
@@ -45,14 +47,18 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
             await state.incrementPipelineIid(cwd);
         }
         const pipelineIid = await state.getPipelineIid(cwd);
-        parser = await Parser.create(cwd, writeStreams, pipelineIid, false, argv.file, argv.home);
+        parser = await Parser.create({
+            cwd, writeStreams, pipelineIid, tabCompletionPhase: false, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
+        });
         await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.privileged || false);
     } else {
         const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
-        parser = await Parser.create(cwd, writeStreams, pipelineIid, false, argv.file, argv.home);
+        parser = await Parser.create({
+            cwd, writeStreams, pipelineIid, tabCompletionPhase: false, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
+        });
         await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged || false);
         writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
