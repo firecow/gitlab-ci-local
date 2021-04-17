@@ -1,6 +1,15 @@
 ---
+default:
+  after_script:
+    - echo "Cleanup after test"
+
 test-job:
   script:
     - echo "Test something"
   after_script:
     - echo "Cleanup after test"
+
+build-job:
+  stage: build
+  script:
+    - echo "Build something"

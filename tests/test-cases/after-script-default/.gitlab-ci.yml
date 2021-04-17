@@ -1,8 +1,0 @@
----
-default:
-  after_script:
-    - echo "Cleanup after test"
-
-test-job:
-  script:
-    - echo "Test something"
