@@ -54,7 +54,7 @@ jobs:
         run: |
           eval $(ssh-agent -s)
           ssh-add
-          FORCE_COLOR=1 npm run coverage -- --testTimeout 90000
+          FORCE_COLOR=1 npx jest --coverage --testTimeout 90000
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
         env:
