@@ -445,7 +445,7 @@ export class Job {
 
         await fs.appendFile(shellScript, "exit 0\n");
 
-        const dockCmd = `docker start --attach -i ${this.containerId} < ${shellScript}`;
+        const dockCmd = `docker start --attach -i ${this.containerId} < .gitlab-ci-local/${this.name}`;
         const bashCmd = `bash --login < .gitlab-ci-local/${this.name}`;
         const cpCmd = this.containerId ? dockCmd : bashCmd;
         const cp = childProcess.spawn(cpCmd, {
