@@ -157,6 +157,7 @@ export class Commander {
         }
 
         if (preScripts.warned.length !== 0) {
+            preScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
             preScripts.warned.forEach(({name}) => {
                 const namePad = name.padEnd(maxJobNameLength);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  pre_script\n`);
@@ -164,6 +165,7 @@ export class Commander {
         }
 
         if (afterScripts.warned.length !== 0) {
+            afterScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
             afterScripts.warned.forEach(({name}) => {
                 const namePad = name.padEnd(maxJobNameLength);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  after_script\n`);
@@ -171,6 +173,7 @@ export class Commander {
         }
 
         if (preScripts.failed.length !== 0) {
+            preScripts.failed.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
             preScripts.failed.forEach(({name}) => {
                 const namePad = name.padEnd(maxJobNameLength);
                 writeStreams.stdout(chalk`{black.bgRed  FAIL } {blueBright ${namePad}}\n`);
