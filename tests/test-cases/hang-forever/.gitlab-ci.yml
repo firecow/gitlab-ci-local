@@ -1,0 +1,6 @@
+---
+test-job:
+  script:
+    - cat
+    - cd folder
+    - cat < text.txt

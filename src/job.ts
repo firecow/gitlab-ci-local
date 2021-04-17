@@ -424,6 +424,7 @@ export class Job {
         });
 
         cp.stdin.write("set -eo pipefail\n");
+        // cp.stdin.write("exec 0<> /dev/null\n");
 
         if (this.imageName) {
             cp.stdin.write("cd /builds/\n");
