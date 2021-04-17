@@ -10,7 +10,7 @@ test("script-failures <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{red failure} {blueBright test-job}`,
+        chalk`{black.bgRed  FAIL } {blueBright test-job                  }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -23,8 +23,8 @@ test("script-failures <test-job-after-script>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{yellowBright after script} {blueBright test-job-after-script}`,
-        chalk`{red failure} {blueBright test-job-after-script}`,
+        chalk`{black.bgYellowBright  WARN } {blueBright test-job-after-script     }  after_script`,
+        chalk`{black.bgRed  FAIL } {blueBright test-job-after-script     }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -37,7 +37,7 @@ test("script-failures <allow-failure-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{yellowBright warning} {blueBright allow-failure-job}`,
+        chalk`{black.bgYellowBright  WARN } {blueBright allow-failure-job         }  pre_script`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -50,8 +50,8 @@ test("script-failures <allow-failure-after-scripts>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{yellowBright warning} {blueBright allow-failure-after-script}`,
-        chalk`{yellowBright after script} {blueBright allow-failure-after-script}`,
+        chalk`{black.bgYellowBright  WARN } {blueBright allow-failure-after-script}  pre_script`,
+        chalk`{black.bgYellowBright  WARN } {blueBright allow-failure-after-script}  after_script`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

@@ -49,14 +49,14 @@ export class Commander {
 
             if (stage.isFinished()) {
                 if (!stage.isSuccess()) {
-                    await Commander.printReport(writeStreams, jobs);
+                    await Commander.printReport(writeStreams, jobs, parser.maxJobNameLength);
                     process.exit(1);
                 }
                 stage = stages.shift();
             }
         }
 
-        await Commander.printReport(writeStreams, jobs);
+        await Commander.printReport(writeStreams, jobs, parser.maxJobNameLength);
     }
 
     static runList(parser: Parser, writeStreams: WriteStreams) {
@@ -113,14 +113,13 @@ export class Commander {
             await job.start(privileged);
         }
 
-        await Commander.printReport(writeStreams, jobs);
+        await Commander.printReport(writeStreams, jobs, parser.maxJobNameLength);
     }
 
-    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>) => {
+    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, maxJobNameLength: number) => {
         writeStreams.stdout("\n");
 
-        const preScripts: { never: Job[], successful: Job[], failed: Job[], warned: Job[] } = {
-            never: [],
+        const preScripts: { successful: Job[], failed: Job[], warned: Job[] } = {
             successful: [],
             failed: [],
             warned: []
@@ -137,8 +136,10 @@ export class Commander {
 
         for (const job of jobs) {
             if (!job.isStarted()) {
-                preScripts.never.push(job);
-            } else if (job.preScriptsExitCode === 0) {
+                continue;
+            }
+
+            if (job.preScriptsExitCode === 0) {
                 preScripts.successful.push(job);
             } else if (job.allowFailure) {
                 preScripts.warned.push(job);
@@ -146,35 +147,32 @@ export class Commander {
                 preScripts.failed.push(job);
             }
         }
-
-        if (preScripts.never.length !== 0) {
-            writeStreams.stdout(chalk`{magenta not started} `);
-            preScripts.never.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout("\n");
-        }
-
         if (preScripts.successful.length !== 0) {
-            writeStreams.stdout(chalk`{green successful} `);
-            preScripts.successful.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout("\n");
+            preScripts.successful.forEach(({name}) => {
+                const namePad = name.padEnd(maxJobNameLength);
+                writeStreams.stdout(chalk`{black.bgGreenBright  PASS } {blueBright ${namePad}}\n`);
+            });
         }
 
         if (preScripts.warned.length !== 0) {
-            writeStreams.stdout(chalk`{yellowBright warning} `);
-            preScripts.warned.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout("\n");
+            preScripts.warned.forEach(({name}) => {
+                const namePad = name.padEnd(maxJobNameLength);
+                writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  pre_script\n`);
+            });
         }
 
         if (afterScripts.warned.length !== 0) {
-            writeStreams.stdout(chalk`{yellowBright after script} `);
-            afterScripts.warned.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout("\n");
+            afterScripts.warned.forEach(({name}) => {
+                const namePad = name.padEnd(maxJobNameLength);
+                writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  after_script\n`);
+            });
         }
 
         if (preScripts.failed.length !== 0) {
-            writeStreams.stdout(chalk`{red failure} `);
-            preScripts.failed.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout("\n");
+            preScripts.failed.forEach(({name}) => {
+                const namePad = name.padEnd(maxJobNameLength);
+                writeStreams.stdout(chalk`{black.bgRed  FAIL } {blueBright ${namePad}}\n`);
+            });
         }
 
         for (const job of preScripts.successful) {
