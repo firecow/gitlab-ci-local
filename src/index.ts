@@ -90,7 +90,6 @@ process.on("unhandledRejection", e => {
         })
         .option("privileged", {
             type: "boolean",
-            default: false,
             description: "Set docker executor to privileged mode",
             requiresArg: false
         })
