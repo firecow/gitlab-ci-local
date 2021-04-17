@@ -43,14 +43,14 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create(cwd, writeStreams, pipelineIid, false, argv.file, argv.home);
-        await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs, argv.privileged);
+        await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.privileged || false);
     } else {
         const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create(cwd, writeStreams, pipelineIid, false, argv.file, argv.home);
-        await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged);
+        await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged || false);
         writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();
