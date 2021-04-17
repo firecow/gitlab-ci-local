@@ -1,7 +1,6 @@
 import * as chalk from "chalk";
 import * as deepExtend from "deep-extend";
 import {Job} from "./job";
-import {ExitError} from "./types/exit-error";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
 
@@ -110,9 +109,7 @@ export function afterScripts(gitlabData: any) {
 
 export function scripts(gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
-        if (!jobData.script && !jobData.trigger) {
-            throw new ExitError(chalk`{blueBright ${jobName}} must have script specified`);
-        }
+        assert(jobData.script || jobData.trigger, chalk`{blueBright ${jobName}} must have script specified`);
         jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
         if (jobData.script) {
             jobData.script = expandMultidimension(jobData.script);

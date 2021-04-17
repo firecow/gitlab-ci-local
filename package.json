@@ -14,9 +14,9 @@
     "build": "rm -f src/*.js src/*.d.ts && tsc",
     "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
     "audit": "npm audit --parseable",
-    "test": "jest",
     "lint": "npx eslint .",
-    "coverage": "jest --coverage",
+    "test": "jest --testTimeout 30000",
+    "coverage": "jest --coverage --testTimeout 30000",
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
@@ -85,6 +85,12 @@
         "error"
       ],
       "@typescript-eslint/quotes": [
+        "error"
+      ],
+      "@typescript-eslint/comma-dangle": [
+        "error", "always-multiline"
+      ],
+      "@typescript-eslint/member-delimiter-style": [
         "error"
       ]
     }

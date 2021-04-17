@@ -5,7 +5,7 @@ test("artifacts-no-globstar", async () => {
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
-            cwd: "tests/test-cases/artifacts-no-globstar"
+            cwd: "tests/test-cases/artifacts-no-globstar",
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe("Artfact paths cannot contain globstar, yet! 'test-job'");

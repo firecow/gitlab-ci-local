@@ -17,7 +17,7 @@ test("plain <notfound>", async () => {
     try {
         await handler({
             cwd: "tests/test-cases/plain",
-            job: "notfound"
+            job: "notfound",
         }, mockWriteStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright notfound} could not be found`);

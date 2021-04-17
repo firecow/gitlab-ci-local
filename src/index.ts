@@ -48,7 +48,7 @@ process.on("unhandledRejection", e => {
                 });
             },
             command: "$0 [job]",
-            describe: "Runs the entire pipeline or a single [job]"
+            describe: "Runs the entire pipeline or a single [job]",
         })
         .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
         .strictOptions()
@@ -56,49 +56,49 @@ process.on("unhandledRejection", e => {
         .option("manual", {
             type: "array",
             description: "One or more manual jobs to run during a pipeline",
-            requiresArg: true
+            requiresArg: true,
         })
         .option("list", {
             type: "string",
             description: "List jobs and job information",
-            requiresArg: false
+            requiresArg: false,
         })
         .option("cwd", {
             type: "string",
             description: "Path to a current working directory",
-            requiresArg: true
+            requiresArg: true,
         })
         .option("completion", {
             type: "string",
             description: "Generate tab completion script",
-            requiresArg: false
+            requiresArg: false,
         })
         .option("needs", {
             type: "boolean",
             description: "Run needed jobs, when executing a single job",
-            requiresArg: false
+            requiresArg: false,
         })
         .option("file", {
             type: "string",
             description: "Specify custom location of the .gitlab-ci.yml. Relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
-            requiresArg: false
+            requiresArg: false,
         })
         .option("home", {
             type: "string",
             description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml)",
-            requiresArg: false
+            requiresArg: false,
         })
         .option("privileged", {
             type: "boolean",
             description: "Set docker executor to privileged mode",
-            requiresArg: false
+            requiresArg: false,
         })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
                 const cwd = yargsArgv.cwd || process.cwd();
                 const pipelineIid = await state.getPipelineIid(cwd);
                 const parser = await Parser.create(cwd, new ProcessWriteStreams(), pipelineIid, true, yargsArgv.file);
-                return parser.getJobNames();
+                return parser.getJobs().map((j) => j.name);
             } catch (e) {
                 return ["Parser-Failed!"];
             }

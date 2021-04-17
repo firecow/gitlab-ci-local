@@ -2,7 +2,7 @@ import {Utils} from "../src/utils";
 
 test("GITLAB_CI on_success", () => {
     const rules = [
-        {if: "$GITLAB_CI == 'false'"}
+        {if: "$GITLAB_CI == 'false'"},
     ];
     const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
     expect(rulesResult).toEqual({when: "on_success", allowFailure: false});
@@ -11,7 +11,7 @@ test("GITLAB_CI on_success", () => {
 test("Regex on undef var", () => {
     const rules = [
         {if: "$CI_COMMIT_TAG =~ /^v\\d+.\\d+.\\d+/"},
-        {when: "manual"}
+        {when: "manual"},
     ];
     const rulesResult = Utils.getRulesResult(rules, {});
     expect(rulesResult).toEqual({when: "manual", allowFailure: false});
@@ -20,7 +20,7 @@ test("Regex on undef var", () => {
 test("GITLAB_CI fail and fallback", () => {
     const rules = [
         {if: "$GITLAB_CI == 'true'"},
-        {when: "manual"}
+        {when: "manual"},
     ];
     const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
     expect(rulesResult).toEqual({when: "manual", allowFailure: false});
@@ -28,7 +28,7 @@ test("GITLAB_CI fail and fallback", () => {
 
 test("Undefined if", () => {
     const rules = [
-        {when: "on_success"}
+        {when: "on_success"},
     ];
     const rulesResult = Utils.getRulesResult(rules, {});
     expect(rulesResult).toEqual({when: "on_success", allowFailure: false});
@@ -36,7 +36,7 @@ test("Undefined if", () => {
 
 test("Undefined when", () => {
     const rules = [
-        {if: "$GITLAB_CI", allow_failure: false}
+        {if: "$GITLAB_CI", allow_failure: false},
     ];
     const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
     expect(rulesResult).toEqual({when: "on_success", allowFailure: false});
@@ -45,7 +45,7 @@ test("Undefined when", () => {
 test("Early return", () => {
     const rules = [
         {if: "$GITLAB_CI", when: "never"},
-        {when: "on_success"}
+        {when: "on_success"},
     ];
     const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
     expect(rulesResult).toEqual({when: "never", allowFailure: false});

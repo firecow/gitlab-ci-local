@@ -1,5 +1,5 @@
 export interface GitRemote {
-    domain: string,
-    group: string,
-    project: string,
+    domain: string;
+    group: string;
+    project: string;
 }
