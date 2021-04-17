@@ -49,14 +49,14 @@ export class Commander {
 
             if (stage.isFinished()) {
                 if (!stage.isSuccess()) {
-                    await Commander.printReport(writeStreams, jobs, parser.maxJobNameLength);
+                    await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.maxJobNameLength);
                     process.exit(1);
                 }
                 stage = stages.shift();
             }
         }
 
-        await Commander.printReport(writeStreams, jobs, parser.maxJobNameLength);
+        await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.maxJobNameLength);
     }
 
     static runList(parser: Parser, writeStreams: WriteStreams) {
@@ -113,10 +113,10 @@ export class Commander {
             await job.start(privileged);
         }
 
-        await Commander.printReport(writeStreams, jobs, parser.maxJobNameLength);
+        await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.maxJobNameLength);
     }
 
-    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, maxJobNameLength: number) => {
+    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], maxJobNameLength: number) => {
         writeStreams.stdout("\n");
 
         const preScripts: { successful: Job[], failed: Job[], warned: Job[] } = {
@@ -147,7 +147,9 @@ export class Commander {
                 preScripts.failed.push(job);
             }
         }
+
         if (preScripts.successful.length !== 0) {
+            preScripts.successful.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
             preScripts.successful.forEach(({name}) => {
                 const namePad = name.padEnd(maxJobNameLength);
                 writeStreams.stdout(chalk`{black.bgGreenBright  PASS } {blueBright ${namePad}}\n`);
