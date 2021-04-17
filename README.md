@@ -78,6 +78,17 @@ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.
 
 ## Convinience
 
+### Dot Env file
+Add a `.gitlab-ci-local-env` file to the current working directory
+```
+# Overrides .gitlab-ci.yml as the default git ci/cd file
+FILE=doctor-strange.yml # --file
+
+# Always runs needed jobs, when gitlab-ci-local <job-name> is called
+NEEDS=true # --needs
+```
+All cli options can be assigned default values this way
+
 ### Bash alias
 
 ```bash
