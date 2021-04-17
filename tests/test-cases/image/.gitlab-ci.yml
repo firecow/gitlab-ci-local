@@ -18,7 +18,8 @@ test-entrypoint:
   script:
     - pwd
     - echo "Test Entrypoint"
-    - cat test-file.txt
+    - cd folder
+    - cat < test-file.txt
 
 test-entrypoint-override:
   image:
