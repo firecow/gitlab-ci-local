@@ -10,6 +10,8 @@ npm-install:
   script:
     - npm install --no-audit
 
+# See for more information on proper deps scanning
+# https://simplesaurus.com/posts/gitlab-ci-dependency-scanning-npm-audit/
 # @Description Find security vulnerabilities in node_modules
 npm-audit:
   stage: test
