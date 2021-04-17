@@ -417,37 +417,42 @@ export class Job {
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
-        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : "bash -e", {
-            shell: "bash",
-            stdio: ["pipe", "pipe", "pipe"],
-            cwd: this.cwd,
-        });
-
-        cp.stdin.write("set -eo pipefail\n");
-        // cp.stdin.write("exec 0<> /dev/null\n");
+        const shellScript = `${this.cwd}/.gitlab-ci-local/${this.name}`;
+        await fs.ensureFile(shellScript);
+        await fs.truncate(shellScript);
+        await fs.appendFile(shellScript, "set -eo pipefail\n");
 
         if (this.imageName) {
-            cp.stdin.write("cd /builds/\n");
-            cp.stdin.write("chown root:root -R .\n");
-            cp.stdin.write("chmod a+w -R .\n");
+            await fs.appendFile(shellScript, "cd /builds/\n");
+            await fs.appendFile(shellScript, "chown root:root -R .\n");
+            await fs.appendFile(shellScript, "chmod a+w -R .\n");
+        } else {
+            for (const [key, value] of Object.entries(this.expandedVariables)) {
+                await fs.appendFile(shellScript, `export ${key}="${String(value).trim()}"\n`);
+            }
         }
 
-        for (const [key, value] of Object.entries(this.expandedVariables)) {
-            cp.stdin.write(`export ${key}="${String(value).trim()}"\n`);
-        }
-
-        scripts.forEach((script) => {
+        for (const script of scripts) {
             // Print command echo'ed in color
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
             const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
-            cp.stdin.write(chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`);
+            await fs.appendFile(shellScript, chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`);
 
             // Execute actual script
-            cp.stdin.write(`${script}\n`);
-        });
+            await fs.appendFile(shellScript, `${script}\n`);
+        }
 
-        cp.stdin.write("exit 0\n");
+        await fs.appendFile(shellScript, "exit 0\n");
+
+        const dockCmd = `docker start --attach -i ${this.containerId} < ${shellScript}`;
+        const bashCmd = `bash < .gitlab-ci-local/${this.name}`;
+        const cpCmd = this.containerId ? dockCmd : bashCmd;
+        const cp = childProcess.spawn(cpCmd, {
+            shell: "bash",
+            stdio: ["pipe", "pipe", "pipe"],
+            cwd: this.cwd,
+        });
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
             for (const line of `${e}`.split(/\r?\n/)) {
