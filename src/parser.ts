@@ -168,8 +168,8 @@ export class Parser {
         // Make sure artifact paths doesn't contain globstar
         // TODO: This deviates from gitlab ci behavior
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
-            jobData?.artifacts?.paths?.forEach((path: any) => {
-                assert(!path.includes("*"), `Artfact paths cannot contain globstar, yet! '${jobName}'`);
+            jobData?.artifacts?.paths?.forEach((artifactPath: any) => {
+                assert(!artifactPath.includes("*"), `Artfact paths cannot contain globstar, yet! '${jobName}'`);
             });
         });
 
