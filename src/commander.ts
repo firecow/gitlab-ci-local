@@ -156,9 +156,13 @@ export class Commander {
 
         if (preScripts.successful.length !== 0) {
             preScripts.successful.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            preScripts.successful.forEach(({name}) => {
-                const namePad = name.padEnd(jobNamePad);
-                writeStreams.stdout(chalk`{black.bgGreenBright  PASS } {blueBright ${namePad}}\n`);
+            preScripts.successful.forEach((job) => {
+                const namePad = job.name.padEnd(jobNamePad);
+                writeStreams.stdout(chalk`{black.bgGreenBright  PASS } {blueBright ${namePad}}`);
+                if (job.coveragePercent) {
+                    writeStreams.stdout(chalk` ${job.coveragePercent}% {grey coverage}`);
+                }
+                writeStreams.stdout("\n");
             });
         }
 
