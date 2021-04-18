@@ -6,7 +6,7 @@ test("include-project-file-ref <deploy-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/include-project-file-ref",
-        job: "deploy-job"
+        job: "deploy-job",
     }, writeStreams);
 
     const expected = [

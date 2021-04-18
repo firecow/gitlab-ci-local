@@ -6,7 +6,7 @@ test("list-case --list", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/list-case/",
-        list: true
+        list: true,
     }, writeStreams);
 
     const expected = [

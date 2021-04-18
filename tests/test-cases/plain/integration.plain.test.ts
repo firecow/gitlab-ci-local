@@ -8,7 +8,7 @@ test("plain", async () => {
         cwd: "tests/test-cases/plain",
     }, writeStream);
 
-    expect(writeStream.stdoutLines.length).toEqual(15);
+    expect(writeStream.stdoutLines.length).toEqual(16);
     expect(writeStream.stderrLines.length).toEqual(1);
 });
 
@@ -17,7 +17,7 @@ test("plain <notfound>", async () => {
     try {
         await handler({
             cwd: "tests/test-cases/plain",
-            job: "notfound"
+            job: "notfound",
         }, mockWriteStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright notfound} could not be found`);

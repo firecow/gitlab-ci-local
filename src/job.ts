@@ -19,16 +19,16 @@ export class Job {
     readonly name: string;
     readonly needs: string[] | null;
     readonly dependencies: string[] | null;
-    readonly maxJobNameLength: number;
-    readonly environment?: { name: string, url: string | null };
+    readonly jobNamePad: number;
+    readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
     readonly cwd: string;
-    readonly rules?: { if: string, when: string, allow_failure: string|boolean }[];
+    readonly rules?: { if: string; when: string; allow_failure: string | boolean }[];
     readonly expandedVariables: { [key: string]: string };
     readonly allowFailure: boolean;
     readonly when: string;
     readonly pipelineIid: number;
-    readonly cache: { key: string | { files: string[] }, paths: string[] };
+    readonly cache: { key: string | { files: string[] }; paths: string[] };
     private _prescriptsExitCode = 0;
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
@@ -39,18 +39,18 @@ export class Job {
     private containerId: string | null = null;
 
     constructor(opt: JobOptions) {
-        const jobData = opt.jobData;
+        const jobData = opt.data;
         const gitUser = opt.gitUser;
         const gitRemote = opt.gitRemote;
         const globals = opt.globals;
-        const userVariables = opt.userVariables;
+        const homeVariables = opt.homeVariables;
 
         this.writeStreams = opt.writeStreams;
-        this.maxJobNameLength = opt.maxJobNameLength;
+        this.jobNamePad = opt.namePad;
         this.name = opt.name;
         this.cwd = opt.cwd;
-        this.jobId = opt.jobId;
-        this.jobData = opt.jobData;
+        this.jobId = opt.id;
+        this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
 
         this.when = jobData.when || "on_success";
@@ -101,7 +101,7 @@ export class Job {
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
 
-        this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...userVariables, ...predefinedVariables};
+        this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...homeVariables, ...predefinedVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
@@ -229,7 +229,7 @@ export class Job {
         }
 
         if (this._afterScriptsExitCode > 0) {
-            writeStreams.stderr(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " (after_script)")}\n`);
+            writeStreams.stderr(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " after_script")}\n`);
         }
 
         if (this._prescriptsExitCode > 0 && !this.allowFailure) {
@@ -245,7 +245,7 @@ export class Job {
     }
 
     getJobNameString() {
-        return chalk`{blueBright ${this.name.padEnd(this.maxJobNameLength)}}`;
+        return chalk`{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
     }
 
     getOutputFilesPath() {
@@ -392,7 +392,7 @@ export class Job {
             dockerCmd += "\texit 1\n";
             dockerCmd += "fi\n\"";
 
-            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
+            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables});
             this.containerId = containerId.replace(/\r?\n/g, "");
 
             time = process.hrtime();
@@ -503,10 +503,10 @@ export class Job {
     private getExitedString(startTime: [number, number], code: number, warning = false, prependString = "") {
         const finishedStr = this.getFinishedString(startTime);
         if (warning) {
-            return chalk`${finishedStr} {yellowBright warning with code ${code.toString()}} ${prependString}`;
+            return chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }${prependString}`;
         }
 
-        return chalk`${finishedStr} {red exited with code ${code.toString()}} ${prependString}`;
+        return chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} } ${prependString}`;
     }
 
     private getFinishedString(startTime: [number, number]) {

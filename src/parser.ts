@@ -27,10 +27,10 @@ export class Parser {
     private readonly pipelineIid: number;
 
     private gitRemote: GitRemote | null = null;
-    private userVariables: any;
+    private homeVariables: any;
 
     private gitlabData: any;
-    private maxJobNameLength = 0;
+    private _jobNamePad = 0;
     private readonly tabCompletionPhase: boolean;
 
     private constructor(cwd: string, writeStreams: WriteStreams, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
@@ -42,6 +42,10 @@ export class Parser {
         this.writeStreams = writeStreams;
     }
 
+    get jobNamePad(): number {
+        return this._jobNamePad;
+    }
+
     static async create(cwd: string, writeStreams: WriteStreams, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
         const parser = new Parser(cwd, writeStreams, pipelineIid, tabCompletionPhase, file, home);
 
@@ -51,7 +55,7 @@ export class Parser {
         await parser.validateNeedsTags();
         const parsingTime = process.hrtime(time);
         if (!tabCompletionPhase) {
-            writeStreams.stdout(chalk`{cyan ${"yml files".padEnd(parser.maxJobNameLength)}} {magentaBright processed} in {magenta ${prettyHrtime(parsingTime)}}\n`);
+            writeStreams.stdout(chalk`{cyan ${"yml files".padEnd(parser.jobNamePad)}} {magentaBright processed} in {magenta ${prettyHrtime(parsingTime)}}\n`);
         }
 
         return parser;
@@ -79,11 +83,11 @@ export class Parser {
         return {
             GITLAB_USER_LOGIN: gitlabUserLogin,
             GITLAB_USER_EMAIL: gitlabUserEmail,
-            GITLAB_USER_NAME: gitlabUserName
+            GITLAB_USER_NAME: gitlabUserName,
         };
     }
 
-    static async initUserVariables(cwd: string, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
+    static async initHomeVariables(cwd: string, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
         const homeDir = home.replace(/\/$/, "");
         const variablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         if (!fs.existsSync(variablesFile)) {
@@ -146,7 +150,7 @@ export class Parser {
         const writeStreams = this.writeStreams;
 
         this.gitRemote = await Parser.initGitRemote(cwd);
-        this.userVariables = await Parser.initUserVariables(cwd, this.gitRemote, this.home ?? process.env.HOME ?? "");
+        this.homeVariables = await Parser.initHomeVariables(cwd, this.gitRemote, this.home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = this.file ? `${cwd}/${this.file}` : `${cwd}/.gitlab-ci.yml`;
@@ -208,7 +212,7 @@ export class Parser {
             if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
                 continue;
             }
-            this.maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
+            this._jobNamePad = Math.max(this.jobNamePad, jobName.length);
         }
 
         // Check that needs is larger and containers the same as dependencies.
@@ -247,13 +251,13 @@ export class Parser {
             const job = new Job({
                 writeStreams: this.writeStreams,
                 name: jobName,
-                maxJobNameLength: this.maxJobNameLength,
-                userVariables: this.userVariables,
-                jobData,
+                namePad: this.jobNamePad,
+                homeVariables: this.homeVariables,
+                data: jobData,
                 cwd,
                 globals: gitlabData,
                 pipelineIid,
-                jobId,
+                id: jobId,
                 gitUser,
                 gitRemote: this.gitRemote,
             });
@@ -328,10 +332,6 @@ export class Parser {
 
     getJobs(): ReadonlyArray<Job> {
         return Array.from(this.jobs.values());
-    }
-
-    getJobNames(): ReadonlyArray<string> {
-        return Array.from(this.jobs.keys());
     }
 
     getStageNames(): ReadonlyArray<string> {
@@ -474,12 +474,12 @@ export class Parser {
         return includeDatas;
     }
 
-    static parseTemplateInclude(template: string): { project: string, ref: string, file: string, domain: string } {
+    static parseTemplateInclude(template: string): { project: string; ref: string; file: string; domain: string } {
         return {
             domain: "gitlab.com",
             project: "gitlab-org/gitlab",
             ref: "master",
-            file: `lib/gitlab/ci/templates/${template}`
+            file: `lib/gitlab/ci/templates/${template}`,
         };
     }
 }

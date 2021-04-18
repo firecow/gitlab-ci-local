@@ -6,7 +6,7 @@ test("artifacts <consume-artifacts> --needs", async () => {
     await handler({
         cwd: "tests/test-cases/artifacts",
         job: "consume-artifacts",
-        needs: true
+        needs: true,
     }, writeStreams);
 
     expect(writeStreams.stderrLines.length).toBe(0);
