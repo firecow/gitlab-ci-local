@@ -286,27 +286,6 @@ export class Job {
         }
     }
 
-    private async waitForContainerUp(containerId: string) {
-        return new Promise<void>((resolve, reject) => {
-            const timeoutKey = setTimeout(() => {
-                clearInterval(intervalKey);
-                reject(new ExitError(`Container ${containerId} timed out`));
-            }, 15000);
-
-            const intervalKey = setInterval(async() => {
-                const {stdout} = await Utils.spawn(`docker container ls --format='{{json .}}' -a -f id=${containerId}`);
-                if (stdout !== "") {
-                    const container = JSON.parse(stdout);
-                    if (container["Status"] === "Created") {
-                        clearTimeout(timeoutKey);
-                        clearInterval(intervalKey);
-                        resolve();
-                    }
-                }
-            }, 5);
-        });
-    }
-
     private generateInjectSSHAgentOptions() {
         if (!this.injectSSHAgent) {
             return "";
@@ -416,8 +395,6 @@ export class Job {
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
             this.containerId = containerId.replace(/\r?\n/g, "");
 
-            await this.waitForContainerUp(containerId);
-
             time = process.hrtime();
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
             endTime = process.hrtime(time);
@@ -490,8 +467,8 @@ export class Job {
             cp.stdout.on("data", (e) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
             cp.stderr.on("data", (e) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
 
-            cp.on("exit", (code) => resolve(code ?? 0));
-            cp.on("error", (err) => reject(err));
+            cp.on("exit", (code) => setTimeout(() => resolve(code ?? 0), 10));
+            cp.on("error", (err) => setTimeout(() => reject(err), 10));
         });
 
         if (this.imageName) {
