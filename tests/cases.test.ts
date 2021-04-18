@@ -2,6 +2,16 @@ import {MockWriteStreams} from "../src/mock-write-streams";
 import * as chalk from "chalk";
 import {handler} from "../src/handler";
 
+test("--completion", async () => {
+    const spy = jest.spyOn(console, "log").mockImplementation();
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        completion: true,
+    }, writeStreams);
+    expect(console.log).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
+});
+
 test("something/unknown-directory (non-existing dir)", async () => {
     try {
         const writeStreams = new MockWriteStreams();
