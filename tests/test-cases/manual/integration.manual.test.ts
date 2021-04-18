@@ -5,7 +5,7 @@ import * as chalk from "chalk";
 test("manual <build-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: "tests/test-cases/manual",
+        cwd: "tests/test-cases/manual/",
         manual: "build-job",
     }, writeStreams);
 
