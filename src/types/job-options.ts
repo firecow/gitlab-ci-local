@@ -13,5 +13,6 @@ export interface JobOptions {
     id: number;
     gitRemote: GitRemote;
     gitUser: GitUser;
+    extraHosts: string[];
     homeVariables: { [name: string]: string };
 }
