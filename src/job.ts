@@ -393,7 +393,7 @@ export class Job {
             dockerCmd += "fi\n\"";
 
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables});
-            this.containerId = containerId.replace("\n", "");
+            this.containerId = containerId.replace(/\r?\n/g, "");
 
             time = process.hrtime();
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
@@ -467,8 +467,8 @@ export class Job {
             cp.stdout.on("data", (e) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
             cp.stderr.on("data", (e) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
 
-            cp.on("exit", (code) => resolve(code ?? 0));
-            cp.on("error", (err) => reject(err));
+            cp.on("exit", (code) => setTimeout(() => resolve(code ?? 0), 10));
+            cp.on("error", (err) => setTimeout(() => reject(err), 10));
         });
 
         if (this.imageName) {
