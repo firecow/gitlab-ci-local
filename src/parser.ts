@@ -15,46 +15,39 @@ import {Utils} from "./utils";
 import {assert} from "./asserts";
 import * as path from "path";
 import {WriteStreams} from "./types/write-streams";
+import {ParserOptions} from "./types/parser-options";
 
 export class Parser {
 
     private readonly jobs: Map<string, Job> = new Map();
     private readonly stages: Map<string, Stage> = new Map();
-    private readonly cwd: string;
-    private readonly writeStreams: WriteStreams;
-    private readonly file?: string;
-    private readonly home?: string;
-    private readonly pipelineIid: number;
+    private readonly opt: ParserOptions;
 
     private gitRemote: GitRemote | null = null;
     private homeVariables: any;
 
     private gitlabData: any;
     private _jobNamePad = 0;
-    private readonly tabCompletionPhase: boolean;
 
-    private constructor(cwd: string, writeStreams: WriteStreams, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
-        this.cwd = cwd;
-        this.pipelineIid = pipelineIid;
-        this.tabCompletionPhase = tabCompletionPhase;
-        this.file = file;
-        this.home = home;
-        this.writeStreams = writeStreams;
+    private constructor(opt: ParserOptions) {
+        this.opt = opt;
     }
 
     get jobNamePad(): number {
         return this._jobNamePad;
     }
 
-    static async create(cwd: string, writeStreams: WriteStreams, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
-        const parser = new Parser(cwd, writeStreams, pipelineIid, tabCompletionPhase, file, home);
+    static async create(opt: ParserOptions) {
+        const writeStreams = opt.writeStreams;
+        const parser = new Parser(opt);
 
         const time = process.hrtime();
         await parser.init();
         await parser.initJobs();
         await parser.validateNeedsTags();
         const parsingTime = process.hrtime(time);
-        if (!tabCompletionPhase) {
+
+        if (!opt.tabCompletionPhase) {
             writeStreams.stdout(chalk`{cyan ${"yml files".padEnd(parser.jobNamePad)}} {magentaBright processed} in {magenta ${prettyHrtime(parsingTime)}}\n`);
         }
 
@@ -146,20 +139,23 @@ export class Parser {
     }
 
     async init() {
-        const cwd = this.cwd;
-        const writeStreams = this.writeStreams;
+        const cwd = this.opt.cwd;
+        const writeStreams = this.opt.writeStreams;
+        const home = this.opt.home;
+        const file = this.opt.file;
+        const tabCompletionPhase = this.opt.tabCompletionPhase;
 
         this.gitRemote = await Parser.initGitRemote(cwd);
-        this.homeVariables = await Parser.initHomeVariables(cwd, this.gitRemote, this.home ?? process.env.HOME ?? "");
+        this.homeVariables = await Parser.initHomeVariables(cwd, this.gitRemote, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [];
-        ymlPath = this.file ? `${cwd}/${this.file}` : `${cwd}/.gitlab-ci.yml`;
+        ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, writeStreams, this.gitRemote, this.tabCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, writeStreams, this.gitRemote, tabCompletionPhase));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, writeStreams, this.gitRemote, this.tabCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, writeStreams, this.gitRemote, tabCompletionPhase));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
@@ -235,8 +231,10 @@ export class Parser {
     async initJobs() {
         assert(this.gitRemote != null, "GitRemote isn't set in parser initJobs function");
 
-        const pipelineIid = this.pipelineIid;
-        const cwd = this.cwd;
+        const writeStreams = this.opt.writeStreams;
+        const pipelineIid = this.opt.pipelineIid;
+        const cwd = this.opt.cwd;
+        const extraHosts = this.opt.extraHosts || [];
         const gitlabData = this.gitlabData;
 
         const gitUser = await Parser.initGitUser(cwd);
@@ -249,7 +247,8 @@ export class Parser {
 
             const jobId = await state.getJobId(cwd);
             const job = new Job({
-                writeStreams: this.writeStreams,
+                extraHosts,
+                writeStreams,
                 name: jobName,
                 namePad: this.jobNamePad,
                 homeVariables: this.homeVariables,
