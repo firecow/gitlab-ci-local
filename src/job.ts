@@ -30,6 +30,8 @@ export class Job {
     readonly pipelineIid: number;
     readonly cache: { key: string | { files: string[] }; paths: string[] };
     private _prescriptsExitCode = 0;
+    private _afterScriptsExitCode = 0;
+    private _coveragePercent: string | null = null;
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
     private readonly extraHosts: string[];
@@ -178,10 +180,12 @@ export class Job {
         return this._prescriptsExitCode;
     }
 
-    private _afterScriptsExitCode = 0;
-
     get afterScriptsExitCode() {
         return this._afterScriptsExitCode;
+    }
+
+    get coveragePercent(): string | null {
+        return this._coveragePercent;
     }
 
     async start(privileged: boolean): Promise<void> {
@@ -242,6 +246,16 @@ export class Job {
 
         this.running = false;
         this.finished = true;
+
+        if (this.jobData.coverage) {
+            const content = await fs.readFile(`${this.cwd}/.gitlab-ci-local/output/${this.name}.log`, "utf8");
+            const regex = new RegExp(this.jobData.coverage.replace(/^\//, "").replace(/\/$/, ""), "m");
+            const match = content.match(regex);
+            if (match && match[0] != null) {
+                const firstNumber = match[0].match(/\d+(\.\d+)?/);
+                this._coveragePercent = firstNumber && firstNumber[0] ? firstNumber[0] : null;
+            }
+        }
 
         await this.removeContainer();
     }

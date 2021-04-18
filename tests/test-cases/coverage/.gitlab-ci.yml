@@ -1,0 +1,5 @@
+---
+test-job:
+  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
+  script:
+    - "echo \"  Lines:   78.46% (510/650)\""
