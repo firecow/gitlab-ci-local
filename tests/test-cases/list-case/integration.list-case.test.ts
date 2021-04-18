@@ -10,8 +10,8 @@ test("list-case --list", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job }  Run Tests  {yellow test }  on_success         `,
-        chalk`{blueBright build-job}             {yellow build}  on_success  warning  [{blueBright test-job}]`,
+        chalk`{blueBright test-job }  Run Tests  {yellow test }  on_success  {black.bgRed  CAN FAIL  }`,
+        chalk`{blueBright build-job}             {yellow build}  on_success  {black.bgYellowBright  ONLY WARN }  [{blueBright test-job}]`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

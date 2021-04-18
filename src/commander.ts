@@ -74,16 +74,22 @@ export class Commander {
         let descriptionPadEnd = 0;
         parser.getJobs().forEach(j => descriptionPadEnd = Math.max(j.description.length, descriptionPadEnd));
 
-        for (const job of jobs) {
+        const neverJobs = jobs.filter(j => j.when === "never");
+        const nonNeverJobs = jobs.filter(j => j.when !== "never");
+
+        const renderLine = (job: Job) => {
             const needs = job.needs;
-            const allowFailure = job.allowFailure ? "warning" : "";
+            const allowFailure = job.allowFailure ? chalk`{black.bgYellowBright  ONLY WARN }` : chalk`{black.bgRed  CAN FAIL  }`;
             let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
-            jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
+            jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
             if (needs) {
                 jobLine += chalk`  [{blueBright ${needs.join(",")}}]`;
             }
             writeStreams.stdout(`${jobLine}\n`);
-        }
+        };
+
+        neverJobs.forEach((job) => renderLine(job));
+        nonNeverJobs.forEach((job) => renderLine(job));
     }
 
     static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobName: string, needs: boolean, privileged: boolean) {
