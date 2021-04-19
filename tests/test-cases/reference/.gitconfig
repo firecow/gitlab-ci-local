@@ -1,2 +1,2 @@
 [remote "origin"]
-	url = git@gitlab.com/fake/test-case/reference.git
+	url = git@gitlab.com/gcl/reference.git
