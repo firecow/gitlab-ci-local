@@ -417,18 +417,17 @@ export class Job {
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
-        const shellScript = `${this.cwd}/.gitlab-ci-local/${this.name}`;
-        await fs.ensureFile(shellScript);
-        await fs.truncate(shellScript);
-        await fs.appendFile(shellScript, "set -eo pipefail\n");
+        let cmd = "";
+        cmd += "set -eo pipefail\n";
+        cmd += "exec 0<> /dev/null\n";
 
         if (this.imageName) {
-            await fs.appendFile(shellScript, "cd /builds/\n");
-            await fs.appendFile(shellScript, "chown root:root -R .\n");
-            await fs.appendFile(shellScript, "chmod a+w -R .\n");
+            cmd += "cd /builds/\n";
+            cmd += "chown root:root -R .\n";
+            cmd += "chmod a+w -R .\n";
         } else {
             for (const [key, value] of Object.entries(this.expandedVariables)) {
-                await fs.appendFile(shellScript, `export ${key}="${String(value).trim()}"\n`);
+                cmd += `export ${key}="${String(value).trim()}"\n`;
             }
         }
 
@@ -437,18 +436,18 @@ export class Job {
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
             const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
-            await fs.appendFile(shellScript, chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`);
+            cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
 
             // Execute actual script
-            await fs.appendFile(shellScript, `${script}\n`);
+            cmd += `${script}\n`;
         }
 
-        await fs.appendFile(shellScript, "exit 0\n");
+        cmd += "exit 0\n";
 
-        const dockCmd = `docker start --attach -i ${this.containerId} < .gitlab-ci-local/${this.name}`;
-        const bashCmd = `bash --login < .gitlab-ci-local/${this.name}`;
-        const cpCmd = this.containerId ? dockCmd : bashCmd;
-        const cp = childProcess.spawn(cpCmd, {
+        // const dockCmd = `docker start --attach -i ${this.containerId} < ${cmd}`;
+        // const bashCmd = `bash --login -c "${cmd}"`;
+        // const cpCmd = this.containerId ? dockCmd : bashCmd;
+        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}\n${cmd}` : cmd, {
             shell: "bash",
             stdio: ["pipe", "pipe", "pipe"],
             cwd: this.cwd,

@@ -1,5 +1,13 @@
 ---
-test-job:
+test-debian:
+  image: debian
+  script:
+    - cat
+    - cd folder
+    - cat < text.txt
+
+test-alpine:
+  image: alpine
   script:
     - cat
     - cd folder
