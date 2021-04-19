@@ -1,2 +1,2 @@
 [remote "origin"]
-	url = git@gitlab.com/gcl/test-case.git
+	url = git@gitlab.com/gcl/needs-invalid-stage.git
