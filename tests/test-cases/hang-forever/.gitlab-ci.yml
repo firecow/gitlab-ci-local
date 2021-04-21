@@ -12,3 +12,9 @@ test-alpine:
     - cat
     - cd folder
     - cat < text.txt
+
+test-shell:
+  script:
+    - cat
+    - cd folder
+    - cat < text.txt

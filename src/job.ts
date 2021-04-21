@@ -417,9 +417,8 @@ export class Job {
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
-        let cmd = "";
-        cmd += "set -eo pipefail\n";
-        cmd += "exec 0<> /dev/null\n";
+        let cmd = "set -eo pipefail\n";
+        cmd += "exec 0< /dev/null\n";
 
         if (this.imageName) {
             cmd += "cd /builds/\n";
@@ -436,7 +435,7 @@ export class Job {
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
             const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
-            cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
+            // cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
 
             // Execute actual script
             cmd += `${script}\n`;
@@ -444,10 +443,7 @@ export class Job {
 
         cmd += "exit 0\n";
 
-        // const dockCmd = `docker start --attach -i ${this.containerId} < ${cmd}`;
-        // const bashCmd = `bash --login -c "${cmd}"`;
-        // const cpCmd = this.containerId ? dockCmd : bashCmd;
-        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}\n${cmd}` : cmd, {
+        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : `bash`, {
             shell: "bash",
             stdio: ["pipe", "pipe", "pipe"],
             cwd: this.cwd,
@@ -474,6 +470,8 @@ export class Job {
 
             cp.on("exit", (code) => resolve(code ?? 0));
             cp.on("error", (err) => reject(err));
+
+            cp.stdin.end(`${cmd}`);
         });
 
         if (this.imageName) {
