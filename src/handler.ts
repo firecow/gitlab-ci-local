@@ -1,3 +1,4 @@
+import * as yaml from "js-yaml";
 import * as chalk from "chalk";
 import * as fs from "fs-extra";
 import * as yargs from "yargs";
@@ -9,6 +10,7 @@ import * as dotenv from "dotenv";
 import * as camelCase from "camelcase";
 import * as prettyHrtime from "pretty-hrtime";
 import {WriteStreams} from "./types/write-streams";
+import {Job} from "./job";
 
 let parser: Parser | null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
@@ -34,6 +36,21 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
 
     if (argv.completion != null) {
         yargs.showCompletionScript();
+    } else if (argv.preview != null) {
+        const pipelineIid = await state.getPipelineIid(cwd);
+        parser = await Parser.create({
+            cwd, writeStreams, pipelineIid, tabCompletionPhase: true, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
+        });
+        const gitlabData = parser.gitlabData;
+        for (const jobName of Object.keys(gitlabData)) {
+            if (jobName === "stages") {
+                continue;
+            }
+            if (Job.illegalJobNames.includes(jobName) || jobName.startsWith(".")) {
+                delete gitlabData[jobName];
+            }
+        }
+        writeStreams.stdout(`${yaml.dump(gitlabData)}`);
     } else if (argv.list != null) {
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
