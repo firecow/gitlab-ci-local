@@ -422,8 +422,8 @@ export class Job {
 
             if (artifactsFrom === null || artifactsFrom.length > 0) {
                 time = process.hrtime();
-                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
-                await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.containerId}:/builds/`);
+                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
+                await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/. ${this.containerId}:/builds/`);
                 endTime = process.hrtime(time);
                 writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
@@ -431,8 +431,8 @@ export class Job {
 
         if (this.imageName === null && (artifactsFrom === null || artifactsFrom.length > 0)) {
             time = process.hrtime();
-            await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
-            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.cwd}`);
+            await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
+            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/. ${this.cwd}`);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
@@ -497,17 +497,17 @@ export class Job {
 
                 time = process.hrtime();
 
-                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
+                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
 
                 let pathReplacement = "";
                 if (`${expandedPath}`.match(/(.*)\/(.+)/)) {
                     // in case of a folder, create the full path
-                    await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${expandedPath.replace(/(.*)\/(.+)/, "$1")}`);
+                    await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${expandedPath.replace(/(.*)\/(.+)/, "$1")}`);
                     pathReplacement = `${expandedPath.replace(/(.*)\/(.+)/, "$1")}`;
                 }
 
                 try {
-                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${pathReplacement}`);
+                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${pathReplacement}`);
                     endTime = process.hrtime(time);
                     writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
                 } catch (e) {
