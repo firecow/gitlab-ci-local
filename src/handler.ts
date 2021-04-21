@@ -44,6 +44,7 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
     } else if (argv.job) {
         checkFolderAndFile(cwd, argv.file);
         if (argv.needs === true) {
+            await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
             await state.incrementPipelineIid(cwd);
         }
         const pipelineIid = await state.getPipelineIid(cwd);
@@ -54,6 +55,7 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
     } else {
         const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);
+        await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
