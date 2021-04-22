@@ -63,6 +63,11 @@ process.on("unhandledRejection", e => {
             description: "List jobs and job information",
             requiresArg: false,
         })
+        .option("preview", {
+            type: "string",
+            description: "Print YML with defaults, includes, extends and reference's expanded",
+            requiresArg: false,
+        })
         .option("cwd", {
             type: "string",
             description: "Path to a current working directory",

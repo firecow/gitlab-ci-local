@@ -1,0 +1,4 @@
+---
+.included-job:
+  script:
+    - echo "Irrelevant"
