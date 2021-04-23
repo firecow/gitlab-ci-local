@@ -387,8 +387,13 @@ export class Job {
             if (this.cache && this.cache.key && typeof this.cache.key === "string" && this.cache.paths) {
                 this.cache.paths.forEach((path) => {
                     writeStreams.stdout(chalk`${jobNameStr} {magentaBright mounting cache} for path ${path}\n`);
-                    // /tmp/ location instead of .gitlab-ci-local/cache avoids the (unneeded) inclusion of cache folders when docker copy all files into the container, thus saving time for all jobs
-                    dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `;
+
+                    if (path.startsWith("/")) {
+                        dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:${path} `;
+                    } else {
+                        dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `;
+                    }
+
                 });
             }
 
