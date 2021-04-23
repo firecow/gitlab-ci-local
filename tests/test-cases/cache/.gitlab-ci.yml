@@ -6,11 +6,12 @@ produce-cache:
     key: maven
     paths:
       - .cache
-    policy: pull-push
+      - /tmp/
   script:
     - rm -rf .cache/file1 || true
     - mkdir -p .cache
     - touch .cache/file1
+    - touch /tmp/file2
 
 consume-cache:
   stage: test
@@ -21,6 +22,7 @@ consume-cache:
     key: maven
     paths:
       - .cache
-    policy: pull-push
+      - /tmp/
   script:
-    - if [ ! -f .cache/file1 ]; then exit 1; fi
+    - test -f .cache/file1
+    - test -f /tmp/file2

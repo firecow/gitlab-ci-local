@@ -389,7 +389,7 @@ export class Job {
                     writeStreams.stdout(chalk`${jobNameStr} {magentaBright mounting cache} for path ${path}\n`);
 
                     if (path.startsWith("/")) {
-                        dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:${path} `;
+                        dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/_root${path}:${path} `;
                     } else {
                         dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `;
                     }
