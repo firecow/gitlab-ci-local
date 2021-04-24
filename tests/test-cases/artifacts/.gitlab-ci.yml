@@ -1,5 +1,5 @@
 ---
-produce-artifacts:
+produce artifacts:
   stage: build
   image: alpine
   script:
@@ -14,11 +14,11 @@ produce-artifacts:
       - path/to/deep/folder
       - another-path/to/deep/empty-folder
 
-consume-artifacts:
+consume artifacts:
   stage: test
   image: alpine
-  needs: [produce-artifacts]
-  dependencies: [produce-artifacts]
+  needs: [produce artifacts]
+  dependencies: [produce artifacts]
   script:
     - if [ ! -f file1 ]; then exit 1; fi
     - if [ ! -f file2 ]; then exit 1; fi
