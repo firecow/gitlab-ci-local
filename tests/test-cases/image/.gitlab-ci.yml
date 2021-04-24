@@ -1,5 +1,5 @@
 ---
-test-job:
+test job:
   variables:
     PHP_IMAGE_URL: php
   image: ${PHP_IMAGE_URL}
