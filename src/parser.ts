@@ -454,7 +454,7 @@ export class Parser {
                 // Expand local includes inside a "project"-like include
                 (fileDoc["include"] || []).forEach((inner: any, i: number) => {
                     if (inner["local"]) {
-                        fileDoc["include"][i] = { project: value["project"], file: inner["local"].replace(/^\//, ""), ref: value["ref"]};
+                        fileDoc["include"][i] = {project: value["project"], file: inner["local"].replace(/^\//, ""), ref: value["ref"]};
                     }
                 });
 

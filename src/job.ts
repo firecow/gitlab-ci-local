@@ -198,11 +198,10 @@ export class Job {
         await fs.ensureFile(this.getOutputFilesPath());
         await fs.truncate(this.getOutputFilesPath());
 
-        const time = process.hrtime();
-        await fs.ensureDir(`${this.cwd}/.gitlab-ci-local/builds/${this.name}`);
-        await Utils.spawn(`rsync -ah --delete --exclude-from=<(git -C . ls-files --exclude-standard -oi --directory) . .gitlab-ci-local/builds/${this.name}/`, this.cwd);
-        const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright rsynced to build folder} in {magenta ${prettyHrtime(endTime)}}\n`);
+        if (!this.imageName) {
+            const {hrdeltatime} = await Utils.rsyncNonIgnoredFilesToBuilds(this.cwd, this.name);
+            writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright rsynced to build folder} in {magenta ${prettyHrtime(hrdeltatime)}}\n`);
+        }
 
         if (!this.interactive) {
             const jobNameStr = this.getJobNameString();
@@ -423,7 +422,7 @@ export class Job {
             this.containerId = containerId.replace(/\r?\n/g, "");
 
             time = process.hrtime();
-            await Utils.spawn(`docker cp .gitlab-ci-local/builds/${this.name}/. ${this.containerId}:/builds/`, this.cwd);
+            await Utils.spawn(`docker cp .gitlab-ci-local/builds/.docker/. ${this.containerId}:/builds/`, this.cwd);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
 
