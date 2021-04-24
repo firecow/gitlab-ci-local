@@ -19,19 +19,22 @@ export class Job {
     readonly name: string;
     readonly needs: string[] | null;
     readonly dependencies: string[] | null;
-    readonly maxJobNameLength: number;
-    readonly environment?: { name: string, url: string | null };
+    readonly jobNamePad: number;
+    readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
     readonly cwd: string;
-    readonly rules?: { if: string, when: string, allow_failure: string|boolean }[];
+    readonly rules?: { if: string; when: string; allow_failure: string | boolean }[];
     readonly expandedVariables: { [key: string]: string };
     readonly allowFailure: boolean;
     readonly when: string;
     readonly pipelineIid: number;
-    readonly cache: { key: string | { files: string[] }, paths: string[] };
+    readonly cache: { key: string | { files: string[] }; paths: string[] };
     private _prescriptsExitCode = 0;
+    private _afterScriptsExitCode = 0;
+    private _coveragePercent: string | null = null;
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
+    private readonly extraHosts: string[];
     private started = false;
     private finished = false;
     private running = false;
@@ -39,18 +42,19 @@ export class Job {
     private containerId: string | null = null;
 
     constructor(opt: JobOptions) {
-        const jobData = opt.jobData;
+        const jobData = opt.data;
         const gitUser = opt.gitUser;
         const gitRemote = opt.gitRemote;
         const globals = opt.globals;
-        const userVariables = opt.userVariables;
+        const homeVariables = opt.homeVariables;
 
+        this.extraHosts = opt.extraHosts;
         this.writeStreams = opt.writeStreams;
-        this.maxJobNameLength = opt.maxJobNameLength;
+        this.jobNamePad = opt.namePad;
         this.name = opt.name;
         this.cwd = opt.cwd;
-        this.jobId = opt.jobId;
-        this.jobData = opt.jobData;
+        this.jobId = opt.id;
+        this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
 
         this.when = jobData.when || "on_success";
@@ -101,7 +105,7 @@ export class Job {
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
 
-        this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...userVariables, ...predefinedVariables};
+        this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...homeVariables, ...predefinedVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
@@ -176,10 +180,12 @@ export class Job {
         return this._prescriptsExitCode;
     }
 
-    private _afterScriptsExitCode = 0;
-
     get afterScriptsExitCode() {
         return this._afterScriptsExitCode;
+    }
+
+    get coveragePercent(): string | null {
+        return this._coveragePercent;
     }
 
     async start(privileged: boolean): Promise<void> {
@@ -229,7 +235,7 @@ export class Job {
         }
 
         if (this._afterScriptsExitCode > 0) {
-            writeStreams.stderr(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " (after_script)")}\n`);
+            writeStreams.stderr(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " after_script")}\n`);
         }
 
         if (this._prescriptsExitCode > 0 && !this.allowFailure) {
@@ -241,11 +247,21 @@ export class Job {
         this.running = false;
         this.finished = true;
 
+        if (this.jobData.coverage) {
+            const content = await fs.readFile(`${this.cwd}/.gitlab-ci-local/output/${this.name}.log`, "utf8");
+            const regex = new RegExp(this.jobData.coverage.replace(/^\//, "").replace(/\/$/, ""), "m");
+            const match = content.match(regex);
+            if (match && match[0] != null) {
+                const firstNumber = match[0].match(/\d+(\.\d+)?/);
+                this._coveragePercent = firstNumber && firstNumber[0] ? firstNumber[0] : null;
+            }
+        }
+
         await this.removeContainer();
     }
 
     getJobNameString() {
-        return chalk`{blueBright ${this.name.padEnd(this.maxJobNameLength)}}`;
+        return chalk`{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
     }
 
     getOutputFilesPath() {
@@ -303,7 +319,7 @@ export class Job {
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
             const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
-            cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
+            cmd += chalk`echo "{green $ ${text}${multilineText}}"\n`;
 
             // Execute actual script
             cmd += `${script}\n`;
@@ -360,6 +376,10 @@ export class Job {
                 dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             }
 
+            for (const extraHost of this.extraHosts) {
+                dockerCmd += `--add-host=${extraHost} `;
+            }
+
             if (this.imageEntrypoint) {
                 this.imageEntrypoint.forEach((e) => {
                     dockerCmd += `--entrypoint "${e}" `;
@@ -398,8 +418,8 @@ export class Job {
             dockerCmd += "\texit 1\n";
             dockerCmd += "fi\n\"";
 
-            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables,});
-            this.containerId = containerId.replace("\n", "");
+            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables});
+            this.containerId = containerId.replace(/\r?\n/g, "");
 
             time = process.hrtime();
             await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
@@ -408,8 +428,8 @@ export class Job {
 
             if (artifactsFrom === null || artifactsFrom.length > 0) {
                 time = process.hrtime();
-                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
-                await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.containerId}:/builds/`);
+                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
+                await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/. ${this.containerId}:/builds/`);
                 endTime = process.hrtime(time);
                 writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
@@ -417,8 +437,8 @@ export class Job {
 
         if (this.imageName === null && (artifactsFrom === null || artifactsFrom.length > 0)) {
             time = process.hrtime();
-            await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
-            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/. ${this.cwd}`);
+            await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
+            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/. ${this.cwd}`);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
@@ -472,8 +492,8 @@ export class Job {
             cp.stdout.on("data", (e) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
             cp.stderr.on("data", (e) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
 
-            cp.on("exit", (code) => resolve(code ?? 0));
-            cp.on("error", (err) => reject(err));
+            cp.on("exit", (code) => setTimeout(() => resolve(code ?? 0), 10));
+            cp.on("error", (err) => setTimeout(() => reject(err), 10));
 
             if (this.imageName) {
                 cp.stdin.end(`/builds/.gitlab-ci-local/scripts/${this.name}`);
@@ -488,17 +508,17 @@ export class Job {
 
                 time = process.hrtime();
 
-                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/`);
+                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
 
                 let pathReplacement = "";
                 if (`${expandedPath}`.match(/(.*)\/(.+)/)) {
                     // in case of a folder, create the full path
-                    await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${expandedPath.replace(/(.*)\/(.+)/, "$1")}`);
+                    await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${expandedPath.replace(/(.*)\/(.+)/, "$1")}`);
                     pathReplacement = `${expandedPath.replace(/(.*)\/(.+)/, "$1")}`;
                 }
 
                 try {
-                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${this.pipelineIid}/${pathReplacement}`);
+                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${pathReplacement}`);
                     endTime = process.hrtime(time);
                     writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
                 } catch (e) {
@@ -514,10 +534,10 @@ export class Job {
     private getExitedString(startTime: [number, number], code: number, warning = false, prependString = "") {
         const finishedStr = this.getFinishedString(startTime);
         if (warning) {
-            return chalk`${finishedStr} {yellowBright warning with code ${code.toString()}} ${prependString}`;
+            return chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }${prependString}`;
         }
 
-        return chalk`${finishedStr} {red exited with code ${code.toString()}} ${prependString}`;
+        return chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} } ${prependString}`;
     }
 
     private getFinishedString(startTime: [number, number]) {

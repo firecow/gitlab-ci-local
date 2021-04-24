@@ -3,15 +3,16 @@ import {GitUser} from "./git-user";
 import {WriteStreams} from "./write-streams";
 
 export interface JobOptions {
-    writeStreams: WriteStreams,
-    jobData: any;
+    writeStreams: WriteStreams;
+    data: any;
     name: string;
+    namePad: number;
     cwd: string;
     globals: any;
     pipelineIid: number;
-    jobId: number;
-    maxJobNameLength: number;
+    id: number;
     gitRemote: GitRemote;
     gitUser: GitUser;
-    userVariables: { [name: string]: string }
+    extraHosts: string[];
+    homeVariables: { [name: string]: string };
 }

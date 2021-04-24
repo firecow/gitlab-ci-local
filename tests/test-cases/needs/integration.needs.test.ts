@@ -7,7 +7,7 @@ test("needs <build-job> --needs", async () => {
     await handler({
         cwd: "tests/test-cases/needs",
         job: "build-job",
-        needs: true
+        needs: true,
     }, mockWriteStreams);
 
     const expected = [chalk`{blueBright test-job } {greenBright >} Test something`];

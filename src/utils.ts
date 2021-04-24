@@ -5,7 +5,7 @@ import {Job} from "./job";
 
 export class Utils {
 
-    static spawn(command: string, cwd = process.cwd(), env: { [key: string]: string | undefined } = process.env): Promise<{ stdout: string, stderr: string, output: string, status: number }> {
+    static spawn(command: string, cwd = process.cwd(), env: { [key: string]: string | undefined } = process.env): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
         return new Promise((resolve, reject) => {
             const cp = childProcess.spawn(command, {shell: "bash", env, cwd});
 
@@ -23,12 +23,12 @@ export class Utils {
             });
             cp.on("exit", (status) => {
                 if ((status ?? 0) === 0) {
-                    return resolve({stdout, stderr, output, status: status ?? 0});
+                    return setTimeout(() => resolve({stdout, stderr, output, status: status ?? 0}), 10);
                 }
-                return reject(new ExitError(`${output}`));
+                return setTimeout(() => reject(new ExitError(`${output}`)), 10);
             });
             cp.on("error", (e) => {
-                reject(new ExitError(`'${command}' had errors\n${e}`));
+                return setTimeout(() => reject(new ExitError(`'${command}' had errors\n${e}`)), 10);
             });
 
         });
@@ -73,7 +73,7 @@ export class Utils {
         return expandedVariables;
     }
 
-    static getRulesResult(rules: { if?: string, when?: string, allow_failure?: string | boolean }[], variables: { [key: string]: string }): { when: string, allowFailure: boolean } {
+    static getRulesResult(rules: { if?: string; when?: string; allow_failure?: string | boolean }[], variables: { [key: string]: string }): { when: string; allowFailure: boolean } {
         let when = "never";
         let allowFailure = false;
 

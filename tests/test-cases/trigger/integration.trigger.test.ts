@@ -8,6 +8,9 @@ test("trigger", async () => {
         cwd: "tests/test-cases/trigger",
     }, mockWriteStreams);
 
-    const expected = [chalk`{green successful} {blueBright pipe-gen-job}, {blueBright trigger_job}`];
+    const expected = [
+        chalk`{black.bgGreenBright  PASS } {blueBright pipe-gen-job}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright trigger_job }`,
+    ];
     expect(mockWriteStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

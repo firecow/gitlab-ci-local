@@ -15,43 +15,43 @@ import {Utils} from "./utils";
 import {assert} from "./asserts";
 import * as path from "path";
 import {WriteStreams} from "./types/write-streams";
+import {ParserOptions} from "./types/parser-options";
 
 export class Parser {
 
     private readonly jobs: Map<string, Job> = new Map();
     private readonly stages: Map<string, Stage> = new Map();
-    private readonly cwd: string;
-    private readonly writeStreams: WriteStreams;
-    private readonly file?: string;
-    private readonly home?: string;
-    private readonly pipelineIid: number;
+    private readonly opt: ParserOptions;
 
     private gitRemote: GitRemote | null = null;
-    private userVariables: any;
+    private homeVariables: any;
+    private _gitlabData: any;
+    private _jobNamePad = 0;
 
-    private gitlabData: any;
-    private maxJobNameLength = 0;
-    private readonly tabCompletionPhase: boolean;
-
-    private constructor(cwd: string, writeStreams: WriteStreams, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
-        this.cwd = cwd;
-        this.pipelineIid = pipelineIid;
-        this.tabCompletionPhase = tabCompletionPhase;
-        this.file = file;
-        this.home = home;
-        this.writeStreams = writeStreams;
+    private constructor(opt: ParserOptions) {
+        this.opt = opt;
     }
 
-    static async create(cwd: string, writeStreams: WriteStreams, pipelineIid: number, tabCompletionPhase: boolean, home?: string, file?: string) {
-        const parser = new Parser(cwd, writeStreams, pipelineIid, tabCompletionPhase, file, home);
+    get gitlabData() {
+        return this._gitlabData;
+    }
+
+    get jobNamePad(): number {
+        return this._jobNamePad;
+    }
+
+    static async create(opt: ParserOptions) {
+        const writeStreams = opt.writeStreams;
+        const parser = new Parser(opt);
 
         const time = process.hrtime();
         await parser.init();
         await parser.initJobs();
         await parser.validateNeedsTags();
         const parsingTime = process.hrtime(time);
-        if (!tabCompletionPhase) {
-            writeStreams.stdout(chalk`{cyan ${"yml files".padEnd(parser.maxJobNameLength)}} {magentaBright processed} in {magenta ${prettyHrtime(parsingTime)}}\n`);
+
+        if (!opt.tabCompletionPhase) {
+            writeStreams.stdout(chalk`{cyan ${"yml files".padEnd(parser.jobNamePad)}} {magentaBright processed} in {magenta ${prettyHrtime(parsingTime)}}\n`);
         }
 
         return parser;
@@ -79,11 +79,11 @@ export class Parser {
         return {
             GITLAB_USER_LOGIN: gitlabUserLogin,
             GITLAB_USER_EMAIL: gitlabUserEmail,
-            GITLAB_USER_NAME: gitlabUserName
+            GITLAB_USER_NAME: gitlabUserName,
         };
     }
 
-    static async initUserVariables(cwd: string, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
+    static async initHomeVariables(cwd: string, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
         const homeDir = home.replace(/\/$/, "");
         const variablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         if (!fs.existsSync(variablesFile)) {
@@ -142,20 +142,23 @@ export class Parser {
     }
 
     async init() {
-        const cwd = this.cwd;
-        const writeStreams = this.writeStreams;
+        const cwd = this.opt.cwd;
+        const writeStreams = this.opt.writeStreams;
+        const home = this.opt.home;
+        const file = this.opt.file;
+        const tabCompletionPhase = this.opt.tabCompletionPhase;
 
         this.gitRemote = await Parser.initGitRemote(cwd);
-        this.userVariables = await Parser.initUserVariables(cwd, this.gitRemote, this.home ?? process.env.HOME ?? "");
+        this.homeVariables = await Parser.initHomeVariables(cwd, this.gitRemote, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [];
-        ymlPath = this.file ? `${cwd}/${this.file}` : `${cwd}/.gitlab-ci.yml`;
+        ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, writeStreams, this.gitRemote, this.tabCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, writeStreams, this.gitRemote, tabCompletionPhase));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, writeStreams, this.gitRemote, this.tabCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, writeStreams, this.gitRemote, tabCompletionPhase));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
@@ -168,8 +171,8 @@ export class Parser {
         // Make sure artifact paths doesn't contain globstar
         // TODO: This deviates from gitlab ci behavior
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
-            jobData?.artifacts?.paths?.forEach((path: any) => {
-                assert(!path.includes("*"), `Artfact paths cannot contain globstar, yet! '${jobName}'`);
+            jobData?.artifacts?.paths?.forEach((artifactPath: any) => {
+                assert(!artifactPath.includes("*"), `Artfact paths cannot contain globstar, yet! '${jobName}'`);
             });
         });
 
@@ -208,7 +211,7 @@ export class Parser {
             if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
                 continue;
             }
-            this.maxJobNameLength = Math.max(this.maxJobNameLength, jobName.length);
+            this._jobNamePad = Math.max(this.jobNamePad, jobName.length);
         }
 
         // Check that needs is larger and containers the same as dependencies.
@@ -225,15 +228,17 @@ export class Parser {
             }
         });
         // chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${value}`}`
-        this.gitlabData = gitlabData;
+        this._gitlabData = gitlabData;
     }
 
     async initJobs() {
         assert(this.gitRemote != null, "GitRemote isn't set in parser initJobs function");
 
-        const pipelineIid = this.pipelineIid;
-        const cwd = this.cwd;
-        const gitlabData = this.gitlabData;
+        const writeStreams = this.opt.writeStreams;
+        const pipelineIid = this.opt.pipelineIid;
+        const cwd = this.opt.cwd;
+        const extraHosts = this.opt.extraHosts || [];
+        const gitlabData = this._gitlabData;
 
         const gitUser = await Parser.initGitUser(cwd);
 
@@ -245,15 +250,16 @@ export class Parser {
 
             const jobId = await state.getJobId(cwd);
             const job = new Job({
-                writeStreams: this.writeStreams,
+                extraHosts,
+                writeStreams,
                 name: jobName,
-                maxJobNameLength: this.maxJobNameLength,
-                userVariables: this.userVariables,
-                jobData,
+                namePad: this.jobNamePad,
+                homeVariables: this.homeVariables,
+                data: jobData,
                 cwd,
                 globals: gitlabData,
                 pipelineIid,
-                jobId,
+                id: jobId,
                 gitUser,
                 gitRemote: this.gitRemote,
             });
@@ -328,10 +334,6 @@ export class Parser {
 
     getJobs(): ReadonlyArray<Job> {
         return Array.from(this.jobs.values());
-    }
-
-    getJobNames(): ReadonlyArray<string> {
-        return Array.from(this.jobs.keys());
     }
 
     getStageNames(): ReadonlyArray<string> {
@@ -474,12 +476,12 @@ export class Parser {
         return includeDatas;
     }
 
-    static parseTemplateInclude(template: string): { project: string, ref: string, file: string, domain: string } {
+    static parseTemplateInclude(template: string): { project: string; ref: string; file: string; domain: string } {
         return {
             domain: "gitlab.com",
             project: "gitlab-org/gitlab",
             ref: "master",
-            file: `lib/gitlab/ci/templates/${template}`
+            file: `lib/gitlab/ci/templates/${template}`,
         };
     }
 }

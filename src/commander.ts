@@ -45,18 +45,18 @@ export class Commander {
                 }
             }
 
-            await new Promise((r) => setTimeout(r, 5));
+            await new Promise((r) => setTimeout(r, 10));
 
             if (stage.isFinished()) {
                 if (!stage.isSuccess()) {
-                    await Commander.printReport(writeStreams, jobs);
+                    await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.jobNamePad);
                     process.exit(1);
                 }
                 stage = stages.shift();
             }
         }
 
-        await Commander.printReport(writeStreams, jobs);
+        await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.jobNamePad);
     }
 
     static runList(parser: Parser, writeStreams: WriteStreams) {
@@ -74,16 +74,22 @@ export class Commander {
         let descriptionPadEnd = 0;
         parser.getJobs().forEach(j => descriptionPadEnd = Math.max(j.description.length, descriptionPadEnd));
 
-        for (const job of jobs) {
+        const neverJobs = jobs.filter(j => j.when === "never");
+        const nonNeverJobs = jobs.filter(j => j.when !== "never");
+
+        const renderLine = (job: Job) => {
             const needs = job.needs;
-            const allowFailure = job.allowFailure ? "warning" : "";
+            const allowFailure = job.allowFailure ? chalk`{black.bgYellowBright  ONLY WARN }` : chalk`{black.bgRed  CAN FAIL  }`;
             let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
-            jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(7)}`;
+            jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
             if (needs) {
                 jobLine += chalk`  [{blueBright ${needs.join(",")}}]`;
             }
             writeStreams.stdout(`${jobLine}\n`);
-        }
+        };
+
+        neverJobs.forEach((job) => renderLine(job));
+        nonNeverJobs.forEach((job) => renderLine(job));
     }
 
     static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobName: string, needs: boolean, privileged: boolean) {
@@ -113,20 +119,19 @@ export class Commander {
             await job.start(privileged);
         }
 
-        await Commander.printReport(writeStreams, jobs);
+        await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.jobNamePad);
     }
 
-    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>) => {
+    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) => {
         writeStreams.stdout("\n");
 
-        const preScripts: { never: Job[], successful: Job[], failed: Job[], warned: Job[] } = {
-            never: [],
+        const preScripts: { successful: Job[]; failed: Job[]; warned: Job[] } = {
             successful: [],
             failed: [],
-            warned: []
+            warned: [],
         };
         const afterScripts: { warned: Job[] } = {
-            warned: []
+            warned: [],
         };
 
         for (const job of jobs) {
@@ -137,8 +142,10 @@ export class Commander {
 
         for (const job of jobs) {
             if (!job.isStarted()) {
-                preScripts.never.push(job);
-            } else if (job.preScriptsExitCode === 0) {
+                continue;
+            }
+
+            if (job.preScriptsExitCode === 0) {
                 preScripts.successful.push(job);
             } else if (job.allowFailure) {
                 preScripts.warned.push(job);
@@ -147,34 +154,40 @@ export class Commander {
             }
         }
 
-        if (preScripts.never.length !== 0) {
-            writeStreams.stdout(chalk`{magenta not started} `);
-            preScripts.never.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout("\n");
-        }
-
         if (preScripts.successful.length !== 0) {
-            writeStreams.stdout(chalk`{green successful} `);
-            preScripts.successful.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout("\n");
+            preScripts.successful.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
+            preScripts.successful.forEach((job) => {
+                const namePad = job.name.padEnd(jobNamePad);
+                writeStreams.stdout(chalk`{black.bgGreenBright  PASS } {blueBright ${namePad}}`);
+                if (job.coveragePercent) {
+                    writeStreams.stdout(chalk` ${job.coveragePercent}% {grey coverage}`);
+                }
+                writeStreams.stdout("\n");
+            });
         }
 
         if (preScripts.warned.length !== 0) {
-            writeStreams.stdout(chalk`{yellowBright warning} `);
-            preScripts.warned.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout("\n");
+            preScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
+            preScripts.warned.forEach(({name}) => {
+                const namePad = name.padEnd(jobNamePad);
+                writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  pre_script\n`);
+            });
         }
 
         if (afterScripts.warned.length !== 0) {
-            writeStreams.stdout(chalk`{yellowBright after script} `);
-            afterScripts.warned.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout("\n");
+            afterScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
+            afterScripts.warned.forEach(({name}) => {
+                const namePad = name.padEnd(jobNamePad);
+                writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  after_script\n`);
+            });
         }
 
         if (preScripts.failed.length !== 0) {
-            writeStreams.stdout(chalk`{red failure} `);
-            preScripts.failed.forEach((job, i, arr) => Utils.printJobNames(writeStreams.stdout.bind(writeStreams), job, i, arr));
-            writeStreams.stdout("\n");
+            preScripts.failed.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
+            preScripts.failed.forEach(({name}) => {
+                const namePad = name.padEnd(jobNamePad);
+                writeStreams.stdout(chalk`{black.bgRed  FAIL } {blueBright ${namePad}}\n`);
+            });
         }
 
         for (const job of preScripts.successful) {
@@ -184,12 +197,11 @@ export class Commander {
             }
             const name = Utils.expandText(e.name, job.expandedVariables);
             const url = Utils.expandText(e.url, job.expandedVariables);
+            writeStreams.stdout(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}}`);
             if (url != null) {
-                writeStreams.stdout(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}}, url: {bold ${url}} \}\n`);
-            } else {
-                writeStreams.stdout(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}} \}\n`);
+                writeStreams.stdout(chalk`, url: {bold ${url}}`);
             }
-
+            writeStreams.stdout(" }\n");
         }
 
     };

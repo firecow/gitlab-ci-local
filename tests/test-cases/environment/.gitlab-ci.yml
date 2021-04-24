@@ -1,0 +1,17 @@
+---
+stages: [deploy]
+
+deploy-dev-job:
+  stage: deploy
+  script:
+    - echo "Deploy dev something"
+  environment:
+    name: dev-domain
+
+deploy-stage-job:
+  stage: deploy
+  script:
+    - echo "Deploy stage something"
+  environment:
+    name: stage-domain
+    url: http://stage.domain.com

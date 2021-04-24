@@ -6,7 +6,7 @@ test("image <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
-        job: "test-job"
+        job: "test-job",
     }, writeStreams);
     const expected = [chalk`{blueBright test-job                } {greenBright >} Test something`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
@@ -17,7 +17,7 @@ test("image <test-entrypoint>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: "test-entrypoint",
-        privileged: true
+        privileged: true,
     }, writeStreams);
 
     const expected = [
@@ -25,7 +25,7 @@ test("image <test-entrypoint>", async () => {
         chalk`{blueBright test-entrypoint         } {greenBright >} I am epic multiline value`,
         chalk`{blueBright test-entrypoint         } {greenBright >} /builds`,
         chalk`{blueBright test-entrypoint         } {greenBright >} Test Entrypoint`,
-        chalk`{blueBright test-entrypoint         } {greenBright >} I'm a test file`
+        chalk`{blueBright test-entrypoint         } {greenBright >} I'm a test file`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -34,7 +34,7 @@ test("image <test-entrypoint-override>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
-        job: "test-entrypoint-override"
+        job: "test-entrypoint-override",
     }, writeStreams);
 
     const expected = [
