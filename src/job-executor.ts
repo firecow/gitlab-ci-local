@@ -45,9 +45,9 @@ export class JobExecutor {
         let jobsToWaitFor: Job[] = [];
         if (job.needs) {
             job.needs.forEach(needJob => {
-                const job = jobs.get(needJob);
-                if (job) {
-                    jobsToWaitFor.push(job);
+                const found = jobs.get(needJob);
+                if (found) {
+                    jobsToWaitFor.push(found);
                 }
             });
         } else {
