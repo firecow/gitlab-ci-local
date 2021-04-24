@@ -312,7 +312,7 @@ export class Job {
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
     }
 
-    private generateScriptsCMDWithDecorations(scripts: string[]) {
+    private generateScriptsCMDWithAnsiEcho(scripts: string[]) {
         let cmd = "";
         scripts.forEach((script) => {
             // Print command echo'ed in color
@@ -344,7 +344,7 @@ export class Job {
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 iCmd += `export ${key}="${String(value).trim()}"\n`;
             }
-            iCmd += this.generateScriptsCMDWithDecorations(scripts);
+            iCmd += this.generateScriptsCMDWithAnsiEcho(scripts);
 
             const cp = childProcess.spawn(iCmd, {
                 shell: "bash",
@@ -456,7 +456,7 @@ export class Job {
             }
         }
 
-        cmd += this.generateScriptsCMDWithDecorations(scripts);
+        cmd += this.generateScriptsCMDWithAnsiEcho(scripts);
 
         cmd += "exit 0\n";
 
