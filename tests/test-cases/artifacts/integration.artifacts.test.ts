@@ -5,7 +5,7 @@ test("artifacts <consume-artifacts> --needs", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/artifacts",
-        job: "consume-artifacts",
+        job: "consume artifacts",
         needs: true,
     }, writeStreams);
 
