@@ -3,126 +3,56 @@ import {Job} from "./job";
 import {Parser} from "./parser";
 import {Utils} from "./utils";
 import {WriteStreams} from "./types/write-streams";
+import {JobExecutor} from "./job-executor";
 
 export class Commander {
 
-    static async runPipeline(parser: Parser, writeStreams: WriteStreams, manualArgs: string[], privileged: boolean) {
-        const jobs = parser.getJobs();
-        const stages = parser.getStages().concat();
+    static async runPipeline(parser: Parser, writeStreams: WriteStreams, manualOpts: string[], privileged: boolean) {
+        const jobs = parser.jobs;
+        const stages = parser.stages;
 
-        let stage = stages.shift();
-        while (stage != null) {
-            const jobsInStage = stage.getJobs();
-            for (const job of jobsInStage) {
-
-                if (job.isManual() && !manualArgs.includes(job.name) && !job.isFinished()) {
-                    job.setFinished(true);
-                    continue;
-                }
-
-                if (job.isNever() && !job.isFinished()) {
-                    job.setFinished(true);
-                    continue;
-                }
-
-                if (!job.isRunning() && !job.isFinished()) {
-                    // noinspection ES6MissingAwait
-                    job.start(privileged);
-                }
-            }
-
-            // Find jobs that can be started, because their needed jobs have finished
-            for (const job of jobs) {
-                if ((job.isManual() && !manualArgs.includes(job.name)) || job.isRunning() || job.isFinished() || job.needs === null || job.isNever()) {
-                    continue;
-                }
-
-                const finishedJobNames = jobs.filter((e) => e.isFinished()).map((j) => j.name);
-                const needsConditionMet = job.needs.every((v) => (finishedJobNames.indexOf(v) >= 0));
-                if (needsConditionMet) {
-                    // noinspection ES6MissingAwait
-                    job.start(privileged);
-                }
-            }
-
-            await new Promise((r) => setTimeout(r, 10));
-
-            if (stage.isFinished()) {
-                if (!stage.isSuccess()) {
-                    await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.jobNamePad);
-                    process.exit(1);
-                }
-                stage = stages.shift();
-            }
-        }
-
-        await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.jobNamePad);
-    }
-
-    static runList(parser: Parser, writeStreams: WriteStreams) {
-        const stageNames = Array.from(parser.getStages()).map((s) => s.name);
-        const jobs = Array.from(parser.getJobs()).sort((a, b) => {
-            return stageNames.indexOf(a.stage) - stageNames.indexOf(b.stage);
+        let potentialStarters: Job[] = [...jobs.values()];
+        const whenFilters = ["never", "manual"];
+        potentialStarters = potentialStarters.filter(j => {
+            return !whenFilters.includes(j.when);
         });
+        const manualJobs = manualOpts.map(m => Utils.getJobByName(jobs, m));
+        potentialStarters = potentialStarters.concat(manualJobs);
+        potentialStarters = [...new Set<Job>(potentialStarters)];
 
-        let whenPadEnd = 0;
-        parser.getJobs().forEach(j => whenPadEnd = Math.max(j.when.length, whenPadEnd));
-
-        let stagePadEnd = 0;
-        parser.getStageNames().forEach(s => stagePadEnd = Math.max(s.length, stagePadEnd));
-
-        let descriptionPadEnd = 0;
-        parser.getJobs().forEach(j => descriptionPadEnd = Math.max(j.description.length, descriptionPadEnd));
-
-        const neverJobs = jobs.filter(j => j.when === "never");
-        const nonNeverJobs = jobs.filter(j => j.when !== "never");
-
-        const renderLine = (job: Job) => {
-            const needs = job.needs;
-            const allowFailure = job.allowFailure ? chalk`{black.bgYellowBright  ONLY WARN }` : chalk`{black.bgRed  CAN FAIL  }`;
-            let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
-            jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
-            if (needs) {
-                jobLine += chalk`  [{blueBright ${needs.join(",")}}]`;
-            }
-            writeStreams.stdout(`${jobLine}\n`);
-        };
-
-        neverJobs.forEach((job) => renderLine(job));
-        nonNeverJobs.forEach((job) => renderLine(job));
+        await JobExecutor.runLoop(jobs, stages, potentialStarters, privileged);
+        await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobName: string, needs: boolean, privileged: boolean) {
-        const jobs: Job[] = [];
-        const foundJob = parser.getJobByName(jobName);
-        jobs.push(foundJob);
+    static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobArgs: string[], needs: boolean, privileged: boolean) {
+        const jobs = parser.jobs;
+        const stages = parser.stages;
 
+        let jobPoolMap: Map<string, Job>;
+        let potentialStarters: Job[] = [];
         if (needs) {
-            // Recursive backwards traversal to find parent needs.
-            let needed: string[] = [];
-            if (foundJob.needs) {
-                needed = needed.concat(foundJob.needs);
-            }
-            while (needed.length > 0) {
-                const need = needed.pop();
-                if (need) {
-                    const needJob = parser.getJobByName(need);
-                    jobs.unshift(needJob);
-                    if (needJob.needs) {
-                        needed = needed.concat(needJob.needs);
-                    }
-                }
-            }
+            jobPoolMap = new Map<string, Job>(jobs);
+            jobArgs.forEach(jobName => {
+                const job = Utils.getJobByName(jobs, jobName);
+                jobPoolMap.set(jobName, job);
+                potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, job));
+                potentialStarters.push(job);
+            });
+        } else {
+            jobPoolMap = new Map<string, Job>();
+            jobArgs.forEach(jobName => {
+                const job = Utils.getJobByName(jobs, jobName);
+                jobPoolMap.set(jobName, job);
+                potentialStarters.push(job);
+            });
         }
+        potentialStarters = [...new Set<Job>(potentialStarters)];
 
-        for (const job of jobs) {
-            await job.start(privileged);
-        }
-
-        await Commander.printReport(writeStreams, jobs, parser.getStageNames(), parser.jobNamePad);
+        await JobExecutor.runLoop(jobPoolMap, stages, potentialStarters, privileged);
+        await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) => {
+    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyMap<string, Job>, stages: readonly string[], jobNamePad: number) => {
         writeStreams.stdout("\n");
 
         const preScripts: { successful: Job[]; failed: Job[]; warned: Job[] } = {
@@ -134,14 +64,14 @@ export class Commander {
             warned: [],
         };
 
-        for (const job of jobs) {
-            if (job.isStarted() && job.afterScriptsExitCode !== 0) {
+        for (const job of jobs.values()) {
+            if (job.started && job.afterScriptsExitCode !== 0) {
                 afterScripts.warned.push(job);
             }
         }
 
-        for (const job of jobs) {
-            if (!job.isStarted()) {
+        for (const job of jobs.values()) {
+            if (!job.started) {
                 continue;
             }
 
@@ -205,5 +135,39 @@ export class Commander {
         }
 
     };
+
+    static runList(parser: Parser, writeStreams: WriteStreams) {
+        const stages = parser.stages;
+        const jobs = [...parser.jobs.values()];
+        jobs.sort((a, b) => {
+            return stages.indexOf(a.stage) - stages.indexOf(b.stage);
+        });
+
+        let whenPadEnd = 0;
+        jobs.forEach(j => whenPadEnd = Math.max(j.when.length, whenPadEnd));
+
+        let stagePadEnd = 0;
+        stages.forEach(s => stagePadEnd = Math.max(s.length, stagePadEnd));
+
+        let descriptionPadEnd = 0;
+        jobs.forEach(j => descriptionPadEnd = Math.max(j.description.length, descriptionPadEnd));
+
+        const neverJobs = jobs.filter(j => j.when === "never");
+        const nonNeverJobs = jobs.filter(j => j.when !== "never");
+
+        const renderLine = (job: Job) => {
+            const needs = job.needs;
+            const allowFailure = job.allowFailure ? chalk`{black.bgYellowBright  ONLY WARN }` : chalk`{black.bgRed  CAN FAIL  }`;
+            let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
+            jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
+            if (needs) {
+                jobLine += chalk`  [{blueBright ${needs.join(",")}}]`;
+            }
+            writeStreams.stdout(`${jobLine}\n`);
+        };
+
+        neverJobs.forEach((job) => renderLine(job));
+        nonNeverJobs.forEach((job) => renderLine(job));
+    }
 
 }

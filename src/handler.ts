@@ -89,7 +89,7 @@ process.on("SIGINT", async (_: string, code: number) => {
         return process.exit(code);
     }
     const promises = [];
-    for (const job of parser.getJobs()) {
+    for (const job of parser.jobs.values()) {
         promises.push(job.removeContainer());
     }
     await Promise.all(promises);

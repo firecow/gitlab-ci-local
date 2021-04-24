@@ -17,9 +17,9 @@ export class Job {
     ];
 
     readonly name: string;
+    readonly jobNamePad: number;
     readonly needs: string[] | null;
     readonly dependencies: string[] | null;
-    readonly jobNamePad: number;
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
     readonly cwd: string;
@@ -29,17 +29,16 @@ export class Job {
     readonly when: string;
     readonly pipelineIid: number;
     readonly cache: { key: string | { files: string[] }; paths: string[] };
-    private _prescriptsExitCode = 0;
+
+    private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
     private _coveragePercent: string | null = null;
+    private _running = false;
+    private _containerId: string | null = null;
+
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
     private readonly extraHosts: string[];
-    private started = false;
-    private finished = false;
-    private running = false;
-    private success = true;
-    private containerId: string | null = null;
 
     constructor(opt: JobOptions) {
         const jobData = opt.data;
@@ -184,6 +183,18 @@ export class Job {
         return this._afterScriptsExitCode;
     }
 
+    get running() {
+        return this._running;
+    }
+
+    get started() {
+        return this._running || this._prescriptsExitCode !== null;
+    }
+
+    get finished() {
+        return !this._running && this._prescriptsExitCode !== null;
+    }
+
     get coveragePercent(): string | null {
         return this._coveragePercent;
     }
@@ -192,11 +203,10 @@ export class Job {
         const startTime = process.hrtime();
         const writeStreams = this.writeStreams;
 
-        this.running = true;
-        this.started = true;
+        this._running = true;
 
-        await fs.ensureFile(this.getOutputFilesPath());
-        await fs.truncate(this.getOutputFilesPath());
+        await fs.ensureFile(`${this.cwd}/.gitlab-ci-local/output/${this.name}.log`);
+        await fs.truncate(`${this.cwd}/.gitlab-ci-local/output/${this.name}.log`);
         if (!this.interactive) {
             const jobNameStr = this.getJobNameString();
             writeStreams.stdout(chalk`${jobNameStr} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
@@ -206,17 +216,14 @@ export class Job {
         this._prescriptsExitCode = await this.execScripts(prescripts, privileged);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
-            this.running = false;
-            this.finished = true;
-            this.success = false;
+            this._running = false;
             await this.removeContainer();
             return;
         }
 
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
-            this.running = false;
-            this.finished = true;
+            this._running = false;
             await this.removeContainer();
             return;
         }
@@ -229,7 +236,6 @@ export class Job {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
         }
 
-        this._afterScriptsExitCode = 0;
         if (this.afterScripts.length > 0) {
             this._afterScriptsExitCode = await this.execScripts(this.afterScripts, privileged);
         }
@@ -238,23 +244,12 @@ export class Job {
             writeStreams.stderr(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " after_script")}\n`);
         }
 
-        if (this._prescriptsExitCode > 0 && !this.allowFailure) {
-            this.success = false;
-        }
-
         writeStreams.stdout(`${this.getFinishedString(startTime)}\n`);
 
-        this.running = false;
-        this.finished = true;
+        this._running = false;
 
         if (this.jobData.coverage) {
-            const content = await fs.readFile(`${this.cwd}/.gitlab-ci-local/output/${this.name}.log`, "utf8");
-            const regex = new RegExp(this.jobData.coverage.replace(/^\//, "").replace(/\/$/, ""), "m");
-            const match = content.match(regex);
-            if (match && match[0] != null) {
-                const firstNumber = match[0].match(/\d+(\.\d+)?/);
-                this._coveragePercent = firstNumber && firstNumber[0] ? firstNumber[0] : null;
-            }
+            this._coveragePercent = await Utils.getCoveragePercent(this.cwd, this.jobData.coverage, this.name);
         }
 
         await this.removeContainer();
@@ -264,41 +259,9 @@ export class Job {
         return chalk`{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
     }
 
-    getOutputFilesPath() {
-        return `${this.cwd}/.gitlab-ci-local/output/${this.name}.log`;
-    }
-
-    isFinished() {
-        return this.finished;
-    }
-
-    isStarted() {
-        return this.started;
-    }
-
-    isManual() {
-        return this.when === "manual";
-    }
-
-    isNever() {
-        return this.when === "never";
-    }
-
-    isRunning() {
-        return this.running;
-    }
-
-    isSuccess() {
-        return this.success;
-    }
-
-    setFinished(finished: boolean) {
-        this.finished = finished;
-    }
-
     public async removeContainer() {
-        if (this.containerId) {
-            await Utils.spawn(`docker rm -f ${this.containerId}`);
+        if (this._containerId) {
+            await Utils.spawn(`docker rm -f ${this._containerId}`);
         }
     }
 
@@ -314,7 +277,7 @@ export class Job {
 
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const jobNameStr = this.getJobNameString();
-        const outputFilesPath = this.getOutputFilesPath();
+        const outputFilesPath = `${this.cwd}/.gitlab-ci-local/output/${this.name}.log`;
         const writeStreams = this.writeStreams;
         const artifactsFrom = this.needs || this.dependencies;
         let time;
@@ -413,17 +376,17 @@ export class Job {
             dockerCmd += "fi\n\"";
 
             const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables});
-            this.containerId = containerId.replace(/\r?\n/g, "");
+            this._containerId = containerId.replace(/\r?\n/g, "");
 
             time = process.hrtime();
-            await Utils.spawn(`docker cp . ${this.containerId}:/builds/`, this.cwd);
+            await Utils.spawn(`docker cp . ${this._containerId}:/builds/`, this.cwd);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
 
             if (artifactsFrom === null || artifactsFrom.length > 0) {
                 time = process.hrtime();
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
-                await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/. ${this.containerId}:/builds/`);
+                await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/. ${this._containerId}:/builds/`);
                 endTime = process.hrtime(time);
                 writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
@@ -437,7 +400,7 @@ export class Job {
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
-        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : "bash -e", {
+        const cp = childProcess.spawn(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash -e", {
             shell: "bash",
             stdio: ["pipe", "pipe", "pipe"],
             cwd: this.cwd,
@@ -507,7 +470,7 @@ export class Job {
                 }
 
                 try {
-                    await Utils.spawn(`docker cp ${this.containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${pathReplacement}`);
+                    await Utils.spawn(`docker cp ${this._containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${pathReplacement}`);
                     endTime = process.hrtime(time);
                     writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
                 } catch (e) {

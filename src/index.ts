@@ -43,12 +43,12 @@ process.on("unhandledRejection", e => {
             },
             builder: (y: any) => {
                 return y.positional("job", {
-                    describe: "Jobname to execute",
-                    type: "string",
+                    describe: "Jobname's to execute",
+                    type: "array",
                 });
             },
-            command: "$0 [job]",
-            describe: "Runs the entire pipeline or a single [job]",
+            command: "$0 [job..]",
+            describe: "Runs the entire pipeline or job's",
         })
         .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
         .strictOptions()
@@ -114,7 +114,7 @@ process.on("unhandledRejection", e => {
                     tabCompletionPhase: true,
                     file: yargsArgv.file,
                 });
-                return parser.getJobs().map((j) => j.name);
+                return [...parser.jobs.values()].map((j) => j.name);
             } catch (e) {
                 return ["Parser-Failed!"];
             }

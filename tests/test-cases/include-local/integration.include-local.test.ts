@@ -6,7 +6,7 @@ test("include-local <build-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/include-local",
-        job: "build-job",
+        job: ["build-job"],
     }, writeStreams);
 
     const expected = [

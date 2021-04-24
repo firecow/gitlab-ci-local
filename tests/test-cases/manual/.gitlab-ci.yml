@@ -1,12 +1,18 @@
 ---
+build-job:
+  stage: build
+  rules:
+    - when: manual
+  script:
+    - echo "Hello, build job manual!"
+
 test-job:
+  stage: test
   rules:
     - when: manual
   script:
     - echo "Hello, test job manual!"
 
-build-job:
-  rules:
-    - when: manual
+deploy-job:
   script:
-    - echo "Hello, build job manual!"
+    - echo "Deploy something"

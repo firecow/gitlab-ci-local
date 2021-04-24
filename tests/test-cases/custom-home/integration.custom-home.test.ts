@@ -6,7 +6,7 @@ test("custom-home <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",
-        job: "test-job",
+        job: ["test-job"],
         home: "tests/test-cases/custom-home/.home",
     }, writeStreams);
 
