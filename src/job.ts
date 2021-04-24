@@ -312,7 +312,7 @@ export class Job {
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
     }
 
-    private generateScriptsCmd(scripts: string[]) {
+    private generateScriptCommands(scripts: string[]) {
         let cmd = "";
         scripts.forEach((script) => {
             // Print command echo'ed in color
@@ -344,7 +344,7 @@ export class Job {
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 iCmd += `export ${key}="${String(value).trim()}"\n`;
             }
-            iCmd += this.generateScriptsCmd(scripts);
+            iCmd += this.generateScriptCommands(scripts);
 
             const cp = childProcess.spawn(iCmd, {
                 shell: "bash",
@@ -456,12 +456,12 @@ export class Job {
             }
         }
 
-        cmd += this.generateScriptsCmd(scripts);
+        cmd += this.generateScriptCommands(scripts);
 
         cmd += "exit 0\n";
 
-        await fs.outputFile(`${this.cwd}/.gitlab-ci-local/scripts/${this.name.replace(" ", "_")}`, cmd, "utf-8");
-        await fs.chmod(`${this.cwd}/.gitlab-ci-local/scripts/${this.name.replace(" ", "_")}`, "0755");
+        await fs.outputFile(`${this.cwd}/.gitlab-ci-local/scripts/${this.name}`, cmd, "utf-8");
+        await fs.chmod(`${this.cwd}/.gitlab-ci-local/scripts/${this.name}`, "0755");
 
         if (this.imageName) {
             await Utils.spawn(`docker cp .gitlab-ci-local/scripts/. ${this.containerId}:/builds/.gitlab-ci-local/scripts/`, this.cwd);
