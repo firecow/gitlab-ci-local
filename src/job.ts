@@ -296,6 +296,21 @@ export class Job {
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
     }
 
+    private generateScriptsCmd(scripts: string[]) {
+        let cmd = "";
+        scripts.forEach((script) => {
+            // Print command echo'ed in color
+            const split = script.split(/\r?\n/);
+            const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
+            const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
+            cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
+
+            // Execute actual script
+            cmd += `${script}\n`;
+        });
+        return cmd;
+    }
+
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
@@ -313,17 +328,8 @@ export class Job {
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 cmd += `export ${key}="${String(value).trim()}"\n`;
             }
+            cmd += this.generateScriptsCmd(scripts);
 
-            scripts.forEach((script) => {
-                // Print command echo'ed in color
-                const split = script.split(/\r?\n/);
-                const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
-                const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
-                cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
-
-                // Execute actual script
-                cmd += `${script}\n`;
-            });
             const cp = childProcess.spawn(cmd, {
                 shell: "bash",
                 stdio: ["inherit", "inherit", "inherit"],
@@ -430,16 +436,7 @@ export class Job {
             }
         }
 
-        for (const script of scripts) {
-            // Print command echo'ed in color
-            const split = script.split(/\r?\n/);
-            const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
-            const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
-            cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
-
-            // Execute actual script
-            cmd += `${script}\n`;
-        }
+        cmd += this.generateScriptsCmd(scripts);
 
         cmd += "exit 0\n";
 
