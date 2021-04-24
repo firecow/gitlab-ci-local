@@ -340,13 +340,13 @@ export class Job {
         }
 
         if (this.interactive) {
-            let cmd = "";
+            let iCmd = "";
             for (const [key, value] of Object.entries(this.expandedVariables)) {
-                cmd += `export ${key}="${String(value).trim()}"\n`;
+                iCmd += `export ${key}="${String(value).trim()}"\n`;
             }
-            cmd += this.generateScriptsCmd(scripts);
+            iCmd += this.generateScriptsCmd(scripts);
 
-            const cp = childProcess.spawn(cmd, {
+            const cp = childProcess.spawn(iCmd, {
                 shell: "bash",
                 stdio: ["inherit", "inherit", "inherit"],
                 cwd: this.cwd,
