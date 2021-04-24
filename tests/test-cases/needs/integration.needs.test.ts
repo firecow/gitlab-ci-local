@@ -3,18 +3,18 @@ import {handler} from "../../../src/handler";
 import * as chalk from "chalk";
 
 test("needs <build-job> --needs", async () => {
-    const mockWriteStreams = new MockWriteStreams();
+    const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/needs",
         job: ["build-job"],
         needs: true,
-    }, mockWriteStreams);
+    }, writeStreams);
 
     const expected = [
         chalk`{blueBright pre-job   } {greenBright >} .pre something`,
         chalk`{blueBright build-job } {greenBright >} Build something`,
     ];
-    expect(mockWriteStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 test("needs <deploy-job> --needs", async () => {
@@ -40,10 +40,10 @@ test("needs <deploy-job> --needs", async () => {
 });
 
 test("needs", async () => {
-    const mockWriteStreams = new MockWriteStreams();
+    const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/needs",
-    }, mockWriteStreams);
+    }, writeStreams);
 
     const expected = [
         chalk`{blueBright pre-job   } {greenBright >} .pre something`,
@@ -51,5 +51,5 @@ test("needs", async () => {
         chalk`{blueBright test-job  } {greenBright >} Test something`,
         chalk`{blueBright deploy-job} {greenBright >} Deploy something`,
     ];
-    expect(mockWriteStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
