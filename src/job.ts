@@ -464,7 +464,7 @@ export class Job {
         await fs.chmod(`${this.cwd}/.gitlab-ci-local/scripts/${this.name}`, "0755");
 
         if (this.imageName) {
-            await Utils.spawn(`docker cp .gitlab-ci-local/scripts/${this.name} ${this.containerId}:/builds/.gitlab-ci-local/scripts/${this.name}`, this.cwd);
+            await Utils.spawn(`docker cp .gitlab-ci-local/scripts/. ${this.containerId}:/builds/.gitlab-ci-local/scripts/`, this.cwd);
         }
 
         const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : "bash", {
