@@ -265,7 +265,7 @@ export class Job {
     }
 
     getOutputFilesPath() {
-        return `${this.cwd}/.gitlab-ci-local/output/${this.name}.log`;
+        return `${this.cwd}/.gitlab-ci-local/output/${this.name.replace(" ", "_")}.log`;
     }
 
     isFinished() {
