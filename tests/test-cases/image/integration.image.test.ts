@@ -6,9 +6,9 @@ test("image <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
-        job: "test-job",
+        job: "test job",
     }, writeStreams);
-    const expected = [chalk`{blueBright test-job                } {greenBright >} Test something`];
+    const expected = [chalk`{blueBright test job                } {greenBright >} Test something`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
