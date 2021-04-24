@@ -25,12 +25,15 @@ export class Parser {
 
     private gitRemote: GitRemote | null = null;
     private homeVariables: any;
-
-    private gitlabData: any;
+    private _gitlabData: any;
     private _jobNamePad = 0;
 
     private constructor(opt: ParserOptions) {
         this.opt = opt;
+    }
+
+    get gitlabData() {
+        return this._gitlabData;
     }
 
     get jobNamePad(): number {
@@ -225,7 +228,7 @@ export class Parser {
             }
         });
         // chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${value}`}`
-        this.gitlabData = gitlabData;
+        this._gitlabData = gitlabData;
     }
 
     async initJobs() {
@@ -235,7 +238,7 @@ export class Parser {
         const pipelineIid = this.opt.pipelineIid;
         const cwd = this.opt.cwd;
         const extraHosts = this.opt.extraHosts || [];
-        const gitlabData = this.gitlabData;
+        const gitlabData = this._gitlabData;
 
         const gitUser = await Parser.initGitUser(cwd);
 
