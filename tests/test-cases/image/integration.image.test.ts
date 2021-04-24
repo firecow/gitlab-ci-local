@@ -2,7 +2,7 @@ import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import * as chalk from "chalk";
 
-test("image <test-job>", async () => {
+test("image <test job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
