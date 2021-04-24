@@ -312,6 +312,21 @@ export class Job {
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
     }
 
+    private generateScriptCommands(scripts: string[]) {
+        let cmd = "";
+        scripts.forEach((script) => {
+            // Print command echo'ed in color
+            const split = script.split(/\r?\n/);
+            const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
+            const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
+            cmd += chalk`echo "{green $ ${text}${multilineText}}"\n`;
+
+            // Execute actual script
+            cmd += `${script}\n`;
+        });
+        return cmd;
+    }
+
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const jobNameStr = this.getJobNameString();
         const outputFilesPath = this.getOutputFilesPath();
@@ -325,22 +340,13 @@ export class Job {
         }
 
         if (this.interactive) {
-            let cmd = "";
+            let iCmd = "";
             for (const [key, value] of Object.entries(this.expandedVariables)) {
-                cmd += `export ${key}="${String(value).trim()}"\n`;
+                iCmd += `export ${key}="${String(value).trim()}"\n`;
             }
+            iCmd += this.generateScriptCommands(scripts);
 
-            scripts.forEach((script) => {
-                // Print command echo'ed in color
-                const split = script.split(/\r?\n/);
-                const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
-                const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
-                cmd += chalk`echo "{green $ ${text}${multilineText}}"\n`;
-
-                // Execute actual script
-                cmd += `${script}\n`;
-            });
-            const cp = childProcess.spawn(cmd, {
+            const cp = childProcess.spawn(iCmd, {
                 shell: "bash",
                 stdio: ["inherit", "inherit", "inherit"],
                 cwd: this.cwd,
@@ -437,36 +443,35 @@ export class Job {
             writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
-        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : "bash -e", {
+        let cmd = "set -eo pipefail\n";
+        cmd += "exec 0< /dev/null\n";
+
+        if (this.imageName) {
+            cmd += "cd /builds/\n";
+            cmd += "chown root:root -R .\n";
+            cmd += "chmod a+w -R .\n";
+        } else {
+            for (const [key, value] of Object.entries(this.expandedVariables)) {
+                cmd += `export ${key}="${String(value).trim()}"\n`;
+            }
+        }
+
+        cmd += this.generateScriptCommands(scripts);
+
+        cmd += "exit 0\n";
+
+        await fs.outputFile(`${this.cwd}/.gitlab-ci-local/scripts/${this.name}`, cmd, "utf-8");
+        await fs.chmod(`${this.cwd}/.gitlab-ci-local/scripts/${this.name}`, "0755");
+
+        if (this.imageName) {
+            await Utils.spawn(`docker cp .gitlab-ci-local/scripts/. ${this.containerId}:/builds/.gitlab-ci-local/scripts/`, this.cwd);
+        }
+
+        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : "bash", {
             shell: "bash",
             stdio: ["pipe", "pipe", "pipe"],
             cwd: this.cwd,
         });
-
-        cp.stdin.write("set -eo pipefail\n");
-
-        if (this.imageName) {
-            cp.stdin.write("cd /builds/\n");
-            cp.stdin.write("chown root:root -R .\n");
-            cp.stdin.write("chmod a+w -R .\n");
-        }
-
-        for (const [key, value] of Object.entries(this.expandedVariables)) {
-            cp.stdin.write(`export ${key}="${String(value).trim()}"\n`);
-        }
-
-        scripts.forEach((script) => {
-            // Print command echo'ed in color
-            const split = script.split(/\r?\n/);
-            const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
-            const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
-            cp.stdin.write(chalk`echo "{green $ ${text}${multilineText}}"\n`);
-
-            // Execute actual script
-            cp.stdin.write(`${script}\n`);
-        });
-
-        cp.stdin.write("exit 0\n");
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
             for (const line of `${e}`.split(/\r?\n/)) {
@@ -489,6 +494,12 @@ export class Job {
 
             cp.on("exit", (code) => setTimeout(() => resolve(code ?? 0), 10));
             cp.on("error", (err) => setTimeout(() => reject(err), 10));
+
+            if (this.imageName) {
+                cp.stdin.end(`/builds/.gitlab-ci-local/scripts/${this.name}`);
+            } else {
+                cp.stdin.end(`./.gitlab-ci-local/scripts/${this.name}`);
+            }
         });
 
         if (this.imageName) {
