@@ -423,8 +423,8 @@ export class Job {
 
         cmd += "exit 0\n";
 
-        await fs.outputFile(`${this.cwd}/.gitlab-ci-local/scripts/${this.name}`, cmd, "utf-8");
-        await fs.chmod(`${this.cwd}/.gitlab-ci-local/scripts/${this.name}`, "0755");
+        await fs.outputFile(`${this.cwd}/.gitlab-ci-local/scripts/${this.name.replace(" ", "_")}`, cmd, "utf-8");
+        await fs.chmod(`${this.cwd}/.gitlab-ci-local/scripts/${this.name.replace(" ", "_")}`, "0755");
 
         if (this.imageName) {
             await Utils.spawn(`docker cp .gitlab-ci-local/scripts/. ${this._containerId}:/gcl-scripts/`, this.cwd);
@@ -459,9 +459,9 @@ export class Job {
             cp.on("error", (err) => setTimeout(() => reject(err), 10));
 
             if (this.imageName) {
-                cp.stdin.end(`/gcl-scripts/${this.name}`);
+                cp.stdin.end(`/gcl-scripts/${this.name.replace(" ", "_")}`);
             } else {
-                cp.stdin.end(`./.gitlab-ci-local/scripts/${this.name}`);
+                cp.stdin.end(`./.gitlab-ci-local/scripts/${this.name.replace(" ", "_")}`);
             }
         });
 
