@@ -31,3 +31,22 @@ test("never <test-job>", async () => {
     });
     expect(found).toEqual(undefined);
 });
+
+test("never <test-job> --needs", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/never/",
+        job: ["test-job"],
+        needs: true,
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job } {greenBright >} Test something`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+
+    const found = writeStreams.stdoutLines.find((l) => {
+        return l.match(/Should never be seen/) !== null;
+    });
+    expect(found).toEqual(undefined);
+});
