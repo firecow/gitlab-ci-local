@@ -6,11 +6,11 @@ test("hang-forever <test-job>", async() => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/hang-forever",
-        job: "test-job"
+        job: "test-debian"
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job} {greenBright >} File content`,
+        chalk`{blueBright test-debian} {greenBright >} File content`,
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));

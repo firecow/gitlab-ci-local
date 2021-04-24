@@ -435,7 +435,7 @@ export class Job {
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
             const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
-            // cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
+            cmd += chalk`echo "{green ${`$ ${text}${multilineText}`}}"\n`;
 
             // Execute actual script
             cmd += `${script}\n`;
@@ -443,7 +443,14 @@ export class Job {
 
         cmd += "exit 0\n";
 
-        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : `bash`, {
+        await fs.outputFile(`${this.cwd}/.gitlab-ci-local/scripts/${this.name}`, cmd, "utf-8");
+        await fs.chmod(`${this.cwd}/.gitlab-ci-local/scripts/${this.name}`, "0755");
+
+        if (this.imageName) {
+            await Utils.spawn(`docker cp .gitlab-ci-local/scripts/${this.name} ${this.containerId}:/builds/.gitlab-ci-local/scripts/${this.name}`, this.cwd);
+        }
+
+        const cp = childProcess.spawn(this.containerId ? `docker start --attach -i ${this.containerId}` : "bash", {
             shell: "bash",
             stdio: ["pipe", "pipe", "pipe"],
             cwd: this.cwd,
@@ -471,7 +478,11 @@ export class Job {
             cp.on("exit", (code) => resolve(code ?? 0));
             cp.on("error", (err) => reject(err));
 
-            cp.stdin.end(`${cmd}`);
+            if (this.imageName) {
+                cp.stdin.end(`/builds/.gitlab-ci-local/scripts/${this.name}`);
+            } else {
+                cp.stdin.end(`./.gitlab-ci-local/scripts/${this.name}`);
+            }
         });
 
         if (this.imageName) {
