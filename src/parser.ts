@@ -107,14 +107,14 @@ export class Parser {
             variables[globalKey] = globalEntry;
         }
 
-        for (const [groupKey, groupEntires] of Object.entries(data?.group ?? [])) {
+        for (const [groupKey, groupEntries] of Object.entries(data?.group ?? [])) {
             if (!`${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`.includes(groupKey)) {
                 continue;
             }
-            if (typeof groupEntires !== "object") {
+            if (typeof groupEntries !== "object") {
                 continue;
             }
-            variables = {...variables, ...groupEntires};
+            variables = {...variables, ...groupEntries};
         }
 
         for (const [projectKey, projectEntries] of Object.entries(data?.project ?? [])) {
