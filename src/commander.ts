@@ -28,24 +28,17 @@ export class Commander {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
-        let jobPoolMap: Map<string, Job>;
         let potentialStarters: Job[] = [];
-        if (needs) {
-            jobPoolMap = new Map<string, Job>(jobs);
-            jobArgs.forEach(jobName => {
-                const job = Utils.getJobByName(jobs, jobName);
-                jobPoolMap.set(jobName, job);
+        const jobPoolMap = needs ? new Map<string, Job>(jobs) : new Map<string, Job>();
+        jobArgs.forEach(jobName => {
+            const job = Utils.getJobByName(jobs, jobName);
+            jobPoolMap.set(jobName, job);
+            if (needs) {
                 potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, job));
-                potentialStarters.push(job);
-            });
-        } else {
-            jobPoolMap = new Map<string, Job>();
-            jobArgs.forEach(jobName => {
-                const job = Utils.getJobByName(jobs, jobName);
-                jobPoolMap.set(jobName, job);
-                potentialStarters.push(job);
-            });
-        }
+            }
+            potentialStarters.push(job);
+        });
+
         potentialStarters = [...new Set<Job>(potentialStarters)];
 
         await JobExecutor.runLoop(jobPoolMap, stages, potentialStarters, privileged);
