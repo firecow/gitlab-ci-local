@@ -72,10 +72,10 @@ export class JobExecutor {
                 const stageIndex = stages.indexOf(loopJob.stage);
                 const pastStages = stages.slice(0, stageIndex);
                 pastStages.forEach((pastStage) => {
-                    waitForLoopArray = [...jobs.values()].filter(j => j.stage === pastStage);
+                    waitForLoopArray = waitForLoopArray.concat([...jobs.values()].filter(j => j.stage === pastStage));
                 });
                 waitForLoopArray = waitForLoopArray.filter(j => j.when !== "never");
-                waitForLoopArray = waitForLoopArray.filter(j => j.when !== "manual" || (manuals.includes(j.name)));
+                waitForLoopArray = waitForLoopArray.filter(j => j.when !== "manual" || manuals.includes(j.name));
             }
             waitForLoopArray.forEach(j => jobsToWaitForSet.add(j));
         }
