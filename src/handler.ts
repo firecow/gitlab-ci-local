@@ -68,7 +68,7 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
         parser = await Parser.create({
             cwd, writeStreams, pipelineIid, tabCompletionPhase: false, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
         });
-        await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.privileged || false);
+        await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.manual || [], argv.privileged || false);
     } else {
         const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);

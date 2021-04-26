@@ -2,7 +2,7 @@
 pre-job:
   stage: .pre
   script:
-    - echo ".pre something"
+    - echo "Pre something"
 
 build-job:
   stage: build

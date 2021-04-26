@@ -20,4 +20,9 @@ build-job:
 pre-job:
   stage: .pre
   script:
-    - echo ".pre something"
+    - echo "Pre something"
+
+no-needs-job:
+  stage: test
+  script:
+    - echo "NoNeeds something"

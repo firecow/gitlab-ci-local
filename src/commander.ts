@@ -11,20 +11,14 @@ export class Commander {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
-        let potentialStarters: Job[] = [...jobs.values()];
-        const whenFilters = ["never", "manual"];
-        potentialStarters = potentialStarters.filter(j => {
-            return !whenFilters.includes(j.when);
-        });
-        const manualJobs = manualOpts.map(m => Utils.getJobByName(jobs, m));
-        potentialStarters = potentialStarters.concat(manualJobs);
-        potentialStarters = [...new Set<Job>(potentialStarters)];
-
-        await JobExecutor.runLoop(jobs, stages, potentialStarters, privileged);
+        let potentialStarters = [...jobs.values()];
+        potentialStarters = potentialStarters.filter(j => j.when !== "never");
+        potentialStarters = potentialStarters.filter(j => j.when !== "manual" || manualOpts.includes(j.name));
+        await JobExecutor.runLoop(jobs, stages, potentialStarters, manualOpts, privileged);
         await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobArgs: string[], needs: boolean, privileged: boolean) {
+    static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobArgs: string[], needs: boolean, manualOpts: string[], privileged: boolean) {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
@@ -34,14 +28,12 @@ export class Commander {
             const job = Utils.getJobByName(jobs, jobName);
             jobPoolMap.set(jobName, job);
             if (needs) {
-                potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, job));
+                potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, job, manualOpts));
             }
             potentialStarters.push(job);
         });
 
-        potentialStarters = [...new Set<Job>(potentialStarters)];
-
-        await JobExecutor.runLoop(jobPoolMap, stages, potentialStarters, privileged);
+        await JobExecutor.runLoop(jobPoolMap, stages, potentialStarters, manualOpts, privileged);
         await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad);
     }
 

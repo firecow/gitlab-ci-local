@@ -1,0 +1,12 @@
+---
+never-job:
+  stage: .pre
+  rules:
+    - when: never
+  script:
+    - echo "Should never be seen"
+
+test-job:
+  needs: [never-job]
+  script:
+    echo "Test something"
