@@ -83,7 +83,7 @@ export class Parser {
         };
     }
 
-    static async initHomeVariables(cwd: string, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
+    static async initHomeVariables(cwd: string, writeStreams: WriteStreams, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
         const homeDir = home.replace(/\/$/, "");
         const variablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         if (!fs.existsSync(variablesFile)) {
@@ -100,8 +100,9 @@ export class Parser {
             variables[globalKey] = globalEntry;
         }
 
+        const groupUrl = `${gitRemote.domain}/${gitRemote.group}/`;
         for (const [groupKey, groupEntires] of Object.entries(data?.group ?? [])) {
-            if (!`${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`.includes(groupKey)) {
+            if (!groupUrl.includes(Parser.normalizeProjectKey(groupKey, writeStreams))) {
                 continue;
             }
             if (typeof groupEntires !== "object") {
@@ -110,8 +111,9 @@ export class Parser {
             variables = {...variables, ...groupEntires};
         }
 
+        const projectUrl = `${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`;
         for (const [projectKey, projectEntries] of Object.entries(data?.project ?? [])) {
-            if (!`${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`.includes(projectKey)) {
+            if (!projectUrl.includes(Parser.normalizeProjectKey(projectKey, writeStreams))) {
                 continue;
             }
             if (typeof projectEntries !== "object") {
@@ -141,6 +143,16 @@ export class Parser {
         return variables;
     }
 
+    static normalizeProjectKey(key: string, writeStreams: WriteStreams): string {
+        if (!key.includes(":")) {
+            return key;
+        }
+
+        writeStreams.stderr(chalk`{yellow WARNING: Interpreting '${key}' as '${key.replace(":", "/")}'}\n`);
+
+        return key.replace(":", "/");
+    }
+
     async init() {
         const cwd = this.opt.cwd;
         const writeStreams = this.opt.writeStreams;
@@ -149,7 +161,7 @@ export class Parser {
         const tabCompletionPhase = this.opt.tabCompletionPhase;
 
         this.gitRemote = await Parser.initGitRemote(cwd);
-        this.homeVariables = await Parser.initHomeVariables(cwd, this.gitRemote, home ?? process.env.HOME ?? "");
+        this.homeVariables = await Parser.initHomeVariables(cwd, writeStreams, this.gitRemote, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
