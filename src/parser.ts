@@ -120,6 +120,15 @@ export class Parser {
             variables = {...variables, ...projectEntries};
         }
 
+        const projectVariablesFile = `${cwd}/.gitlab-ci-local/variables.yml`;
+
+        if (fs.existsSync(projectVariablesFile)) {
+            const projectEntries: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8")) ?? {};
+            if (typeof projectEntries === "object") {
+                variables = {...variables, ...projectEntries};
+            }
+        }
+
         // Generate files for file type variables
         for (const [key, value] of Object.entries(variables)) {
             if (!value.match(/^[/|~]/)) {
