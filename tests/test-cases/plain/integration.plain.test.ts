@@ -8,7 +8,7 @@ test("plain", async () => {
         cwd: "tests/test-cases/plain",
     }, writeStream);
 
-    expect(writeStream.stdoutLines.length).toEqual(16);
+    expect(writeStream.stdoutLines.length).toEqual(18);
     expect(writeStream.stderrLines.length).toEqual(1);
 });
 
