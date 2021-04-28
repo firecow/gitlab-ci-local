@@ -1,0 +1,4 @@
+---
+project:
+  gitlab.com/gcl/project-variables:
+    PROJECT_VAR: home-project-var-value
