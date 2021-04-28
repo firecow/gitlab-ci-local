@@ -30,7 +30,7 @@ process.on("unhandledRejection", e => {
         .showHelpOnFail(false)
         .wrap(yargs.terminalWidth())
         .command({
-            handler: async(argv) => {
+            handler: async (argv) => {
                 try {
                     await handler(argv, new ProcessWriteStreams());
                 } catch (e) {

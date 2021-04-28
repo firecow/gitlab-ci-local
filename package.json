@@ -101,6 +101,10 @@
     "testMatch": [
       "**/*.test.ts"
     ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/.gitlab-ci-local/"
+    ],
     "coverageReporters": [
       "lcov",
       "json-summary",
