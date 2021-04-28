@@ -23,7 +23,7 @@ test("custom-home <test-normalize-key>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",
-        job: "test-normalize-key",
+        job: ["test-normalize-key"],
         home: "tests/test-cases/custom-home/.home-normalize-key",
     }, writeStreams);
 

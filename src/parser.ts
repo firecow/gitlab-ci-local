@@ -108,7 +108,7 @@ export class Parser {
         }
 
         const groupUrl = `${gitRemote.domain}/${gitRemote.group}/`;
-        for (const [groupKey, groupEntires] of Object.entries(data?.group ?? [])) {
+        for (const [groupKey, groupEntries] of Object.entries(data?.group ?? [])) {
             if (!groupUrl.includes(Parser.normalizeProjectKey(groupKey, writeStreams))) {
                 continue;
             }
@@ -178,8 +178,8 @@ export class Parser {
         const pipelineIid = this.opt.pipelineIid;
         const extraHosts = this.opt.extraHosts || [];
 
-        this.gitRemote = await Parser.initGitRemote(cwd);
-        this.homeVariables = await Parser.initHomeVariables(cwd, writeStreams, this._gitRemote, home ?? process.env.HOME ?? "");
+        this._gitRemote = await Parser.initGitRemote(cwd);
+        this._homeVariables = await Parser.initHomeVariables(cwd, writeStreams, this._gitRemote, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
