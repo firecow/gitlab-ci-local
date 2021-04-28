@@ -90,7 +90,7 @@ export class Parser {
         };
     }
 
-    static async initHomeVariables(cwd: string, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
+    static async initHomeVariables(cwd: string, writeStreams: WriteStreams, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
         const homeDir = home.replace(/\/$/, "");
         const variablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         if (!fs.existsSync(variablesFile)) {
@@ -107,8 +107,9 @@ export class Parser {
             variables[globalKey] = globalEntry;
         }
 
-        for (const [groupKey, groupEntries] of Object.entries(data?.group ?? [])) {
-            if (!`${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`.includes(groupKey)) {
+        const groupUrl = `${gitRemote.domain}/${gitRemote.group}/`;
+        for (const [groupKey, groupEntires] of Object.entries(data?.group ?? [])) {
+            if (!groupUrl.includes(Parser.normalizeProjectKey(groupKey, writeStreams))) {
                 continue;
             }
             if (typeof groupEntries !== "object") {
@@ -117,14 +118,24 @@ export class Parser {
             variables = {...variables, ...groupEntries};
         }
 
+        const projectUrl = `${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`;
         for (const [projectKey, projectEntries] of Object.entries(data?.project ?? [])) {
-            if (!`${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`.includes(projectKey)) {
+            if (!projectUrl.includes(Parser.normalizeProjectKey(projectKey, writeStreams))) {
                 continue;
             }
             if (typeof projectEntries !== "object") {
                 continue;
             }
             variables = {...variables, ...projectEntries};
+        }
+
+        const projectVariablesFile = `${cwd}/.gitlab-ci-local/variables.yml`;
+
+        if (fs.existsSync(projectVariablesFile)) {
+            const projectEntries: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8")) ?? {};
+            if (typeof projectEntries === "object") {
+                variables = {...variables, ...projectEntries};
+            }
         }
 
         // Generate files for file type variables
@@ -148,6 +159,16 @@ export class Parser {
         return variables;
     }
 
+    static normalizeProjectKey(key: string, writeStreams: WriteStreams): string {
+        if (!key.includes(":")) {
+            return key;
+        }
+
+        writeStreams.stderr(chalk`{yellow WARNING: Interpreting '${key}' as '${key.replace(":", "/")}'}\n`);
+
+        return key.replace(":", "/");
+    }
+
     async init() {
         const cwd = this.opt.cwd;
         const writeStreams = this.opt.writeStreams;
@@ -157,8 +178,8 @@ export class Parser {
         const pipelineIid = this.opt.pipelineIid;
         const extraHosts = this.opt.extraHosts || [];
 
-        this._gitRemote = await Parser.initGitRemote(cwd);
-        this._homeVariables = await Parser.initHomeVariables(cwd, this._gitRemote, home ?? process.env.HOME ?? "");
+        this.gitRemote = await Parser.initGitRemote(cwd);
+        this.homeVariables = await Parser.initHomeVariables(cwd, writeStreams, this._gitRemote, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;

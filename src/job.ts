@@ -70,6 +70,7 @@ export class Job {
             GITLAB_USER_NAME: gitUser["GITLAB_USER_NAME"],
             CI_COMMIT_SHORT_SHA: "a33bd89c", // Changes
             CI_COMMIT_SHA: "a33bd89c7b8fa3567524525308d8cafd7c0cd2ad",
+            CI_PROJECT_DIR: this.imageName ? "/builds/" : `${this.cwd}`,
             CI_PROJECT_NAME: gitRemote.project,
             CI_PROJECT_TITLE: `${camelCase(gitRemote.project)}`,
             CI_PROJECT_PATH: `${gitRemote.group}/${camelCase(gitRemote.project)}`,
