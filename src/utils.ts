@@ -2,6 +2,7 @@ import * as chalk from "chalk";
 import * as childProcess from "child_process";
 import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
+import * as fs from "fs-extra";
 import {assert} from "./asserts";
 import * as fs from "fs-extra";
 
@@ -148,4 +149,12 @@ export class Utils {
 
         return eval(evalStr);
     }
+
+    static async rsyncNonIgnoredFilesToBuilds(cwd: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
+        const time = process.hrtime();
+        await fs.ensureDir(`${cwd}/.gitlab-ci-local/builds/${target}`);
+        await Utils.spawn(`rsync -ah --delete --exclude-from=<(git -C . ls-files --exclude-standard -oi --directory) ./ .gitlab-ci-local/builds/${target}/`, cwd);
+        return {hrdeltatime: process.hrtime(time)};
+    }
+
 }

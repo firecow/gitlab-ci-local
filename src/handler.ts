@@ -11,6 +11,7 @@ import * as camelCase from "camelcase";
 import * as prettyHrtime from "pretty-hrtime";
 import {WriteStreams} from "./types/write-streams";
 import {Job} from "./job";
+import {Utils} from "./utils";
 
 let parser: Parser | null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
@@ -68,6 +69,7 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
         parser = await Parser.create({
             cwd, writeStreams, pipelineIid, tabCompletionPhase: false, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
         });
+        await Utils.rsyncNonIgnoredFilesToBuilds(cwd, ".docker");
         await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.manual || [], argv.privileged || false);
     } else {
         const time = process.hrtime();
@@ -78,6 +80,7 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
         parser = await Parser.create({
             cwd, writeStreams, pipelineIid, tabCompletionPhase: false, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
         });
+        await Utils.rsyncNonIgnoredFilesToBuilds(cwd, ".docker");
         await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged || false);
         writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }

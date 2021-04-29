@@ -97,7 +97,7 @@ export class Parser {
             return {};
         }
 
-        const data: any = yaml.load(await fs.readFile(variablesFile, "utf8"));
+        const data: any = yaml.load(await fs.readFile(variablesFile, "utf8"), { schema: yaml.FAILSAFE_SCHEMA });
         let variables: { [key: string]: string } = {};
 
         for (const [globalKey, globalEntry] of Object.entries(data?.global ?? [])) {
@@ -132,7 +132,7 @@ export class Parser {
         const projectVariablesFile = `${cwd}/.gitlab-ci-local/variables.yml`;
 
         if (fs.existsSync(projectVariablesFile)) {
-            const projectEntries: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8")) ?? {};
+            const projectEntries: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8"), { schema: yaml.FAILSAFE_SCHEMA }) ?? {};
             if (typeof projectEntries === "object") {
                 variables = {...variables, ...projectEntries};
             }
@@ -140,6 +140,9 @@ export class Parser {
 
         // Generate files for file type variables
         for (const [key, value] of Object.entries(variables)) {
+            if (typeof value !== "string") {
+                continue;
+            }
             if (!value.match(/^[/|~]/)) {
                 continue;
             }
@@ -410,7 +413,7 @@ export class Parser {
                 // Expand local includes inside a "project"-like include
                 (fileDoc["include"] || []).forEach((inner: any, i: number) => {
                     if (inner["local"]) {
-                        fileDoc["include"][i] = { project: value["project"], file: inner["local"].replace(/^\//, ""), ref: value["ref"]};
+                        fileDoc["include"][i] = {project: value["project"], file: inner["local"].replace(/^\//, ""), ref: value["ref"]};
                     }
                 });
 
