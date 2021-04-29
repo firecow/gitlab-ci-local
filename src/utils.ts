@@ -2,6 +2,7 @@ import * as chalk from "chalk";
 import * as childProcess from "child_process";
 import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
+import {assert} from "./asserts";
 import * as fs from "fs-extra";
 
 export class Utils {
@@ -39,6 +40,12 @@ export class Utils {
         return url.replace(/^https:\/\//g, "").replace(/^http:\/\//g, "");
     }
 
+    static getJobByName(jobs: ReadonlyMap<string, Job>, name: string): Job {
+        const job = jobs.get(name);
+        assert(job != null, chalk`{blueBright ${name}} could not be found`);
+        return job;
+    }
+
     static forEachRealJob(gitlabData: any, callback: (jobName: string, jobData: any) => void) {
         for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
             if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
@@ -46,6 +53,17 @@ export class Utils {
             }
             callback(jobName, jobData);
         }
+    }
+
+    static async getCoveragePercent(cwd: string, coverageRegex: string, jobName: string) {
+        const content = await fs.readFile(`${cwd}/.gitlab-ci-local/output/${jobName}.log`, "utf8");
+        const regex = new RegExp(coverageRegex.replace(/^\//, "").replace(/\/$/, ""), "m");
+        const match = content.match(regex);
+        if (match && match[0] != null) {
+            const firstNumber = match[0].match(/\d+(\.\d+)?/);
+            return firstNumber && firstNumber[0] ? firstNumber[0] : null;
+        }
+        return "0";
     }
 
     static printJobNames(stream: (txt: string) => void, job: { name: string }, i: number, arr: { name: string }[]) {

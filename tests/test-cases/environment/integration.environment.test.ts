@@ -6,7 +6,7 @@ test("environment <deploy-dev-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/environment",
-        job: "deploy-dev-job",
+        job: ["deploy-dev-job"],
     }, writeStreams);
 
     const expected = [
@@ -20,7 +20,7 @@ test("environment <deploy-stage-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/environment",
-        job: "deploy-stage-job",
+        job: ["deploy-stage-job"],
     }, writeStreams);
 
     const expected = [

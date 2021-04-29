@@ -3,22 +3,35 @@ import {handler} from "../../../src/handler";
 import * as chalk from "chalk";
 
 test("plain", async () => {
-    const writeStream = new MockWriteStreams();
+    const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/plain",
-    }, writeStream);
+    }, writeStreams);
 
-    expect(writeStream.stdoutLines.length).toEqual(18);
-    expect(writeStream.stderrLines.length).toEqual(1);
+    expect(writeStreams.stdoutLines.length).toEqual(18);
+    expect(writeStreams.stderrLines.length).toEqual(1);
+});
+
+test("plain <test-job> <test-job>", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/plain",
+        job: ["test-job", "test-job"],
+    }, writeStreams);
+
+    const found = writeStreams.stderrLines.filter((l) => {
+        return l.match(/Hello, error!/) !== null;
+    });
+    expect(found.length).toEqual(1);
 });
 
 test("plain <notfound>", async () => {
-    const mockWriteStreams = new MockWriteStreams();
+    const writeStreams = new MockWriteStreams();
     try {
         await handler({
             cwd: "tests/test-cases/plain",
-            job: "notfound",
-        }, mockWriteStreams);
+            job: ["notfound"],
+        }, writeStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright notfound} could not be found`);
     }
