@@ -21,6 +21,14 @@ const checkFolderAndFile = (cwd: string, file?: string) => {
     assert(fs.existsSync(gitlabFilePath), `${cwd} does not contain ${file ?? ".gitlab-ci.yml"}`);
 };
 
+const generateGitIgnore = (cwd: string) => {
+    const gitIgnoreFilePath = `${cwd}/.gitlab-ci-local/.gitignore`;
+    const gitIgnoreContent = "*\n!.gitignore\n";
+    if (!fs.existsSync(gitIgnoreFilePath)) {
+        fs.outputFileSync(gitIgnoreFilePath, gitIgnoreContent);
+    }
+};
+
 export async function handler(argv: any, writeStreams: WriteStreams) {
     assert(typeof argv.cwd != "object", "--cwd option cannot be an array");
     const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
@@ -61,6 +69,7 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
         Commander.runList(parser, writeStreams);
     } else if (argv.job) {
         checkFolderAndFile(cwd, argv.file);
+        generateGitIgnore(cwd);
         if (argv.needs === true) {
             await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
             await state.incrementPipelineIid(cwd);
@@ -74,6 +83,7 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
     } else {
         const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);
+        generateGitIgnore(cwd);
         await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
