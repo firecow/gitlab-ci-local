@@ -11,8 +11,8 @@ test("list-case --list", async () => {
 
     const expected = [
         chalk`{grey name       description}  {grey stage  when      }  {grey allow_failure  needs}`,
-        chalk`{blueBright test-job }  Run Tests    {yellow test }  on_success  false      `,
-        chalk`{blueBright build-job}               {yellow build}  on_success  true           [{blueBright test-job}]`,
+        chalk`{blueBright test-job }  Run Tests  {yellow test }  on_success  false      `,
+        chalk`{blueBright build-job}             {yellow build}  on_success  true           [{blueBright test-job}]`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

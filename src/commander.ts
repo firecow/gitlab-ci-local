@@ -134,7 +134,7 @@ export class Commander {
         let stagePadEnd = 0;
         stages.forEach(s => stagePadEnd = Math.max(s.length, stagePadEnd));
 
-        let descriptionPadEnd = 0;
+        let descriptionPadEnd = 11;
         jobs.forEach(j => descriptionPadEnd = Math.max(j.description.length, descriptionPadEnd));
 
         const jobNamePad = parser.jobNamePad;
