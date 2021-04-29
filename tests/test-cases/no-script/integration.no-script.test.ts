@@ -7,7 +7,7 @@ test("no-script <test-job>", async () => {
         const writeStreams = new MockWriteStreams();
         await handler({
             cwd: "tests/test-cases/no-script",
-            job: "test-job",
+            job: ["test-job"],
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright test-job} must have script specified`);

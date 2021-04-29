@@ -6,7 +6,7 @@ test("add-host <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/extra-host",
-        job: "test-job",
+        job: ["test-job"],
         extraHost: ["fake-google.com:142.250.185.206"],
     }, writeStreams);
 

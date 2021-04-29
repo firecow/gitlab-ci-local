@@ -7,7 +7,7 @@ test("invalid-variables-null <test-job>", async () => {
         const writeStreams = new MockWriteStreams();
         await handler({
             cwd: "tests/test-cases/invalid-variables-null",
-            job: "test-job",
+            job: ["test-job"],
         }, writeStreams);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright test-job} has invalid variables hash of key value pairs. INVALID=null`);

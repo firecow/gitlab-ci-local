@@ -6,7 +6,7 @@ test("after-script <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/after-script",
-        job: "test-job",
+        job: ["test-job"],
     }, writeStreams);
 
     const expected = [
@@ -20,7 +20,7 @@ test("after-script <build-job> (default)", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/after-script",
-        job: "build-job",
+        job: ["build-job"],
     }, writeStreams);
 
     const expected = [
