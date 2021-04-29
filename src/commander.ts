@@ -128,25 +128,31 @@ export class Commander {
             return stages.indexOf(a.stage) - stages.indexOf(b.stage);
         });
 
-        let whenPadEnd = 0;
+        let whenPadEnd = 4;
         jobs.forEach(j => whenPadEnd = Math.max(j.when.length, whenPadEnd));
 
-        let stagePadEnd = 0;
+        let stagePadEnd = 5;
         stages.forEach(s => stagePadEnd = Math.max(s.length, stagePadEnd));
 
-        let descriptionPadEnd = 0;
+        let descriptionPadEnd = 11;
         jobs.forEach(j => descriptionPadEnd = Math.max(j.description.length, descriptionPadEnd));
+
+        const jobNamePad = parser.jobNamePad;
 
         const neverJobs = jobs.filter(j => j.when === "never");
         const nonNeverJobs = jobs.filter(j => j.when !== "never");
 
+        writeStreams.stdout(chalk`{grey ${"name".padEnd(jobNamePad)}  ${"description".padEnd(descriptionPadEnd)}}  `);
+        writeStreams.stdout(chalk`{grey ${"stage".padEnd(stagePadEnd)}  ${"when".padEnd(whenPadEnd)}}  `);
+        writeStreams.stdout(chalk`{grey allow_failure  needs}\n`);
+
         const renderLine = (job: Job) => {
             const needs = job.needs;
-            const allowFailure = job.allowFailure ? chalk`{black.bgYellowBright  ONLY WARN }` : chalk`{black.bgRed  CAN FAIL  }`;
-            let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
-            jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
+            const allowFailure = job.allowFailure ? "true " : "false";
+            let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
+            jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
             if (needs) {
-                jobLine += chalk`  [{blueBright ${needs.join(",")}}]`;
+                jobLine += chalk`    [{blueBright ${needs.join(",")}}]`;
             }
             writeStreams.stdout(`${jobLine}\n`);
         };
