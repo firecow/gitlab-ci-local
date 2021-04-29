@@ -74,16 +74,22 @@ export class Commander {
         let descriptionPadEnd = 0;
         parser.getJobs().forEach(j => descriptionPadEnd = Math.max(j.description.length, descriptionPadEnd));
 
+        const jobNamePad = parser.jobNamePad;
+
         const neverJobs = jobs.filter(j => j.when === "never");
         const nonNeverJobs = jobs.filter(j => j.when !== "never");
 
+        writeStreams.stdout(chalk`{grey ${"name".padEnd(jobNamePad)}  ${"description".padEnd(descriptionPadEnd)}}  `);
+        writeStreams.stdout(chalk`{grey ${"stage".padEnd(stagePadEnd)}  ${"when".padEnd(whenPadEnd)}}  `);
+        writeStreams.stdout(chalk`{grey allow_failure  needs}\n`);
+
         const renderLine = (job: Job) => {
             const needs = job.needs;
-            const allowFailure = job.allowFailure ? chalk`{black.bgYellowBright  ONLY WARN }` : chalk`{black.bgRed  CAN FAIL  }`;
-            let jobLine = `${job.getJobNameString()}  ${job.description.padEnd(descriptionPadEnd)}`;
+            const allowFailure = job.allowFailure ? "true " : "false";
+            let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
             jobLine += chalk`  {yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
             if (needs) {
-                jobLine += chalk`  [{blueBright ${needs.join(",")}}]`;
+                jobLine += chalk`    [{blueBright ${needs.join(",")}}]`;
             }
             writeStreams.stdout(`${jobLine}\n`);
         };
