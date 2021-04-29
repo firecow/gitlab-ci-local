@@ -2,7 +2,6 @@ import * as chalk from "chalk";
 import * as childProcess from "child_process";
 import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
-import * as fs from "fs-extra";
 import {assert} from "./asserts";
 import * as fs from "fs-extra";
 
