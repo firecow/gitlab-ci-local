@@ -48,6 +48,10 @@ export class JobExecutor {
         return [...jobs.values()].filter(j => j.running);
     }
 
+    static getFailed(jobs: ReadonlyMap<string, Job>) {
+        return [...jobs.values()].filter(j => j.finished && !j.allowFailure && (j.preScriptsExitCode ?? 0) > 0);
+    }
+
     static getPastToWaitFor(jobs: ReadonlyMap<string, Job>, stages: readonly string[], job: Job, manuals: string[]) {
         const jobsToWaitForSet = new Set<Job>();
         let waitForLoopArray: Job[] = [job];
