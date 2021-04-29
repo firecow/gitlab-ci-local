@@ -1,24 +1,23 @@
 ---
 pre-job:
   stage: .pre
-  rules:
-    - when: manual
   script:
-    - echo "Hello, pre job manual!"
+    - echo "Pre something"
 
 build-job:
   stage: build
-  rules:
-    - when: manual
+  needs: [pre-job]
   script:
-    - echo "Hello, build job manual!"
+    - echo "Build something"
 
 test-job:
   stage: test
-  needs: [pre-job]
+  needs: [pre-job, build-job]
   script:
     - echo "Test something"
 
 deploy-job:
+  stage: deploy
+  needs: [pre-job, build-job, test-job]
   script:
     - echo "Deploy something"

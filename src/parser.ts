@@ -6,7 +6,6 @@ import * as prettyHrtime from "pretty-hrtime";
 import fetch from "node-fetch";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
-import {Stage} from "./stage";
 import * as state from "./state";
 import {ExitError} from "./types/exit-error";
 import {GitRemote} from "./types/git-remote";
@@ -16,20 +15,29 @@ import {assert} from "./asserts";
 import * as path from "path";
 import {WriteStreams} from "./types/write-streams";
 import {ParserOptions} from "./types/parser-options";
+import {Validator} from "./validator";
 
 export class Parser {
 
-    private readonly jobs: Map<string, Job> = new Map();
-    private readonly stages: Map<string, Stage> = new Map();
     private readonly opt: ParserOptions;
 
-    private gitRemote: GitRemote | null = null;
-    private homeVariables: any;
+    private _jobs: Map<string, Job> = new Map();
+    private _stages: string[] = [];
+    private _gitRemote: GitRemote | null = null;
+    private _homeVariables: any;
     private _gitlabData: any;
     private _jobNamePad = 0;
 
     private constructor(opt: ParserOptions) {
         this.opt = opt;
+    }
+
+    get jobs(): ReadonlyMap<string, Job> {
+        return this._jobs;
+    }
+
+    get stages(): readonly string[] {
+        return this._stages;
     }
 
     get gitlabData() {
@@ -46,8 +54,7 @@ export class Parser {
 
         const time = process.hrtime();
         await parser.init();
-        await parser.initJobs();
-        await parser.validateNeedsTags();
+        await Validator.validateNeedsTags(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
 
         if (!opt.tabCompletionPhase) {
@@ -101,14 +108,14 @@ export class Parser {
         }
 
         const groupUrl = `${gitRemote.domain}/${gitRemote.group}/`;
-        for (const [groupKey, groupEntires] of Object.entries(data?.group ?? [])) {
+        for (const [groupKey, groupEntries] of Object.entries(data?.group ?? [])) {
             if (!groupUrl.includes(Parser.normalizeProjectKey(groupKey, writeStreams))) {
                 continue;
             }
-            if (typeof groupEntires !== "object") {
+            if (typeof groupEntries !== "object") {
                 continue;
             }
-            variables = {...variables, ...groupEntires};
+            variables = {...variables, ...groupEntries};
         }
 
         const projectUrl = `${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`;
@@ -171,18 +178,20 @@ export class Parser {
         const home = this.opt.home;
         const file = this.opt.file;
         const tabCompletionPhase = this.opt.tabCompletionPhase;
+        const pipelineIid = this.opt.pipelineIid;
+        const extraHosts = this.opt.extraHosts || [];
 
-        this.gitRemote = await Parser.initGitRemote(cwd);
-        this.homeVariables = await Parser.initHomeVariables(cwd, writeStreams, this.gitRemote, home ?? process.env.HOME ?? "");
+        this._gitRemote = await Parser.initGitRemote(cwd);
+        this._homeVariables = await Parser.initHomeVariables(cwd, writeStreams, this._gitRemote, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, writeStreams, this.gitRemote, tabCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, writeStreams, this._gitRemote, tabCompletionPhase));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, writeStreams, this.gitRemote, tabCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, writeStreams, this._gitRemote, tabCompletionPhase));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
@@ -203,26 +212,17 @@ export class Parser {
         jobExpanders.afterScripts(gitlabData);
         jobExpanders.scripts(gitlabData);
 
-        // If undefined set default array.
         if (!gitlabData.stages) {
-            gitlabData.stages = ["build", "test", "deploy"];
+            gitlabData.stages = [".pre", "build", "test", "deploy", ".post"];
         }
-
-        // 'stages:' must be an array
         assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
-
-        // Make sure stages includes ".pre" and ".post". See: https://docs.gitlab.com/ee/ci/yaml/#pre-and-post
         if (!gitlabData.stages.includes(".pre")) {
             gitlabData.stages.unshift(".pre");
         }
         if (!gitlabData.stages.includes(".post")) {
             gitlabData.stages.push(".post");
         }
-
-        // Create stages and set into Map
-        for (const value of gitlabData.stages || []) {
-            this.stages.set(value, new Stage(value));
-        }
+        this._stages = gitlabData.stages;
 
         // Find longest job name
         for (const jobName of Object.keys(gitlabData)) {
@@ -245,18 +245,10 @@ export class Parser {
                 );
             }
         });
-        // chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${value}`}`
+
         this._gitlabData = gitlabData;
-    }
 
-    async initJobs() {
-        assert(this.gitRemote != null, "GitRemote isn't set in parser initJobs function");
-
-        const writeStreams = this.opt.writeStreams;
-        const pipelineIid = this.opt.pipelineIid;
-        const cwd = this.opt.cwd;
-        const extraHosts = this.opt.extraHosts || [];
-        const gitlabData = this._gitlabData;
+        assert(this._gitRemote != null, "GitRemote isn't set in parser initJobs function");
 
         const gitUser = await Parser.initGitUser(cwd);
 
@@ -266,30 +258,25 @@ export class Parser {
                 continue;
             }
 
-            const jobId = await state.getJobId(cwd);
+            const jobId = await state.incrementJobId(cwd);
             const job = new Job({
                 extraHosts,
                 writeStreams,
                 name: jobName,
                 namePad: this.jobNamePad,
-                homeVariables: this.homeVariables,
+                homeVariables: this._homeVariables,
                 data: jobData,
                 cwd,
                 globals: gitlabData,
                 pipelineIid,
                 id: jobId,
                 gitUser,
-                gitRemote: this.gitRemote,
+                gitRemote: this._gitRemote,
             });
-            const stage = this.stages.get(job.stage);
-            const stageStr = `stage:${job.stage}`;
-            assert(stage != null, chalk`{yellow ${stageStr}} not found for {blueBright ${job.name}}`);
-            stage.addJob(job);
-            await state.incrementJobId(cwd);
-
-            this.jobs.set(jobName, job);
+            const foundStage = this.stages.includes(job.stage);
+            assert(foundStage != null, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
+            this._jobs.set(jobName, job);
         }
-
     }
 
     static async loadYaml(filePath: string): Promise<any> {
@@ -342,52 +329,6 @@ export class Parser {
         ]);
 
         return yaml.load(fileSplitClone.join("\n"), {schema: GITLAB_SCHEMA}) || {};
-    }
-
-    getJobByName(name: string): Job {
-        const job = this.jobs.get(name);
-        assert(job != null, chalk`{blueBright ${name}} could not be found`);
-        return job;
-    }
-
-    getJobs(): ReadonlyArray<Job> {
-        return Array.from(this.jobs.values());
-    }
-
-    getStageNames(): ReadonlyArray<string> {
-        return Array.from(this.stages.values()).map((s) => s.name);
-    }
-
-    getStages(): ReadonlyArray<Stage> {
-        return Array.from(this.stages.values());
-    }
-
-    private async validateNeedsTags() {
-        const stages = Array.from(this.stages.keys());
-        const jobNames = Array.from(this.jobs.values()).map((j) => j.name);
-        for (const job of this.jobs.values()) {
-            if (job.needs === null || job.needs.length === 0) {
-                continue;
-            }
-
-            const unspecifiedNeedsJob = job.needs.filter((v) => (jobNames.indexOf(v) === -1));
-            assert(
-                unspecifiedNeedsJob.length !== job.needs.length,
-                chalk`[ {blueBright ${unspecifiedNeedsJob.join(",")}} ] jobs are needed by {blueBright ${job.name}}, but they cannot be found`,
-            );
-
-
-            for (const need of job.needs) {
-                const needJob = this.getJobByName(need);
-                const needJobStageIndex = stages.indexOf(needJob.stage);
-                const jobStageIndex = stages.indexOf(job.stage);
-                assert(
-                    needJobStageIndex < jobStageIndex,
-                    chalk`{blueBright ${needJob.name}} is needed by {blueBright ${job.name}}, but it is in the same or a future stage`,
-                );
-            }
-
-        }
     }
 
     static async initGitRemote(cwd: string): Promise<GitRemote> {

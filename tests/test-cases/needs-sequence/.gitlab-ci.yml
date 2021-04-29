@@ -1,0 +1,28 @@
+---
+deploy-job:
+  stage: deploy
+  needs: [test-job]
+  script:
+    - echo "Deploy something"
+
+test-job:
+  stage: test
+  needs: [build-job]
+  script:
+    - echo "Test something"
+
+build-job:
+  stage: build
+  needs: [pre-job]
+  script:
+    - echo "Build something"
+
+pre-job:
+  stage: .pre
+  script:
+    - echo "Pre something"
+
+no-needs-job:
+  stage: test
+  script:
+    - echo "NoNeeds something"

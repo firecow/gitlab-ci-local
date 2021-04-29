@@ -70,7 +70,7 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
             cwd, writeStreams, pipelineIid, tabCompletionPhase: false, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
         });
         await Utils.rsyncNonIgnoredFilesToBuilds(cwd, ".docker");
-        await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.privileged || false);
+        await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.manual || [], argv.privileged || false);
     } else {
         const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);
@@ -92,7 +92,7 @@ process.on("SIGINT", async (_: string, code: number) => {
         return process.exit(code);
     }
     const promises = [];
-    for (const job of parser.getJobs()) {
+    for (const job of parser.jobs.values()) {
         promises.push(job.removeContainer());
     }
     await Promise.all(promises);

@@ -6,7 +6,7 @@ test("image <test job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
-        job: "test job",
+        job: ["test job"],
     }, writeStreams);
     const expected = [chalk`{blueBright test job                } {greenBright >} Test something`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
@@ -16,7 +16,7 @@ test("image <test-entrypoint>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
-        job: "test-entrypoint",
+        job: ["test-entrypoint"],
         privileged: true,
     }, writeStreams);
 
@@ -34,7 +34,7 @@ test("image <test-entrypoint-override>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
-        job: "test-entrypoint-override",
+        job: ["test-entrypoint-override"],
     }, writeStreams);
 
     const expected = [

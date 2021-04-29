@@ -5,7 +5,7 @@ test("cache <consume-cache> --needs", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/cache",
-        job: "consume-cache",
+        job: ["consume-cache"],
         needs: true,
     }, writeStreams);
 

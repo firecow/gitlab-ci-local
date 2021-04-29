@@ -1,6 +1,7 @@
 ---
 test-job:
   script:
+    - echo "Test something"
     - exit 1
 
 test-job-after-script:
@@ -20,3 +21,9 @@ allow-failure-after-script:
     - exit 1
   after_script:
     - exit 1
+
+deploy-job:
+  stage: deploy
+  needs: [test-job]
+  script:
+    echo "Deploy something"

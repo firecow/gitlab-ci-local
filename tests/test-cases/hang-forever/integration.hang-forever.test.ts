@@ -6,7 +6,7 @@ test("hang-forever <test-debian>", async() => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/hang-forever",
-        job: "test-debian",
+        job: ["test-debian"],
     }, writeStreams);
 
     const expected = [
@@ -21,7 +21,7 @@ test("hang-forever <test-alpine>", async() => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/hang-forever",
-        job: "test-alpine",
+        job: ["test-alpine"],
     }, writeStreams);
 
     const expected = [
@@ -36,7 +36,7 @@ test("hang-forever <test-shell>", async() => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/hang-forever",
-        job: "test-shell",
+        job: ["test-shell"],
     }, writeStreams);
 
     const expected = [

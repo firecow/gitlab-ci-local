@@ -1,5 +1,8 @@
 ---
-stages: [test, build]
+build-job:
+  stage: build
+  script:
+    - 'echo "Build something"'
 
 # @Description Run Tests
 test-job:
@@ -7,8 +10,3 @@ test-job:
   script:
     - echo ${GITLAB_USER_LOGIN}
     - '>&2 echo "Hello, error!"'
-
-build-job:
-  stage: build
-  script:
-    - 'echo "Build something"'
