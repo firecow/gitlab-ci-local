@@ -12,7 +12,6 @@ import * as prettyHrtime from "pretty-hrtime";
 import {WriteStreams} from "./types/write-streams";
 import {Job} from "./job";
 import {Utils} from "./utils";
-import {JobExecutor} from "./job-executor";
 
 let parser: Parser | null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
@@ -30,7 +29,7 @@ const generateGitIgnore = (cwd: string) => {
     }
 };
 
-export async function handler(argv: any, writeStreams: WriteStreams) {
+export async function handler(argv: any, writeStreams: WriteStreams): Promise<ReadonlyMap<string, Job>> {
     assert(typeof argv.cwd != "object", "--cwd option cannot be an array");
     const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
 
@@ -97,12 +96,10 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
     }
     writeStreams.flush();
 
-    // Exit with 1, if any jobs failed.
-    let failedJobs = [];
     if (parser) {
-        failedJobs = JobExecutor.getFailed(parser.jobs);
+        return parser.jobs;
     }
-    process.exit(failedJobs.length > 0 ? 1 : 0);
+    return new Map<string, Job>();
 }
 
 process.on("SIGINT", async (_: string, code: number) => {

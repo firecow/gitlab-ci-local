@@ -9,6 +9,7 @@ import * as state from "./state";
 import {ExitError} from "./types/exit-error";
 import {ProcessWriteStreams} from "./process-write-streams";
 import {handler} from "./handler";
+import {JobExecutor} from "./job-executor";
 
 sourceMapSupport.install();
 process.on("unhandledRejection", e => {
@@ -32,7 +33,9 @@ process.on("unhandledRejection", e => {
         .command({
             handler: async (argv) => {
                 try {
-                    await handler(argv, new ProcessWriteStreams());
+                    const jobs = await handler(argv, new ProcessWriteStreams());
+                    const failedJobs = JobExecutor.getFailed(jobs);
+                    process.exit(failedJobs.length > 0 ? 1 : 0);
                 } catch (e) {
                     if (e instanceof ExitError) {
                         process.stderr.write(chalk`{red ${e.message}}\n`);
