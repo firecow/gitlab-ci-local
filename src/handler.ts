@@ -12,6 +12,7 @@ import * as prettyHrtime from "pretty-hrtime";
 import {WriteStreams} from "./types/write-streams";
 import {Job} from "./job";
 import {Utils} from "./utils";
+import {JobExecutor} from "./job-executor";
 
 let parser: Parser | null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
@@ -95,6 +96,13 @@ export async function handler(argv: any, writeStreams: WriteStreams) {
         writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();
+
+    // Exit with 1, if any jobs failed.
+    let failedJobs = [];
+    if (parser) {
+        failedJobs = JobExecutor.getFailed(parser.jobs);
+    }
+    process.exit(failedJobs.length > 0 ? 1 : 0);
 }
 
 process.on("SIGINT", async (_: string, code: number) => {
