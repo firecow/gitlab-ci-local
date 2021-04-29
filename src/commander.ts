@@ -128,10 +128,10 @@ export class Commander {
             return stages.indexOf(a.stage) - stages.indexOf(b.stage);
         });
 
-        let whenPadEnd = 0;
+        let whenPadEnd = 4;
         jobs.forEach(j => whenPadEnd = Math.max(j.when.length, whenPadEnd));
 
-        let stagePadEnd = 0;
+        let stagePadEnd = 5;
         stages.forEach(s => stagePadEnd = Math.max(s.length, stagePadEnd));
 
         let descriptionPadEnd = 11;
