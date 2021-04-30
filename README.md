@@ -180,9 +180,9 @@ Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
 ### Scripts
 
 ```bash
-npm install
+./docker-npm install
 npm run build
-npm start
+npm run test
 ```
 
 ![example](./docs/images/example.png)
