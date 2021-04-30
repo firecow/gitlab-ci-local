@@ -25,7 +25,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [docker-compose-nodejs](./examples/docker-compose-nodejs/README.md)
     * [docker-swarm-php](./examples/docker-swarm-php/README.md)
 * [Installation](#installation)
-* [Convinience](#convinience)
+* [Convenience](#convenience)
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
 * [Quirks](#quirks)
@@ -79,7 +79,9 @@ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.
 ## Convenience
 
 ### Dot Env file
+
 Add a `.gitlab-ci-local-env` file to the current working directory
+
 ```
 # Overrides .gitlab-ci.yml as the default git ci/cd file
 FILE=doctor-strange.yml # --file
@@ -87,6 +89,7 @@ FILE=doctor-strange.yml # --file
 # Always runs needed jobs, when gitlab-ci-local <job-name> is called
 NEEDS=true # --needs
 ```
+
 All cli options can be assigned default values this way
 
 ### Bash alias
@@ -176,6 +179,8 @@ Shell executor jobs copies artifacts to host/cwd directory
 Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
 
 ## Development
+
+You need nodejs 14+
 
 ### Scripts
 
