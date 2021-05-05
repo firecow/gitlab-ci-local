@@ -16,7 +16,7 @@ consume-cache:
   stage: test
   image: alpine
   needs: [produce-cache]
-  dependencies: [produce-cache] # testing the absence of artifacts
+  dependencies: [produce-cache]  # testing the absence of artifacts
   cache:
     key: maven
     paths:
