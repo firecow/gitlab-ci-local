@@ -1,0 +1,10 @@
+---
+build-job:
+  stage: build
+  script:
+    - exit 1
+
+test-job:
+  when: always
+  script:
+    - echo "Test something"
