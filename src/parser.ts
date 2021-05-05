@@ -195,14 +195,6 @@ export class Parser {
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
-        // Make sure artifact paths doesn't contain globstar
-        // TODO: This deviates from gitlab ci behavior
-        Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
-            jobData?.artifacts?.paths?.forEach((artifactPath: any) => {
-                assert(!artifactPath.includes("*"), `Artfact paths cannot contain globstar, yet! '${jobName}'`);
-            });
-        });
-
         // Expand various fields in gitlabData
         jobExpanders.reference(gitlabData, gitlabData);
         jobExpanders.jobExtends(gitlabData);
