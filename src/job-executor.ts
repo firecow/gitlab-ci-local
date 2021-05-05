@@ -22,9 +22,17 @@ export class JobExecutor {
             if (job.started) continue;
 
             const jobsToWaitFor = JobExecutor.getPastToWaitFor(jobs, stages, job, manuals);
-            if (!JobExecutor.isPastFailed(jobsToWaitFor) && !JobExecutor.isNotFinished(jobsToWaitFor)) {
-                startCandidates.push(job);
+            if (JobExecutor.isNotFinished(jobsToWaitFor)) {
+                continue;
             }
+            if (job.when === "on_success" && JobExecutor.isPastFailed(jobsToWaitFor)) {
+                continue;
+            }
+            if (job.when === "on_failure" && !JobExecutor.isPastFailed(jobsToWaitFor)) {
+                continue;
+            }
+
+            startCandidates.push(job);
         }
         return startCandidates;
     }

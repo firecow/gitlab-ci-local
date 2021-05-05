@@ -1,0 +1,23 @@
+---
+pre-job:
+  stage: .pre
+  script:
+    - echo "Pre something"
+
+build-job:
+  stage: build
+  script:
+    - exit 1
+
+test-job:
+  needs: [build-job]
+  when: on_failure
+  script:
+    - echo "Test something"
+
+deploy-job:
+  stage: deploy
+  needs: [pre-job]
+  when: on_failure
+  script:
+    - echo "Deploy something"
