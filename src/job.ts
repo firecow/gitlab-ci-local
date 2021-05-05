@@ -285,9 +285,7 @@ export class Job {
             } catch(e) {
                 this.writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
-        }
 
-        if (this.artifacts.paths.length > 0) {
             try {
                 await Utils.spawn(`docker volume rm gcl-${this.safeJobName}-${this.jobId}`);
             } catch (e) {
