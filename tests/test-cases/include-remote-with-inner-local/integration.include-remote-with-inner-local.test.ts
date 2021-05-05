@@ -13,5 +13,5 @@ test("include-remote-with-inner-local", async () => {
         chalk`{blueBright deploy-job} {greenBright >} Deploy something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines.length).toBe(0);
+    expect(writeStreams.stderrLines).toEqual([]);
 });
