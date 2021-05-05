@@ -1,6 +1,7 @@
 import * as chalk from "chalk";
 import {Job} from "./job";
 import {ExitError} from "./types/exit-error";
+import {assert} from "./asserts";
 
 export class JobExecutor {
 
@@ -58,7 +59,7 @@ export class JobExecutor {
 
         while (waitForLoopArray.length > 0) {
             const loopJob = waitForLoopArray.pop();
-            if (!loopJob) break;
+            assert(loopJob != null, "Job not found in getPastToWaitFor, should be impossible!");
             if (loopJob.needs) {
                 loopJob.needs.forEach(needJob => {
                     const found = jobs.get(needJob);
