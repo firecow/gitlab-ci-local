@@ -35,6 +35,7 @@ export class Job {
     private _coveragePercent: string | null = null;
     private _running = false;
     private _containerId: string | null = null;
+    private _artifactsContainerId: string | null = null;
 
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
@@ -121,6 +122,10 @@ export class Job {
         if (this.injectSSHAgent && this.imageName === null) {
             throw new ExitError(`${this.getJobNameString()} @InjectSSHAgent can only be used with image:`);
         }
+    }
+
+    get safeJobName() {
+        return this.name.replace(" ", "_");
     }
 
     get imageName(): string | null {
@@ -223,15 +228,15 @@ export class Job {
         this._prescriptsExitCode = await this.execScripts(prescripts, privileged);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
-            this._running = false;
             await this.removeContainer();
+            this._running = false;
             return;
         }
 
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
-            this._running = false;
             await this.removeContainer();
+            this._running = false;
             return;
         }
 
@@ -253,13 +258,12 @@ export class Job {
 
         writeStreams.stdout(`${this.getFinishedString(startTime)}\n`);
 
-        this._running = false;
-
         if (this.jobData.coverage) {
             this._coveragePercent = await Utils.getCoveragePercent(this.cwd, this.jobData.coverage, this.name);
         }
 
         await this.removeContainer();
+        this._running = false;
     }
 
     getJobNameString() {
@@ -271,7 +275,23 @@ export class Job {
             try {
                 await Utils.spawn(`docker rm -f ${this._containerId}`);
             } catch (e) {
-                this.writeStreams.stderr(chalk`{yellow ${e}}`);
+                this.writeStreams.stderr(chalk`{yellow ${e.message}}`);
+            }
+        }
+
+        if (this._artifactsContainerId) {
+            try {
+                await Utils.spawn(`docker rm -f ${this._artifactsContainerId}`);
+            } catch(e) {
+                this.writeStreams.stderr(chalk`{yellow ${e.message}}`);
+            }
+        }
+
+        if (this.artifacts.paths.length > 0) {
+            try {
+                await Utils.spawn(`docker volume rm gcl-${this.safeJobName}-${this.jobId}`);
+            } catch (e) {
+                this.writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
         }
     }
@@ -348,6 +368,11 @@ export class Job {
                 dockerCmd += `docker create --privileged -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             } else {
                 dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
+            }
+
+            if (this.artifacts.paths.length > 0) {
+                await Utils.spawn(`docker volume create gcl-${this.safeJobName}-${this.jobId}`, this.cwd);
+                dockerCmd += `--volume gcl-${this.safeJobName}-${this.jobId}:/builds/ `;
             }
 
             for (const extraHost of this.extraHosts) {
@@ -434,8 +459,8 @@ export class Job {
 
         cmd += "exit 0\n";
 
-        await fs.outputFile(`${this.cwd}/.gitlab-ci-local/scripts/${this.name.replace(" ", "_")}`, cmd, "utf-8");
-        await fs.chmod(`${this.cwd}/.gitlab-ci-local/scripts/${this.name.replace(" ", "_")}`, "0755");
+        await fs.outputFile(`${this.cwd}/.gitlab-ci-local/scripts/${this.safeJobName}`, cmd, "utf-8");
+        await fs.chmod(`${this.cwd}/.gitlab-ci-local/scripts/${this.safeJobName}`, "0755");
 
         if (this.imageName) {
             await Utils.spawn(`docker cp .gitlab-ci-local/scripts/. ${this._containerId}:/gcl-scripts/`, this.cwd);
@@ -470,36 +495,29 @@ export class Job {
             cp.on("error", (err) => setTimeout(() => reject(err), 10));
 
             if (this.imageName) {
-                cp.stdin.end(`/gcl-scripts/${this.name.replace(" ", "_")}`);
+                cp.stdin.end(`/gcl-scripts/${this.safeJobName}`);
             } else {
-                cp.stdin.end(`./.gitlab-ci-local/scripts/${this.name.replace(" ", "_")}`);
+                cp.stdin.end(`./.gitlab-ci-local/scripts/${this.safeJobName}`);
             }
         });
 
-        if (this.imageName) {
+        if (this.imageName && this.artifacts.paths.length > 0) {
+            let cpCmd = "shopt -s globstar\nmkdir -p /artifacts/\n";
             for (const artifactPath of this.artifacts.paths) {
-                const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(/\/$/, "");
-
-                time = process.hrtime();
-
-                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
-
-                let pathReplacement = "";
-                if (`${expandedPath}`.match(/(.*)\/(.+)/)) {
-                    // in case of a folder, create the full path
-                    await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${expandedPath.replace(/(.*)\/(.+)/, "$1")}`);
-                    pathReplacement = `${expandedPath.replace(/(.*)\/(.+)/, "$1")}`;
-                }
-
-                try {
-                    await Utils.spawn(`docker cp ${this._containerId}:/builds/${expandedPath} ${this.cwd}/.gitlab-ci-local/artifacts/${pathReplacement}`);
-                    endTime = process.hrtime(time);
-                    writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
-                } catch (e) {
-                    // exact same message and color as Gitlab runner
-                    writeStreams.stdout(chalk`${this.getJobNameString()} {yellow WARNING: ${artifactPath}: no matching files}\n`);
-                }
+                const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
+                cpCmd += `echo Started copying ${expandedPath} to /artifacts\n`;
+                cpCmd += "cd /builds/\n";
+                cpCmd += `cp -r --parents ${expandedPath} /artifacts\n`;
+                cpCmd += `echo Done copying ${expandedPath} to /artifacts\n`;
             }
+
+            time = process.hrtime();
+            const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i -v gcl-${this.safeJobName}-${this.jobId}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
+            this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
+            await Utils.spawn(`docker start ${this._artifactsContainerId} --attach`);
+            await Utils.spawn(`docker cp ${this._artifactsContainerId}:/artifacts .gitlab-ci-local/.`, this.cwd);
+            endTime = process.hrtime(time);
+            writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         return exitCode;

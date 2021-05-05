@@ -12,4 +12,5 @@ test("artifacts-globstar", async () => {
         chalk`{blueBright test-job} {greenBright >} Pre something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines).toEqual([]);
 });
