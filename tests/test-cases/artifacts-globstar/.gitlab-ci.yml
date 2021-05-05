@@ -1,0 +1,19 @@
+---
+pre-job:
+  stage: .pre
+  needs: []
+  image: alpine
+  artifacts:
+    paths:
+      - path/**/*.txt
+  script:
+    - mkdir -p path/crazylong/folder/
+    - echo "Pre something" > path/crazylong/folder/log.txt
+    - echo "Not an artifact" > path/crazylong/folder/different.ext
+
+test-job:
+  needs: [pre-job]
+  image: alpine
+  script:
+    - cat path/crazylong/folder/log.txt
+    - if [ -f path/crazylong/folder/different.ext ]; then exit 1; fi
