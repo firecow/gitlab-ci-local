@@ -3,6 +3,7 @@ extends: default
 
 # For all rules
 ignore: |
+  .gitlab-ci-local
   node_modules/
   examples/docker-compose-nodejs/node_modules/
   examples/docker-swarm-php/vendor/
