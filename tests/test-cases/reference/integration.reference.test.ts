@@ -14,5 +14,5 @@ test("reference <test-job>", async () => {
         chalk`{blueBright test-job} {greenBright >} Yoyo`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines.length).toBe(0);
+    expect(writeStreams.stderrLines).toEqual([]);
 });

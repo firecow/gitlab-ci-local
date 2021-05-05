@@ -13,5 +13,5 @@ test("before-script-default <test-job>", async () => {
         chalk`{blueBright test-job} {greenBright >} Before test`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines.length).toBe(0);
+    expect(writeStreams.stderrLines).toEqual([]);
 });

@@ -13,7 +13,7 @@ test("environment <deploy-dev-job>", async () => {
         chalk`{blueBright deploy-dev-job} environment: \{ name: {bold dev-domain} \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines.length).toEqual(0);
+    expect(writeStreams.stderrLines).toEqual([]);
 });
 
 test("environment <deploy-stage-job>", async () => {
@@ -27,5 +27,5 @@ test("environment <deploy-stage-job>", async () => {
         chalk`{blueBright deploy-stage-job} environment: \{ name: {bold stage-domain}, url: {bold http://stage.domain.com} \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines.length).toEqual(0);
+    expect(writeStreams.stderrLines).toEqual([]);
 });

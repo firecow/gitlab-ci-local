@@ -9,5 +9,5 @@ test("cache <consume-cache> --needs", async () => {
         needs: true,
     }, writeStreams);
 
-    expect(writeStreams.stderrLines.length).toBe(0);
+    expect(writeStreams.stderrLines).toEqual([]);
 });

@@ -9,5 +9,5 @@ test("artifacts <consume artifacts> --needs", async () => {
         needs: true,
     }, writeStreams);
 
-    expect(writeStreams.stderrLines.length).toBe(0);
+    expect(writeStreams.stderrLines).toEqual([]);
 });

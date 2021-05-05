@@ -13,5 +13,5 @@ test("include-local <build-job>", async () => {
         chalk`{blueBright build-job} {greenBright >} Build something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines.length).toBe(0);
+    expect(writeStreams.stderrLines).toEqual([]);
 });
