@@ -1,0 +1,10 @@
+---
+# @Interactive
+fake-shell-job:
+  stage: build
+  when: manual
+  script:
+    - echo "About to enter interactive mode"
+    - exit 0
+  after_script:
+    - echo "Exited interactive mode"
