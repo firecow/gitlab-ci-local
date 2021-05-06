@@ -125,7 +125,13 @@ export class Job {
     }
 
     get safeJobName() {
-        return this.name.replace(" ", "_");
+        const unifiedEmojiRanges = [
+            "\ud83c[\udf00-\udfff]", // U+1F300 to U+1F3FF
+            "\ud83d[\udc00-\ude4f]", // U+1F400 to U+1F64F
+            "\ud83d[\ude80-\udeff]", // U+1F680 to U+1F6FF
+        ];
+        const regExp = new RegExp(unifiedEmojiRanges.join("|"), "g");
+        return this.name.replace(/ /g, "_").replace(regExp, "_");
     }
 
     get imageName(): string | null {
