@@ -1,0 +1,8 @@
+---
+# @Interactive
+image-job:
+  stage: build
+  image: alpine
+  when: manual
+  script:
+    - echo "Should fail before this"
