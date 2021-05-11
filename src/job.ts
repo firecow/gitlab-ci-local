@@ -365,6 +365,7 @@ export class Job {
             pullCmd += `\tdocker pull ${this.imageName}\n`;
             pullCmd += "fi\n";
             await Utils.spawn(pullCmd, this.cwd);
+            this.refreshLongRunningSilentTimeout(writeStreams);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${this.imageName} in {magenta ${prettyHrtime(endTime)}}\n`);
 
@@ -426,6 +427,7 @@ export class Job {
 
             time = process.hrtime();
             await Utils.spawn(`docker cp .gitlab-ci-local/builds/.docker/. ${this._containerId}:/builds/`, this.cwd);
+            this.refreshLongRunningSilentTimeout(writeStreams);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
 
@@ -433,6 +435,7 @@ export class Job {
                 time = process.hrtime();
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
                 await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/. ${this._containerId}:/builds/`);
+                this.refreshLongRunningSilentTimeout(writeStreams);
                 endTime = process.hrtime(time);
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
