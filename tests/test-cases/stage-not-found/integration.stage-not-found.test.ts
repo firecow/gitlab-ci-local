@@ -1,6 +1,6 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
-import * as chalk from "chalk";
+import chalk from "chalk";
 
 test("stage-not-found <test-job>", async () => {
     try {

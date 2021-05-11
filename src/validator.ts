@@ -1,6 +1,6 @@
 import {Job} from "./job";
 import {assert} from "./asserts";
-import * as chalk from "chalk";
+import chalk from "chalk";
 import {Utils} from "./utils";
 
 export class Validator {

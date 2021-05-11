@@ -1,5 +1,5 @@
 import * as yaml from "js-yaml";
-import * as chalk from "chalk";
+import chalk from "chalk";
 import * as fs from "fs-extra";
 import * as yargs from "yargs";
 import {Commander} from "./commander";
@@ -7,8 +7,8 @@ import {Parser} from "./parser";
 import * as state from "./state";
 import {assert} from "./asserts";
 import * as dotenv from "dotenv";
-import * as camelCase from "camelcase";
-import * as prettyHrtime from "pretty-hrtime";
+import camelCase from "camelcase";
+import prettyHrtime from "pretty-hrtime";
 import {WriteStreams} from "./types/write-streams";
 import {Job} from "./job";
 import {Utils} from "./utils";

@@ -1,8 +1,8 @@
-import * as chalk from "chalk";
-import * as deepExtend from "deep-extend";
+import chalk from "chalk";
+import deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
-import * as prettyHrtime from "pretty-hrtime";
+import prettyHrtime from "pretty-hrtime";
 import fetch from "node-fetch";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";

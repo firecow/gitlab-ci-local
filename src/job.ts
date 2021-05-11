@@ -1,12 +1,13 @@
-import * as chalk from "chalk";
+import chalk from "chalk";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
-import * as prettyHrtime from "pretty-hrtime";
-import * as camelCase from "camelcase";
+import prettyHrtime from "pretty-hrtime";
+import camelCase from "camelcase";
 import {ExitError} from "./types/exit-error";
 import {Utils} from "./utils";
 import {JobOptions} from "./types/job-options";
 import {WriteStreams} from "./types/write-streams";
+import emojiRegex from "emoji-regex";
 
 export class Job {
 
@@ -130,13 +131,7 @@ export class Job {
     }
 
     get safeJobName() {
-        const unifiedEmojiRanges = [
-            "\ud83c[\udf00-\udfff]", // U+1F300 to U+1F3FF
-            "\ud83d[\udc00-\ude4f]", // U+1F400 to U+1F64F
-            "\ud83d[\ude80-\udeff]", // U+1F680 to U+1F6FF
-        ];
-        const regExp = new RegExp(unifiedEmojiRanges.join("|"), "g");
-        return this.name.replace(/ /g, "_").replace(regExp, "_");
+        return this.name.replace(/ /g, "_").replace(emojiRegex(), "_");
     }
 
     get imageName(): string | null {
@@ -277,7 +272,7 @@ export class Job {
         this._running = false;
     }
 
-    public async cleanupResources() {
+    async cleanupResources() {
         const writeStreams = this.writeStreams;
         clearTimeout(this._longRunningSilentTimeout);
 
