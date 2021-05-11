@@ -1,4 +1,4 @@
-import * as chalk from "chalk";
+import chalk from "chalk";
 import * as jobExpanders from "../src/job-expanders";
 import {Utils} from "../src/utils";
 
