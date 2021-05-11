@@ -1,0 +1,5 @@
+---
+test-job:
+  script:
+    - sleep 11
+    - echo "Test something"
