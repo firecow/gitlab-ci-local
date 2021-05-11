@@ -36,6 +36,7 @@ export class Job {
     private _running = false;
     private _containerId: string | null = null;
     private _artifactsContainerId: string | null = null;
+    private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
 
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
@@ -116,12 +117,16 @@ export class Job {
         }
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
-            throw new ExitError(`${this.getJobNameString()} @Interactive decorator cannot have image: and must be when:manual`);
+            throw new ExitError(`${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`);
         }
 
         if (this.injectSSHAgent && this.imageName === null) {
-            throw new ExitError(`${this.getJobNameString()} @InjectSSHAgent can only be used with image:`);
+            throw new ExitError(`${this.chalkJobName} @InjectSSHAgent can only be used with image:`);
         }
+    }
+
+    get chalkJobName() {
+        return chalk`{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
     }
 
     get safeJobName() {
@@ -216,32 +221,32 @@ export class Job {
         const writeStreams = this.writeStreams;
 
         this._running = true;
+        this.refreshLongRunningSilentTimeout(writeStreams);
 
         await fs.ensureFile(`${this.cwd}/.gitlab-ci-local/output/${this.name}.log`);
         await fs.truncate(`${this.cwd}/.gitlab-ci-local/output/${this.name}.log`);
 
         if (!this.imageName) {
             const {hrdeltatime} = await Utils.rsyncNonIgnoredFilesToBuilds(this.cwd, this.name);
-            writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright rsynced to build folder} in {magenta ${prettyHrtime(hrdeltatime)}}\n`);
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright rsynced to build folder} in {magenta ${prettyHrtime(hrdeltatime)}}\n`);
         }
 
         if (!this.interactive) {
-            const jobNameStr = this.getJobNameString();
-            writeStreams.stdout(chalk`${jobNameStr} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
         }
 
         const prescripts = this.beforeScripts.concat(this.scripts);
         this._prescriptsExitCode = await this.execScripts(prescripts, privileged);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
-            await this.removeContainer();
+            await this.cleanupResources();
             this._running = false;
             return;
         }
 
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
-            await this.removeContainer();
+            await this.cleanupResources();
             this._running = false;
             return;
         }
@@ -268,20 +273,19 @@ export class Job {
             this._coveragePercent = await Utils.getCoveragePercent(this.cwd, this.jobData.coverage, this.name);
         }
 
-        await this.removeContainer();
+        await this.cleanupResources();
         this._running = false;
     }
 
-    getJobNameString() {
-        return chalk`{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
-    }
+    public async cleanupResources() {
+        const writeStreams = this.writeStreams;
+        clearTimeout(this._longRunningSilentTimeout);
 
-    public async removeContainer() {
         if (this._containerId) {
             try {
                 await Utils.spawn(`docker rm -f ${this._containerId}`);
             } catch (e) {
-                this.writeStreams.stderr(chalk`{yellow ${e.message}}`);
+                writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
         }
 
@@ -289,13 +293,13 @@ export class Job {
             try {
                 await Utils.spawn(`docker rm -f ${this._artifactsContainerId}`);
             } catch(e) {
-                this.writeStreams.stderr(chalk`{yellow ${e.message}}`);
+                writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
 
             try {
                 await Utils.spawn(`docker volume rm gcl-${this.safeJobName}-${this.jobId}`);
             } catch (e) {
-                this.writeStreams.stderr(chalk`{yellow ${e.message}}`);
+                writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
         }
     }
@@ -326,7 +330,6 @@ export class Job {
     }
 
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
-        const jobNameStr = this.getJobNameString();
         const outputFilesPath = `${this.cwd}/.gitlab-ci-local/output/${this.name}.log`;
         const writeStreams = this.writeStreams;
         const artifactsFrom = this.needs || this.dependencies;
@@ -365,7 +368,7 @@ export class Job {
             pullCmd += "fi\n";
             await Utils.spawn(pullCmd, this.cwd);
             endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright pulled} ${this.imageName} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${this.imageName} in {magenta ${prettyHrtime(endTime)}}\n`);
 
             let dockerCmd = "";
             if (privileged) {
@@ -395,7 +398,7 @@ export class Job {
 
             if (this.cache && this.cache.key && typeof this.cache.key === "string" && this.cache.paths) {
                 this.cache.paths.forEach((path) => {
-                    writeStreams.stdout(chalk`${jobNameStr} {magentaBright mounting cache} for path ${path}\n`);
+                    writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
                     // /tmp/ location instead of .gitlab-ci-local/cache avoids the (unneeded) inclusion of cache folders when docker copy all files into the container, thus saving time for all jobs
                     dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `;
                 });
@@ -427,14 +430,14 @@ export class Job {
             time = process.hrtime();
             await Utils.spawn(`docker cp .gitlab-ci-local/builds/.docker/. ${this._containerId}:/builds/`, this.cwd);
             endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
 
             if (artifactsFrom === null || artifactsFrom.length > 0) {
                 time = process.hrtime();
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
                 await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/. ${this._containerId}:/builds/`);
                 endTime = process.hrtime(time);
-                writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
+                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
         }
 
@@ -443,7 +446,7 @@ export class Job {
             await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
             await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/. ${this.cwd}`);
             endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         let cmd = "set -eo pipefail\n";
@@ -477,12 +480,13 @@ export class Job {
         });
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
+            this.refreshLongRunningSilentTimeout(writeStreams);
             for (const line of `${e}`.split(/\r?\n/)) {
                 if (line.length === 0) {
                     continue;
                 }
 
-                stream(`${jobNameStr} `);
+                stream(`${this.chalkJobName} `);
                 if (!line.startsWith("\u001b[32m$")) {
                     stream(`${colorize(">")} `);
                 }
@@ -521,10 +525,17 @@ export class Job {
             await Utils.spawn(`docker start ${this._artifactsContainerId} --attach`);
             await Utils.spawn(`docker cp ${this._artifactsContainerId}:/artifacts .gitlab-ci-local/.`, this.cwd);
             endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.getJobNameString()} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         return exitCode;
+    }
+
+    private refreshLongRunningSilentTimeout(writeStreams: WriteStreams) {
+        clearTimeout(this._longRunningSilentTimeout);
+        this._longRunningSilentTimeout = setTimeout(() => {
+            writeStreams.stdout(chalk`${this.chalkJobName} {grey > still running...}\n`);
+        }, 10000);
     }
 
     private getExitedString(startTime: [number, number], code: number, warning = false, prependString = "") {
@@ -539,8 +550,6 @@ export class Job {
     private getFinishedString(startTime: [number, number]) {
         const endTime = process.hrtime(startTime);
         const timeStr = prettyHrtime(endTime);
-        const jobNameStr = this.getJobNameString();
-
-        return chalk`${jobNameStr} {magentaBright finished} in {magenta ${timeStr}}`;
+        return chalk`${this.chalkJobName} {magentaBright finished} in {magenta ${timeStr}}`;
     }
 }

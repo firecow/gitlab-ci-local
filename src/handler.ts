@@ -13,7 +13,6 @@ import {WriteStreams} from "./types/write-streams";
 import {Job} from "./job";
 import {Utils} from "./utils";
 
-let parser: Parser | null = null;
 const checkFolderAndFile = (cwd: string, file?: string) => {
     assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
 
@@ -32,6 +31,20 @@ const generateGitIgnore = (cwd: string) => {
 export async function handler(argv: any, writeStreams: WriteStreams): Promise<ReadonlyMap<string, Job>> {
     assert(typeof argv.cwd != "object", "--cwd option cannot be an array");
     const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
+
+    process.on("SIGINT", async (_: string, code: number) => {
+        if (!parser) {
+            return process.exit(code);
+        }
+        const promises = [];
+        for (const job of parser.jobs.values()) {
+            promises.push(job.cleanupResources());
+        }
+        await Promise.all(promises);
+        process.exit(code);
+    });
+
+    let parser: Parser | null = null;
 
     if (fs.existsSync(`${cwd}/.gitlab-ci-local-env`)) {
         const config = dotenv.parse(fs.readFileSync(`${cwd}/.gitlab-ci-local-env`));
@@ -99,17 +112,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
     if (parser) {
         return parser.jobs;
     }
+
     return new Map<string, Job>();
 }
 
-process.on("SIGINT", async (_: string, code: number) => {
-    if (!parser) {
-        return process.exit(code);
-    }
-    const promises = [];
-    for (const job of parser.jobs.values()) {
-        promises.push(job.removeContainer());
-    }
-    await Promise.all(promises);
-    process.exit(code);
-});
