@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import * as chalk from "chalk";
+import chalk from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as sourceMapSupport from "source-map-support";
-import * as yargs from "yargs";
+import yargs from "yargs";
 import {Parser} from "./parser";
 import * as state from "./state";
 import {ExitError} from "./types/exit-error";

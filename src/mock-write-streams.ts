@@ -5,8 +5,8 @@ export class MockWriteStreams implements WriteStreams {
     private currentStderr = "";
     private currentStdout = "";
 
-    public readonly stderrLines: string[] = [];
-    public readonly stdoutLines: string[] = [];
+    readonly stderrLines: string[] = [];
+    readonly stdoutLines: string[] = [];
 
     stderr(txt: string): void {
         this.currentStderr += txt;

@@ -1,4 +1,4 @@
-import * as chalk from "chalk";
+import chalk from "chalk";
 import {Job} from "./job";
 import {ExitError} from "./types/exit-error";
 import {assert} from "./asserts";

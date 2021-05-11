@@ -1,5 +1,5 @@
-import * as chalk from "chalk";
-import * as deepExtend from "deep-extend";
+import chalk from "chalk";
+import deepExtend from "deep-extend";
 import {Job} from "./job";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
