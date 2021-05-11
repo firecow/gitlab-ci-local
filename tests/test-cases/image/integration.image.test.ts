@@ -50,6 +50,8 @@ test.concurrent("image <test-from-scratch>", async () => {
         job: ["test-from-scratch"],
     }, writeStreams);
 
+    console.log(writeStreams.stdoutLines);
+
     expect(writeStreams.stdoutLines[5]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 0:0 .gitlab-ci.yml`);
     expect(writeStreams.stdoutLines[7]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 666 .gitlab-ci.yml`);
     expect(writeStreams.stderrLines).toEqual([]);
