@@ -45,8 +45,7 @@ export class Job {
 
     constructor(opt: JobOptions) {
         const jobData = opt.data;
-        const gitUser = opt.gitUser;
-        const gitRemote = opt.gitRemote;
+        const gitData = opt.gitData;
         const globals = opt.globals;
         const homeVariables = opt.homeVariables;
 
@@ -68,23 +67,23 @@ export class Job {
         this.cache = jobData.cache || null;
 
         const predefinedVariables = {
-            GITLAB_USER_LOGIN: gitUser["GITLAB_USER_LOGIN"],
-            GITLAB_USER_EMAIL: gitUser["GITLAB_USER_EMAIL"],
-            GITLAB_USER_NAME: gitUser["GITLAB_USER_NAME"],
-            CI_COMMIT_SHORT_SHA: "a33bd89c", // Changes
-            CI_COMMIT_SHA: "a33bd89c7b8fa3567524525308d8cafd7c0cd2ad",
+            GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
+            GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
+            GITLAB_USER_NAME: gitData.user["GITLAB_USER_NAME"],
+            CI_COMMIT_SHORT_SHA: gitData.commit.SHORT_SHA, // Changes
+            CI_COMMIT_SHA: gitData.commit.SHA,
             CI_PROJECT_DIR: this.imageName ? "/builds/" : `${this.cwd}`,
-            CI_PROJECT_NAME: gitRemote.project,
-            CI_PROJECT_TITLE: `${camelCase(gitRemote.project)}`,
-            CI_PROJECT_PATH: `${gitRemote.group}/${camelCase(gitRemote.project)}`,
-            CI_PROJECT_PATH_SLUG: `${gitRemote.group.replace(/\//g, "-")}-${gitRemote.project}`,
-            CI_PROJECT_NAMESPACE: `${gitRemote.group}`,
-            CI_COMMIT_REF_PROTECTED: "false",
-            CI_COMMIT_BRANCH: "local/branch", // Branch name, only when building branches
-            CI_COMMIT_REF_NAME: "local/branch", // Tag or branch name
+            CI_PROJECT_NAME: gitData.remote.project,
+            CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
+            CI_PROJECT_PATH: `${gitData.remote.group}/${camelCase(gitData.remote.project)}`,
+            CI_PROJECT_PATH_SLUG: `${gitData.remote.group.replace(/\//g, "-")}-${gitData.remote.project}`,
+            CI_PROJECT_NAMESPACE: `${gitData.remote.group}`,
             CI_PROJECT_VISIBILITY: "internal",
             CI_PROJECT_ID: "1217",
-            CI_COMMIT_REF_SLUG: "local-branch",
+            CI_COMMIT_REF_PROTECTED: "false",
+            CI_COMMIT_BRANCH: gitData.commit.REF_NAME, // Not available in merge request or tag pipelines
+            CI_COMMIT_REF_NAME: gitData.commit.REF_NAME, // Tag or branch name
+            CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replace(/[^a-z0-9]+/ig, "-").replace(/^-/, "").replace(/-$/, "").slice(0, 63).toLowerCase(),
             CI_COMMIT_TITLE: "Commit Title", // First line of commit message.
             CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
             CI_COMMIT_DESCRIPTION: "More commit text",
@@ -92,12 +91,12 @@ export class Job {
             CI_JOB_ID: `${this.jobId}`, // Changes on rerun
             CI_PIPELINE_ID: `${this.pipelineIid + 1000}`,
             CI_PIPELINE_IID: `${this.pipelineIid}`,
-            CI_SERVER_HOST: `${gitRemote.domain}`,
-            CI_SERVER_URL: `https://${gitRemote.domain}:443`,
-            CI_API_V4_URL: `https://${gitRemote.domain}/api/v4`,
-            CI_PROJECT_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}`,
-            CI_JOB_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}/-/jobs/${this.jobId}`, // Changes on rerun.
-            CI_PIPELINE_URL: `https://${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}/pipelines/${this.pipelineIid}`,
+            CI_SERVER_HOST: `${gitData.remote.domain}`,
+            CI_SERVER_URL: `https://${gitData.remote.domain}:443`,
+            CI_API_V4_URL: `https://${gitData.remote.domain}/api/v4`,
+            CI_PROJECT_URL: `https://${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}`,
+            CI_JOB_URL: `https://${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`, // Changes on rerun.
+            CI_PIPELINE_URL: `https://${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`,
             CI_JOB_NAME: `${this.name}`,
             CI_JOB_STAGE: `${this.stage}`,
             GITLAB_CI: "false",
@@ -287,7 +286,7 @@ export class Job {
         if (this._artifactsContainerId) {
             try {
                 await Utils.spawn(`docker rm -f ${this._artifactsContainerId}`);
-            } catch(e) {
+            } catch (e) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
 

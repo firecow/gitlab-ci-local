@@ -8,14 +8,13 @@ import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
 import * as state from "./state";
 import {ExitError} from "./types/exit-error";
-import {GitRemote} from "./types/git-remote";
-import {GitUser} from "./types/git-user";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
 import * as path from "path";
 import {WriteStreams} from "./types/write-streams";
 import {ParserOptions} from "./types/parser-options";
 import {Validator} from "./validator";
+import {GitData} from "./types/git-data";
 
 export class Parser {
 
@@ -23,7 +22,7 @@ export class Parser {
 
     private _jobs: Map<string, Job> = new Map();
     private _stages: string[] = [];
-    private _gitRemote: GitRemote | null = null;
+    private _gitData: GitData | null = null;
     private _homeVariables: any;
     private _gitlabData: any;
     private _jobNamePad = 0;
@@ -64,7 +63,7 @@ export class Parser {
         return parser;
     }
 
-    static async initGitUser(cwd: string): Promise<GitUser> {
+    static async initGitData(cwd: string): Promise<GitData> {
         let gitlabUserEmail, gitlabUserName;
 
         try {
@@ -73,9 +72,7 @@ export class Parser {
         } catch (e) {
             gitlabUserEmail = "local@gitlab.com";
         }
-
         const gitlabUserLogin = gitlabUserEmail.replace(/@.*/, "");
-
         try {
             const {stdout: gitConfigUserName} = await Utils.spawn("git config user.name", cwd);
             gitlabUserName = gitConfigUserName.trimEnd();
@@ -83,14 +80,39 @@ export class Parser {
             gitlabUserName = "Bob Local";
         }
 
+        let gitConfig;
+        if (fs.existsSync(`${cwd}/.git/config`)) {
+            gitConfig = fs.readFileSync(`${cwd}/.git/config`, "utf8");
+        } else if (fs.existsSync(`${cwd}/.gitconfig`)) {
+            gitConfig = fs.readFileSync(`${cwd}/.gitconfig`, "utf8");
+        } else {
+            throw new ExitError("Could not locate.gitconfig or .git/config file");
+        }
+        const gitRemoteMatch = gitConfig.match(/url = .*@(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*)\.git/);
+
+        const {stdout: gitLogOutput} = await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd);
+        const gitLogMatch = gitLogOutput.replace(/\r?\n/g, "").match(/(?<short_sha>.*?) (?<sha>.*?) HEAD -> (?<ref_name>[\w_-]*)/);
+
         return {
-            GITLAB_USER_LOGIN: gitlabUserLogin,
-            GITLAB_USER_EMAIL: gitlabUserEmail,
-            GITLAB_USER_NAME: gitlabUserName,
+            user: {
+                GITLAB_USER_LOGIN: gitlabUserLogin,
+                GITLAB_USER_EMAIL: gitlabUserEmail,
+                GITLAB_USER_NAME: gitlabUserName,
+            },
+            remote: {
+                domain: gitRemoteMatch?.groups?.domain ?? "ERROR",
+                group: gitRemoteMatch?.groups?.group ?? "ERROR",
+                project: gitRemoteMatch?.groups?.project ?? "ERROR",
+            },
+            commit: {
+                REF_NAME: gitLogMatch?.groups?.ref_name ?? "ERROR",
+                SHA: gitLogMatch?.groups?.sha ?? "ERROR",
+                SHORT_SHA: gitLogMatch?.groups?.short_sha ?? "ERROR",
+            },
         };
     }
 
-    static async initHomeVariables(cwd: string, writeStreams: WriteStreams, gitRemote: GitRemote, home: string): Promise<{ [key: string]: string }> {
+    static async initHomeVariables(cwd: string, writeStreams: WriteStreams, gitData: GitData, home: string): Promise<{ [key: string]: string }> {
         const homeDir = home.replace(/\/$/, "");
         const variablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         if (!fs.existsSync(variablesFile)) {
@@ -107,7 +129,7 @@ export class Parser {
             variables[globalKey] = globalEntry;
         }
 
-        const groupUrl = `${gitRemote.domain}/${gitRemote.group}/`;
+        const groupUrl = `${gitData.remote.domain}/${gitData.remote.group}/`;
         for (const [groupKey, groupEntries] of Object.entries(data?.group ?? [])) {
             if (!groupUrl.includes(Parser.normalizeProjectKey(groupKey, writeStreams))) {
                 continue;
@@ -118,7 +140,7 @@ export class Parser {
             variables = {...variables, ...groupEntries};
         }
 
-        const projectUrl = `${gitRemote.domain}/${gitRemote.group}/${gitRemote.project}.git`;
+        const projectUrl = `${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}.git`;
         for (const [projectKey, projectEntries] of Object.entries(data?.project ?? [])) {
             if (!projectUrl.includes(Parser.normalizeProjectKey(projectKey, writeStreams))) {
                 continue;
@@ -181,17 +203,17 @@ export class Parser {
         const pipelineIid = this.opt.pipelineIid;
         const extraHosts = this.opt.extraHosts || [];
 
-        this._gitRemote = await Parser.initGitRemote(cwd);
-        this._homeVariables = await Parser.initHomeVariables(cwd, writeStreams, this._gitRemote, home ?? process.env.HOME ?? "");
+        this._gitData = await Parser.initGitData(cwd);
+        this._homeVariables = await Parser.initHomeVariables(cwd, writeStreams, this._gitData, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, writeStreams, this._gitRemote, tabCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, writeStreams, this._gitData, tabCompletionPhase));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, writeStreams, this._gitRemote, tabCompletionPhase));
+        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, writeStreams, this._gitData, tabCompletionPhase));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
@@ -240,9 +262,7 @@ export class Parser {
 
         this._gitlabData = gitlabData;
 
-        assert(this._gitRemote != null, "GitRemote isn't set in parser initJobs function");
-
-        const gitUser = await Parser.initGitUser(cwd);
+        assert(this._gitData != null, "GitRemote isn't set in parser initJobs function");
 
         // Generate jobs and put them into stages
         for (const [jobName, jobData] of Object.entries(gitlabData)) {
@@ -262,8 +282,7 @@ export class Parser {
                 globals: gitlabData,
                 pipelineIid,
                 id: jobId,
-                gitUser,
-                gitRemote: this._gitRemote,
+                gitData: this._gitData,
             });
             const foundStage = this.stages.includes(job.stage);
             assert(foundStage != null, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
@@ -323,25 +342,6 @@ export class Parser {
         return yaml.load(fileSplitClone.join("\n"), {schema: GITLAB_SCHEMA}) || {};
     }
 
-    static async initGitRemote(cwd: string): Promise<GitRemote> {
-        let gitConfig;
-        if (fs.existsSync(`${cwd}/.git/config`)) {
-            gitConfig = fs.readFileSync(`${cwd}/.git/config`, "utf8");
-        } else if (fs.existsSync(`${cwd}/.gitconfig`)) {
-            gitConfig = fs.readFileSync(`${cwd}/.gitconfig`, "utf8");
-        } else {
-            throw new ExitError("Could not locate.gitconfig or .git/config file");
-        }
-
-        const match = gitConfig.match(/url = .*@(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*)\.git/);
-
-        return {
-            domain: match?.groups?.domain ?? "",
-            group: match?.groups?.group ?? "",
-            project: match?.groups?.project ?? "",
-        };
-    }
-
     static async downloadIncludeRemote(cwd: string, writeStreams: WriteStreams, url: string): Promise<void> {
         const time = process.hrtime();
         const fsUrl = Utils.fsUrl(url);
@@ -368,7 +368,7 @@ export class Parser {
         writeStreams.stdout(chalk`{cyan downloaded} {magentaBright ${remoteUrl}} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
-    static async prepareIncludes(gitlabData: any, cwd: string, writeStreams: WriteStreams, gitRemote: GitRemote, tabCompletionPhase: boolean): Promise<any[]> {
+    static async prepareIncludes(gitlabData: any, cwd: string, writeStreams: WriteStreams, gitData: GitData, tabCompletionPhase: boolean): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
 
@@ -383,7 +383,7 @@ export class Parser {
                     throw new ExitError(`Local include file cannot be found ${value["local"]}`);
                 }
             } else if (value["file"]) {
-                promises.push(Parser.downloadIncludeProjectFile(cwd, writeStreams, value["project"], value["ref"] || "master", value["file"], gitRemote.domain));
+                promises.push(Parser.downloadIncludeProjectFile(cwd, writeStreams, value["project"], value["ref"] || "master", value["file"], gitData.remote.domain));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value["template"]);
                 promises.push(Parser.downloadIncludeProjectFile(cwd, writeStreams, project, ref, file, domain));
@@ -398,26 +398,30 @@ export class Parser {
         for (const value of gitlabData["include"] || []) {
             if (value["local"]) {
                 const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(localDoc, cwd, writeStreams, gitRemote, tabCompletionPhase));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(localDoc, cwd, writeStreams, gitData, tabCompletionPhase));
             } else if (value["project"]) {
-                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitRemote.domain}/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
+                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.domain}/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
 
                 // Expand local includes inside a "project"-like include
                 (fileDoc["include"] || []).forEach((inner: any, i: number) => {
                     if (inner["local"]) {
-                        fileDoc["include"][i] = {project: value["project"], file: inner["local"].replace(/^\//, ""), ref: value["ref"]};
+                        fileDoc["include"][i] = {
+                            project: value["project"],
+                            file: inner["local"].replace(/^\//, ""),
+                            ref: value["ref"],
+                        };
                     }
                 });
 
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitRemote, tabCompletionPhase));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitData, tabCompletionPhase));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value["template"]);
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${domain}/${project}/${ref}/${file}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitRemote, tabCompletionPhase));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitData, tabCompletionPhase));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitRemote, tabCompletionPhase));
+                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitData, tabCompletionPhase));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }
