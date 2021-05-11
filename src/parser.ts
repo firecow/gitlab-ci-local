@@ -89,9 +89,17 @@ export class Parser {
             throw new ExitError("Could not locate.gitconfig or .git/config file");
         }
         const gitRemoteMatch = gitConfig.match(/url = .*@(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*)\.git/);
+        assert(gitRemoteMatch?.groups != null, "git config didn't provide valid matches");
+        assert(gitRemoteMatch.groups.domain != null, "<domain> not found in git config");
+        assert(gitRemoteMatch.groups.group != null, "<group> not found in git config");
+        assert(gitRemoteMatch.groups.project != null, "<project> not found in git config");
 
         const {stdout: gitLogOutput} = await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd);
         const gitLogMatch = gitLogOutput.replace(/\r?\n/g, "").match(/(?<short_sha>.*?) (?<sha>.*?) HEAD -> (?<ref_name>[\w_-]*)/);
+        assert(gitLogMatch?.groups != null, "git log -1 didn't provide valid matches");
+        assert(gitLogMatch.groups.ref_name != null, "<ref_name> not found in git log -1");
+        assert(gitLogMatch.groups.sha != null, "<sha> not found in git log -1");
+        assert(gitLogMatch.groups.short_sha != null, "<short_sha> not found in git log -1");
 
         return {
             user: {
@@ -100,14 +108,14 @@ export class Parser {
                 GITLAB_USER_NAME: gitlabUserName,
             },
             remote: {
-                domain: gitRemoteMatch?.groups?.domain ?? "ERROR",
-                group: gitRemoteMatch?.groups?.group ?? "ERROR",
-                project: gitRemoteMatch?.groups?.project ?? "ERROR",
+                domain: gitRemoteMatch.groups.domain,
+                group: gitRemoteMatch.groups.group,
+                project: gitRemoteMatch.groups.project,
             },
             commit: {
-                REF_NAME: gitLogMatch?.groups?.ref_name ?? "ERROR",
-                SHA: gitLogMatch?.groups?.sha ?? "ERROR",
-                SHORT_SHA: gitLogMatch?.groups?.short_sha ?? "ERROR",
+                REF_NAME: gitLogMatch.groups.ref_name,
+                SHA: gitLogMatch.groups.sha,
+                SHORT_SHA: gitLogMatch.groups.short_sha,
             },
         };
     }
