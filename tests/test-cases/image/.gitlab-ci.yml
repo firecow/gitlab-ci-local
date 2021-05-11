@@ -27,3 +27,12 @@ test-entrypoint-override:
     entrypoint: [""]
   script:
     echo "Test something"
+
+test-from-scratch:
+  needs: []
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  script:
+    - stat -c '%u:%g %n' .gitlab-ci.yml
+    - stat -c "%a %n" .gitlab-ci.yml

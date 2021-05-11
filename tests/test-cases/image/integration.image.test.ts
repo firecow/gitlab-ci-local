@@ -2,7 +2,7 @@ import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import * as chalk from "chalk";
 
-test("image <test job>", async () => {
+test.concurrent("image <test job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
@@ -12,7 +12,7 @@ test("image <test job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("image <test-entrypoint>", async () => {
+test.concurrent("image <test-entrypoint>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
@@ -30,7 +30,7 @@ test("image <test-entrypoint>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("image <test-entrypoint-override>", async () => {
+test.concurrent("image <test-entrypoint-override>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
@@ -41,4 +41,16 @@ test("image <test-entrypoint-override>", async () => {
         chalk`{blueBright test-entrypoint-override} {greenBright >} Test something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test.concurrent("image <test-from-scratch>", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/image",
+        job: ["test-from-scratch"],
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines[5]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 0:0 .gitlab-ci.yml`);
+    expect(writeStreams.stdoutLines[7]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 666 .gitlab-ci.yml`);
+    expect(writeStreams.stderrLines).toEqual([]);
 });
