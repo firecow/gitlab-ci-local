@@ -1,5 +1,5 @@
 import {MockWriteStreams} from "../src/mock-write-streams";
-import * as chalk from "chalk";
+import chalk from "chalk";
 import {handler} from "../src/handler";
 
 test("--completion", async () => {
