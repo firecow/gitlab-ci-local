@@ -9,7 +9,6 @@ export interface JobOptions {
     cwd: string;
     globals: any;
     pipelineIid: number;
-    id: number;
     gitData: GitData;
     extraHosts: string[];
     homeVariables: { [name: string]: string };
