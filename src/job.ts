@@ -440,7 +440,7 @@ export class Job {
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
 
-            await Utils.spawn(`docker run --rm -w /builds/ -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "chown 0:0 -R . && chmod a=rw -R ."`);
+            await Utils.spawn(`docker run --rm -w /builds/ -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "chown 0:0 -R . && chmod a+rw -R ."`);
         }
 
         if (this.imageName === null && (artifactsFrom === null || artifactsFrom.length > 0)) {
