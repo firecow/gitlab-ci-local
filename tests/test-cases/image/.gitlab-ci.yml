@@ -36,3 +36,5 @@ test-from-scratch:
   script:
     - stat -c '%u:%g %n' .gitlab-ci.yml
     - stat -c "%a %n" .gitlab-ci.yml
+    - stat -c "%a %n" folder/
+    - stat -c "%a %n" executable.sh
