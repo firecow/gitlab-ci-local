@@ -7,7 +7,6 @@ import {ExitError} from "./types/exit-error";
 import {Utils} from "./utils";
 import {JobOptions} from "./types/job-options";
 import {WriteStreams} from "./types/write-streams";
-import emojiRegex from "emoji-regex";
 
 export class Job {
 
@@ -132,7 +131,8 @@ export class Job {
     }
 
     get safeJobName() {
-        return this.name.replace(/ /g, "_").replace(emojiRegex(), "_");
+        const emojiRegex = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff])[\ufe0e\ufe0f]?(?:[\u0300-\u036f\ufe20-\ufe23\u20d0-\u20f0]|\ud83c[\udffb-\udfff])?(?:\u200d(?:[^\ud800-\udfff]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff])[\ufe0e\ufe0f]?(?:[\u0300-\u036f\ufe20-\ufe23\u20d0-\u20f0]|\ud83c[\udffb-\udfff])?)*/g;
+        return this.name.replace(/ /g, "_").replace(emojiRegex, "_");
     }
 
     get imageName(): string | null {
