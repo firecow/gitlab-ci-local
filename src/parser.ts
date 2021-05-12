@@ -6,7 +6,6 @@ import prettyHrtime from "pretty-hrtime";
 import fetch from "node-fetch";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
-import * as state from "./state";
 import {ExitError} from "./types/exit-error";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
@@ -278,7 +277,6 @@ export class Parser {
                 continue;
             }
 
-            const jobId = await state.incrementJobId(cwd);
             const job = new Job({
                 extraHosts,
                 writeStreams,
@@ -289,7 +287,6 @@ export class Parser {
                 cwd,
                 globals: gitlabData,
                 pipelineIid,
-                id: jobId,
                 gitData: this._gitData,
             });
             const foundStage = this.stages.includes(job.stage);

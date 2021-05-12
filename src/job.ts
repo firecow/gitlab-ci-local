@@ -54,7 +54,7 @@ export class Job {
         this.jobNamePad = opt.namePad;
         this.name = opt.name;
         this.cwd = opt.cwd;
-        this.jobId = opt.id;
+        this.jobId = Math.floor(Math.random() * 1000000);
         this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
 
@@ -88,7 +88,7 @@ export class Job {
             CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
             CI_COMMIT_DESCRIPTION: "More commit text",
             CI_PIPELINE_SOURCE: "push",
-            CI_JOB_ID: `${this.jobId}`, // Changes on rerun
+            CI_JOB_ID: `${this.jobId}`,
             CI_PIPELINE_ID: `${this.pipelineIid + 1000}`,
             CI_PIPELINE_IID: `${this.pipelineIid}`,
             CI_SERVER_HOST: `${gitData.remote.domain}`,
