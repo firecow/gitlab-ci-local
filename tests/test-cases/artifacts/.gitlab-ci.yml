@@ -14,7 +14,7 @@ produce artifacts 📝:
       - path/to/deep/folder
       - another-path/to/deep/empty-folder
 
-consume artifacts 🇩🇰:
+consume artifacts 🏗️:
   stage: test
   image: alpine
   needs: [produce artifacts 📝]

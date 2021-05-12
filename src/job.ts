@@ -7,7 +7,6 @@ import {ExitError} from "./types/exit-error";
 import {Utils} from "./utils";
 import {JobOptions} from "./types/job-options";
 import {WriteStreams} from "./types/write-streams";
-import emojiRegex from "emoji-regex";
 
 export class Job {
 
@@ -37,6 +36,7 @@ export class Job {
     private _running = false;
     private _containerId: string | null = null;
     private _artifactsContainerId: string | null = null;
+    private _containerVolumeName: string | null = null;
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
 
     private readonly jobData: any;
@@ -130,7 +130,8 @@ export class Job {
     }
 
     get safeJobName() {
-        return this.name.replace(/ /g, "_").replace(emojiRegex(), "_");
+        const emojiRegex = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff])[\ufe0e\ufe0f]?(?:[\u0300-\u036f\ufe20-\ufe23\u20d0-\u20f0]|\ud83c[\udffb-\udfff])?(?:\u200d(?:[^\ud800-\udfff]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff])[\ufe0e\ufe0f]?(?:[\u0300-\u036f\ufe20-\ufe23\u20d0-\u20f0]|\ud83c[\udffb-\udfff])?)*/g;
+        return this.name.replace(/ /g, "_").replace(emojiRegex, "_");
     }
 
     get imageName(): string | null {
@@ -289,9 +290,11 @@ export class Job {
             } catch (e) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
+        }
 
+        if (this._containerVolumeName) {
             try {
-                await Utils.spawn(`docker volume rm gcl-${this.safeJobName}-${this.jobId}`);
+                await Utils.spawn(`docker volume rm ${this._containerVolumeName}`);
             } catch (e) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
@@ -361,6 +364,7 @@ export class Job {
             pullCmd += `\tdocker pull ${this.imageName}\n`;
             pullCmd += "fi\n";
             await Utils.spawn(pullCmd, this.cwd);
+            this.refreshLongRunningSilentTimeout(writeStreams);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${this.imageName} in {magenta ${prettyHrtime(endTime)}}\n`);
 
@@ -371,10 +375,9 @@ export class Job {
                 dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             }
 
-            if (this.artifacts.paths.length > 0) {
-                await Utils.spawn(`docker volume create gcl-${this.safeJobName}-${this.jobId}`, this.cwd);
-                dockerCmd += `--volume gcl-${this.safeJobName}-${this.jobId}:/builds/ `;
-            }
+            this._containerVolumeName = `gcl-${this.safeJobName}-${this.jobId}`;
+            await Utils.spawn(`docker volume create ${this._containerVolumeName}`, this.cwd);
+            dockerCmd += `--volume ${this._containerVolumeName}:/builds/ `;
 
             for (const extraHost of this.extraHosts) {
                 dockerCmd += `--add-host=${extraHost} `;
@@ -423,6 +426,7 @@ export class Job {
 
             time = process.hrtime();
             await Utils.spawn(`docker cp .gitlab-ci-local/builds/.docker/. ${this._containerId}:/builds/`, this.cwd);
+            this.refreshLongRunningSilentTimeout(writeStreams);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied source to container} in {magenta ${prettyHrtime(endTime)}}\n`);
 
@@ -430,9 +434,12 @@ export class Job {
                 time = process.hrtime();
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
                 await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/. ${this._containerId}:/builds/`);
+                this.refreshLongRunningSilentTimeout(writeStreams);
                 endTime = process.hrtime(time);
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
+
+            await Utils.spawn(`docker run --rm -w /builds/ -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "chown 0:0 -R . && chmod a+rw -R ."`);
         }
 
         if (this.imageName === null && (artifactsFrom === null || artifactsFrom.length > 0)) {
@@ -448,8 +455,6 @@ export class Job {
 
         if (this.imageName) {
             cmd += "cd /builds/\n";
-            cmd += "chown root:root -R .\n";
-            cmd += "chmod a+w -R .\n";
         } else {
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 cmd += `export ${key}="${String(value).trim()}"\n`;
@@ -514,7 +519,7 @@ export class Job {
             }
 
             time = process.hrtime();
-            const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i -v gcl-${this.safeJobName}-${this.jobId}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
+            const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
             this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
             await Utils.spawn(`docker start ${this._artifactsContainerId} --attach`);
             await Utils.spawn(`docker cp ${this._artifactsContainerId}:/artifacts .gitlab-ci-local/.`, this.cwd);
