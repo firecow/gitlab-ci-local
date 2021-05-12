@@ -1,5 +1,4 @@
-import {GitRemote} from "./git-remote";
-import {GitUser} from "./git-user";
+import {GitData} from "./git-data";
 import {WriteStreams} from "./write-streams";
 
 export interface JobOptions {
@@ -11,8 +10,7 @@ export interface JobOptions {
     globals: any;
     pipelineIid: number;
     id: number;
-    gitRemote: GitRemote;
-    gitUser: GitUser;
+    gitData: GitData;
     extraHosts: string[];
     homeVariables: { [name: string]: string };
 }
