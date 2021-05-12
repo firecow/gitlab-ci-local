@@ -93,8 +93,14 @@ export class Parser {
         assert(gitRemoteMatch.groups.group != null, "<group> not found in git config");
         assert(gitRemoteMatch.groups.project != null, "<project> not found in git config");
 
-        const {stdout: gitLogOutput} = await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd);
-        const gitLogMatch = gitLogOutput.replace(/\r?\n/g, "").match(/(?<short_sha>.*?) (?<sha>.*?) HEAD -> (?<ref_name>[\w_-]*)/);
+        const {stdout: gitLogStdout} = await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd);
+        const gitLogOutput = gitLogStdout.replace(/\r?\n/g, "");
+        let gitLogMatch;
+        if (gitLogOutput.match(/HEAD, tag/)) {
+            gitLogMatch = gitLogOutput.match(/(?<short_sha>.*?) (?<sha>.*?) HEAD, tag: (?<ref_name>[\w_\-.]*)/);
+        } else {
+            gitLogMatch = gitLogOutput.match(/(?<short_sha>.*?) (?<sha>.*?) HEAD -> (?<ref_name>[\w_-]*)/);
+        }
         assert(gitLogMatch?.groups != null, "git log -1 didn't provide valid matches");
         assert(gitLogMatch.groups.ref_name != null, "<ref_name> not found in git log -1");
         assert(gitLogMatch.groups.sha != null, "<sha> not found in git log -1");
