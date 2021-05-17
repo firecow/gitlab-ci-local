@@ -7,6 +7,7 @@ import {ExitError} from "./types/exit-error";
 import {Utils} from "./utils";
 import {JobOptions} from "./types/job-options";
 import {WriteStreams} from "./types/write-streams";
+import base32Encode from "base32-encode";
 
 export class Job {
 
@@ -130,8 +131,14 @@ export class Job {
     }
 
     get safeJobName() {
-        const emojiRegex = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff])[\ufe0e\ufe0f]?(?:[\u0300-\u036f\ufe20-\ufe23\u20d0-\u20f0]|\ud83c[\udffb-\udfff])?(?:\u200d(?:[^\ud800-\udfff]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff])[\ufe0e\ufe0f]?(?:[\u0300-\u036f\ufe20-\ufe23\u20d0-\u20f0]|\ud83c[\udffb-\udfff])?)*/g;
-        return this.name.replace(/ /g, "_").replace(emojiRegex, "_");
+        return this.name.replace(/[^\w_-]+/g, (match) => {
+            const buffer = new ArrayBuffer(match.length * 2);
+            const bufView = new Uint16Array(buffer);
+            for (let i = 0, len = match.length; i < len; i++) {
+                bufView[i] = match.charCodeAt(i);
+            }
+            return base32Encode(buffer, "Crockford");
+        });
     }
 
     get imageName(): string | null {
@@ -214,15 +221,15 @@ export class Job {
     async start(privileged: boolean): Promise<void> {
         const startTime = process.hrtime();
         const writeStreams = this.writeStreams;
+        const safeJobname = this.safeJobName;
 
         this._running = true;
-        this.refreshLongRunningSilentTimeout(writeStreams);
 
-        await fs.ensureFile(`${this.cwd}/.gitlab-ci-local/output/${this.name}.log`);
-        await fs.truncate(`${this.cwd}/.gitlab-ci-local/output/${this.name}.log`);
+        await fs.ensureFile(`${this.cwd}/.gitlab-ci-local/output/${safeJobname}.log`);
+        await fs.truncate(`${this.cwd}/.gitlab-ci-local/output/${safeJobname}.log`);
 
         if (!this.imageName) {
-            const {hrdeltatime} = await Utils.rsyncNonIgnoredFilesToBuilds(this.cwd, this.name);
+            const {hrdeltatime} = await Utils.rsyncNonIgnoredFilesToBuilds(this.cwd, safeJobname);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright rsynced to build folder} in {magenta ${prettyHrtime(hrdeltatime)}}\n`);
         }
 
@@ -265,7 +272,7 @@ export class Job {
         writeStreams.stdout(`${this.getFinishedString(startTime)}\n`);
 
         if (this.jobData.coverage) {
-            this._coveragePercent = await Utils.getCoveragePercent(this.cwd, this.jobData.coverage, this.name);
+            this._coveragePercent = await Utils.getCoveragePercent(this.cwd, this.jobData.coverage, safeJobname);
         }
 
         await this.cleanupResources();
@@ -327,7 +334,8 @@ export class Job {
     }
 
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
-        const outputFilesPath = `${this.cwd}/.gitlab-ci-local/output/${this.name}.log`;
+        const safeJobName = this.safeJobName;
+        const outputFilesPath = `${this.cwd}/.gitlab-ci-local/output/${safeJobName}.log`;
         const writeStreams = this.writeStreams;
         const artifactsFrom = this.needs || this.dependencies;
         let time;
@@ -354,6 +362,8 @@ export class Job {
                 cp.on("error", (err) => reject(err));
             });
         }
+
+        this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (this.imageName) {
             time = process.hrtime();
