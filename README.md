@@ -20,8 +20,7 @@ Get rid of all those dev specific shell scripts and make files.
 
 ## Table of contents
 
-* [Table of contents](#table-of-contents)
-* [Examples](./examples/)
+* [Examples](./examples)
     * [docker-compose-nodejs](./examples/docker-compose-nodejs/README.md)
     * [docker-swarm-php](./examples/docker-swarm-php/README.md)
 * [Installation](#installation)
