@@ -25,6 +25,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [docker-swarm-php](./examples/docker-swarm-php/README.md)
 * [Installation](#installation)
 * [Convenience](#convenience)
+    * [DotEnv file](#dot-env-file)
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
 * [Quirks](#quirks)
@@ -77,7 +78,7 @@ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.
 
 ## Convenience
 
-### Dot Env file
+### DotEnv file
 
 Add a `.gitlab-ci-local-env` file to the current working directory
 
