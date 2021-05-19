@@ -56,9 +56,9 @@ test("extends infinite loop", () => {
             "build-job": {extends: ["test-job"]},
             "test-job": {extends: ["build-job"]},
         });
-        // expect(true).toBe(false); TODO: This test isn't working
+        expect(true).toBe(false);
     } catch (e) {
-        expect(e.message).toBe(chalk`You have an infinite extends loop starting from {blueBright build-job}`);
+        expect(e.message).toBe(chalk`{blueBright build-job}: circular dependency detected in \`extends\``);
     }
 });
 

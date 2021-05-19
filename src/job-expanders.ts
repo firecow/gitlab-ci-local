@@ -2,35 +2,36 @@ import chalk from "chalk";
 import deepExtend from "deep-extend";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
+import {Job} from "./job";
+
+const extendsMaxDepth = 11;
+const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
+    assert(depth < extendsMaxDepth, chalk`{blueBright build-job}: circular dependency detected in \`extends\``);
+    depth++;
+    for (const parentName of (jobData.extends || []).reverse()) {
+        const parentData = gitlabData[parentName];
+        assert(parentData != null, chalk`{blueBright ${parentName}} is extended from {blueBright ${jobName}}, but is unspecified`);
+        parents = parents.concat(extendsRecurse(gitlabData, parentName, parentData, parents, depth));
+        parents.push(parentData);
+    }
+    return parents;
+};
 
 export function jobExtends(gitlabData: any) {
-    const maxDepth = 50;
-    Utils.forEachRealJob(gitlabData, (jobName) => {
-        let i = 0;
-        for (i; i < maxDepth; i++) {
-            const jobData = gitlabData[jobName];
-            jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
-            if (gitlabData[jobName].extends.length === 0) {
-                delete jobData.extends;
-                break;
-            }
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
+        jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
+    }
 
-            const parentName = jobData.extends.pop();
-            const parentData = gitlabData[parentName];
-            assert(parentData != null, chalk`{blueBright ${parentName}} is extended from {blueBright ${jobName}}, but is unspecified`);
-            if (jobData.extends.length === 0) {
-                delete jobData.extends;
-            }
-
-            if (parentData.extends) {
-                jobData.extends = (jobData.extends || []).concat(parentData.extends);
-            }
-
-            gitlabData[jobName] = deepExtend({}, parentData, jobData);
-        }
-
-        assert(i < maxDepth, chalk`You have an infinite extends loop starting from {blueBright ${jobName}}`);
+    Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
+        const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
+        gitlabData[jobName] = deepExtend({}, ...parentDatas, jobData);
     });
+
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
+        delete jobData.extends;
+    }
 }
 
 export function reference(gitlabData: any, recurseData: any) {
