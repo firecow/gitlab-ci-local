@@ -1,6 +1,6 @@
 ---
 test-debian:
-  image: debian
+  image: debian:stable-slim
   script:
     - cat
     - cd folder

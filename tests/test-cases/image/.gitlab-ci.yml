@@ -1,8 +1,8 @@
 ---
 test job:
   variables:
-    PHP_IMAGE_URL: php
-  image: ${PHP_IMAGE_URL}
+    DEBIAN_IMAGE_URL: debian:stable-slim
+  image: ${DEBIAN_IMAGE_URL}
   script:
     - echo "Test something"
 
