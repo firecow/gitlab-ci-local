@@ -32,6 +32,7 @@ test("plain <notfound>", async () => {
             cwd: "tests/test-cases/plain",
             job: ["notfound"],
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright notfound} could not be found`);
     }

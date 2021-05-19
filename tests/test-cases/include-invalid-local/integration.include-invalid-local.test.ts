@@ -7,6 +7,7 @@ test("include-invalid-local", async () => {
         await handler({
             cwd: "tests/test-cases/include-invalid-local",
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe("Local include file cannot be found .gitlab-ci-invalid.yml");
     }

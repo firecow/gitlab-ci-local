@@ -8,6 +8,7 @@ test("invalid-stages", async () => {
         await handler({
             cwd: "tests/test-cases/invalid-stages",
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe(chalk`{yellow stages:} must be an array`);
     }

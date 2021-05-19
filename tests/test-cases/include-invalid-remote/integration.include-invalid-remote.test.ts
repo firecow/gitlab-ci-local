@@ -7,6 +7,7 @@ test("include-invalid-remote", async () => {
         await handler({
             cwd: "tests/test-cases/include-invalid-remote",
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe("Remote include could not be fetched https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml");
     }

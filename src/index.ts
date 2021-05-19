@@ -114,7 +114,8 @@ process.on("unhandledRejection", e => {
                     cwd,
                     writeStreams: new ProcessWriteStreams(),
                     pipelineIid,
-                    tabCompletionPhase: true,
+                    showInitMessage: false,
+                    fetchIncludes: false,
                     file: yargsArgv.file,
                 });
                 return [...parser.jobs.values()].map((j) => j.name);

@@ -1,20 +1,26 @@
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 
-import {Parser} from "./parser";
+const loadStateYML = async (stateFile: string): Promise<any> => {
+    if (!fs.existsSync(stateFile)) {
+        return {};
+    }
+    const stateFileContent = await fs.readFile(stateFile, "utf8");
+    return yaml.load(stateFileContent) || {};
+};
 
 const getPipelineIid = async (cwd: string) => {
     const stateFile = `${cwd}/.gitlab-ci-local/state.yml`;
-    const ymlData = await Parser.loadYaml(stateFile);
+    const ymlData = await loadStateYML(stateFile);
 
-    return ymlData["pipelineIid"] ? Number(ymlData["pipelineIid"]) : 0;
+    return ymlData["pipelineIid"] ? ymlData["pipelineIid"] : 0;
 };
 
 const incrementPipelineIid = async (cwd: string) => {
     const stateFile = `${cwd}/.gitlab-ci-local/state.yml`;
-    const ymlData = await Parser.loadYaml(stateFile);
+    const ymlData = await loadStateYML(stateFile);
 
-    ymlData["pipelineIid"] = ymlData["pipelineIid"] != null ? Number(ymlData["pipelineIid"]) + 1 : 0;
+    ymlData["pipelineIid"] = ymlData["pipelineIid"] != null ? ymlData["pipelineIid"] + 1 : 0;
     await fs.outputFile(stateFile, `---\n${yaml.dump(ymlData)}`);
 };
 

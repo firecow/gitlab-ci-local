@@ -7,6 +7,7 @@ test("no-git-config", async () => {
         await handler({
             cwd: "tests/test-cases/no-git-config",
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe("Could not locate.gitconfig or .git/config file");
     }

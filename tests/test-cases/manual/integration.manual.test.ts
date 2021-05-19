@@ -138,6 +138,7 @@ test("manual", async () => {
         await handler({
             cwd: "tests/test-cases/manual/",
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright pre-job} is when:manual, its needed by {blueBright test-job}, and not specified in --manual`);
     }

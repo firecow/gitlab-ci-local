@@ -42,7 +42,7 @@ test("script-failures <allow-failure-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("script-failures <allow-failure-after-scripts>", async () => {
+test("script-failures <allow-failure-after-script>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/script-failures",

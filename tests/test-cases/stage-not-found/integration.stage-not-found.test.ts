@@ -9,6 +9,7 @@ test("stage-not-found <test-job>", async () => {
             cwd: "tests/test-cases/stage-not-found",
             job: ["test-job"],
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe(chalk`{yellow stage:invalid} not found for {blueBright test-job}`);
     }

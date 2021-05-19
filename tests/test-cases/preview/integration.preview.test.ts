@@ -10,7 +10,7 @@ test("preview", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`child-job:\n  script:\n    - echo \"Irrelevant\"\n  before_script:\n    - echo \"Default before script\"\nstages:\n  - .pre\n  - build\n  - test\n  - deploy\n  - .post`,
+        chalk`---\nstages:\n  - .pre\n  - build\n  - test\n  - deploy\n  - .post\nchild-job:\n  script:\n    - echo \"Irrelevant\"\n  before_script:\n    - echo \"Default before script\"`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
     expect(writeStreams.stderrLines).toEqual([]);
