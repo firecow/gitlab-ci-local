@@ -10,4 +10,4 @@ docker run -it --rm \
     -v "/$PWD/:/app/" \
     -v "/tmp/node-docker-home/:/home/node/" \
     -w /app/ \
-    node npm "$@"
+    node:slim npm "$@"
