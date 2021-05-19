@@ -2,4 +2,4 @@
 
 set -e
 
-docker run -t -v /$PWD/:/app/ -w /app/ sdesbure/yamllint yamllint --strict .
+docker run -t -v "/$PWD/:/app/" -w /app/ sdesbure/yamllint yamllint --strict .
