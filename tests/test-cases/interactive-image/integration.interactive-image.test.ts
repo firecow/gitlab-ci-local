@@ -9,6 +9,7 @@ test("interactive-image <image-job>", async () => {
             cwd: "tests/test-cases/interactive-image",
             job: ["image-job"],
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toEqual(chalk`{blueBright image-job} @Interactive decorator cannot have image: and must be when:manual`);
     }

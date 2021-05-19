@@ -10,6 +10,7 @@ test("never-needs <test-job> --needs", async () => {
             job: ["test-job"],
             needs: true,
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright never-job} is when:never, but its needed by {blueBright test-job}`);
     }

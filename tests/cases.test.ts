@@ -18,6 +18,7 @@ test("something/unknown-directory (non-existing dir)", async () => {
         await handler({
             cwd: "something/unknown-directory",
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe(chalk`something/unknown-directory is not a directory`);
     }
@@ -29,6 +30,7 @@ test("docs (no .gitlab-ci.yml)", async () => {
         await handler({
             cwd: "docs",
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe(chalk`docs does not contain .gitlab-ci.yml`);
     }

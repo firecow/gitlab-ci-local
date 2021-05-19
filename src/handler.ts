@@ -61,7 +61,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
     } else if (argv.preview != null) {
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, tabCompletionPhase: true, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
+            cwd, writeStreams, pipelineIid, showInitMessage: false, fetchIncludes: true, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
         });
         const gitlabData = parser.gitlabData;
         for (const jobName of Object.keys(gitlabData)) {
@@ -72,15 +72,16 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
                 delete gitlabData[jobName];
             }
         }
-        writeStreams.stdout(`${yaml.dump(gitlabData)}`);
+        writeStreams.stdout(`---\n${yaml.dump(gitlabData)}`);
     } else if (argv.list != null) {
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, tabCompletionPhase: false, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
+            cwd, writeStreams, pipelineIid, showInitMessage: false, fetchIncludes: true, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
         });
         Commander.runList(parser, writeStreams);
     } else if (argv.job) {
+        const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);
         generateGitIgnore(cwd);
         if (argv.needs === true) {
@@ -89,10 +90,13 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
         }
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, tabCompletionPhase: false, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
+            cwd, writeStreams, pipelineIid, showInitMessage: true, fetchIncludes: true, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
         });
         await Utils.rsyncNonIgnoredFilesToBuilds(cwd, ".docker");
         await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.manual || [], argv.privileged || false);
+        if (argv.needs === true) {
+            writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+        }
     } else {
         const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);
@@ -101,7 +105,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, tabCompletionPhase: false, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
+            cwd, writeStreams, pipelineIid, showInitMessage: true, fetchIncludes: true, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
         });
         await Utils.rsyncNonIgnoredFilesToBuilds(cwd, ".docker");
         await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged || false);

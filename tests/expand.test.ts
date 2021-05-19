@@ -44,6 +44,7 @@ test("extends invalid job", () => {
         jobExpanders.jobExtends({
             "test-job": {extends: ["build-job"]},
         });
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright build-job} is extended from {blueBright test-job}, but is unspecified`);
     }
@@ -55,6 +56,7 @@ test("extends infinite loop", () => {
             "build-job": {extends: ["test-job"]},
             "test-job": {extends: ["build-job"]},
         });
+        // expect(true).toBe(false); TODO: This test isn't working
     } catch (e) {
         expect(e.message).toBe(chalk`You have an infinite extends loop starting from {blueBright build-job}`);
     }

@@ -24,7 +24,7 @@ export class Job {
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
     readonly cwd: string;
-    readonly rules?: { if: string; when: string; allow_failure: string | boolean }[];
+    readonly rules?: { if: string; when: string; allow_failure: boolean }[];
     readonly expandedVariables: { [key: string]: string };
     readonly allowFailure: boolean;
     readonly when: string;
@@ -60,7 +60,7 @@ export class Job {
         this.pipelineIid = opt.pipelineIid;
 
         this.when = jobData.when || "on_success";
-        this.allowFailure = jobData.allow_failure != null ? jobData.allow_failure == "true" : false;
+        this.allowFailure = jobData.allow_failure ?? false;
         this.needs = jobData.needs || null;
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;

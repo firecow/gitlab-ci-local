@@ -1,17 +1,12 @@
 import chalk from "chalk";
 import deepExtend from "deep-extend";
-import {Job} from "./job";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
 
 export function jobExtends(gitlabData: any) {
-    for (const jobName of Object.keys(gitlabData)) {
-        if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
-            continue;
-        }
-
+    const maxDepth = 50;
+    Utils.forEachRealJob(gitlabData, (jobName) => {
         let i = 0;
-        const maxDepth = 50;
         for (i; i < maxDepth; i++) {
             const jobData = gitlabData[jobName];
             jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
@@ -35,7 +30,7 @@ export function jobExtends(gitlabData: any) {
         }
 
         assert(i < maxDepth, chalk`You have an infinite extends loop starting from {blueBright ${jobName}}`);
-    }
+    });
 }
 
 export function reference(gitlabData: any, recurseData: any) {

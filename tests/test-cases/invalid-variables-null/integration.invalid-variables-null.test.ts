@@ -9,6 +9,7 @@ test("invalid-variables-null <test-job>", async () => {
             cwd: "tests/test-cases/invalid-variables-null",
             job: ["test-job"],
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe(chalk`{blueBright test-job} has invalid variables hash of key value pairs. INVALID=null`);
     }

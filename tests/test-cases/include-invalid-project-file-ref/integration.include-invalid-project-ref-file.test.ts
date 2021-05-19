@@ -7,6 +7,7 @@ test("include-invalid-project-file-ref", async () => {
         await handler({
             cwd: "tests/test-cases/include-invalid-project-file-ref",
         }, writeStreams);
+        expect(true).toBe(false);
     } catch (e) {
         expect(e.message).toBe("Project include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: master, file: .gitlab-modue.yml }");
     }

@@ -4,7 +4,8 @@ export interface ParserOptions {
     cwd: string;
     writeStreams: WriteStreams;
     pipelineIid: number;
-    tabCompletionPhase: boolean;
+    showInitMessage: boolean;
+    fetchIncludes: boolean;
     extraHosts?: string[];
     home?: string;
     file?: string;
