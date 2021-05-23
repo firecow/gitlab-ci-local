@@ -354,7 +354,7 @@ export class Parser {
     static async downloadIncludeProjectFile(cwd: string, writeStreams: WriteStreams, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
         const time = process.hrtime();
         fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
-        const normalizedFile = file.replace(/^\/+/, '');
+        const normalizedFile = file.replace(/^\/+/, "");
         try {
             await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${normalizedFile} | tar -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
         } catch (e) {
