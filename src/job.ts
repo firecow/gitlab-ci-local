@@ -153,7 +153,8 @@ export class Job {
 
     get imageEntrypoint(): string[] | null {
         const image = this.jobData["image"];
-        if (!image) {
+
+        if (!image || !image.entrypoint) {
             return null;
         }
         if (typeof image.entrypoint !== "object") {
