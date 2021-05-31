@@ -12,4 +12,5 @@ export interface JobOptions {
     gitData: GitData;
     extraHosts: string[];
     homeVariables: { [name: string]: string };
+    hasShellExecutorJobs: boolean;
 }

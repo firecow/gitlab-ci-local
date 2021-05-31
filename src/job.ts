@@ -31,6 +31,7 @@ export class Job {
     readonly pipelineIid: number;
     readonly cache: { key: string | { files: string[] }; paths: string[] };
 
+    private readonly _hasShellExecutorJobs: boolean;
     private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
     private _coveragePercent: string | null = null;
@@ -50,6 +51,7 @@ export class Job {
         const globals = opt.globals;
         const homeVariables = opt.homeVariables;
 
+        this._hasShellExecutorJobs = opt.hasShellExecutorJobs;
         this.extraHosts = opt.extraHosts;
         this.writeStreams = opt.writeStreams;
         this.jobNamePad = opt.namePad;
@@ -228,11 +230,6 @@ export class Job {
 
         await fs.ensureFile(`${this.cwd}/.gitlab-ci-local/output/${safeJobname}.log`);
         await fs.truncate(`${this.cwd}/.gitlab-ci-local/output/${safeJobname}.log`);
-
-        if (!this.imageName) {
-            const {hrdeltatime} = await Utils.rsyncNonIgnoredFilesToBuilds(this.cwd, safeJobname);
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright rsynced to build folder} in {magenta ${prettyHrtime(hrdeltatime)}}\n`);
-        }
 
         if (!this.interactive) {
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
@@ -453,14 +450,6 @@ export class Job {
             await Utils.spawn(`docker run --rm -w /builds/ -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "chown 0:0 -R . && chmod a+rw -R ."`);
         }
 
-        if (this.imageName === null && (artifactsFrom === null || artifactsFrom.length > 0)) {
-            time = process.hrtime();
-            await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
-            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/. ${this.cwd}`);
-            endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
-        }
-
         let cmd = "set -eo pipefail\n";
         cmd += "exec 0< /dev/null\n";
 
@@ -532,10 +521,9 @@ export class Job {
             let cacheMount = "";
             if (this.cache && this.cache.key && typeof this.cache.key === "string" && this.cache.paths) {
                 this.cache.paths.forEach((path) => {
-                    cacheMount = `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `;
+                    cacheMount += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `;
                 });
             }
-
             time = process.hrtime();
             const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i ${cacheMount} -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
             this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
@@ -543,6 +531,14 @@ export class Job {
             await Utils.spawn(`docker cp ${this._artifactsContainerId}:/artifacts .gitlab-ci-local/.`, this.cwd);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+
+            if (this._hasShellExecutorJobs) {
+                time = process.hrtime();
+                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
+                await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/. ${this.cwd}`);
+                endTime = process.hrtime(time);
+                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
+            }
         }
 
         return exitCode;
