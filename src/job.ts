@@ -529,8 +529,15 @@ export class Job {
                 cpCmd += `echo Done copying ${expandedPath} to /artifacts\n`;
             }
 
+            let cacheMount = "";
+            if (this.cache && this.cache.key && typeof this.cache.key === "string" && this.cache.paths) {
+                this.cache.paths.forEach((path) => {
+                    cacheMount = `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${path} `;
+                });
+            }
+
             time = process.hrtime();
-            const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
+            const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i ${cacheMount} -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
             this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
             await Utils.spawn(`docker start ${this._artifactsContainerId} --attach`);
             await Utils.spawn(`docker cp ${this._artifactsContainerId}:/artifacts .gitlab-ci-local/.`, this.cwd);
