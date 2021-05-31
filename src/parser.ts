@@ -269,6 +269,13 @@ export class Parser {
         this._gitlabData = gitlabData;
 
 
+        let hasShellExecutorJobs = false;
+        Utils.forEachRealJob(gitlabData, (_, jobData) => {
+            if (!jobData.image) {
+                hasShellExecutorJobs = true;
+            }
+        });
+
         // Generate jobs and put them into stages
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             assert(this._gitData != null, "GitRemote isn't set in parser initJobs function");
@@ -280,6 +287,7 @@ export class Parser {
                 homeVariables: this._homeVariables,
                 data: jobData,
                 cwd,
+                hasShellExecutorJobs,
                 globals: gitlabData,
                 pipelineIid,
                 gitData: this._gitData,
