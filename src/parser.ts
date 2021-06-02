@@ -395,7 +395,8 @@ export class Parser {
                 promises.push(Parser.downloadIncludeProjectFile(cwd, writeStreams, value["project"], value["ref"] || "master", value["file"], gitData.remote.domain));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value["template"]);
-                promises.push(Parser.downloadIncludeProjectFile(cwd, writeStreams, project, ref, file, domain));
+                const url = `https://${domain}/${project}/-/raw/${ref}/${file}`;
+                promises.push(Parser.downloadIncludeRemote(cwd, writeStreams, url));
             } else if (value["remote"]) {
                 promises.push(Parser.downloadIncludeRemote(cwd, writeStreams, value["remote"]));
             }
@@ -425,7 +426,8 @@ export class Parser {
                 includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value["template"]);
-                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${domain}/${project}/${ref}/${file}`);
+                const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
+                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
                 includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
