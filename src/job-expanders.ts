@@ -3,6 +3,7 @@ import deepExtend from "deep-extend";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
 import {Job} from "./job";
+import {Service} from "./service";
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
@@ -57,6 +58,24 @@ export function artifacts(gitlabData: any) {
         const expandedArtifacts = jobData.artifacts || (gitlabData.default || {}).artifacts || gitlabData.artifacts;
         if (expandedArtifacts) {
             jobData.artifacts = expandedArtifacts;
+        }
+    });
+}
+
+export function services(gitlabData: any) {
+    Utils.forEachRealJob(gitlabData, (_, jobData) => {
+        const expandedServices = jobData.services || (gitlabData.default || {}).services || gitlabData.services;
+        if (expandedServices) {
+            jobData.services = [];
+            for (const [index, expandedService] of Object.entries<any>(expandedServices)) {
+                jobData.services[index] = new Service({
+                    name: typeof expandedService === "string" ? expandedService : expandedService.name,
+                    entrypoint: expandedService.entrypoint,
+                    command: typeof expandedService.command === "string" ? expandedService.command : expandedService.command?.join(" "),
+                    alias: expandedService.alias,
+
+                });
+            }
         }
     });
 }

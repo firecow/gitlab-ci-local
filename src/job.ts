@@ -8,6 +8,7 @@ import {Utils} from "./utils";
 import {JobOptions} from "./types/job-options";
 import {WriteStreams} from "./types/write-streams";
 import base32Encode from "base32-encode";
+import {Service} from "./service";
 
 export class Job {
 
@@ -37,6 +38,8 @@ export class Job {
     private _coveragePercent: string | null = null;
     private _running = false;
     private _containerId: string | null = null;
+    private _serviceIds = [] as string[];
+    private _serviceNetworkIds = [] as string[];
     private _artifactsContainerId: string | null = null;
     private _containerVolumeName: string | null = null;
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
@@ -165,6 +168,10 @@ export class Job {
         return image.entrypoint;
     }
 
+    get services(): Service[] {
+        return this.jobData["services"];
+    }
+
     get stage(): string {
         return this.jobData["stage"] || "test";
     }
@@ -289,6 +296,26 @@ export class Job {
             }
         }
 
+        if (this._serviceIds) {
+            try {
+                for (const serviceId of this._serviceIds) {
+                    await Utils.spawn(`docker rm -f ${serviceId}`);
+                }
+            } catch (e) {
+                writeStreams.stderr(chalk`{yellow ${e.message}}`);
+            }
+        }
+
+        if (this._serviceNetworkIds) {
+            try {
+                for (const serviceNetworkId of this._serviceNetworkIds) {
+                    await Utils.spawn(`docker network rm ${serviceNetworkId}`);
+                }
+            } catch (e) {
+                writeStreams.stderr(chalk`{yellow ${e.message}}`);
+            }
+        }
+
         if (this._artifactsContainerId) {
             try {
                 await Utils.spawn(`docker rm -f ${this._artifactsContainerId}`);
@@ -364,23 +391,21 @@ export class Job {
         this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (this.imageName) {
-            time = process.hrtime();
-            let pullCmd = "";
-            pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${this.imageName}$'\n`;
-            pullCmd += "if [ \"$?\" -ne 0 ]; then\n";
-            pullCmd += `\techo "Pulling ${this.imageName}"\n`;
-            pullCmd += `\tdocker pull ${this.imageName}\n`;
-            pullCmd += "fi\n";
-            await Utils.spawn(pullCmd, this.cwd);
-            this.refreshLongRunningSilentTimeout(writeStreams);
-            endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${this.imageName} in {magenta ${prettyHrtime(endTime)}}\n`);
+            await this.pullImage(writeStreams, this.imageName);
 
             let dockerCmd = "";
             if (privileged) {
                 dockerCmd += `docker create --privileged -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             } else {
                 dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
+            }
+            if (this.services?.length) {
+                await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
+                dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
+                for (const service of this.services) {
+                    await this.pullImage(writeStreams, service.getName(this.expandedVariables));
+                    await this.startService(writeStreams, service);
+                }
             }
 
             this._containerVolumeName = `gcl-${this.safeJobName}-${this.jobId}`;
@@ -544,6 +569,20 @@ export class Job {
         return exitCode;
     }
 
+    private async pullImage(writeStreams: WriteStreams, imageToPull: string) {
+        const time = process.hrtime();
+        let pullCmd = "";
+        pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${imageToPull}$'\n`;
+        pullCmd += "if [ \"$?\" -ne 0 ]; then\n";
+        pullCmd += `\techo "Pulling ${imageToPull}"\n`;
+        pullCmd += `\tdocker pull ${imageToPull}\n`;
+        pullCmd += "fi\n";
+        await Utils.spawn(pullCmd, this.cwd);
+        this.refreshLongRunningSilentTimeout(writeStreams);
+        const endTime = process.hrtime(time);
+        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+    }
+
     private refreshLongRunningSilentTimeout(writeStreams: WriteStreams) {
         clearTimeout(this._longRunningSilentTimeout);
         this._longRunningSilentTimeout = setTimeout(() => {
@@ -564,5 +603,43 @@ export class Job {
         const endTime = process.hrtime(startTime);
         const timeStr = prettyHrtime(endTime);
         return chalk`${this.chalkJobName} {magentaBright finished} in {magenta ${timeStr}}`;
+    }
+
+    private async createDockerNetwork(networkName: string) {
+        const {stdout: networkId} = await Utils.spawn(`docker network create ${networkName}`);
+        this._serviceNetworkIds.push(networkId.replace(/\r?\n/g, ""));
+    }
+
+    private async startService(writeStreams: WriteStreams, service: Service) {
+        let dockerCmd = `docker run -d --network gitlab-ci-local-${this.jobId} `;
+
+        (service.getEntrypoint() ?? []).forEach((e) => {
+            dockerCmd += `--entrypoint "${e}" `;
+        });
+        const alias = service.getAlias(this.expandedVariables);
+        const serviceName = service.getName(this.expandedVariables);
+        const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
+        const aliases = [serviceNameWithoutVersion.replace("/", "-"), serviceNameWithoutVersion.replace("/", "__")];
+        if (alias) {
+            aliases.push(alias);
+            dockerCmd += `--network-alias=${alias} `;
+        }
+
+        for (const [key, value] of Object.entries(this.expandedVariables)) {
+            dockerCmd += `-e ${key}="${String(value).trim()}" `;
+        }
+
+        dockerCmd += `${serviceName}`;
+        const command = service.getCommand(this.expandedVariables);
+        if (command) {
+            dockerCmd += ` ${command}`;
+        }
+
+        const time = process.hrtime();
+        const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables});
+        this._serviceIds.push(containerId.replace(/\r?\n/g, ""));
+        this.refreshLongRunningSilentTimeout(writeStreams);
+        const endTime = process.hrtime(time);
+        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${aliases.join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 }
