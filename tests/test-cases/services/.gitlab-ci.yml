@@ -1,0 +1,23 @@
+---
+
+default:
+  services:
+    - mariadb
+
+test-job:
+  services: []
+  image: tutum/dnsutils
+  script: host mariadb
+
+build-job:
+  stage: build
+  image: tutum/dnsutils
+  script: host mariadb
+
+deploy-job:
+  services: [redis]
+  stage: deploy
+  image: tutum/dnsutils
+  script:
+    - host mariadb || echo "Host check fails on purpose (mariadb)"
+    - host redis
