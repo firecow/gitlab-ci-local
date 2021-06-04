@@ -38,8 +38,8 @@ export class Job {
     private _coveragePercent: string | null = null;
     private _running = false;
     private _containerId: string | null = null;
-    private _serviceIds = [] as string[];
-    private _serviceNetworkIds = [] as string[];
+    private _serviceIds: string[] = [];
+    private _serviceNetworkIds: string[] = [];
     private _artifactsContainerId: string | null = null;
     private _containerVolumeName: string | null = null;
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
