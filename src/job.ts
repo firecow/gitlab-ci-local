@@ -39,7 +39,7 @@ export class Job {
     private _running = false;
     private _containerId: string | null = null;
     private _serviceIds: string[] = [];
-    private _serviceNetworkIds: string[] = [];
+    private _serviceNetworkId: string | null = null;
     private _artifactsContainerId: string | null = null;
     private _containerVolumeName: string | null = null;
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
@@ -306,11 +306,9 @@ export class Job {
             }
         }
 
-        if (this._serviceNetworkIds) {
+        if (this._serviceNetworkId) {
             try {
-                for (const serviceNetworkId of this._serviceNetworkIds) {
-                    await Utils.spawn(`docker network rm ${serviceNetworkId}`);
-                }
+                await Utils.spawn(`docker network rm ${this._serviceNetworkId}`);
             } catch (e) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
@@ -607,7 +605,7 @@ export class Job {
 
     private async createDockerNetwork(networkName: string) {
         const {stdout: networkId} = await Utils.spawn(`docker network create ${networkName}`);
-        this._serviceNetworkIds.push(networkId.replace(/\r?\n/g, ""));
+        this._serviceNetworkId = networkId.replace(/\r?\n/g, "");
     }
 
     private async startService(writeStreams: WriteStreams, service: Service) {
