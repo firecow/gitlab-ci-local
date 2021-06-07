@@ -614,12 +614,15 @@ export class Job {
         (service.getEntrypoint() ?? []).forEach((e) => {
             dockerCmd += `--entrypoint "${e}" `;
         });
-        const alias = service.getAlias(this.expandedVariables);
+        const serviceAlias = service.getAlias(this.expandedVariables);
         const serviceName = service.getName(this.expandedVariables);
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
         const aliases = [serviceNameWithoutVersion.replace("/", "-"), serviceNameWithoutVersion.replace("/", "__")];
-        if (alias) {
-            aliases.push(alias);
+        if (serviceAlias) {
+            aliases.push(serviceAlias);
+        }
+
+        for(const alias of aliases) {
             dockerCmd += `--network-alias=${alias} `;
         }
 
