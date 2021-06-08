@@ -10,7 +10,7 @@ test.concurrent("services <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgRed  FAIL } {blueBright test-job                  }`,
+        chalk`{black.bgRed  FAIL } {blueBright test-job  }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -23,7 +23,7 @@ test.concurrent("services <build-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright build-job                 }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright build-job }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -36,7 +36,7 @@ test.concurrent("services <deploy-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright deploy-job                 }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright deploy-job}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
