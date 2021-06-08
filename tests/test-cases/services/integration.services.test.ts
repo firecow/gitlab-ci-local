@@ -40,3 +40,16 @@ test.concurrent("services <deploy-job>", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test.concurrent("services <alias-job>", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["alias-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{black.bgGreenBright  PASS } {blueBright alias-job }`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
