@@ -65,8 +65,8 @@ export function artifacts(gitlabData: any) {
 export function services(gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedServices = jobData.services || (gitlabData.default || {}).services || gitlabData.services;
-        jobData.services = [];
         if (expandedServices) {
+            jobData.services = [];
             for (const [index, expandedService] of Object.entries<any>(expandedServices)) {
                 jobData.services[index] = new Service({
                     name: typeof expandedService === "string" ? expandedService : expandedService.name,
