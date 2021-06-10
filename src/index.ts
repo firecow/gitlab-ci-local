@@ -63,7 +63,12 @@ process.on("unhandledRejection", e => {
         })
         .option("list", {
             type: "string",
-            description: "List jobs and job information",
+            description: "List jobs and job information, when:never excluded",
+            requiresArg: false,
+        })
+        .option("list-all", {
+            type: "string",
+            description: "List jobs and job information, when:never included",
             requiresArg: false,
         })
         .option("preview", {
@@ -118,7 +123,7 @@ process.on("unhandledRejection", e => {
                     fetchIncludes: false,
                     file: yargsArgv.file,
                 });
-                return [...parser.jobs.values()].map((j) => j.name);
+                return [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
             } catch (e) {
                 return ["Parser-Failed!"];
             }
