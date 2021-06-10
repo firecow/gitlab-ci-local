@@ -73,13 +73,13 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
             }
         }
         writeStreams.stdout(`---\n${yaml.dump(gitlabData, {lineWidth: 160})}`);
-    } else if (argv.list != null) {
+    } else if (argv.list != null || argv.listAll != null) {
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
             cwd, writeStreams, pipelineIid, showInitMessage: false, fetchIncludes: true, file: argv.file, home: argv.home, extraHosts: argv.extraHost,
         });
-        Commander.runList(parser, writeStreams);
+        Commander.runList(parser, writeStreams, argv.listAll != null);
     } else if (argv.job) {
         const time = process.hrtime();
         checkFolderAndFile(cwd, argv.file);

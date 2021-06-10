@@ -121,9 +121,9 @@ export class Commander {
 
     };
 
-    static runList(parser: Parser, writeStreams: WriteStreams) {
+    static runList(parser: Parser, writeStreams: WriteStreams, listAll: boolean) {
         const stages = parser.stages;
-        const jobs = [...parser.jobs.values()];
+        let jobs = [...parser.jobs.values()];
         jobs.sort((a, b) => {
             return stages.indexOf(a.stage) - stages.indexOf(b.stage);
         });
@@ -139,8 +139,9 @@ export class Commander {
 
         const jobNamePad = parser.jobNamePad;
 
-        const neverJobs = jobs.filter(j => j.when === "never");
-        const nonNeverJobs = jobs.filter(j => j.when !== "never");
+        if (!listAll) {
+            jobs = jobs.filter(j => j.when !== "never");
+        }
 
         writeStreams.stdout(chalk`{grey ${"name".padEnd(jobNamePad)}  ${"description".padEnd(descriptionPadEnd)}}  `);
         writeStreams.stdout(chalk`{grey ${"stage".padEnd(stagePadEnd)}  ${"when".padEnd(whenPadEnd)}}  `);
@@ -157,8 +158,7 @@ export class Commander {
             writeStreams.stdout(`${jobLine}\n`);
         };
 
-        neverJobs.forEach((job) => renderLine(job));
-        nonNeverJobs.forEach((job) => renderLine(job));
+        jobs.forEach((job) => renderLine(job));
     }
 
 }
