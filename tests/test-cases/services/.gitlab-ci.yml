@@ -1,0 +1,33 @@
+---
+
+default:
+  services:
+    - nginx
+
+test-job:
+  services: []
+  image: tutum/dnsutils
+  script: host nginx
+
+build-job:
+  stage: build
+  image: tutum/dnsutils
+  script: host nginx
+
+deploy-job:
+  services: [redis]
+  stage: deploy
+  image: tutum/dnsutils
+  script:
+    - host nginx && exit 1
+    - host redis
+
+alias-job:
+  services:
+    - name: redis
+      alias: redis-alias
+  stage: deploy
+  image: tutum/dnsutils
+  script:
+    - host redis
+    - host redis-alias
