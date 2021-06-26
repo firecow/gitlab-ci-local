@@ -55,8 +55,8 @@ export class Parser {
         await Validator.validateNeedsTags(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
 
-        if (opt.showInitMessage) {
-            writeStreams.stdout(chalk`{cyan ${"yml files".padEnd(parser.jobNamePad)}} {magentaBright processed} in {magenta ${prettyHrtime(parsingTime)}}\n`);
+        if (opt.showInitMessage ?? true) {
+            writeStreams.stdout(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
         }
 
         return parser;
@@ -212,7 +212,7 @@ export class Parser {
         const writeStreams = this.opt.writeStreams;
         const home = this.opt.home;
         const file = this.opt.file;
-        const fetchIncludes = this.opt.fetchIncludes;
+        const fetchIncludes = this.opt.fetchIncludes ?? true;
         const pipelineIid = this.opt.pipelineIid;
         const extraHosts = this.opt.extraHosts || [];
 
@@ -239,6 +239,7 @@ export class Parser {
         jobExpanders.beforeScripts(gitlabData);
         jobExpanders.afterScripts(gitlabData);
         jobExpanders.scripts(gitlabData);
+
 
         assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
         if (!gitlabData.stages.includes(".pre")) {
@@ -348,20 +349,16 @@ export class Parser {
         return yaml.load(fileSplitClone.join("\n"), {schema}) || {};
     }
 
-    static async downloadIncludeRemote(cwd: string, writeStreams: WriteStreams, url: string): Promise<void> {
-        const time = process.hrtime();
+    static async downloadIncludeRemote(cwd: string, url: string): Promise<void> {
         const fsUrl = Utils.fsUrl(url);
         const res = await fetch(url);
         if (res.status !== 200) {
             throw new ExitError(`Remote include could not be fetched ${url}`);
         }
         fs.outputFileSync(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`, await res.text());
-        const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`{cyan downloaded} {magentaBright ${url}} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
-    static async downloadIncludeProjectFile(cwd: string, writeStreams: WriteStreams, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
-        const time = process.hrtime();
+    static async downloadIncludeProjectFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
         fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
         const normalizedFile = file.replace(/^\/+/, "");
         try {
@@ -369,10 +366,6 @@ export class Parser {
         } catch (e) {
             throw new ExitError(`Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }`);
         }
-
-        const endTime = process.hrtime(time);
-        const remoteUrl = `${gitRemoteDomain}/${project}/${normalizedFile}`;
-        writeStreams.stdout(chalk`{cyan downloaded} {magentaBright ${remoteUrl}} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
     static async prepareIncludes(gitlabData: any, cwd: string, writeStreams: WriteStreams, gitData: GitData, fetchIncludes: boolean, depth: number): Promise<any[]> {
@@ -393,13 +386,13 @@ export class Parser {
                     throw new ExitError(`Local include file cannot be found ${value["local"]}`);
                 }
             } else if (value["file"]) {
-                promises.push(Parser.downloadIncludeProjectFile(cwd, writeStreams, value["project"], value["ref"] || "master", value["file"], gitData.remote.domain));
+                promises.push(Parser.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", value["file"], gitData.remote.domain));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = Parser.parseTemplateInclude(value["template"]);
                 const url = `https://${domain}/${project}/-/raw/${ref}/${file}`;
-                promises.push(Parser.downloadIncludeRemote(cwd, writeStreams, url));
+                promises.push(Parser.downloadIncludeRemote(cwd, url));
             } else if (value["remote"]) {
-                promises.push(Parser.downloadIncludeRemote(cwd, writeStreams, value["remote"]));
+                promises.push(Parser.downloadIncludeRemote(cwd, value["remote"]));
             }
 
         }
