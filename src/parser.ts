@@ -254,7 +254,7 @@ export class Parser {
             this._jobNamePad = Math.max(this.jobNamePad, jobName.length);
         });
 
-        // Check that needs is larger and containers the same as dependencies.
+        // Check that `needs` is larger or equal to `dependencies`
         // TODO: We need this check, to prevent jobs from copying artifacts that might not be needed.
 
         // Check job variables for invalid hash of key value pairs
