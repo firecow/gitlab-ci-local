@@ -9,7 +9,7 @@ export class Utils {
 
     static spawn(command: string, cwd = process.cwd(), env: { [key: string]: string | undefined } = process.env): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
         return new Promise((resolve, reject) => {
-            const cp = childProcess.spawn(`set -eo pipefail\n${command}`, {shell: "bash", env, cwd});
+            const cp = childProcess.spawn(`${command}`, {shell: "bash", env, cwd});
 
             let output = "";
             let stdout = "";
