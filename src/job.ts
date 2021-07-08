@@ -403,7 +403,7 @@ export class Job {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
                 for (const service of this.services) {
                     await this.pullImage(writeStreams, service.getName(this.expandedVariables));
-                    await this.startService(writeStreams, service);
+                    await this.startService(writeStreams, service, privileged);
                 }
             }
 
@@ -609,8 +609,12 @@ export class Job {
         this._serviceNetworkId = networkId.replace(/\r?\n/g, "");
     }
 
-    private async startService(writeStreams: WriteStreams, service: Service) {
+    private async startService(writeStreams: WriteStreams, service: Service, privileged: boolean) {
         let dockerCmd = `docker run -d --network gitlab-ci-local-${this.jobId} `;
+
+        if (privileged) {
+            dockerCmd += "--privileged ";
+        }
 
         (service.getEntrypoint() ?? []).forEach((e) => {
             dockerCmd += `--entrypoint "${e}" `;
