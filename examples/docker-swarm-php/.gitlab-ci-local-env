@@ -1,0 +1,2 @@
+VOLUME="/var/run/docker.sock:/var/run/docker.sock"
+NEEDS=true
