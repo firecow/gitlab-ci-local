@@ -215,6 +215,7 @@ export class Parser {
         const fetchIncludes = this.opt.fetchIncludes ?? true;
         const pipelineIid = this.opt.pipelineIid;
         const extraHosts = this.opt.extraHosts || [];
+        const volumes = this.opt.volumes || [];
 
         this._gitData = await Parser.initGitData(cwd);
         this._homeVariables = await Parser.initHomeVariables(cwd, writeStreams, this._gitData, home ?? process.env.HOME ?? "");
@@ -282,6 +283,7 @@ export class Parser {
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             assert(this._gitData != null, "GitRemote isn't set in parser initJobs function");
             const job = new Job({
+                volumes,
                 extraHosts,
                 writeStreams,
                 name: jobName,

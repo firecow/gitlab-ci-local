@@ -12,6 +12,7 @@ composer-install:
 # @Description Build/Push PHP image
 build-php:
   needs: [composer-install]
+  image: docker:stable
   stage: build
   artifacts:
     paths: [.env-build-php]

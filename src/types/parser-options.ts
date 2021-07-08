@@ -7,6 +7,7 @@ export interface ParserOptions {
     showInitMessage?: boolean;
     fetchIncludes?: boolean;
     extraHosts?: string[];
+    volumes?: string[];
     home?: string;
     file?: string;
 }

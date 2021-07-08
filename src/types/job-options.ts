@@ -11,6 +11,7 @@ export interface JobOptions {
     pipelineIid: number;
     gitData: GitData;
     extraHosts: string[];
+    volumes: string[];
     homeVariables: { [name: string]: string };
     hasShellExecutorJobs: boolean;
 }

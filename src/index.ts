@@ -106,6 +106,11 @@ process.on("unhandledRejection", e => {
             description: "Set docker executor to privileged mode",
             requiresArg: false,
         })
+        .option("volume", {
+            type: "array",
+            description: "Add volumes to docker executor",
+            requiresArg: false,
+        })
         .option("extra-host", {
             type: "array",
             description: "Add extra docker host entries",
