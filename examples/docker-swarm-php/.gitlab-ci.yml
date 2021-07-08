@@ -6,7 +6,13 @@ composer-install:
   needs: []
   artifacts:
     paths: [vendor/]
+  cache:
+    key: composer-home
+    paths: [.composer/cache/]
+  variables:
+    COMPOSER_HOME: "${PWD}/.composer"
   script:
+    - export COMPOSER_HOME=.composer
     - composer install --no-progress
 
 # @Description Build/Push PHP image
