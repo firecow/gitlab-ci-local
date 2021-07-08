@@ -47,6 +47,7 @@ export class Job {
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
     private readonly extraHosts: string[];
+    private readonly volumes: string[];
 
     constructor(opt: JobOptions) {
         const jobData = opt.data;
@@ -56,6 +57,7 @@ export class Job {
 
         this._hasShellExecutorJobs = opt.hasShellExecutorJobs;
         this.extraHosts = opt.extraHosts;
+        this.volumes = opt.volumes;
         this.writeStreams = opt.writeStreams;
         this.jobNamePad = opt.namePad;
         this.name = opt.name;
@@ -410,6 +412,10 @@ export class Job {
             this._containerVolumeName = `gcl-${this.safeJobName}-${this.jobId}`;
             await Utils.spawn(`docker volume create ${this._containerVolumeName}`, this.cwd);
             dockerCmd += `--volume ${this._containerVolumeName}:/builds/ `;
+
+            for (const volume of this.volumes) {
+                dockerCmd += `--volume ${volume} `;
+            }
 
             for (const extraHost of this.extraHosts) {
                 dockerCmd += `--add-host=${extraHost} `;
