@@ -107,7 +107,7 @@ export class Job {
             CI_PIPELINE_URL: `https://${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`,
             CI_JOB_NAME: `${this.name}`,
             CI_JOB_STAGE: `${this.stage}`,
-            CI_REGISTRY: `registry.${gitData.remote.domain}`,
+            CI_REGISTRY: `local-registry.${gitData.remote.domain}`,
             GITLAB_CI: "false",
         };
 
