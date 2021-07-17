@@ -99,7 +99,7 @@ export class Parser {
         if (gitLogOutput.match(/HEAD, tag/)) {
             gitLogMatch = gitLogOutput.match(/(?<short_sha>.*?) (?<sha>.*?) HEAD, tag: (?<ref_name>.*?),/);
         } else {
-            gitLogMatch = gitLogOutput.match(/(?<short_sha>.*?) (?<sha>.*?) HEAD -> (?<ref_name>.*?),/);
+            gitLogMatch = gitLogOutput.match(/(?<short_sha>.*?) (?<sha>.*?) HEAD -> (?<ref_name>.*?)(?:,|$)/);
         }
         assert(gitLogMatch?.groups != null, "git log -1 didn't provide valid matches");
         assert(gitLogMatch.groups.ref_name != null, "<ref_name> not found in git log -1");
