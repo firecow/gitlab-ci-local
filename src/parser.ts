@@ -377,8 +377,13 @@ export class Parser {
         assert(depth < 100, chalk`circular dependency detected in \`include\``);
         depth++;
 
+        let include = gitlabData["include"] || [];
+        if (include && include.length == null) {
+            include = [ gitlabData["include"] ];
+        }
+
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
-        for (const value of gitlabData["include"] || []) {
+        for (const value of include) {
             if (!fetchIncludes) {
                 continue;
             }
@@ -401,7 +406,7 @@ export class Parser {
 
         await Promise.all(promises);
 
-        for (const value of gitlabData["include"] || []) {
+        for (const value of include) {
             if (value["local"]) {
                 const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
                 includeDatas = includeDatas.concat(await Parser.prepareIncludes(localDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
