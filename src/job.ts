@@ -125,8 +125,8 @@ export class Job {
             this.allowFailure = ruleResult.allowFailure;
         }
 
-        if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
-            throw new ExitError(`${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`);
+        if (this.interactive && this.imageName !== null) {
+            throw new ExitError(`${this.chalkJobName} @Interactive decorator cannot have image:`);
         }
 
         if (this.injectSSHAgent && this.imageName === null) {
