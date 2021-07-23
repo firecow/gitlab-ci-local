@@ -106,7 +106,7 @@ export class Parser {
         assert(gitLogMatch.groups.sha != null, "<sha> not found in git log -1");
         assert(gitLogMatch.groups.short_sha != null, "<short_sha> not found in git log -1");
 
-        return {
+        return new GitData({
             user: {
                 GITLAB_USER_LOGIN: gitlabUserLogin,
                 GITLAB_USER_EMAIL: gitlabUserEmail,
@@ -122,7 +122,7 @@ export class Parser {
                 SHA: gitLogMatch.groups.sha,
                 SHORT_SHA: gitLogMatch.groups.short_sha,
             },
-        };
+        });
     }
 
     static async initHomeVariables(cwd: string, writeStreams: WriteStreams, gitData: GitData, home: string): Promise<{ [key: string]: string }> {
@@ -188,9 +188,9 @@ export class Parser {
 
             const fromFilePath = value.replace(/^~\/(.*)/, `${homeDir}/$1`);
             if (fs.existsSync(fromFilePath)) {
-                await fs.ensureDir("/tmp/gitlab-ci-local-file-variables/");
-                await fs.copyFile(fromFilePath, `/tmp/gitlab-ci-local-file-variables/${path.basename(fromFilePath)}`);
-                variables[key] = `/tmp/gitlab-ci-local-file-variables/${path.basename(fromFilePath)}`;
+                await fs.ensureDir(`/tmp/gitlab-ci-local-file-variables-${gitData.CI_PROJECT_PATH_SLUG}/`);
+                await fs.copyFile(fromFilePath, `/tmp/gitlab-ci-local-file-variables-${gitData.CI_PROJECT_PATH_SLUG}/${path.basename(fromFilePath)}`);
+                variables[key] = `/tmp/gitlab-ci-local-file-variables-${gitData.CI_PROJECT_PATH_SLUG}/${path.basename(fromFilePath)}`;
             }
         }
 

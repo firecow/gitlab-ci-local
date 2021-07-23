@@ -9,6 +9,7 @@ import {JobOptions} from "./types/job-options";
 import {WriteStreams} from "./types/write-streams";
 import base32Encode from "base32-encode";
 import {Service} from "./service";
+import {GitData} from "./types/git-data";
 
 export class Job {
 
@@ -31,6 +32,7 @@ export class Job {
     readonly when: string;
     readonly pipelineIid: number;
     readonly cache: { key: string | { files: string[] }; paths: string[] };
+    readonly gitData: GitData;
 
     private readonly _hasShellExecutorJobs: boolean;
     private _prescriptsExitCode: number | null = null;
@@ -60,6 +62,7 @@ export class Job {
         this.volumes = opt.volumes;
         this.writeStreams = opt.writeStreams;
         this.jobNamePad = opt.namePad;
+        this.gitData = opt.gitData;
         this.name = opt.name;
         this.cwd = opt.cwd;
         this.jobId = Math.floor(Math.random() * 1000000);
@@ -84,7 +87,7 @@ export class Job {
             CI_PROJECT_NAME: gitData.remote.project,
             CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
             CI_PROJECT_PATH: `${gitData.remote.group}/${camelCase(gitData.remote.project)}`,
-            CI_PROJECT_PATH_SLUG: `${gitData.remote.group.replace(/\//g, "-")}-${gitData.remote.project}`,
+            CI_PROJECT_PATH_SLUG: gitData.CI_PROJECT_PATH_SLUG,
             CI_PROJECT_NAMESPACE: `${gitData.remote.group}`,
             CI_PROJECT_VISIBILITY: "internal",
             CI_PROJECT_ID: "1217",
@@ -468,8 +471,11 @@ export class Job {
             this.refreshLongRunningSilentTimeout(writeStreams);
 
             // Copy file variables into container.
-            await Utils.spawn(`docker cp /tmp/gitlab-ci-local-file-variables ${this._containerId}:/tmp/`, this.cwd);
-            this.refreshLongRunningSilentTimeout(writeStreams);
+            const fileVariablesFolder = `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/`;
+            if (await fs.pathExists(fileVariablesFolder)) {
+                await Utils.spawn(`docker cp ${fileVariablesFolder} ${this._containerId}:${fileVariablesFolder}/`, this.cwd);
+                this.refreshLongRunningSilentTimeout(writeStreams);
+            }
 
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied to container} in {magenta ${prettyHrtime(endTime)}}\n`);
