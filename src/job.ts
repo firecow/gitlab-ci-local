@@ -74,8 +74,8 @@ export class Job {
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
         this.cache = jobData.cache || null;
 
-        let ciProjectPath = `${gitData.remote.group}/${camelCase(gitData.remote.project)}`;
-        let ciRegistry = `local-registry.${gitData.remote.domain}`;
+        const ciProjectPath = `${gitData.remote.group}/${camelCase(gitData.remote.project)}`;
+        const ciRegistry = `local-registry.${gitData.remote.domain}`;
         const predefinedVariables = {
             GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
             GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
