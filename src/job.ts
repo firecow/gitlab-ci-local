@@ -549,12 +549,17 @@ export class Job {
             }
 
             if (this.artifacts.exclude && this.artifacts.exclude.length > 0) {
+                cpCmd += "shopt -s globstar nullglob\n";
                 for (const artifactExcludePath of this.artifacts.exclude) {
                     const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
-                    cpCmd += `echo Started removing excludes from ${expandedPath}\n`;
+                    cpCmd += `echo Started removing excludes from '${expandedPath}'\n`;
                     cpCmd += "cd /artifacts/\n";
-                    cpCmd += `rm -d ${expandedPath}\n`;
-                    cpCmd += `echo Done removing excludes from ${expandedPath}\n`;
+		    cpCmd += `gcil_exclude=\\"${expandedPath}\\"\n`;
+		    cpCmd += "IFS=''\n";
+		    cpCmd += 'for f in \\\${gcil_exclude}; do\n';
+		    cpCmd += '\tprintf \\"%s\\0\\" \\"\\\$f\\"\n';
+                    cpCmd += 'done | sort --zero-terminated --reverse | xargs --no-run-if-empty --null rm --dir \n';
+                    cpCmd += `echo Done removing excludes from '${expandedPath}'\n`;
                 }
             }
 
