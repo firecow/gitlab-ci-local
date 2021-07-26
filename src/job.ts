@@ -549,7 +549,7 @@ export class Job {
             }
 
             if (this.artifacts.exclude && this.artifacts.exclude.length > 0) {
-                cpCmd += "shopt -s globstar nullglob\n";
+                cpCmd += "shopt -s globstar nullglob dotglob\n";
                 for (const artifactExcludePath of this.artifacts.exclude) {
                     const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
                     cpCmd += `echo Started removing excludes from '${expandedPath}'\n`;
