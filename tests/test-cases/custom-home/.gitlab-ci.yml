@@ -10,3 +10,9 @@ test-normalize-key:
   script:
     - echo ${GROUP_VAR}
     - echo ${PROJECT_VAR}
+
+test-predefined-overwrite:
+  script:
+    - echo ${CI_PIPELINE_SOURCE}
+    - echo ${CI_PROJECT_ID}
+
