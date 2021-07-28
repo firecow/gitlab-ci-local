@@ -574,8 +574,6 @@ export class Job {
             }
             time = process.hrtime();
 
-            await fs.writeFile("/home/mjn/Workspace/gitlab-ci-local/test1.txt", cpCmd);
-
             const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i ${cacheMount} -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
             this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
             await Utils.spawn(`docker start ${this._artifactsContainerId} --attach`);

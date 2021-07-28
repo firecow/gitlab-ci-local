@@ -15,4 +15,3 @@ test-predefined-overwrite:
   script:
     - echo ${CI_PIPELINE_SOURCE}
     - echo ${CI_PROJECT_ID}
-
