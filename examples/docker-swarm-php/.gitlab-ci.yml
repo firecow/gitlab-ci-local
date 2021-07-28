@@ -56,6 +56,7 @@ php-cs-fixer-dry-run:
 # @Description Find outdated PHP packages
 composer-outdated:
   stage: test
+  image: composer
   needs: [composer-install]
   allow_failure: true
   script:
