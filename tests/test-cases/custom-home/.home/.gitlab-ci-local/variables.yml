@@ -3,6 +3,7 @@ project:
   gitlab.com/gcl/custom-home:
     GROUP_VAR: project-group-var-override-value
     PROJECT_VAR: project-var-value
+    CI_PROJECT_ID: 12345678
   gitlab.com/gcl/no-match:
     PROJECT_VAR: no-match
 
@@ -10,6 +11,7 @@ group:
   gitlab.com/gcl/:
     GROUP_VAR: group-var-value
     GLOBAL_VAR: group-global-var-override-value
+    CI_PIPELINE_SOURCE: schedule
   gitlab.com/no-match/:
     GROUP_VAR: no-match
 
