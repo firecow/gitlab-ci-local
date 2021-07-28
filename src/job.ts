@@ -382,7 +382,7 @@ export class Job {
                 shell: "bash",
                 stdio: ["inherit", "inherit", "inherit"],
                 cwd: this.cwd,
-                env: this.expandedVariables,
+                env: {...this.expandedVariables, ...process.env},
             });
             return new Promise<number>((resolve, reject) => {
                 cp.on("exit", (code) => resolve(code ?? 0));
@@ -512,7 +512,7 @@ export class Job {
             shell: "bash",
             stdio: ["pipe", "pipe", "pipe"],
             cwd: this.cwd,
-            env: this.imageName ? {} : this.expandedVariables,
+            env: this.imageName ? {...process.env} : {...this.expandedVariables, ...process.env},
         });
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
