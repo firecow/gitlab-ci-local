@@ -28,7 +28,7 @@ test("custom-home <test-image>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-image        } {greenBright >} Im content of a file variable`,
+        chalk`{blueBright test-image               } {greenBright >} Im content of a file variable`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
