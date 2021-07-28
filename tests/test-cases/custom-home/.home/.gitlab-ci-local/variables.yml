@@ -4,6 +4,12 @@ project:
     GROUP_VAR: project-group-var-override-value
     PROJECT_VAR: project-var-value
     CI_PROJECT_ID: 12345678
+    DOUBLE_QUOTE_VAR: |
+      "This is crazy"
+    COMPLEX_VAR: |
+      {
+        "private_key": "-----BEGIN PRIVATE KEY-----\n"
+      }
   gitlab.com/gcl/no-match:
     PROJECT_VAR: no-match
 
@@ -19,4 +25,3 @@ global:
   GLOBAL_VAR: global-var-value
   GLOBAL_FILE_VAR: ~/somefolder/file-var
   INVALID_DIR_VAR: ~/dir/
-  INVALID_GLOBAL_VAR: true

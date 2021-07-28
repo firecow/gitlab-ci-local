@@ -4,13 +4,18 @@ test-job:
     - echo ${GLOBAL_VAR}
     - echo ${GROUP_VAR}
     - echo ${PROJECT_VAR}
+    - echo ${INVALID_DIR_VAR}
     - cat ${GLOBAL_FILE_VAR}
+    - echo ${DOUBLE_QUOTE_VAR}
+    - echo ${COMPLEX_VAR}
 
 # Test file variables are working with docker-executor jobs
 test-image:
   image: alpine
   script:
     - cat ${GLOBAL_FILE_VAR}
+    - echo ${DOUBLE_QUOTE_VAR}
+    - echo ${COMPLEX_VAR}
 
 test-normalize-key:
   script:
