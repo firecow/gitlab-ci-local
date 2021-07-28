@@ -194,7 +194,7 @@ export class Job {
         return this.jobData["description"] ?? "";
     }
 
-    get artifacts(): { paths: string[], exclude: string[] } {
+    get artifacts(): { paths: string[]; exclude?: string[] } {
         return this.jobData["artifacts"] || {paths: [], exclude: []};
     }
 
@@ -555,14 +555,14 @@ export class Job {
                 cpCmd += "shopt -s globstar nullglob dotglob\n";
                 for (const artifactExcludePath of this.artifacts.exclude) {
                     const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
-                    cpCmd += `echo Started removing excludes from '${expandedPath}'\n`;
+                    cpCmd += `echo Started removing exclude '${expandedPath}' from /artifacts\n`;
                     cpCmd += "cd /artifacts/\n";
-		    cpCmd += `gcil_exclude=\\"${expandedPath}\\"\n`;
-		    cpCmd += "IFS=''\n";
-		    cpCmd += 'for f in \\\${gcil_exclude}; do\n';
-		    cpCmd += '\tprintf \\"%s\\0\\" \\"\\\$f\\"\n';
-                    cpCmd += 'done | sort --zero-terminated --reverse | xargs --no-run-if-empty --null rm --dir \n';
-                    cpCmd += `echo Done removing excludes from '${expandedPath}'\n`;
+                    cpCmd += `gcil_exclude=\\"${expandedPath}\\"\n`;
+                    cpCmd += "IFS=''\n";
+                    cpCmd += "for f in \\${gcil_exclude}; do\n";
+                    cpCmd += "\tprintf \\\"%s\\0\\\" \\\"\\$f\\\"\n";
+                    cpCmd += "done | sort --zero-terminated --reverse | xargs --no-run-if-empty --null rm --dir\n";
+                    cpCmd += `echo Done removing exclude '${expandedPath}' from /artifacts\n`;
                 }
             }
 
@@ -573,6 +573,9 @@ export class Job {
                 });
             }
             time = process.hrtime();
+
+            await fs.writeFile("/home/mjn/Workspace/gitlab-ci-local/test1.txt", cpCmd);
+
             const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i ${cacheMount} -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
             this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
             await Utils.spawn(`docker start ${this._artifactsContainerId} --attach`);

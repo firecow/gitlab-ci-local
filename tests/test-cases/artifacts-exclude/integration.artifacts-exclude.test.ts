@@ -5,7 +5,7 @@ test("artifacts-exlude <consume artifacts> --needs", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/artifacts-exclude",
-        job: ["consume artifacts"],
+        job: ["consume-artifacts"],
         needs: true,
     }, writeStreams);
 

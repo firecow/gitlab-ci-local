@@ -1,5 +1,5 @@
 ---
-produce artifacts:
+produce-artifacts:
   stage: build
   image: debian:stable-slim
   script:
@@ -25,11 +25,11 @@ produce artifacts:
       - foo/d
       - xyzzy/**/*
 
-consume artifacts:
+consume-artifacts:
   stage: test
   image: debian:stable-slim
-  needs: [produce artifacts]
-  dependencies: [produce artifacts]
+  needs: [produce-artifacts]
+  dependencies: [produce-artifacts]
   script:
     - ls -laR .
     - '[ -e "ux" ]'
