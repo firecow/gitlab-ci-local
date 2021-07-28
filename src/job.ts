@@ -77,8 +77,7 @@ export class Job {
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
         this.cache = jobData.cache || null;
 
-        const ciProjectPath = `${gitData.remote.group}/${camelCase(gitData.remote.project)}`;
-        const ciRegistry = `local-registry.${gitData.remote.domain}`;
+
         const predefinedVariables = {
             GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
             GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
@@ -88,7 +87,7 @@ export class Job {
             CI_PROJECT_DIR: this.imageName ? "/builds/" : `${this.cwd}`,
             CI_PROJECT_NAME: gitData.remote.project,
             CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
-            CI_PROJECT_PATH: ciProjectPath,
+            CI_PROJECT_PATH: gitData.CI_PROJECT_PATH,
             CI_PROJECT_PATH_SLUG: gitData.CI_PROJECT_PATH_SLUG,
             CI_PROJECT_NAMESPACE: `${gitData.remote.group}`,
             CI_PROJECT_VISIBILITY: "internal",
@@ -112,8 +111,8 @@ export class Job {
             CI_PIPELINE_URL: `https://${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`,
             CI_JOB_NAME: `${this.name}`,
             CI_JOB_STAGE: `${this.stage}`,
-            CI_REGISTRY: ciRegistry,
-            CI_REGISTRY_IMAGE: `${ciRegistry}/${ciProjectPath}`,
+            CI_REGISTRY: gitData.CI_REGISTRY,
+            CI_REGISTRY_IMAGE: gitData.CI_REGISTRY_IMAGE,
             GITLAB_CI: "false",
         };
 
