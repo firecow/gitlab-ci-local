@@ -378,16 +378,12 @@ export class Job {
         }
 
         if (this.interactive) {
-            let iCmd = "";
-            for (const [key, value] of Object.entries(this.expandedVariables)) {
-                iCmd += `export ${key}="${String(value).trim()}"\n`;
-            }
-            iCmd += this.generateScriptCommands(scripts);
-
+            const iCmd = this.generateScriptCommands(scripts);
             const cp = childProcess.spawn(iCmd, {
                 shell: "bash",
                 stdio: ["inherit", "inherit", "inherit"],
                 cwd: this.cwd,
+                env: this.expandedVariables,
             });
             return new Promise<number>((resolve, reject) => {
                 cp.on("exit", (code) => resolve(code ?? 0));
@@ -434,7 +430,7 @@ export class Job {
             }
 
             for (const [key, value] of Object.entries(this.expandedVariables)) {
-                dockerCmd += `-e ${key}="${String(value).trim()}" `;
+                dockerCmd += `-e ${key}='${String(value).trim()}' `;
             }
 
             if (this.cache && this.cache.key && typeof this.cache.key === "string" && this.cache.paths) {
@@ -500,10 +496,6 @@ export class Job {
 
         if (this.imageName) {
             cmd += "cd /builds/\n";
-        } else {
-            for (const [key, value] of Object.entries(this.expandedVariables)) {
-                cmd += `export ${key}="${String(value).trim()}"\n`;
-            }
         }
 
         cmd += this.generateScriptCommands(scripts);
@@ -521,6 +513,7 @@ export class Job {
             shell: "bash",
             stdio: ["pipe", "pipe", "pipe"],
             cwd: this.cwd,
+            env: this.imageName ? {} : this.expandedVariables,
         });
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {

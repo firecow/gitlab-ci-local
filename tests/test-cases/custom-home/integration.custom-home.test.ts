@@ -14,7 +14,10 @@ test("custom-home <test-job>", async () => {
         chalk`{blueBright test-job                 } {greenBright >} group-global-var-override-value`,
         chalk`{blueBright test-job                 } {greenBright >} project-group-var-override-value`,
         chalk`{blueBright test-job                 } {greenBright >} project-var-value`,
+        chalk`{blueBright test-job                 } {greenBright >} ~/dir/`,
         chalk`{blueBright test-job                 } {greenBright >} Im content of a file variable`,
+        chalk`{blueBright test-job                 } {greenBright >} "This is crazy"`,
+        chalk`{blueBright test-job                 } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -29,6 +32,8 @@ test("custom-home <test-image>", async () => {
 
     const expected = [
         chalk`{blueBright test-image               } {greenBright >} Im content of a file variable`,
+        chalk`{blueBright test-image               } {greenBright >} "This is crazy"`,
+        chalk`{blueBright test-image               } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
