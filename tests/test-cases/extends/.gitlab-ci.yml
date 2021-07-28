@@ -1,5 +1,7 @@
 ---
 .after:
+  script:
+    - echo "Should not be printed"
   after_script:
     - echo "Test something (after_script)"
 

@@ -7,12 +7,12 @@ import {Service} from "./service";
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
-    assert(depth < extendsMaxDepth, chalk`{blueBright build-job}: circular dependency detected in \`extends\``);
+    assert(depth < extendsMaxDepth, chalk`{blueBright ${jobName}}: circular dependency detected in \`extends\``);
     depth++;
-    for (const parentName of (jobData.extends || []).reverse()) {
+    for (const parentName of (jobData.extends || [])) {
         const parentData = gitlabData[parentName];
         assert(parentData != null, chalk`{blueBright ${parentName}} is extended from {blueBright ${jobName}}, but is unspecified`);
-        parents = parents.concat(extendsRecurse(gitlabData, parentName, parentData, parents, depth));
+        extendsRecurse(gitlabData, parentName, parentData, parents, depth);
         parents.push(parentData);
     }
     return parents;
