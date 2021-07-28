@@ -58,7 +58,7 @@ test("extends infinite loop", () => {
         });
         expect(true).toBe(false);
     } catch (e) {
-        expect(e.message).toBe(chalk`{blueBright build-job}: circular dependency detected in \`extends\``);
+        expect(e.message).toBe(chalk`{blueBright test-job}: circular dependency detected in \`extends\``);
     }
 });
 
