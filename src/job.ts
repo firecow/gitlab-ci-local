@@ -194,8 +194,8 @@ export class Job {
         return this.jobData["description"] ?? "";
     }
 
-    get artifacts(): { paths: string[] } {
-        return this.jobData["artifacts"] || {paths: []};
+    get artifacts(): { paths: string[], exclude: string[] } {
+        return this.jobData["artifacts"] || {paths: [], exclude: []};
     }
 
     get beforeScripts(): string[] {
@@ -549,6 +549,21 @@ export class Job {
                 cpCmd += "cd /builds/\n";
                 cpCmd += `cp -r --parents ${expandedPath} /artifacts\n`;
                 cpCmd += `echo Done copying ${expandedPath} to /artifacts\n`;
+            }
+
+            if (this.artifacts.exclude && this.artifacts.exclude.length > 0) {
+                cpCmd += "shopt -s globstar nullglob dotglob\n";
+                for (const artifactExcludePath of this.artifacts.exclude) {
+                    const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
+                    cpCmd += `echo Started removing excludes from '${expandedPath}'\n`;
+                    cpCmd += "cd /artifacts/\n";
+		    cpCmd += `gcil_exclude=\\"${expandedPath}\\"\n`;
+		    cpCmd += "IFS=''\n";
+		    cpCmd += 'for f in \\\${gcil_exclude}; do\n';
+		    cpCmd += '\tprintf \\"%s\\0\\" \\"\\\$f\\"\n';
+                    cpCmd += 'done | sort --zero-terminated --reverse | xargs --no-run-if-empty --null rm --dir \n';
+                    cpCmd += `echo Done removing excludes from '${expandedPath}'\n`;
+                }
             }
 
             let cacheMount = "";
