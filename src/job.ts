@@ -23,6 +23,7 @@ export class Job {
     readonly jobNamePad: number;
     readonly needs: string[] | null;
     readonly dependencies: string[] | null;
+    readonly producers: string[];
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
     readonly cwd: string;
@@ -34,7 +35,6 @@ export class Job {
     readonly cache: { key: string | { files: string[] }; paths: string[] };
     readonly gitData: GitData;
 
-    private readonly _hasShellExecutorJobs: boolean;
     private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
     private _coveragePercent: string | null = null;
@@ -57,7 +57,7 @@ export class Job {
         const globals = opt.globals;
         const homeVariables = opt.homeVariables;
 
-        this._hasShellExecutorJobs = opt.hasShellExecutorJobs;
+        this.producers = opt.producers;
         this.extraHosts = opt.extraHosts;
         this.volumes = opt.volumes;
         this.writeStreams = opt.writeStreams;
@@ -368,7 +368,6 @@ export class Job {
         const safeJobName = this.safeJobName;
         const outputFilesPath = `${this.cwd}/.gitlab-ci-local/output/${safeJobName}.log`;
         const writeStreams = this.writeStreams;
-        const artifactsFrom = this.needs || this.dependencies;
         let time;
         let endTime;
 
@@ -478,11 +477,20 @@ export class Job {
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied to container} in {magenta ${prettyHrtime(endTime)}}\n`);
 
-            if (artifactsFrom === null || artifactsFrom.length > 0) {
+            if (this.producers.length > 0) {
                 time = process.hrtime();
-                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
-                await Utils.spawn(`docker cp ${this.cwd}/.gitlab-ci-local/artifacts/. ${this._containerId}:/builds/`);
-                this.refreshLongRunningSilentTimeout(writeStreams);
+                const promises = [];
+                for (const producer of this.producers) {
+                    const producerSafeName = Utils.getSafeJobName(producer);
+                    const artifactFolder = `${this.cwd}/.gitlab-ci-local/artifacts/${producerSafeName}`;
+                    if (!await fs.pathExists(artifactFolder)) {
+                        throw new ExitError(`${artifactFolder} doesn't exist, did you forget --needs`);
+                    }
+                    promises.push(Utils.spawn(`docker cp ${artifactFolder}/. ${this._containerId}:/builds/`).then(() => {
+                        this.refreshLongRunningSilentTimeout(writeStreams);
+                    }));
+                }
+                await Promise.all(promises);
                 endTime = process.hrtime(time);
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
@@ -580,18 +588,17 @@ export class Job {
 
             const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i ${cacheMount} -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
             this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
+            await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}`);
             await Utils.spawn(`docker start ${this._artifactsContainerId} --attach`);
-            await Utils.spawn(`docker cp ${this._artifactsContainerId}:/artifacts .gitlab-ci-local/.`, this.cwd);
+            await Utils.spawn(`docker cp ${this._artifactsContainerId}:/artifacts/. .gitlab-ci-local/artifacts/${safeJobName}/.`, this.cwd);
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
 
-            if (this._hasShellExecutorJobs) {
-                time = process.hrtime();
-                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/`);
-                await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/. ${this.cwd}`);
-                endTime = process.hrtime(time);
-                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
-            }
+            // Copy docker-executor job artifacts to host machine
+            time = process.hrtime();
+            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${this.cwd}`);
+            endTime = process.hrtime(time);
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         return exitCode;

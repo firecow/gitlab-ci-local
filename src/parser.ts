@@ -22,7 +22,7 @@ export class Parser {
     private _jobs: Map<string, Job> = new Map();
     private _stages: string[] = [];
     private _gitData: GitData | null = null;
-    private _homeVariables: any;
+    private _homeVariables: { [key: string]: string } | null = null;
     private _gitlabData: any;
     private _jobNamePad = 0;
 
@@ -271,27 +271,34 @@ export class Parser {
 
         this._gitlabData = gitlabData;
 
-
-        let hasShellExecutorJobs = false;
-        Utils.forEachRealJob(gitlabData, (_, jobData) => {
-            if (!jobData.image) {
-                hasShellExecutorJobs = true;
-            }
-        });
-
         // Generate jobs and put them into stages
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
-            assert(this._gitData != null, "GitRemote isn't set in parser initJobs function");
+            assert(this._gitData != null, "gitData must be set");
+            assert(this._homeVariables != null, "homeVariables must be set");
+
+            let producers: string[];
+            if (jobData.dependencies) {
+                producers = jobData.dependencies;
+            } else if (jobData.needs) {
+                producers = jobData.needs;
+            } else {
+                producers = Utils.getJobNamesFromPreviousStages(gitlabData, this.stages, jobData["stage"]);
+            }
+
+            producers = producers.filter((producerName) => {
+                return gitlabData[producerName]?.artifacts ?? null;
+            });
+
             const job = new Job({
                 volumes,
                 extraHosts,
                 writeStreams,
+                producers,
                 name: jobName,
                 namePad: this.jobNamePad,
                 homeVariables: this._homeVariables,
                 data: jobData,
                 cwd,
-                hasShellExecutorJobs,
                 globals: gitlabData,
                 pipelineIid,
                 gitData: this._gitData,

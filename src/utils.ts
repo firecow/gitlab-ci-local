@@ -4,6 +4,7 @@ import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
 import {assert} from "./asserts";
 import * as fs from "fs-extra";
+import base32Encode from "base32-encode";
 
 export class Utils {
 
@@ -46,6 +47,17 @@ export class Utils {
         return job;
     }
 
+    static getSafeJobName(jobName: string) {
+        return jobName.replace(/[^\w_-]+/g, (match) => {
+            const buffer = new ArrayBuffer(match.length * 2);
+            const bufView = new Uint16Array(buffer);
+            for (let i = 0, len = match.length; i < len; i++) {
+                bufView[i] = match.charCodeAt(i);
+            }
+            return base32Encode(buffer, "Crockford");
+        });
+    }
+
     static forEachRealJob(gitlabData: any, callback: (jobName: string, jobData: any) => void) {
         for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
             if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
@@ -53,6 +65,18 @@ export class Utils {
             }
             callback(jobName, jobData);
         }
+    }
+
+    static getJobNamesFromPreviousStages(gitlabData: any, stages: readonly string[], currentStage: string) {
+        const jobNames: string[] = [];
+        const currentStageIndex = stages.indexOf(currentStage);
+        Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
+            const stageIndex = stages.indexOf(jobData.stage);
+            if (stageIndex < currentStageIndex) {
+                jobNames.push(jobName);
+            }
+        });
+        return jobNames;
     }
 
     static async getCoveragePercent(cwd: string, coverageRegex: string, jobName: string) {
