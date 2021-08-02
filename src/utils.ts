@@ -176,7 +176,8 @@ export class Utils {
     static async rsyncNonIgnoredFilesToBuilds(cwd: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
         const time = process.hrtime();
         await fs.ensureDir(`${cwd}/.gitlab-ci-local/builds/${target}`);
-        await Utils.spawn(`rsync -a --delete --exclude-from=<(git -C . ls-files --exclude-standard -oi --directory) --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
+        const excludeCmd = "git clean -xdn | sed 's/Would remove //g'";
+        await Utils.spawn(`rsync -a --delete --exclude-from=<(${excludeCmd}) --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
 
