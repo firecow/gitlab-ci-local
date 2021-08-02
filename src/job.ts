@@ -487,9 +487,9 @@ export class Job {
             if (this.producers.length > 0) {
                 const cpFunc = async (folder: string) => {
                     if (!this.imageName && this.shellIsolation) {
-                        return await Utils.spawn(`cp -r ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+                        return Utils.spawn(`cp -r ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
                     }
-                    return await Utils.spawn(`docker cp ${folder}/. ${this._containerId}:/builds/${safeJobName}`);
+                    return Utils.spawn(`docker cp ${folder}/. ${this._containerId}:/builds/${safeJobName}`);
                 };
 
                 time = process.hrtime();

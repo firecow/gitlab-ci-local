@@ -276,19 +276,7 @@ export class Parser {
             assert(this._gitData != null, "gitData must be set");
             assert(this._homeVariables != null, "homeVariables must be set");
 
-            let producers: string[];
-            if (jobData.dependencies) {
-                producers = jobData.dependencies;
-            } else if (jobData.needs) {
-                producers = jobData.needs;
-            } else {
-                producers = Utils.getJobNamesFromPreviousStages(gitlabData, this.stages, jobData["stage"]);
-            }
-
-            producers = producers.filter((producerName) => {
-                return gitlabData[producerName]?.artifacts ?? null;
-            });
-
+            const producers = this.getProducers(gitlabData, jobData);
             const job = new Job({
                 volumes,
                 extraHosts,
@@ -307,6 +295,20 @@ export class Parser {
             const foundStage = this.stages.includes(job.stage);
             assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
             this._jobs.set(jobName, job);
+        });
+    }
+
+    getProducers(gitlabData: any, jobData: any) {
+        let producers: string[];
+        if (jobData["dependencies"]) {
+            producers = jobData["dependencies"];
+        } else if (jobData["needs"]) {
+            producers = jobData["needs"];
+        } else {
+            producers = Utils.getJobNamesFromPreviousStages(gitlabData, this.stages, jobData["stage"]);
+        }
+        return producers.filter((producerName) => {
+            return gitlabData[producerName]?.artifacts ?? null;
         });
     }
 
