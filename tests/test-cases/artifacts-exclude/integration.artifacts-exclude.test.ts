@@ -1,7 +1,9 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 
-test("artifacts-exlude <consume artifacts> --needs", async () => {
+jest.setTimeout(20000);
+
+test("artifacts-exclude <consume artifacts> --needs", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/artifacts-exclude",
