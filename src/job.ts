@@ -375,7 +375,7 @@ export class Job {
             return 0;
         }
 
-        // Copy git traced files to build folder if shell isolation enabled.
+        // Copy git tracked files to build folder if shell isolation enabled.
         if (!this.imageName && this.shellIsolation) {
             await Utils.rsyncNonIgnoredFilesToBuilds(this.cwd, `${safeJobName}`);
         }
