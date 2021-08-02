@@ -14,4 +14,5 @@ export interface JobOptions {
     volumes: string[];
     homeVariables: { [name: string]: string };
     producers: string[];
+    shellIsolation: boolean;
 }

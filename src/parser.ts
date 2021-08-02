@@ -297,6 +297,7 @@ export class Parser {
                 name: jobName,
                 namePad: this.jobNamePad,
                 homeVariables: this._homeVariables,
+                shellIsolation: this.opt.shellIsolation ?? false,
                 data: jobData,
                 cwd,
                 globals: gitlabData,

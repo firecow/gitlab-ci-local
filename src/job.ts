@@ -34,6 +34,7 @@ export class Job {
     readonly pipelineIid: number;
     readonly cache: { key: string | { files: string[] }; paths: string[] };
     readonly gitData: GitData;
+    readonly shellIsolation: boolean;
 
     private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
@@ -68,6 +69,7 @@ export class Job {
         this.jobId = Math.floor(Math.random() * 1000000);
         this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
+        this.shellIsolation = opt.shellIsolation;
 
         this.when = jobData.when || "on_success";
         this.allowFailure = jobData.allow_failure ?? false;
@@ -76,7 +78,6 @@ export class Job {
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
         this.cache = jobData.cache || null;
-
 
         const predefinedVariables = {
             GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
@@ -120,7 +121,6 @@ export class Job {
         const envs = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...process.env};
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
-
         this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...predefinedVariables, ...homeVariables};
 
         // Set {when, allowFailure} based on rules result
@@ -373,6 +373,11 @@ export class Job {
 
         if (scripts.length === 0 || scripts[0] == null) {
             return 0;
+        }
+
+        // Copy git traced files to build folder if shell isolation enabled.
+        if (!this.imageName && this.shellIsolation) {
+            await Utils.rsyncNonIgnoredFilesToBuilds(this.cwd, `${safeJobName}`);
         }
 
         if (this.interactive) {
