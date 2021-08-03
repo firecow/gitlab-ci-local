@@ -421,7 +421,7 @@ export class Job {
             const volumePromises = [];
             volumePromises.push(Utils.spawn(`docker volume create ${buildVolumeName}`, this.cwd));
             volumePromises.push(Utils.spawn(`docker volume create ${tmpVolumeName}`, this.cwd));
-            dockerCmd += `--volume ${buildVolumeName}:/builds/ `;
+            dockerCmd += `--volume ${buildVolumeName}:/builds/${safeJobName} `;
             dockerCmd += `--volume ${tmpVolumeName}:/tmp/ `;
             this._containerVolumeNames.push(buildVolumeName);
             this._containerVolumeNames.push(tmpVolumeName);
