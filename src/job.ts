@@ -43,7 +43,7 @@ export class Job {
     private _serviceIds: string[] = [];
     private _serviceNetworkId: string | null = null;
     private _artifactsContainerId: string | null = null;
-    private _containerVolumeName: string | null = null;
+    private _containerVolumeNames: string[] = [];
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
 
     private readonly jobData: any;
@@ -330,9 +330,11 @@ export class Job {
             }
         }
 
-        if (this._containerVolumeName) {
+        if (this._containerVolumeNames.length > 0) {
             try {
-                await Utils.spawn(`docker volume rm ${this._containerVolumeName}`);
+                for (const containerVolume of this._containerVolumeNames) {
+                    await Utils.spawn(`docker volume rm ${containerVolume}`);
+                }
             } catch (e) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
@@ -367,6 +369,8 @@ export class Job {
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const safeJobName = this.safeJobName;
         const outputFilesPath = `${this.cwd}/.gitlab-ci-local/output/${safeJobName}.log`;
+        const buildVolumeName = `gcl-${this.safeJobName}-${this.jobId}-build`;
+        const tmpVolumeName = `gcl-${this.safeJobName}-${this.jobId}-tmp`;
         const writeStreams = this.writeStreams;
         const artifactsFrom = this.needs || this.dependencies;
         let time;
@@ -410,9 +414,14 @@ export class Job {
                 }
             }
 
-            this._containerVolumeName = `gcl-${this.safeJobName}-${this.jobId}`;
-            await Utils.spawn(`docker volume create ${this._containerVolumeName}`, this.cwd);
-            dockerCmd += `--volume ${this._containerVolumeName}:/builds/ `;
+            const volumePromises = [];
+            volumePromises.push(Utils.spawn(`docker volume create ${buildVolumeName}`, this.cwd));
+            volumePromises.push(Utils.spawn(`docker volume create ${tmpVolumeName}`, this.cwd));
+            dockerCmd += `--volume ${buildVolumeName}:/builds/ `;
+            dockerCmd += `--volume ${tmpVolumeName}:/tmp/ `;
+            this._containerVolumeNames.push(buildVolumeName);
+            this._containerVolumeNames.push(tmpVolumeName);
+            await Promise.all(volumePromises);
 
             for (const volume of this.volumes) {
                 dockerCmd += `--volume ${volume} `;
@@ -487,7 +496,7 @@ export class Job {
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to container} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
 
-            await Utils.spawn(`docker run --rm -w /builds/ -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "chown 0:0 -R . && chmod a+rw -R ."`);
+            await Utils.spawn(`docker run --rm -w /builds/ -v ${buildVolumeName}:/builds/ debian:stable-slim bash -c "chown 0:0 -R . && chmod a+rw -R ."`);
         }
 
         let cmd = "set -eo pipefail\n";
@@ -578,7 +587,7 @@ export class Job {
             }
             time = process.hrtime();
 
-            const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i ${cacheMount} -v ${this._containerVolumeName}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
+            const {stdout: artifactsContainerId} = await Utils.spawn(`docker create -i ${cacheMount} -v ${buildVolumeName}:/builds/ debian:stable-slim bash -c "${cpCmd}"`, this.cwd);
             this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
             await Utils.spawn(`docker start ${this._artifactsContainerId} --attach`);
             await Utils.spawn(`docker cp ${this._artifactsContainerId}:/artifacts .gitlab-ci-local/.`, this.cwd);

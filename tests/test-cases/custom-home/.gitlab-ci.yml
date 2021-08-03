@@ -11,7 +11,9 @@ test-job:
 
 # Test file variables are working with docker-executor jobs
 test-image:
-  image: alpine
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
   script:
     - cat ${GLOBAL_FILE_VAR}
     - echo ${DOUBLE_QUOTE_VAR}
