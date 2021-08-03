@@ -1,6 +1,7 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
+import fs from "fs-extra";
 
 test("plain", async () => {
     const writeStreams = new MockWriteStreams();
@@ -10,6 +11,9 @@ test("plain", async () => {
 
     expect(writeStreams.stdoutLines.length).toEqual(14);
     expect(writeStreams.stderrLines.length).toEqual(1);
+
+    expect(await fs.pathExists("tests/test-cases/plain/.gitlab-ci-local/builds/test-job")).toBe(false);
+    expect(await fs.pathExists("tests/test-cases/plain/.gitlab-ci-local/builds/build-job")).toBe(false);
 });
 
 test("plain <test-job> <test-job>", async () => {

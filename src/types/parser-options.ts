@@ -10,4 +10,5 @@ export interface ParserOptions {
     volumes?: string[];
     home?: string;
     file?: string;
+    shellIsolation?: boolean;
 }

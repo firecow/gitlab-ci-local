@@ -13,5 +13,6 @@ export interface JobOptions {
     extraHosts: string[];
     volumes: string[];
     homeVariables: { [name: string]: string };
-    hasShellExecutorJobs: boolean;
+    producers: string[];
+    shellIsolation: boolean;
 }
