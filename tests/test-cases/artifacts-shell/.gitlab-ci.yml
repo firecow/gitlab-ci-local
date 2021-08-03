@@ -1,0 +1,18 @@
+---
+produce:
+  stage: build
+  script:
+    - mkdir -p path/
+    - touch path/file1
+    - touch path/file2
+  artifacts:
+    paths: [path/]
+    exclude: [path/file2]
+
+consume:
+  stage: test
+  dependencies: [produce]
+  script:
+    - pwd
+    - if [ ! -f path/file1 ]; then exit 1; fi
+    - if [ -f path/file2 ]; then exit 1; fi
