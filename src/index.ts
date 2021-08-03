@@ -101,6 +101,11 @@ process.on("unhandledRejection", e => {
             description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml)",
             requiresArg: false,
         })
+        .option("shell-isolation", {
+            type: "boolean",
+            description: "Enable artifact isolation for shell-executor jobs",
+            requiresArg: false,
+        })
         .option("privileged", {
             type: "boolean",
             description: "Set docker executor to privileged mode",
