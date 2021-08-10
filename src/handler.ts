@@ -30,7 +30,7 @@ const generateGitIgnore = (cwd: string) => {
 
 export async function handler(argv: any, writeStreams: WriteStreams): Promise<ReadonlyMap<string, Job>> {
     assert(typeof argv.cwd != "object", "--cwd option cannot be an array");
-    const cwd = argv.cwd?.replace(/\/$/, "") ?? ".";
+    const cwd = argv.cwd?.replace(/\/$/, "") ?? process.cwd();
 
     process.on("SIGINT", async (_: string, code: number) => {
         if (!parser) {
