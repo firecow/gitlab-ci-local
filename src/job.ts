@@ -79,13 +79,20 @@ export class Job {
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
         this.cache = jobData.cache || null;
 
+        let CI_PROJECT_DIR = `${this.cwd}`;
+        if (this.imageName) {
+            CI_PROJECT_DIR = `/builds/${this.safeJobName}`;
+        } else if (this.shellIsolation) {
+            CI_PROJECT_DIR = `${this.cwd}/.gitlab-ci-local/builds/${this.safeJobName}`;
+        }
+
         const predefinedVariables = {
             GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
             GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
             GITLAB_USER_NAME: gitData.user["GITLAB_USER_NAME"],
             CI_COMMIT_SHORT_SHA: gitData.commit.SHORT_SHA, // Changes
             CI_COMMIT_SHA: gitData.commit.SHA,
-            CI_PROJECT_DIR: this.imageName ? `/builds/${this.safeJobName}` : `${this.cwd}`,
+            CI_PROJECT_DIR,
             CI_PROJECT_NAME: gitData.remote.project,
             CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
             CI_PROJECT_PATH: gitData.CI_PROJECT_PATH,
