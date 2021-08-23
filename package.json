@@ -23,6 +23,7 @@
     "base32-encode": "^1.2.0",
     "camelcase": "^6.2.0",
     "chalk": "^4.1.2",
+    "checksum": "^1.0.0",
     "deep-extend": "^0.6.0",
     "dotenv": "^10.0.0",
     "fs-extra": "^10.0.0",
@@ -34,6 +35,7 @@
   },
   "devDependencies": {
     "@types/chalk": "^2.2.0",
+    "@types/checksum": "^0.1.33",
     "@types/deep-extend": "^0.4.31",
     "@types/fs-extra": "^9.0.12",
     "@types/jest": "^27.0.1",

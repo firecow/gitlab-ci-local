@@ -1,4 +1,27 @@
 ---
+produce-cache-key-files:
+  stage: build
+  image: alpine
+  cache:
+    key: { files: [fakepackage.json, fakepackage1.json] }
+    paths:
+      - key-files
+  script:
+    - mkdir -p key-files
+    - touch key-files/file1
+
+consume-cache-key-files:
+  stage: test
+  image: alpine
+  needs: [produce-cache-key-files]
+  dependencies: [produce-cache-key-files]
+  cache:
+    key: { files: [fakepackage.json, fakepackage1.json] }
+    paths:
+      - key-files
+  script:
+    - if [ ! -f key-files/file1 ]; then exit 1; fi
+
 produce-cache:
   stage: build
   image: alpine
