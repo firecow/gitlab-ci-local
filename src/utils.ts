@@ -5,6 +5,7 @@ import {Job} from "./job";
 import {assert} from "./asserts";
 import * as fs from "fs-extra";
 import base32Encode from "base32-encode";
+import checksum from "checksum";
 
 export class Utils {
 
@@ -181,4 +182,21 @@ export class Utils {
         return {hrdeltatime: process.hrtime(time)};
     }
 
+    static async checksumFiles(files: string[]): Promise<string> {
+        const promises: Promise<string>[] = [];
+
+        files.forEach((file) => {
+            promises.push(new Promise((resolve, reject) => {
+                checksum.file(file, (err, hash) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(hash);
+                });
+            }));
+        });
+
+        const result = await Promise.all(promises);
+        return checksum(result.join(""));
+    }
 }

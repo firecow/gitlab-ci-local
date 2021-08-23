@@ -146,6 +146,13 @@ export class Job {
         }
     }
 
+    async getUniqueCacheName() {
+        if (typeof this.cache.key === "string") {
+            return this.cache.key;
+        }
+        return "md-" + await Utils.checksumFiles(this.cache.key.files.map((f) => `${this.cwd}/${f}`));
+    }
+
     get chalkJobName() {
         return chalk`{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
     }
@@ -454,10 +461,11 @@ export class Job {
                 dockerCmd += `-e ${key}='${String(value).trim()}' `;
             }
 
-            if (this.cache && this.cache.key && typeof this.cache.key === "string" && this.cache.paths) {
+            if (this.cache && this.cache.key && this.cache.paths) {
+                const uniqueCacheName = await this.getUniqueCacheName();
                 this.cache.paths.forEach((path) => {
                     writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
-                    dockerCmd += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${safeJobName}/${path} `;
+                    dockerCmd += `-v /tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}:/builds/${safeJobName}/${path} `;
                 });
             }
 
@@ -612,9 +620,11 @@ export class Job {
             time = process.hrtime();
             if (this.imageName) {
                 let cacheMount = "";
-                if (this.cache && this.cache.key && typeof this.cache.key === "string" && this.cache.paths) {
+                if (this.cache && this.cache.key && this.cache.paths) {
+                    const uniqueCacheName = await this.getUniqueCacheName();
                     this.cache.paths.forEach((path) => {
-                        cacheMount += `-v /tmp/gitlab-ci-local/cache/${this.cache.key}/${path}:/builds/${safeJobName}/${path} `;
+                        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
+                        cacheMount += `-v /tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}:/builds/${safeJobName}/${path} `;
                     });
                 }
                 const dockerCreateCmd = `docker create -i ${cacheMount} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ debian:stable-slim bash -c "${cpCmd}"`;
