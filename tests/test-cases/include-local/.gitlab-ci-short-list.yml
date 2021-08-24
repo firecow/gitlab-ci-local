@@ -1,0 +1,3 @@
+---
+include:
+  - ".gitlab-ci-base.yml"
