@@ -391,6 +391,12 @@ export class Parser {
         if (include && include.length == null) {
             include = [ gitlabData["include"] ];
         }
+        if (typeof include === "string") {
+            include = [{"local": include}];
+        }
+        for (const [index, entry] of Object.entries(include)) {
+            include[index] = typeof entry === "string" ? {"local": entry } : entry;
+        }
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
