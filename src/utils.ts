@@ -9,9 +9,9 @@ import checksum from "checksum";
 
 export class Utils {
 
-    static spawn(command: string, cwd = process.cwd(), env: { [key: string]: string | undefined } = process.env): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
+    static spawn(command: string, cwd = process.cwd()): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
         return new Promise((resolve, reject) => {
-            const cp = childProcess.spawn(`${command}`, {shell: "bash", env, cwd});
+            const cp = childProcess.spawn(`${command}`, {shell: "bash", env: process.env, cwd});
 
             let output = "";
             let stdout = "";
@@ -105,7 +105,7 @@ export class Utils {
         }
         return text.replace(/[$][{]?\w*[}]?/g, (match) => {
             const sub = envs[match.replace(/^[$][{]?/, "").replace(/[}]?$/, "")];
-            return sub || match;
+            return sub || "";
         });
     }
 
