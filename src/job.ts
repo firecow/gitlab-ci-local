@@ -125,7 +125,7 @@ export class Job {
         };
 
         // Create expanded variables
-        const envs = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...process.env};
+        const envs = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...homeVariables};
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
         this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...predefinedVariables, ...homeVariables};
@@ -489,7 +489,7 @@ export class Job {
             dockerCmd += "\texit 1\n";
             dockerCmd += "fi\n\"";
 
-            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables});
+            const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd);
             this._containerId = containerId.replace(/\r?\n/g, "");
 
             time = process.hrtime();
@@ -724,7 +724,7 @@ export class Job {
         }
 
         const time = process.hrtime();
-        const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd, {...process.env, ...this.expandedVariables});
+        const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd);
         this._serviceIds.push(containerId.replace(/\r?\n/g, ""));
         this.refreshLongRunningSilentTimeout(writeStreams);
         const endTime = process.hrtime(time);
