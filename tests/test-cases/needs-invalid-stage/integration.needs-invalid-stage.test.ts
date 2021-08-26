@@ -11,6 +11,6 @@ test("needs-invalid-stage <build-job> --needs", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
-        expect(e.message).toBe(chalk`{blueBright test-job} is needed by {blueBright build-job}, but it is in the same or a future stage`);
+        expect(e.message).toBe(chalk`{blueBright test-job} is needed by {blueBright build-job}, but it is in a future stage`);
     }
 });
