@@ -23,8 +23,8 @@ export class Validator {
                 const needJobStageIndex = stages.indexOf(needJob.stage);
                 const jobStageIndex = stages.indexOf(job.stage);
                 assert(
-                    needJobStageIndex < jobStageIndex,
-                    chalk`{blueBright ${needJob.name}} is needed by {blueBright ${job.name}}, but it is in the same or a future stage`,
+                    needJobStageIndex <= jobStageIndex,
+                    chalk`{blueBright ${needJob.name}} is needed by {blueBright ${job.name}}, but it is in a future stage`,
                 );
             }
 
