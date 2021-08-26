@@ -1,11 +1,9 @@
 ---
 test-job:
-  stage: test
+  needs: [build-job]
   script:
     - echo "Test something"
 
 build-job:
-  stage: build
-  needs: [test-job]
   script:
     - echo "Build something"
