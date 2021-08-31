@@ -125,6 +125,8 @@ project:
   gitlab.com/test-group/test-project.git:
     # Will be type Variable and only available if remote is exact match
     AUTHORIZATION_PASSWORD: djwqiod910321
+  gitlab.com:project/test-group/test-project.git: # another syntax
+    AUTHORIZATION_PASSWORD: djwqiod910321
 
 group:
   gitlab.com/test-group/:
