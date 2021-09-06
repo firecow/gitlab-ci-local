@@ -668,6 +668,7 @@ export class Job {
         clearTimeout(this._longRunningSilentTimeout);
         this._longRunningSilentTimeout = setTimeout(() => {
             writeStreams.stdout(chalk`${this.chalkJobName} {grey > still running...}\n`);
+            this.refreshLongRunningSilentTimeout(writeStreams);
         }, 10000);
     }
 
