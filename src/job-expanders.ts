@@ -39,6 +39,9 @@ export function reference(gitlabData: any, recurseData: any) {
     for (const [key, value] of Object.entries<any>(recurseData || {})) {
         if (value && value.referenceData) {
             recurseData[key] = getSubDataByReference(gitlabData, value.referenceData);
+            if (Array.isArray(recurseData[key]) && recurseData[key].filter((d: any) => Array.isArray(d)).length > 0) {
+                recurseData[key] = expandMultidimension(recurseData[key]);
+            }
         } else if (typeof value === "object") {
             reference(gitlabData, value);
         }
