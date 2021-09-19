@@ -12,6 +12,7 @@ import prettyHrtime from "pretty-hrtime";
 import {WriteStreams} from "./types/write-streams";
 import {Job} from "./job";
 import {Utils} from "./utils";
+import {ExitError} from "./types/exit-error";
 
 const checkFolderAndFile = (cwd: string, file?: string) => {
     assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
@@ -28,19 +29,35 @@ const generateGitIgnore = (cwd: string) => {
     }
 };
 
+const cleanupResources = async(parser: Parser|null) => {
+    if (!parser) {
+        process.exit(1);
+    }
+    const promises = [];
+    for (const job of parser.jobs.values()) {
+        promises.push(job.cleanupResources());
+    }
+    await Promise.all(promises);
+};
+
 export async function handler(argv: any, writeStreams: WriteStreams): Promise<ReadonlyMap<string, Job>> {
     assert(typeof argv.cwd != "object", "--cwd option cannot be an array");
     const cwd = argv.cwd?.replace(/\/$/, "") ?? process.cwd();
 
+    process.on("unhandledRejection", async (e) => {
+        if (e instanceof ExitError) {
+            process.stderr.write(chalk`{red ${e.message}}\n`);
+        } else if (e instanceof Error) {
+            process.stderr.write(chalk`{red ${e.stack ?? e.message}}\n`);
+        } else if (e) {
+            process.stderr.write(chalk`{red ${e.toString()}}\n`);
+        }
+        await cleanupResources(parser);
+        process.exit(1);
+    });
+
     process.on("SIGINT", async (_: string, code: number) => {
-        if (!parser) {
-            return process.exit(code);
-        }
-        const promises = [];
-        for (const job of parser.jobs.values()) {
-            promises.push(job.cleanupResources());
-        }
-        await Promise.all(promises);
+        await cleanupResources(parser);
         process.exit(code);
     });
 
