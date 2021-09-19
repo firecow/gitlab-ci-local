@@ -4,8 +4,8 @@ import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
 import {assert} from "./asserts";
 import * as fs from "fs-extra";
-import base32Encode from "base32-encode";
 import checksum from "checksum";
+import base64url from "base64url";
 
 export class Utils {
 
@@ -50,12 +50,7 @@ export class Utils {
 
     static getSafeJobName(jobName: string) {
         return jobName.replace(/[^\w_-]+/g, (match) => {
-            const buffer = new ArrayBuffer(match.length * 2);
-            const bufView = new Uint16Array(buffer);
-            for (let i = 0, len = match.length; i < len; i++) {
-                bufView[i] = match.charCodeAt(i);
-            }
-            return base32Encode(buffer, "Crockford");
+            return base64url.encode(match);
         });
     }
 

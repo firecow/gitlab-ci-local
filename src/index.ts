@@ -12,17 +12,6 @@ import {handler} from "./handler";
 import {JobExecutor} from "./job-executor";
 
 sourceMapSupport.install();
-process.on("unhandledRejection", e => {
-    if (e instanceof ExitError) {
-        process.stderr.write(chalk`{red ${e.message}}\n`);
-        process.exit(1);
-    } else if (e instanceof Error) {
-        process.stderr.write(chalk`{red ${e.stack ?? e.message}}\n`);
-    } else if (e) {
-        process.stderr.write(chalk`{red ${e.toString()}}\n`);
-    }
-    process.exit(1);
-});
 
 (() => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));

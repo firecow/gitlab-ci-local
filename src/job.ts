@@ -7,7 +7,6 @@ import {ExitError} from "./types/exit-error";
 import {Utils} from "./utils";
 import {JobOptions} from "./types/job-options";
 import {WriteStreams} from "./types/write-streams";
-import base32Encode from "base32-encode";
 import {Service} from "./service";
 import {GitData} from "./types/git-data";
 
@@ -158,14 +157,7 @@ export class Job {
     }
 
     get safeJobName() {
-        return this.name.replace(/[^\w_-]+/g, (match) => {
-            const buffer = new ArrayBuffer(match.length * 2);
-            const bufView = new Uint16Array(buffer);
-            for (let i = 0, len = match.length; i < len; i++) {
-                bufView[i] = match.charCodeAt(i);
-            }
-            return base32Encode(buffer, "Crockford");
-        });
+        return Utils.getSafeJobName(this.name);
     }
 
     get imageName(): string | null {
@@ -461,13 +453,7 @@ export class Job {
                 dockerCmd += `-e ${key}='${String(value).trim()}' `;
             }
 
-            if (this.cache && this.cache.key && this.cache.paths) {
-                const uniqueCacheName = await this.getUniqueCacheName();
-                this.cache.paths.forEach((path) => {
-                    writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
-                    dockerCmd += `-v /tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}:/builds/${safeJobName}/${path} `;
-                });
-            }
+            dockerCmd += await this.createCacheDockerVolumeMounts(safeJobName, writeStreams, this.cache);
 
             dockerCmd += `${this.imageName} sh -c "\n`;
             dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
@@ -619,15 +605,8 @@ export class Job {
 
             time = process.hrtime();
             if (this.imageName) {
-                let cacheMount = "";
-                if (this.cache && this.cache.key && this.cache.paths) {
-                    const uniqueCacheName = await this.getUniqueCacheName();
-                    this.cache.paths.forEach((path) => {
-                        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
-                        cacheMount += `-v /tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}:/builds/${safeJobName}/${path} `;
-                    });
-                }
-                const dockerCreateCmd = `docker create -i ${cacheMount} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ debian:stable-slim bash -c "${cpCmd}"`;
+                const cacheMountStr = await this.createCacheDockerVolumeMounts(safeJobName, writeStreams, this.cache);
+                const dockerCreateCmd = `docker create -i ${cacheMountStr} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ debian:stable-slim bash -c "${cpCmd}"`;
                 const {stdout: artifactsContainerId} = await Utils.spawn(dockerCreateCmd, this.cwd);
                 this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
                 await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}`);
@@ -690,6 +669,18 @@ export class Job {
     private async createDockerNetwork(networkName: string) {
         const {stdout: networkId} = await Utils.spawn(`docker network create ${networkName}`);
         this._serviceNetworkId = networkId.replace(/\r?\n/g, "");
+    }
+
+    private async createCacheDockerVolumeMounts(safeJobName: string, writeStreams: WriteStreams, cache?: { key: string | { files: string[] }; paths: string[] }) {
+        let cmd = "";
+        if (cache && cache.key && cache.paths) {
+            const uniqueCacheName = await this.getUniqueCacheName();
+            this.cache.paths.forEach((path) => {
+                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
+                cmd += `-v /tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}:/builds/${safeJobName}/${path} `;
+            });
+        }
+        return cmd;
     }
 
     private async startService(writeStreams: WriteStreams, service: Service, privileged: boolean) {
