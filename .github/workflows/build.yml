@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - run: node --version
+      - run: npm --version
       - name: Install modules
         run: npm install
       - name: Run ESLint
