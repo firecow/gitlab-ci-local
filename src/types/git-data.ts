@@ -1,5 +1,3 @@
-import camelCase from "camelcase";
-
 interface GitRemote {
     domain: string;
     group: string;
@@ -30,7 +28,7 @@ export class GitData {
     }
 
     get CI_PROJECT_PATH() {
-        return `${this.remote.group}/${camelCase(this.remote.project)}`;
+        return `${this.remote.group}/${this.remote.project}`;
     }
 
     get CI_REGISTRY() {
