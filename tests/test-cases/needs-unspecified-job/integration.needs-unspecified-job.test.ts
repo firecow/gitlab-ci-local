@@ -1,6 +1,7 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
+import {assert} from "../../../src/asserts";
 
 test("needs-unspecified-job <build-job> --needs", async () => {
     const writeStreams = new MockWriteStreams();
@@ -11,6 +12,7 @@ test("needs-unspecified-job <build-job> --needs", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
+        assert(e instanceof Error, "e is not instanceof Error");
         expect(e.message).toBe(chalk`[ {blueBright invalid} ] jobs are needed by {blueBright test-job}, but they cannot be found`);
     }
 });

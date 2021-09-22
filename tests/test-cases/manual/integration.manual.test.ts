@@ -1,6 +1,7 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
+import {assert} from "../../../src/asserts";
 
 test("manual --manual <build-job> --manual <pre-job>", async () => {
     const writeStreams = new MockWriteStreams();
@@ -140,6 +141,7 @@ test("manual", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
+        assert(e instanceof Error, "e is not instanceof Error");
         expect(e.message).toBe(chalk`{blueBright pre-job} is when:manual, its needed by {blueBright test-job}, and not specified in --manual`);
     }
 });

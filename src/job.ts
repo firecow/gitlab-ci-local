@@ -9,6 +9,7 @@ import {JobOptions} from "./types/job-options";
 import {WriteStreams} from "./types/write-streams";
 import {Service} from "./service";
 import {GitData} from "./types/git-data";
+import {assert} from "./asserts";
 
 export class Job {
 
@@ -306,6 +307,7 @@ export class Job {
             try {
                 await Utils.spawn(`docker rm -f ${this._containerId}`);
             } catch (e) {
+                assert(e instanceof Error, "e is not instanceof Error");
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
         }
@@ -316,6 +318,7 @@ export class Job {
                     await Utils.spawn(`docker rm -f ${serviceId}`);
                 }
             } catch (e) {
+                assert(e instanceof Error, "e is not instanceof Error");
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
         }
@@ -324,6 +327,7 @@ export class Job {
             try {
                 await Utils.spawn(`docker network rm ${this._serviceNetworkId}`);
             } catch (e) {
+                assert(e instanceof Error, "e is not instanceof Error");
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
         }
@@ -332,6 +336,7 @@ export class Job {
             try {
                 await Utils.spawn(`docker rm -f ${this._artifactsContainerId}`);
             } catch (e) {
+                assert(e instanceof Error, "e is not instanceof Error");
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
         }
@@ -342,6 +347,7 @@ export class Job {
                     await Utils.spawn(`docker volume rm ${containerVolume}`);
                 }
             } catch (e) {
+                assert(e instanceof Error, "e is not instanceof Error");
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
         }
