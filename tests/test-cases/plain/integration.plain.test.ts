@@ -2,6 +2,7 @@ import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import fs from "fs-extra";
+import {assert} from "../../../src/asserts";
 
 test("plain", async () => {
     const writeStreams = new MockWriteStreams();
@@ -38,6 +39,7 @@ test("plain <notfound>", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
+        assert(e instanceof Error, "e is not instanceof Error");
         expect(e.message).toBe(chalk`{blueBright notfound} could not be found`);
     }
 });

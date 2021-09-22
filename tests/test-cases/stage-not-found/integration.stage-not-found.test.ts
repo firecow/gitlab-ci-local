@@ -1,6 +1,7 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
+import {assert} from "../../../src/asserts";
 
 test("stage-not-found <test-job>", async () => {
     try {
@@ -11,6 +12,7 @@ test("stage-not-found <test-job>", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
+        assert(e instanceof Error, "e is not instanceof Error");
         expect(e.message).toBe(chalk`{yellow stage:invalid} not found for {blueBright test-job}`);
     }
 });
