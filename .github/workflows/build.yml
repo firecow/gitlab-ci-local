@@ -16,7 +16,10 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
-      - { uses: actions/cache@v2, with: { path: 'node_modules', key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }} } }
+      - uses: actions/cache@v2
+        with:
+          path: 'node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
       - run: npm install
       - run: npm run lint
 
