@@ -7,8 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run YAMLLint
-        run: ./yamllint
+      - run: ./yamllint
 
   eslint:
     runs-on: ubuntu-latest
@@ -16,32 +15,26 @@ jobs:
       - uses: actions/checkout@v2
       - { uses: actions/setup-node@v2, with: { node-version: '16' } }
       - { uses: actions/cache@v2, with: { path: 'node_modules', key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }} } }
-      - name: Install modules
-        run: npm install
-      - name: Run ESLint
-        run: npm run lint
+      - run: npm install
+      - run: npm run lint
 
   typescript-compile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with: { node-version: '16' }
-      - name: Install modules
-        run: npm install
-      - name: Run Typescipt Compiler
-        run: npm run build
+      - { uses: actions/setup-node@v2, with: { node-version: '16' } }
+      - { uses: actions/cache@v2, with: { path: 'node_modules', key: ${ { runner.os } }-modules-${ { hashFiles('**/package-lock.json') } } } }
+      - run: npm install
+      - run: npm run build
 
   unused-deps:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with: { node-version: '16' }
-      - name: Install modules
-        run: npm install
-      - name: Run depcheck
-        run: npx depcheck --ignores depcheck,@types/jest
+      - { uses: actions/setup-node@v2, with: { node-version: '16' } }
+      - { uses: actions/cache@v2, with: { path: 'node_modules', key: ${ { runner.os } }-modules-${ { hashFiles('**/package-lock.json') } } } }
+      - run: npm install
+      - run: npx depcheck --ignores depcheck,@types/jest
 
   jest:
     runs-on: ubuntu-latest
@@ -49,22 +42,18 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v2
-        with: { node-version: '16' }
-      - name: Install modules
-        run: npm install
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
+      - { uses: actions/setup-node@v2, with: { node-version: '16' } }
+      - { uses: actions/cache@v2, with: { path: 'node_modules', key: ${ { runner.os } }-modules-${ { hashFiles('**/package-lock.json') } } } }
+      - run: npm install
+      - uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOSTS }}
-      - name: Run tests
-        run: |
+      - run: |
           eval $(ssh-agent -s)
           ssh-add
           FORCE_COLOR=1 npx jest --coverage --testTimeout 90000
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
+      - uses: sonarsource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
