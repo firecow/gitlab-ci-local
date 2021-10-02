@@ -23,7 +23,6 @@ export class Job {
     readonly jobNamePad: number;
     readonly needs: string[] | null;
     readonly dependencies: string[] | null;
-    readonly producers: string[];
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
     readonly cwd: string;
@@ -32,7 +31,7 @@ export class Job {
     readonly allowFailure: boolean;
     readonly when: string;
     readonly pipelineIid: number;
-    readonly cache: { key: string | { files: string[] }; paths: string[] };
+    readonly cache: { key: string | { files: string[] }; paths: string[] }[];
     readonly gitData: GitData;
     readonly shellIsolation: boolean;
 
@@ -46,6 +45,7 @@ export class Job {
     private _artifactsContainerId: string | null = null;
     private _containerVolumeNames: string[] = [];
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
+    private _producers: string[]|null = null;
 
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
@@ -58,7 +58,6 @@ export class Job {
         const globals = opt.globals;
         const homeVariables = opt.homeVariables;
 
-        this.producers = opt.producers;
         this.extraHosts = opt.extraHosts;
         this.volumes = opt.volumes;
         this.writeStreams = opt.writeStreams;
@@ -77,7 +76,7 @@ export class Job {
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
-        this.cache = jobData.cache || null;
+        this.cache = jobData.cache || [];
 
         let CI_PROJECT_DIR = `${this.cwd}`;
         if (this.imageName) {
@@ -146,11 +145,11 @@ export class Job {
         }
     }
 
-    async getUniqueCacheName() {
-        if (typeof this.cache.key === "string") {
-            return this.cache.key;
+    static async getUniqueCacheName(cwd: string, cacheEntry: { key: string | { files: string[] }; paths: string[] }) {
+        if (typeof cacheEntry.key === "string") {
+            return cacheEntry.key;
         }
-        return "md-" + await Utils.checksumFiles(this.cache.key.files.map((f) => `${this.cwd}/${f}`));
+        return "md-" + await Utils.checksumFiles(cacheEntry.key.files.map((f) => `${cwd}/${f}`));
     }
 
     get chalkJobName() {
@@ -185,6 +184,15 @@ export class Job {
 
     get services(): Service[] {
         return this.jobData["services"];
+    }
+
+    get producers(): string[]|null {
+        return this._producers;
+    }
+
+    set producers(producers: string[]|null) {
+        if (this._producers != null) throw new ExitError("this._producers can only be set once");
+        this._producers = producers;
     }
 
     get stage(): string {
@@ -459,7 +467,7 @@ export class Job {
                 dockerCmd += `-e ${key}='${String(value).trim()}' `;
             }
 
-            dockerCmd += await this.createCacheDockerVolumeMounts(safeJobName, writeStreams, this.cache);
+            dockerCmd += await this.createCacheDockerVolumeMounts(safeJobName, writeStreams);
 
             dockerCmd += `${this.imageName} sh -c "\n`;
             dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
@@ -501,7 +509,7 @@ export class Job {
         }
 
         if ((this.imageName || this.shellIsolation)) {
-            if (this.producers.length > 0) {
+            if (this.producers && this.producers.length > 0) {
                 const cpFunc = async (folder: string) => {
                     if (!this.imageName && this.shellIsolation) {
                         return Utils.spawn(`cp -r ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
@@ -611,7 +619,7 @@ export class Job {
 
             time = process.hrtime();
             if (this.imageName) {
-                const cacheMountStr = await this.createCacheDockerVolumeMounts(safeJobName, writeStreams, this.cache);
+                const cacheMountStr = await this.createCacheDockerVolumeMounts(safeJobName, writeStreams);
                 const dockerCreateCmd = `docker create -i ${cacheMountStr} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ debian:stable-slim bash -c "${cpCmd}"`;
                 const {stdout: artifactsContainerId} = await Utils.spawn(dockerCreateCmd, this.cwd);
                 this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
@@ -677,11 +685,11 @@ export class Job {
         this._serviceNetworkId = networkId.replace(/\r?\n/g, "");
     }
 
-    private async createCacheDockerVolumeMounts(safeJobName: string, writeStreams: WriteStreams, cache?: { key: string | { files: string[] }; paths: string[] }) {
+    private async createCacheDockerVolumeMounts(safeJobName: string, writeStreams: WriteStreams) {
         let cmd = "";
-        if (cache && cache.key && cache.paths) {
-            const uniqueCacheName = await this.getUniqueCacheName();
-            this.cache.paths.forEach((path) => {
+        for (const entry of this.cache) {
+            const uniqueCacheName = await Job.getUniqueCacheName(this.cwd, entry);
+            entry.paths.forEach((path) => {
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
                 cmd += `-v /tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}:/builds/${safeJobName}/${path} `;
             });

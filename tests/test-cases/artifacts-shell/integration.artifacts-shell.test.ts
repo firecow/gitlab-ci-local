@@ -1,7 +1,7 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 
-test("artifacts-shell <consume> --needs", async () => {
+test.concurrent("artifacts-shell <consume> --needs", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/artifacts-shell",
@@ -18,4 +18,15 @@ test("artifacts-shell <consume> --needs", async () => {
     expect(found.length).toEqual(1);
 
     expect(writeStreams.stderrLines).toEqual([]);
+});
+
+test.concurrent("artifacts-shell --file .gitlab-ci-when-never.ymml", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/artifacts-shell",
+        file: ".gitlab-ci-when-never.yml",
+        shellIsolation: true,
+    }, writeStreams);
+
+     expect(writeStreams.stderrLines).toEqual([]);
 });

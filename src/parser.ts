@@ -235,6 +235,7 @@ export class Parser {
         jobExpanders.reference(gitlabData, gitlabData);
         jobExpanders.jobExtends(gitlabData);
         jobExpanders.artifacts(gitlabData);
+        jobExpanders.cache(gitlabData);
         jobExpanders.image(gitlabData);
         jobExpanders.services(gitlabData);
         jobExpanders.beforeScripts(gitlabData);
@@ -276,12 +277,10 @@ export class Parser {
             assert(this._gitData != null, "gitData must be set");
             assert(this._homeVariables != null, "homeVariables must be set");
 
-            const producers = this.getProducers(gitlabData, jobData);
             const job = new Job({
                 volumes,
                 extraHosts,
                 writeStreams,
-                producers,
                 name: jobName,
                 namePad: this.jobNamePad,
                 homeVariables: this._homeVariables,
@@ -296,19 +295,29 @@ export class Parser {
             assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
             this._jobs.set(jobName, job);
         });
+
+        // Generate producer lists for each job
+        Utils.forEachRealJob(gitlabData, (jobName) => {
+            const job = this._jobs.get(jobName);
+            assert(job != null, "job is null");
+            job.producers = this.getProducers(this._jobs, gitlabData, job);
+        });
+
     }
 
-    getProducers(gitlabData: any, jobData: any) {
+    getProducers(jobs: Map<string, Job>, gitlabData: any, job: Job) {
         let producers: string[];
-        if (jobData["dependencies"]) {
-            producers = jobData["dependencies"];
-        } else if (jobData["needs"]) {
-            producers = jobData["needs"];
+        if (job.dependencies) {
+            producers = job.dependencies;
+        } else if (job.needs) {
+            producers = job.needs;
         } else {
-            producers = Utils.getJobNamesFromPreviousStages(gitlabData, this.stages, jobData["stage"]);
+            producers = Utils.getJobNamesFromPreviousStages(gitlabData, this.stages, job.stage);
         }
+
         return producers.filter((producerName) => {
-            return gitlabData[producerName]?.artifacts ?? null;
+            const producerJob = jobs.get(producerName);
+            return producerJob && producerJob.artifacts.paths.length > 0 && producerJob.when != "never";
         });
     }
 
