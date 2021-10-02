@@ -1,0 +1,15 @@
+---
+build:
+  stage: build
+  rules:
+    - when: never
+  artifacts:
+    paths:
+      - node_modules.txt
+  script:
+    - echo "Generate node_modules" > node_modules.txt
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Getting artifacts from all producers"

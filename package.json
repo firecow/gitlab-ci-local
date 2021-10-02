@@ -6,9 +6,9 @@
   "version": "4.24.0",
   "scripts": {
     "prepublishOnly": "npm run check-all && chmod +x src/index.js",
-    "pkg-linux": "pkg src/index.js --public -t node14-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
-    "pkg-macos": "pkg src/index.js --public -t node14-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
-    "pkg-win": "pkg src/index.js --public -t node14-win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
+    "pkg-linux": "pkg src/index.js --public -t node16-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
+    "pkg-macos": "pkg src/index.js --public -t node16-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
+    "pkg-win": "pkg src/index.js --public -t node16-win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
     "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win",
     "pkg": "pkg",
     "build": "rm -f src/*.js src/*.d.ts && tsc",
@@ -55,7 +55,7 @@
     "typescript": "4.4.3"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.10.0"
   },
   "pkg": {
     "assets": [
