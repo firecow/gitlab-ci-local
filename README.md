@@ -186,18 +186,18 @@ need-ssh:
 
 ### Artifacts
 
-Shell executor jobs copies artifacts to host/cwd directory
+Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolation option to mimic correct artifact handling
 
 Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
 
 ## Development
 
-You need nodejs 14+
+You need nodejs 16+
 
 ### Scripts
 
 ```bash
-./docker-npm install
+npm install
 npm run build
 npm run test
 ```
