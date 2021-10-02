@@ -191,7 +191,7 @@ export class Job {
     }
 
     set producers(producers: string[]|null) {
-        if (this._producers != null) throw new ExitError("this._producers can only be set once");
+        assert(this._producers == null, "this._producers can only be set once");
         this._producers = producers;
     }
 
@@ -512,7 +512,7 @@ export class Job {
             if (this.producers && this.producers.length > 0) {
                 const cpFunc = async (folder: string) => {
                     if (!this.imageName && this.shellIsolation) {
-                        return Utils.spawn(`cp -r ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+                        return Utils.spawn(`cp -R ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
                     }
                     return Utils.spawn(`docker cp ${folder}/. ${this._containerId}:/builds/${safeJobName}`);
                 };
