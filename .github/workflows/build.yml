@@ -27,8 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - { uses: actions/setup-node@v2, with: { node-version: '16' } }
-      - { uses: actions/cache@v2, with: { path: 'node_modules', key: ${ { runner.os } }-modules-${ { hashFiles('**/package-lock.json') } } } }
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - uses: actions/cache@v2
+        with:
+          path: 'node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
       - run: npm install
       - run: npm run build
 
@@ -36,8 +41,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - { uses: actions/setup-node@v2, with: { node-version: '16' } }
-      - { uses: actions/cache@v2, with: { path: 'node_modules', key: ${ { runner.os } }-modules-${ { hashFiles('**/package-lock.json') } } } }
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - uses: actions/cache@v2
+        with:
+          path: 'node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
       - run: npm install
       - run: npx depcheck --ignores depcheck,@types/jest
 
@@ -47,8 +57,13 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - { uses: actions/setup-node@v2, with: { node-version: '16' } }
-      - { uses: actions/cache@v2, with: { path: 'node_modules', key: ${ { runner.os } }-modules-${ { hashFiles('**/package-lock.json') } } } }
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - uses: actions/cache@v2
+        with:
+          path: 'node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
       - run: npm install
       - uses: shimataro/ssh-key-action@v2
         with:
