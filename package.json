@@ -28,7 +28,7 @@
     "dotenv": "^10.0.0",
     "fs-extra": "^10.0.0",
     "js-yaml": "^4.1.0",
-    "node-fetch": "^2.6.2",
+    "node-fetch": "^3.0.0",
     "pretty-hrtime": "^1.0.3",
     "source-map-support": "^0.5.20",
     "yargs": "^17.2.1"
@@ -40,7 +40,7 @@
     "@types/fs-extra": "9.0.13",
     "@types/jest": "27.0.2",
     "@types/js-yaml": "4.0.3",
-    "@types/node-fetch": "2.5.12",
+    "@types/node-fetch": "3.0.2",
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.4",
     "@types/yargs": "17.0.3",
