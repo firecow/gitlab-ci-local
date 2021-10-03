@@ -508,31 +508,7 @@ export class Job {
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied to container} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
-        if ((this.imageName || this.shellIsolation)) {
-            if (this.producers && this.producers.length > 0) {
-                const cpFunc = async (folder: string) => {
-                    if (!this.imageName && this.shellIsolation) {
-                        return Utils.spawn(`cp -R ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
-                    }
-                    return Utils.spawn(`docker cp ${folder}/. ${this._containerId}:/builds/${safeJobName}`);
-                };
-
-                time = process.hrtime();
-                const promises = [];
-                for (const producer of this.producers) {
-                    const producerSafeName = Utils.getSafeJobName(producer);
-                    const artifactFolder = `${this.cwd}/.gitlab-ci-local/artifacts/${producerSafeName}`;
-                    if (!await fs.pathExists(artifactFolder)) {
-                        throw new ExitError(`${artifactFolder} doesn't exist, did you forget --needs`);
-                    }
-                    promises.push(cpFunc(artifactFolder));
-                }
-                await Promise.all(promises);
-                endTime = process.hrtime(time);
-                const targetText = this.imageName ? "container" : "isolated shell";
-                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to ${targetText}} in {magenta ${prettyHrtime(endTime)}}\n`);
-            }
-        }
+        await this.copyArtifactsIn(writeStreams);
 
         if (this.imageName) {
             // Make sure tracked files and artifacts are root owned in docker-executor jobs.
@@ -610,6 +586,40 @@ export class Job {
         this.refreshLongRunningSilentTimeout(writeStreams);
         const endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+    }
+
+    private async copyArtifactsIn(writeStreams: WriteStreams) {
+        if (!this.imageName && !this.shellIsolation) {
+            return;
+        }
+
+        if (!this.producers || this.producers.length === 0) {
+            return;
+        }
+
+        const safeJobName = this.safeJobName;
+
+        const cpFunc = async (folder: string) => {
+            if (!this.imageName && this.shellIsolation) {
+                return Utils.spawn(`cp -R ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+            }
+            return Utils.spawn(`docker cp ${folder}/. ${this._containerId}:/builds/${safeJobName}`);
+        };
+
+        const time = process.hrtime();
+        const promises = [];
+        for (const producer of this.producers) {
+            const producerSafeName = Utils.getSafeJobName(producer);
+            const artifactFolder = `${this.cwd}/.gitlab-ci-local/artifacts/${producerSafeName}`;
+            if (!await fs.pathExists(artifactFolder)) {
+                throw new ExitError(`${artifactFolder} doesn't exist, did you forget --needs`);
+            }
+            promises.push(cpFunc(artifactFolder));
+        }
+        await Promise.all(promises);
+        const endTime = process.hrtime(time);
+        const targetText = this.imageName ? "container" : "isolated shell";
+        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to ${targetText}} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
     private async copyArtifactsOut(writeStreams: WriteStreams, buildVolumeName: string) {
