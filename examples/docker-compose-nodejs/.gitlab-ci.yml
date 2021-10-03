@@ -1,29 +1,21 @@
 ---
 # @Description Install npm packages
 npm-install:
-  stage: .pre
-  image: node:alpine
-  dependencies: []
-  artifacts:
-    paths:
-      - node_modules/
-  script:
-    - npm install --no-audit
-
-# See for more information on proper deps scanning
-# https://simplesaurus.com/posts/gitlab-ci-dependency-scanning-npm-audit/
-# @Description Find security vulnerabilities in node_modules
-npm-audit:
-  stage: test
-  image: node
-  allow_failure: true
+  stage: build
+  image: node:16.10.0-alpine3.14
   needs: []
-  script: npm audit
+  cache:
+    - { key: npm-cache, paths: [.npm] }
+    - { key: { files: [package-lock.json] }, paths: [node_modules] }
+  artifacts:
+    paths: [node_modules/]
+  script:
+    - npm install --no-audit --no-progress --cache .npm
 
 # @Description Find outdated packages in node_modules
 npm-outdated:
   stage: test
-  image: node
+  image: node:16.10.0-alpine3.14
   allow_failure: true
   needs: [npm-install]
   script:
@@ -32,6 +24,7 @@ npm-outdated:
 # @Description Up docker-compose services
 docker-compose-up:
   stage: deploy
+  needs: [npm-install]
   environment:
     url: http://localhost:8891
     name: local
@@ -42,7 +35,7 @@ docker-compose-up:
 docker-compose-down:
   stage: .post
   rules:
-    # Just job will only run locally, and only when manually started
+    # This job will only run locally, and only when manually started
     - { if: $GITLAB_CI == 'false', when: 'manual' }
   environment:
     name: local
