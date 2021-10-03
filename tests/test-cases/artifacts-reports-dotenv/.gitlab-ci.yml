@@ -1,0 +1,45 @@
+# Test image
+build-image:
+  stage: build
+  image: alpine
+  needs: []
+  script:
+    - echo "BUILD_VERSION=Hello" > build.env
+  artifacts:
+    reports: { dotenv: build.env }
+deploy-image:
+  stage: deploy
+  image: alpine
+  needs: [build-image]
+  script:
+    - if [ -f build.env ]; then exit 1; fi
+    - if [ "$BUILD_VERSION" = "" ]; then exit 1; fi
+
+# Test with --shell-isolation
+build-shell-iso:
+  stage: build
+  needs: []
+  script:
+    - echo "BUILD_VERSION=Hello" > build.env
+  artifacts:
+    reports: { dotenv: build.env }
+deploy-shell-iso:
+  stage: deploy
+  needs: [build-shell-iso]
+  script:
+    - if [ -f build.env ]; then exit 1; fi
+    - if [ "$BUILD_VERSION" = "" ]; then exit 1; fi
+
+# Test with --no-shell-isolation
+build-shell-noiso:
+  stage: build
+  needs: []
+  script:
+    - echo "BUILD_VERSION=Hello" > build.env
+  artifacts:
+    reports: { dotenv: build.env }
+deploy-shell-noiso:
+  stage: deploy
+  needs: [build-shell-noiso]
+  script:
+    - if [ "$BUILD_VERSION" = "" ]; then exit 1; fi

@@ -1,7 +1,7 @@
 ---
 # @Description Install PHP packages
 composer-install:
-  stage: .pre
+  stage: build
   image: composer
   needs: []
   artifacts:
@@ -10,9 +10,8 @@ composer-install:
     key: composer-home
     paths: [.composer/cache/]
   variables:
-    COMPOSER_HOME: "${PWD}/.composer"
+    COMPOSER_HOME: ".composer"
   script:
-    - export COMPOSER_HOME=.composer
     - composer install --no-progress
 
 # @Description Build/Push PHP image
@@ -21,25 +20,26 @@ build-php:
   image: docker:stable
   stage: build
   artifacts:
-    paths: [.env-build-php]
+    reports:
+      dotenv: .build-php-env
   script:
     - IMAGE_NAME=fake/php
     - IMAGE_PIPELINE_URL=${IMAGE_NAME}:${CI_PIPELINE_IID}
     - docker build . -q -t ${IMAGE_PIPELINE_URL}
     - echo "Built ./Dockerfile ${IMAGE_PIPELINE_URL}"
-    - echo "BUILD_PHP_IMAGE_URL=${IMAGE_PIPELINE_URL}" > .env-build-php
-    - >
+    - echo "BUILD_PHP_IMAGE_URL=${IMAGE_PIPELINE_URL}" > .build-php-env
+    - |
       if [ "${GITLAB_CI}" == 'true' ]; then
         docker push -q ${IMAGE_PIPELINE_URL}
         echo "Pushed ${IMAGE_PIPELINE_URL}"
       fi
-    - >
+    - |
       if [ -n "${CI_COMMIT_TAG}" ]; then
         IMAGE_TAG_URL=${IMAGE_NAME}:${CI_COMMIT_TAG}
         docker tag ${IMAGE_PIPELINE_URL} ${IMAGE_TAG_URL}
         docker push -q ${IMAGE_TAG_URL}
         echo "Pushed ${IMAGE_TAG_URL}"
-        echo "BUILD_PHP_IMAGE_URL=${IMAGE_TAG_URL}" > .env-build-php
+        echo "BUILD_PHP_IMAGE_URL=${IMAGE_TAG_URL}" > .build-php-env
       fi
 
 # @Description Find PHP Code standard issues
@@ -65,18 +65,18 @@ composer-outdated:
 
 # @Description Deploy a docker swarm stack
 deploy:
-  dependencies: [build-php]
+  needs: [build-php]
   stage: deploy
   script:
-    - export $(grep -vh '^#' .env* | xargs)
     - docker stack deploy -c docker-compose.yml php-project
   environment:
     url: http://localhost:8892
     name: local
 
-# @Description Remove the deployed swarm stack
+# @Description Remove the deployed swarm stack (local only)
 remove-stack:
   stage: .post
+  needs: []
   rules:
     - { if: $GITLAB_CI == 'false', allow_failure: true, when: manual }
     - { if: $GITLAB_CI == 'true', when: never }

@@ -6,7 +6,7 @@ test("predefined-variables <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/predefined-variables",
-        jobs: ["test-job"],
+        job: ["test-job"],
     }, writeStreams);
 
     expect(writeStreams.stdoutLines[3]).toEqual(chalk`{blueBright test-job} {greenBright >} predefined-variables`);
@@ -20,7 +20,7 @@ test("predefined-variables <test-job> --shell-isolation", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/predefined-variables",
-        jobs: ["test-job"],
+        job: ["test-job"],
         shellIsolation: true,
     }, writeStreams);
 
