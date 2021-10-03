@@ -593,52 +593,7 @@ export class Job {
             }
         });
 
-        if ((this.shellIsolation || this.imageName) && this.artifacts && this.artifacts.paths && this.artifacts.paths.length > 0) {
-            let cpCmd = `shopt -s globstar\nmkdir -p ../../artifacts/${safeJobName}\n`;
-            for (const artifactPath of this.artifacts.paths) {
-                const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
-                cpCmd += `echo Started copying ${expandedPath} to ../../artifacts/${safeJobName}\n`;
-                cpCmd += `cp -r --parents ${expandedPath} ../../artifacts/${safeJobName}\n`;
-                cpCmd += `echo Done copying ${expandedPath} to ../../artifacts/${safeJobName}\n`;
-            }
-
-            if (this.artifacts.exclude && this.artifacts.exclude.length > 0) {
-                cpCmd += "shopt -s globstar nullglob dotglob\n";
-                for (const artifactExcludePath of this.artifacts.exclude) {
-                    const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
-                    cpCmd += `echo Started removing exclude '${expandedPath}' from ../../artifacts/${safeJobName}\n`;
-                    cpCmd += `cd ../../artifacts/${safeJobName}\n`;
-                    cpCmd += `gcil_exclude=\\"${expandedPath}\\"\n`;
-                    cpCmd += "IFS=''\n";
-                    cpCmd += "for f in \\${gcil_exclude}; do\n";
-                    cpCmd += "\tprintf \\\"%s\\0\\\" \\\"\\$f\\\"\n";
-                    cpCmd += "done | sort --zero-terminated --reverse | xargs --no-run-if-empty --null rm --dir\n";
-                    cpCmd += `echo Done removing exclude '${expandedPath}' from ../../artifacts/${safeJobName}\n`;
-                }
-            }
-
-            time = process.hrtime();
-            if (this.imageName) {
-                const cacheMountStr = await this.createCacheDockerVolumeMounts(safeJobName, writeStreams);
-                const dockerCreateCmd = `docker create -i ${cacheMountStr} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ debian:stable-slim bash -c "${cpCmd}"`;
-                const {stdout: artifactsContainerId} = await Utils.spawn(dockerCreateCmd, this.cwd);
-                this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
-                await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}`);
-                await Utils.spawn(`docker start ${this._artifactsContainerId} --attach`);
-                await Utils.spawn(`docker cp ${this._artifactsContainerId}:/artifacts/. .gitlab-ci-local/artifacts/.`, this.cwd);
-            } else if (this.shellIsolation) {
-                await Utils.spawn(`mkdir -p ../../artifacts/${safeJobName}`, `${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
-                await Utils.spawn(`bash -e -c "${cpCmd}"`, `${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
-            }
-            endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
-
-            // Copy job artifacts to hosts "real" cwd
-            time = process.hrtime();
-            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${this.cwd}`);
-            endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
-        }
+        await this.copyArtifactsOut(writeStreams, buildVolumeName);
 
         return exitCode;
     }
@@ -655,6 +610,58 @@ export class Job {
         this.refreshLongRunningSilentTimeout(writeStreams);
         const endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+    }
+
+    private async copyArtifactsOut(writeStreams: WriteStreams, buildVolumeName: string) {
+        if (!this.shellIsolation && !this.imageName || !this.artifacts) {
+            return;
+        }
+
+        let time, endTime;
+        const safeJobName = this.safeJobName;
+
+        let cpCmd = "shopt -s globstar nullglob dotglob\n";
+        cpCmd += `mkdir -p ../../artifacts/${safeJobName}\n`;
+        for (const artifactPath of this.artifacts?.paths ?? []) {
+            const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
+            cpCmd += `echo Started copying ${expandedPath} to ../../artifacts/${safeJobName}\n`;
+            cpCmd += `cp -r --parents ${expandedPath} ../../artifacts/${safeJobName}\n`;
+            cpCmd += `echo Done copying ${expandedPath} to ../../artifacts/${safeJobName}\n`;
+        }
+
+        for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
+            const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
+            cpCmd += `echo Started removing exclude '${expandedPath}' from ../../artifacts/${safeJobName}\n`;
+            cpCmd += `cd ../../artifacts/${safeJobName}\n`;
+            cpCmd += `gcil_exclude=\\"${expandedPath}\\"\n`;
+            cpCmd += "IFS=''\n";
+            cpCmd += "for f in \\${gcil_exclude}; do\n";
+            cpCmd += "\tprintf \\\"%s\\0\\\" \\\"\\$f\\\"\n";
+            cpCmd += "done | sort --zero-terminated --reverse | xargs --no-run-if-empty --null rm --dir\n";
+            cpCmd += `echo Done removing exclude '${expandedPath}' from ../../artifacts/${safeJobName}\n`;
+        }
+
+        time = process.hrtime();
+        if (this.imageName) {
+            const cacheMountStr = await this.createCacheDockerVolumeMounts(safeJobName, writeStreams);
+            const dockerCreateCmd = `docker create -i ${cacheMountStr} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ debian:stable-slim bash -c "${cpCmd}"`;
+            const {stdout: artifactsContainerId} = await Utils.spawn(dockerCreateCmd, this.cwd);
+            this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
+            await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}`);
+            await Utils.spawn(`docker start ${this._artifactsContainerId} --attach`);
+            await Utils.spawn(`docker cp ${this._artifactsContainerId}:/artifacts/. .gitlab-ci-local/artifacts/.`, this.cwd);
+        } else if (this.shellIsolation) {
+            await Utils.spawn(`mkdir -p ../../artifacts/${safeJobName}`, `${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+            await Utils.spawn(`bash -e -c "${cpCmd}"`, `${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+        }
+        endTime = process.hrtime(time);
+        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+
+        // Copy job artifacts to hosts "real" cwd
+        time = process.hrtime();
+        await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${this.cwd}`);
+        endTime = process.hrtime(time);
+        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
     private refreshLongRunningSilentTimeout(writeStreams: WriteStreams) {
