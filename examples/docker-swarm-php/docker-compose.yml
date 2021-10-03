@@ -5,8 +5,7 @@ services:
   webserver:
     image: ${BUILD_PHP_IMAGE_URL}
     ports:
-      - 8892:80
+      - "8892:80"
     deploy:
       update_config:
-        # Deploy without downtime.
         order: start-first

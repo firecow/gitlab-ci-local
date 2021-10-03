@@ -315,10 +315,14 @@ export class Parser {
             producers = Utils.getJobNamesFromPreviousStages(gitlabData, this.stages, job.stage);
         }
 
-        return producers.filter((producerName) => {
+        producers = producers.filter((producerName) => {
             const producerJob = jobs.get(producerName);
-            const hasArtifacts = producerJob && producerJob.artifacts && producerJob.artifacts.paths && producerJob.artifacts.paths.length > 0;
-            return producerJob && hasArtifacts && producerJob.when != "never";
+            return producerJob && producerJob.artifacts && producerJob.when != "never";
+        });
+
+        return producers.map(producerName => {
+            const producerJob = jobs.get(producerName);
+            return {name: producerName, dotenv: producerJob?.artifacts?.reports?.dotenv ?? null};
         });
     }
 
