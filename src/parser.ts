@@ -317,7 +317,8 @@ export class Parser {
 
         return producers.filter((producerName) => {
             const producerJob = jobs.get(producerName);
-            return producerJob && producerJob.artifacts.paths.length > 0 && producerJob.when != "never";
+            const hasArtifacts = producerJob && producerJob.artifacts && producerJob.artifacts.paths && producerJob.artifacts.paths.length > 0;
+            return producerJob && hasArtifacts && producerJob.when != "never";
         });
     }
 
