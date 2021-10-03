@@ -1,3 +1,5 @@
+---
+
 # Test image
 build-image:
   stage: build
