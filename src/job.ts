@@ -211,8 +211,8 @@ export class Job {
         return this.jobData["description"] ?? "";
     }
 
-    get artifacts(): { paths: string[]; exclude?: string[] } {
-        return this.jobData["artifacts"] || {paths: [], exclude: []};
+    get artifacts(): { paths?: string[]; exclude?: string[]; reports?: { dotenv?: string } }|null {
+        return this.jobData["artifacts"];
     }
 
     get beforeScripts(): string[] {
@@ -593,7 +593,7 @@ export class Job {
             }
         });
 
-        if ((this.shellIsolation || this.imageName) && this.artifacts.paths.length > 0) {
+        if ((this.shellIsolation || this.imageName) && this.artifacts && this.artifacts.paths && this.artifacts.paths.length > 0) {
             let cpCmd = `shopt -s globstar\nmkdir -p ../../artifacts/${safeJobName}\n`;
             for (const artifactPath of this.artifacts.paths) {
                 const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
