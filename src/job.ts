@@ -680,12 +680,12 @@ export class Job {
             cpCmd += `echo Done removing exclude '${expandedPath}' from ../../artifacts/${safeJobName}\n`;
         }
 
-        const dotenv = this.artifacts.reports?.dotenv ?? null;
-        if (dotenv != null) {
+        const reportDotenv = this.artifacts.reports?.dotenv ?? null;
+        if (reportDotenv != null) {
             cpCmd += `mkdir -p ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
-            cpCmd += `echo Started copying ${dotenv} to ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
-            cpCmd += `cp -r --parents ${dotenv} ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
-            cpCmd += `echo Done copying ${dotenv} to ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
+            cpCmd += `echo Started copying ${reportDotenv} to ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
+            cpCmd += `cp -r --parents ${reportDotenv} ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
+            cpCmd += `echo Done copying ${reportDotenv} to ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
         }
 
         time = process.hrtime();
@@ -707,7 +707,7 @@ export class Job {
         // Copy job artifacts to hosts "real" cwd
         time = process.hrtime();
         await Utils.spawn(`rsync --exclude=/.gitlab-ci-reports/ -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${this.cwd}`);
-        if (dotenv != null) {
+        if (reportDotenv != null) {
             await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${this.cwd}`);
         }
         endTime = process.hrtime(time);
