@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import * as dotenv from "dotenv";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
@@ -45,7 +46,7 @@ export class Job {
     private _artifactsContainerId: string | null = null;
     private _containerVolumeNames: string[] = [];
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
-    private _producers: string[]|null = null;
+    private _producers: { name: string; dotenv: string | null }[] | null = null;
 
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
@@ -186,11 +187,11 @@ export class Job {
         return this.jobData["services"];
     }
 
-    get producers(): string[]|null {
+    get producers(): { name: string; dotenv: string | null }[] | null {
         return this._producers;
     }
 
-    set producers(producers: string[]|null) {
+    set producers(producers: { name: string; dotenv: string | null }[] | null) {
         assert(this._producers == null, "this._producers can only be set once");
         this._producers = producers;
     }
@@ -392,6 +393,7 @@ export class Job {
         const buildVolumeName = `gcl-${this.safeJobName}-${this.jobId}-build`;
         const tmpVolumeName = `gcl-${this.safeJobName}-${this.jobId}-tmp`;
         const writeStreams = this.writeStreams;
+        const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams);
         let time;
         let endTime;
 
@@ -466,6 +468,9 @@ export class Job {
             for (const [key, value] of Object.entries(this.expandedVariables)) {
                 dockerCmd += `-e ${key}='${String(value).trim()}' `;
             }
+            for (const [key, value] of Object.entries(reportsDotenvVariables)) {
+                dockerCmd += `-e ${key}='${String(value).trim()}' `;
+            }
 
             dockerCmd += await this.createCacheDockerVolumeMounts(safeJobName, writeStreams);
 
@@ -536,7 +541,7 @@ export class Job {
             shell: "bash",
             stdio: ["pipe", "pipe", "pipe"],
             cwd: this.cwd,
-            env: this.imageName ? {...process.env} : {...this.expandedVariables, ...process.env},
+            env: this.imageName ? {...process.env} : {...this.expandedVariables, ...reportsDotenvVariables, ...process.env},
         });
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
@@ -588,6 +593,30 @@ export class Job {
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
+    private async initProducerReportsDotenvVariables(writeStreams: WriteStreams) {
+        const producers = this.producers;
+        let producerReportsEnvs = {};
+        for (const producer of producers ?? []) {
+            if (producer.dotenv === null) continue;
+
+            const safeProducerName = Utils.getSafeJobName(producer.name);
+            let dotenvFile;
+            if (!this.shellIsolation && !this.imageName) {
+                dotenvFile = `${this.cwd}/${producer.dotenv}`;
+            } else {
+                dotenvFile = `${this.cwd}/.gitlab-ci-local/artifacts/${safeProducerName}/.gitlab-ci-reports/dotenv/${producer.dotenv}`;
+            }
+            if (await fs.pathExists(dotenvFile)) {
+                const producerReportEnv = dotenv.parse(await fs.readFile(dotenvFile));
+                producerReportsEnvs = {...producerReportsEnvs, ...producerReportEnv};
+            } else {
+                writeStreams.stderr(chalk`${this.chalkJobName} {yellow '${producer.dotenv}' produced by '${producer.name}' could not be found}\n`);
+            }
+
+        }
+        return producerReportsEnvs;
+    }
+
     private async copyArtifactsIn(writeStreams: WriteStreams) {
         if (!this.imageName && !this.shellIsolation) {
             return;
@@ -609,7 +638,7 @@ export class Job {
         const time = process.hrtime();
         const promises = [];
         for (const producer of this.producers) {
-            const producerSafeName = Utils.getSafeJobName(producer);
+            const producerSafeName = Utils.getSafeJobName(producer.name);
             const artifactFolder = `${this.cwd}/.gitlab-ci-local/artifacts/${producerSafeName}`;
             if (!await fs.pathExists(artifactFolder)) {
                 throw new ExitError(`${artifactFolder} doesn't exist, did you forget --needs`);
@@ -623,13 +652,13 @@ export class Job {
     }
 
     private async copyArtifactsOut(writeStreams: WriteStreams, buildVolumeName: string) {
+        const safeJobName = this.safeJobName;
+
         if (!this.shellIsolation && !this.imageName || !this.artifacts) {
             return;
         }
 
         let time, endTime;
-        const safeJobName = this.safeJobName;
-
         let cpCmd = "shopt -s globstar nullglob dotglob\n";
         cpCmd += `mkdir -p ../../artifacts/${safeJobName}\n`;
         for (const artifactPath of this.artifacts?.paths ?? []) {
@@ -651,6 +680,14 @@ export class Job {
             cpCmd += `echo Done removing exclude '${expandedPath}' from ../../artifacts/${safeJobName}\n`;
         }
 
+        const dotenv = this.artifacts.reports?.dotenv ?? null;
+        if (dotenv != null) {
+            cpCmd += `mkdir -p ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
+            cpCmd += `echo Started copying ${dotenv} to ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
+            cpCmd += `cp -r --parents ${dotenv} ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
+            cpCmd += `echo Done copying ${dotenv} to ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
+        }
+
         time = process.hrtime();
         if (this.imageName) {
             const cacheMountStr = await this.createCacheDockerVolumeMounts(safeJobName, writeStreams);
@@ -669,7 +706,10 @@ export class Job {
 
         // Copy job artifacts to hosts "real" cwd
         time = process.hrtime();
-        await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${this.cwd}`);
+        await Utils.spawn(`rsync --exclude=/.gitlab-ci-reports/ -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${this.cwd}`);
+        if (dotenv != null) {
+            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${this.cwd}`);
+        }
         endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
     }

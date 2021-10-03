@@ -6,7 +6,7 @@ test("artifacts-with-cache <test-job> --needs", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/artifacts-with-cache",
-        jobs: ["test-job"],
+        job: ["test-job"],
         needs: true,
     }, writeStreams);
 
