@@ -362,11 +362,12 @@ export class Job {
         }
     }
 
-    private generateInjectSSHAgentOptions() {
+    private async generateInjectSSHAgentOptions() {
         if (!this.injectSSHAgent) {
             return "";
         }
-        if (process.env.OSTYPE === "darwin") {
+
+        if (await fs.pathExists("/run/host-services/ssh-auth.sock")) {
             return "--env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock";
         }
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
@@ -426,10 +427,11 @@ export class Job {
             await this.pullImage(writeStreams, this.imageName);
 
             let dockerCmd = "";
+            const injectSSSHAgentOptions = await this.generateInjectSSHAgentOptions();
             if (privileged) {
-                dockerCmd += `docker create --privileged -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
+                dockerCmd += `docker create --privileged -u 0:0 -i ${injectSSSHAgentOptions} `;
             } else {
-                dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
+                dockerCmd += `docker create -u 0:0 -i ${injectSSSHAgentOptions} `;
             }
             if (this.services?.length) {
                 await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
