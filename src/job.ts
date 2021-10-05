@@ -366,7 +366,7 @@ export class Job {
         if (!this.injectSSHAgent) {
             return "";
         }
-        if (process.env.OSTYPE?.match(/^darwin/) ?? null) {
+        if (process.platform === "darwin" || process.env.OSTYPE?.match(/^darwin/) ?? null) {
             return "--env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock";
         }
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
