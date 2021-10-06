@@ -34,6 +34,6 @@ consume-artifacts:
     - ls -laR .
     - '[ -e "ux" ]'
     - '[ -e "foo/qux/qu" ]'
-    - '[ ! -e "foo/qux/qu ux" ]'
+    - '[ -e "foo/qux/qu ux" ]'
     - '[ ! -e foo/bar ]'
     - '[ ! -e foo/d ]'

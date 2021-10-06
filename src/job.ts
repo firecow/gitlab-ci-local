@@ -659,7 +659,7 @@ export class Job {
         }
 
         let time, endTime;
-        let cpCmd = "shopt -s globstar nullglob dotglob failglob\n";
+        let cpCmd = "shopt -s globstar nullglob dotglob\n";
         cpCmd += `mkdir -p ../../artifacts/${safeJobName}\n`;
         for (const artifactPath of this.artifacts?.paths ?? []) {
             const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
@@ -671,12 +671,7 @@ export class Job {
         for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
             const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
             cpCmd += `echo Started removing exclude '${expandedPath}' from ../../artifacts/${safeJobName}\n`;
-            cpCmd += `cd ../../artifacts/${safeJobName}\n`;
-            cpCmd += `gcil_exclude=\\"${expandedPath}\\"\n`;
-            cpCmd += "IFS=''\n";
-            cpCmd += "for f in \\${gcil_exclude}; do\n";
-            cpCmd += "\tprintf \\\"%s\\0\\\" \\\"\\$f\\\"\n";
-            cpCmd += "done | sort --zero-terminated --reverse | xargs --no-run-if-empty --null rm --dir\n";
+            cpCmd += `ls -1d '../../artifacts/${safeJobName}/${expandedPath}' | xargs -n1 rm -rf || true\n`;
             cpCmd += `echo Done removing exclude '${expandedPath}' from ../../artifacts/${safeJobName}\n`;
         }
 
