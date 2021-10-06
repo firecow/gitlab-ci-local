@@ -67,7 +67,9 @@ You'll be able to run `gitlab-ci-local` if the environment variable `$PATH` cont
 
 ### Macos
 
-Download and put binary in `/usr/local/bin`
+Download and put binary in `/usr/local/bin`.
+
+Make sure you have bash > 4.x installed `brew install bash`
 
 ```bash
 sudo su # must be installed as root, if placed in /usr/local/bin/
@@ -186,7 +188,7 @@ need-ssh:
 
 ### Artifacts
 
-Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolation option to mimic correct artifact handling
+Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolation option to mimic correct artifact handling for shell jobs.
 
 Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
 
