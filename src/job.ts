@@ -517,7 +517,7 @@ export class Job {
 
         if (this.imageName) {
             // Make sure tracked files and artifacts are root owned in docker-executor jobs.
-            await Utils.spawn(`docker run --rm -w /app/ -v ${buildVolumeName}:/app/ debian:stable-slim bash -c "chown 0:0 -R . && chmod a+rw -R ."`);
+            await Utils.spawn(`docker run --rm -w /app/ -v ${buildVolumeName}:/app/ firecow/gitlab-ci-local-util bash -c "chown 0:0 -R . && chmod a+rw -R ."`);
         }
 
         let cmd = "set -eo pipefail\n";
@@ -630,7 +630,7 @@ export class Job {
 
         const cpFunc = async (folder: string) => {
             if (!this.imageName && this.shellIsolation) {
-                return Utils.spawn(`cp -R ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+                return await Utils.spawn(`rsync -a ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
             }
             return Utils.spawn(`docker cp ${folder}/. ${this._containerId}:/builds/${safeJobName}`);
         };
@@ -659,12 +659,12 @@ export class Job {
         }
 
         let time, endTime;
-        let cpCmd = "shopt -s globstar nullglob dotglob\n";
+        let cpCmd = "shopt -s globstar nullglob dotglob failglob\n";
         cpCmd += `mkdir -p ../../artifacts/${safeJobName}\n`;
         for (const artifactPath of this.artifacts?.paths ?? []) {
             const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
             cpCmd += `echo Started copying ${expandedPath} to ../../artifacts/${safeJobName}\n`;
-            cpCmd += `cp -r --parents ${expandedPath} ../../artifacts/${safeJobName}\n`;
+            cpCmd += `rsync -Ra ${expandedPath} ../../artifacts/${safeJobName}/.\n`;
             cpCmd += `echo Done copying ${expandedPath} to ../../artifacts/${safeJobName}\n`;
         }
 
@@ -684,14 +684,14 @@ export class Job {
         if (reportDotenv != null) {
             cpCmd += `mkdir -p ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
             cpCmd += `echo Started copying ${reportDotenv} to ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
-            cpCmd += `cp -r --parents ${reportDotenv} ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
+            cpCmd += `rsync -Ra ${reportDotenv} ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
             cpCmd += `echo Done copying ${reportDotenv} to ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
         }
 
         time = process.hrtime();
         if (this.imageName) {
             const cacheMountStr = await this.createCacheDockerVolumeMounts(safeJobName, writeStreams);
-            const dockerCreateCmd = `docker create -i ${cacheMountStr} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ debian:stable-slim bash -c "${cpCmd}"`;
+            const dockerCreateCmd = `docker create -i ${cacheMountStr} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ firecow/gitlab-ci-local-util bash -c "${cpCmd}"`;
             const {stdout: artifactsContainerId} = await Utils.spawn(dockerCreateCmd, this.cwd);
             this._artifactsContainerId = artifactsContainerId.replace(/\r?\n/g, "");
             await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}`);
