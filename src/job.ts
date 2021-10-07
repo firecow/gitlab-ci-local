@@ -630,7 +630,7 @@ export class Job {
 
         const cpFunc = async (folder: string) => {
             if (!this.imageName && this.shellIsolation) {
-                return await Utils.spawn(`rsync -a ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+                return Utils.spawn(`rsync -a ${folder}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
             }
             return Utils.spawn(`docker cp ${folder}/. ${this._containerId}:/builds/${safeJobName}`);
         };
