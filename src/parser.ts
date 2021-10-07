@@ -388,7 +388,7 @@ export class Parser {
         fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
         const normalizedFile = file.replace(/^\/+/, "");
         try {
-            await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${normalizedFile} | tar -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
+            await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${normalizedFile} | tar -f - -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
         } catch (e) {
             throw new ExitError(`Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }`);
         }
