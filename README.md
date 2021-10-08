@@ -47,23 +47,11 @@ npm install -g gitlab-ci-local
 
 ### Linux
 
-Download and put binary in `/usr/local/bin`
-
 ```bash
-sudo su # must be installed as root, if placed in /usr/local/bin/
-curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/linux.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
-chmod +x /usr/local/bin/gitlab-ci-local
-exit
+curl -s "https://firecow.github.io/gitlab-ci-local/ppa/pubkey.gpg" | sudo apt-key add -
+sudo curl -s -o /etc/apt/sources.list.d/gitlab-ci-local.list "https://firecow.github.io/gitlab-ci-local/ppa/gitlab-ci-local.list"
 ```
 
-Or install it only for the current user
-
-```bash
-curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/linux.gz | gunzip -c > ~/.local/bin/gitlab-ci-local
-chmod +x ~/.local/bin/gitlab-ci-local
-```
-
-You'll be able to run `gitlab-ci-local` if the environment variable `$PATH` contains `~/.local/bin/`. If it isn't, please refer to the documentation of your shell to add it. 
 
 ### Macos
 
