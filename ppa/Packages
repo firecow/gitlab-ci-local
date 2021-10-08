@@ -1,0 +1,11 @@
+Package: gitlab-ci-local
+Version: 4.25.0
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Filename: ./gitlab-ci-local_4.25.0_amd64.deb
+Size: 12801868
+MD5sum: 05b3316ad0185b382aa8b5a0aec0f5f4
+SHA1: 17ed53202bec6f2bf2587e4aac3118a024e4ab71
+SHA256: 6b40ce08df8c5fa0f609a92a8cd7b03a25bae23369ca75ad82aebace61bc93a4
+Description: Tired of pushing to test your .gitlab-ci.yml?
+

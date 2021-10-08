@@ -12,4 +12,6 @@
 
 /coverage
 
+/publish
+
 !/docker-npm
