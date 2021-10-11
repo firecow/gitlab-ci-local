@@ -378,7 +378,7 @@ export class Job {
             // Print command echo'ed in color
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
-            const text = split[0]?.replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
+            const text = split[0]?.replace(/[\\]/g, "\\\\").replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
             cmd += chalk`echo "{green $ ${text}${multilineText}}"\n`;
 
             // Execute actual script
