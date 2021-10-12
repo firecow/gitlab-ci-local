@@ -30,7 +30,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
 * [Quirks](#quirks)
-    * [User Variables](#user-variables)
+    * [Home Variables](#home-variables)
     * [Decorators](#decorators)
     * [Artifacts](#artifacts)
 * [Development](#development)
@@ -108,7 +108,7 @@ gitlab-ci-local --completion >> ~/.bashrc
 
 ## Quirks
 
-### User variables
+### Home variables
 
 Put a file like this in `$HOME/.gitlab-ci-local/variables.yml`
 
