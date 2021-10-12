@@ -257,9 +257,6 @@ export class Parser {
             this._jobNamePad = Math.max(this.jobNamePad, jobName.length);
         });
 
-        // Check that `needs` is larger or equal to `dependencies`
-        // TODO: We need this check, to prevent jobs from copying artifacts that might not be needed.
-
         // Check job variables for invalid hash of key value pairs
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             for (const [key, value] of Object.entries(jobData.variables || {})) {
@@ -303,6 +300,16 @@ export class Parser {
             job.producers = this.getProducers(this._jobs, gitlabData, job);
         });
 
+        // Check that `needs` fully contain `dependencies`
+        for (const job of this._jobs.values()) {
+            const needs = job.needs;
+            const dependencies = job.dependencies;
+            if (!dependencies || !needs) continue;
+            const everyIncluded = dependencies.every((dep: string) => needs.includes(dep));
+            if (!everyIncluded) {
+                throw new ExitError(`${job.chalkJobName} needs: '${needs.join(",")}' doesn't fully contain dependencies: '${dependencies.join(",")}'`);
+            }
+        }
     }
 
     getProducers(jobs: Map<string, Job>, gitlabData: any, job: Job) {

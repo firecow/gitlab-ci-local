@@ -1,0 +1,18 @@
+---
+one:
+  script:
+    - echo "I'm one"
+
+two:
+  script:
+    - echo "I'm two"
+
+three:
+  script:
+    - echo "I'm three"
+
+test-job:
+  needs: [one, three]
+  dependencies: [one, two]
+  script:
+    - echo "Should fail during parsing and never get to this script"
