@@ -139,10 +139,10 @@ export class Utils {
             let subEval = subRule;
 
             if (subRule.includes("!~")) {
-                subEval = subRule.replace(/\s*!~\s*(\/.*\/)/, ".match($1) == null");
+                subEval = subRule.replace(/\s*!~\s*(\/.*\/[igmsuy]*)/, ".match($1) == null");
                 subEval = subEval.match(/^null/) ? "false" : subEval;
             } else if (subRule.includes("=~")) {
-                subEval = subRule.replace(/\s*=~\s*(\/.*\/)/, ".match($1) != null");
+                subEval = subRule.replace(/\s*=~\s*(\/.*\/[igmsuy]*)/, ".match($1) != null");
                 subEval = subEval.match(/^null/) ? "false" : subEval;
             } else if (!subRule.match(/==|!=/)) {
                 if (subRule.match(/null/)) {

@@ -99,8 +99,20 @@ test("VAR regex match success", () => {
     expect(val).toBe(true);
 });
 
+test("VAR regex match success - case insensitive", () => {
+    const ruleIf = "$VAR =~ /testvalue/i";
+    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "testvalue"});
+    expect(val).toBe(true);
+});
+
 test("VAR regex match fail", () => {
     const ruleIf = "$VAR =~ /testvalue/";
+    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "spiffy"});
+    expect(val).toBe(false);
+});
+
+test("VAR regex match fail - case insensitive", () => {
+    const ruleIf = "$VAR =~ /testvalue/i";
     const val = Utils.evaluateRuleIf(ruleIf, {VAR: "spiffy"});
     expect(val).toBe(false);
 });
@@ -111,8 +123,20 @@ test("VAR regex not match success", () => {
     expect(val).toBe(true);
 });
 
+test("VAR regex not match success - case insensitive", () => {
+    const ruleIf = "$VAR !~ /testvalue/i";
+    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "notamatch"});
+    expect(val).toBe(true);
+});
+
 test("VAR regex not match fail", () => {
     const ruleIf = "$VAR !~ /testvalue/";
+    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "testvalue"});
+    expect(val).toBe(false);
+});
+
+test("VAR regex not match fail - case insensitive", () => {
+    const ruleIf = "$VAR !~ /testvalue/i";
     const val = Utils.evaluateRuleIf(ruleIf, {VAR: "testvalue"});
     expect(val).toBe(false);
 });
@@ -159,8 +183,20 @@ test("Complex parentheses junctions regex success", () => {
     expect(val).toBe(true);
 });
 
+test("Complex parentheses junctions regex success - case insensitive", () => {
+    const ruleIf = "$VAR1 =~ /val/i && ($VAR2 =~ /val/ || $VAR3)";
+    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "VAL", VAR2: "val", VAR3: ""});
+    expect(val).toBe(true);
+});
+
 test("Complex parentheses junctions regex fail", () => {
     const ruleIf = "$VAR1 =~ /val/ && ($VAR2 =~ /val/ || $VAR3)";
     const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "val", VAR2: "not", VAR3: ""});
+    expect(val).toBe(false);
+});
+
+test("Complex parentheses junctions regex fail - case insensitive", () => {
+    const ruleIf = "$VAR1 =~ /val/i && ($VAR2 =~ /val/ || $VAR3)";
+    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "VAL", VAR2: "not", VAR3: ""});
     expect(val).toBe(false);
 });
