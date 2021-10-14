@@ -1,0 +1,27 @@
+---
+pre-job:
+  stage: .pre
+  script:
+    - echo "Pre-job"
+
+build-job:
+  stage: build
+  script:
+    - echo "Build-job ${NAME}"
+  parallel:
+    matrix:
+      - NAME: [foo, bar]
+      - NAME: bear
+
+test-job:
+  stage: test
+  needs: [build-job, pre-job]
+  script:
+    - echo "Test-job ${NAME}"
+    - echo "Test-job ${SPIFFY}"
+    - echo "$CI_NODE_INDEX / $CI_NODE_TOTAL"
+  parallel:
+    matrix:
+      - NAME: [foo, bar]
+        SPIFFY: [hejsa, danling, dungling]
+      - NAME: bear

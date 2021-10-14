@@ -274,23 +274,39 @@ export class Parser {
             assert(this._gitData != null, "gitData must be set");
             assert(this._homeVariables != null, "homeVariables must be set");
 
-            const job = new Job({
-                volumes,
-                extraHosts,
-                writeStreams,
-                name: jobName,
-                namePad: this.jobNamePad,
-                homeVariables: this._homeVariables,
-                shellIsolation: this.opt.shellIsolation ?? false,
-                data: jobData,
-                cwd,
-                globals: gitlabData,
-                pipelineIid,
-                gitData: this._gitData,
-            });
-            const foundStage = this.stages.includes(job.stage);
-            assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
-            this._jobs.set(jobName, job);
+            if (jobData["parallel"] != null && jobData["parallel"]["matrix"] != null) {
+                const matrixList = jobData["parallel"]["matrix"];
+                assert(Array.isArray(matrixList), "parallel.matrix is not an array");
+                let nodeIndex = 1;
+                for (const entry of matrixList) {
+                    for (let [key, valueList] of Object.entries(entry)) {
+                        valueList = Array.isArray(valueList) ? valueList : [valueList];
+                        for (const value of valueList) {
+                            console.log(key, value, nodeIndex);
+                            nodeIndex++;
+                        }
+
+                    }
+                }
+            } else {
+                const job = new Job({
+                    volumes,
+                    extraHosts,
+                    writeStreams,
+                    name: jobName,
+                    namePad: this.jobNamePad,
+                    homeVariables: this._homeVariables,
+                    shellIsolation: this.opt.shellIsolation ?? false,
+                    data: jobData,
+                    cwd,
+                    globals: gitlabData,
+                    pipelineIid,
+                    gitData: this._gitData,
+                });
+                const foundStage = this.stages.includes(job.stage);
+                assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
+                this._jobs.set(jobName, job);
+            }
         });
 
         // Generate producer lists for each job
