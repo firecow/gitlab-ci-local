@@ -30,6 +30,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
 * [Quirks](#quirks)
+    * [Tracked Files](#tracked-files) 
     * [Home Variables](#home-variables)
     * [Decorators](#decorators)
     * [Artifacts](#artifacts)
@@ -107,6 +108,14 @@ gitlab-ci-local --completion >> ~/.bashrc
 ```
 
 ## Quirks
+
+### Tracked Files
+
+Untracked and ignored files will not be synced inside isolated jobs, only tracked files are synced.
+
+Remember `git add`
+
+
 
 ### Home variables
 
