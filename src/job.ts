@@ -146,11 +146,13 @@ export class Job {
         }
     }
 
-    static async getUniqueCacheName(cwd: string, cacheEntry: { key: string | { files: string[] }; paths: string[] }) {
+    static async getUniqueCacheName(cwd: string, cacheEntry: { key: string | { files: string[] }; paths: string[] }, expandedVariables: { [key: string]: string }) {
         if (typeof cacheEntry.key === "string") {
-            return cacheEntry.key;
+            return Utils.expandText(cacheEntry.key);
         }
-        return "md-" + await Utils.checksumFiles(cacheEntry.key.files.map((f) => `${cwd}/${f}`));
+        return "md-" + await Utils.checksumFiles(cacheEntry.key.files.map(f => {
+            return `${cwd}/${Utils.expandText(f, expandedVariables)}`;
+        }));
     }
 
     get chalkJobName() {
@@ -740,8 +742,9 @@ export class Job {
     private async createCacheDockerVolumeMounts(safeJobName: string, writeStreams: WriteStreams) {
         let cmd = "";
         for (const entry of this.cache) {
-            const uniqueCacheName = await Job.getUniqueCacheName(this.cwd, entry);
-            entry.paths.forEach((path) => {
+            const uniqueCacheName = await Job.getUniqueCacheName(this.cwd, entry, this.expandedVariables);
+            entry.paths.forEach((p) => {
+                const path = Utils.expandText(p, this.expandedVariables)
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
                 cmd += `-v /tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}:/builds/${safeJobName}/${path} `;
             });
