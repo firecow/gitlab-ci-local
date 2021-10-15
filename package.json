@@ -43,7 +43,7 @@
     "@types/node-fetch": "2.5.12",
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.4",
-    "@types/yargs": "17.0.3",
+    "@types/yargs": "17.0.4",
     "@typescript-eslint/eslint-plugin": "5.0.0",
     "@typescript-eslint/parser": "5.0.0",
     "depcheck": "1.4.2",
