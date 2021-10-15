@@ -401,16 +401,10 @@ export class Parser {
         }
     }
 
-    static async prepareIncludes(gitlabData: any, cwd: string, writeStreams: WriteStreams, gitData: GitData, fetchIncludes: boolean, depth: number): Promise<any[]> {
-        let includeDatas: any[] = [];
-        const promises = [];
-
-        assert(depth < 100, chalk`circular dependency detected in \`include\``);
-        depth++;
-
-        let include = gitlabData["include"] || [];
+    static expandInclude(i: any): any[] {
+        let include = i || [];
         if (include && include.length == null) {
-            include = [ gitlabData["include"] ];
+            include = [ i ];
         }
         if (typeof include === "string") {
             include = [{"local": include}];
@@ -418,6 +412,17 @@ export class Parser {
         for (const [index, entry] of Object.entries(include)) {
             include[index] = typeof entry === "string" ? {"local": entry } : entry;
         }
+        return include;
+    }
+
+    static async prepareIncludes(gitlabData: any, cwd: string, writeStreams: WriteStreams, gitData: GitData, fetchIncludes: boolean, depth: number): Promise<any[]> {
+        let includeDatas: any[] = [];
+        const promises = [];
+
+        assert(depth < 100, chalk`circular dependency detected in \`include\``);
+        depth++;
+
+        const include = Parser.expandInclude(gitlabData["include"]);
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
@@ -451,14 +456,13 @@ export class Parser {
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.domain}/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
 
                 // Expand local includes inside a "project"-like include
-                (fileDoc["include"] || []).forEach((inner: any, i: number) => {
-                    if (inner["local"]) {
-                        fileDoc["include"][i] = {
-                            project: value["project"],
-                            file: inner["local"].replace(/^\//, ""),
-                            ref: value["ref"],
-                        };
-                    }
+                Parser.expandInclude(fileDoc["include"]).forEach((inner: any, i: number) => {
+                    if (!inner["local"]) return;
+                    fileDoc["include"][i] = {
+                        project: value["project"],
+                        file: inner["local"].replace(/^\//, ""),
+                        ref: value["ref"],
+                    };
                 });
 
                 includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
