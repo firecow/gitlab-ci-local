@@ -49,7 +49,7 @@ export class Utils {
     }
 
     static getSafeJobName(jobName: string) {
-        return jobName.replace(/[^\w_-]+/g, (match) => {
+        return jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
         });
     }
