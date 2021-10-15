@@ -351,7 +351,7 @@ export class Parser {
             interactiveMatch = !interactiveMatch ? line.match(/#[\s]?@[\s]?[Ii]nteractive/) : interactiveMatch;
             injectSSHAgent = !injectSSHAgent ? line.match(/#[\s]?@[\s]?[Ii]njectSSHAgent/) : injectSSHAgent;
             descriptionMatch = !descriptionMatch ? line.match(/#[\s]?@[\s]?[Dd]escription (?<description>.*)/) : descriptionMatch;
-            const jobMatch = line.match(/(?<jobname>\w):/);
+            const jobMatch = line.match(/\w:/);
             if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent)) {
                 if (interactiveMatch) {
                     fileSplitClone.splice(index + 1, 0, "  interactive: true");
