@@ -410,15 +410,15 @@ export class Job {
 
         if (this.interactive) {
             const iCmd = this.generateScriptCommands(scripts);
-            const cp = childProcess.spawn(iCmd, {
+            const interactiveCp = childProcess.spawn(iCmd, {
                 shell: "bash",
                 stdio: ["inherit", "inherit", "inherit"],
                 cwd: this.cwd,
                 env: {...this.expandedVariables, ...process.env},
             });
             return new Promise<number>((resolve, reject) => {
-                cp.on("exit", (code) => resolve(code ?? 0));
-                cp.on("error", (err) => reject(err));
+                interactiveCp.on("exit", (code) => resolve(code ?? 0));
+                interactiveCp.on("error", (err) => reject(err));
             });
         }
 
