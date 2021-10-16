@@ -1,5 +1,4 @@
 ---
 test-job:
-  image: alpine
   script:
     - (! test -f .gitlab-ci-local/state.yml)

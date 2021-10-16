@@ -22,7 +22,6 @@ export class Job {
 
     readonly name: string;
     readonly jobNamePad: number;
-    readonly needs: string[] | null;
     readonly dependencies: string[] | null;
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
@@ -48,6 +47,7 @@ export class Job {
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
     private _producers: { name: string; dotenv: string | null }[] | null = null;
 
+    private readonly _needs: { job: string; artifacts: true }[] | string[] | null;
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
     private readonly extraHosts: string[];
@@ -73,7 +73,7 @@ export class Job {
 
         this.when = jobData.when || "on_success";
         this.allowFailure = jobData.allow_failure ?? false;
-        this.needs = jobData.needs || null;
+        this._needs = jobData.needs || null;
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
@@ -162,6 +162,19 @@ export class Job {
     get safeJobName() {
         return Utils.getSafeJobName(this.name);
     }
+
+    get needs(): {job: string; artifacts: boolean}[] | null {
+        if (!this._needs) return null;
+        const list: {job: string; artifacts: boolean}[] = [];
+        this._needs?.forEach((need) => {
+            list.push({
+                job: typeof need === "string" ? need : need.job,
+                artifacts: typeof need === "string" ? true : need.artifacts,
+            });
+        });
+        return list;
+    }
+
 
     get imageName(): string | null {
         const image = this.jobData["image"];
