@@ -1,0 +1,16 @@
+---
+one:
+  artifacts: { paths: [one.txt] }
+  script: touch one.txt
+
+two:
+  artifacts: { paths: [two.txt] }
+  script: touch two.txt
+
+test-job:
+  needs:
+    - { job: one, artifacts: false }
+    - { job: two, artifacts: true }
+  script:
+    - test -f two.txt
+    - (! test -f one.txt)

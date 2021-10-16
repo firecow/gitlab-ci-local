@@ -14,6 +14,7 @@ import {ParserOptions} from "./types/parser-options";
 import {Validator} from "./validator";
 import {GitData} from "./types/git-data";
 import {ParserIncludes} from "./parser-includes";
+import {Producers} from "./producers";
 
 export class Parser {
 
@@ -52,7 +53,7 @@ export class Parser {
 
         const time = process.hrtime();
         await parser.init();
-        await Validator.validateNeedsTags(parser.jobs, parser.stages);
+        await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
 
         if (opt.showInitMessage ?? true) {
@@ -198,12 +199,8 @@ export class Parser {
     }
 
     static normalizeProjectKey(key: string, writeStreams: WriteStreams): string {
-        if (!key.includes(":")) {
-            return key;
-        }
-
+        if (!key.includes(":")) return key;
         writeStreams.stderr(chalk`{yellow WARNING: Interpreting '${key}' as '${key.replace(":", "/")}'}\n`);
-
         return key.replace(":", "/");
     }
 
@@ -293,43 +290,9 @@ export class Parser {
             this._jobs.set(jobName, job);
         });
 
-        // Generate producer lists for each job
-        Utils.forEachRealJob(gitlabData, (jobName) => {
-            const job = this._jobs.get(jobName);
-            assert(job != null, "job is null");
-            job.producers = this.getProducers(this._jobs, gitlabData, job);
-        });
-
-        // Check that `needs` fully contain `dependencies`
-        for (const job of this._jobs.values()) {
-            const needs = job.needs;
-            const dependencies = job.dependencies;
-            if (!dependencies || !needs) continue;
-            const everyIncluded = dependencies.every((dep: string) => needs.includes(dep));
-            if (!everyIncluded) {
-                throw new ExitError(`${job.chalkJobName} needs: '${needs.join(",")}' doesn't fully contain dependencies: '${dependencies.join(",")}'`);
-            }
-        }
-    }
-
-    getProducers(jobs: Map<string, Job>, gitlabData: any, job: Job) {
-        let producers: string[];
-        if (job.dependencies) {
-            producers = job.dependencies;
-        } else if (job.needs) {
-            producers = job.needs;
-        } else {
-            producers = Utils.getJobNamesFromPreviousStages(gitlabData, this.stages, job.stage);
-        }
-
-        producers = producers.filter((producerName) => {
-            const producerJob = jobs.get(producerName);
-            return producerJob && producerJob.artifacts && producerJob.when != "never";
-        });
-
-        return producers.map(producerName => {
-            const producerJob = jobs.get(producerName);
-            return {name: producerName, dotenv: producerJob?.artifacts?.reports?.dotenv ?? null};
+        // Generate producers for each job
+        this.jobs.forEach((job) => {
+            job.producers = Producers.init(this.jobs, this.stages, job);
         });
     }
 

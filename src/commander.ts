@@ -153,7 +153,7 @@ export class Commander {
             let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
             jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
             if (needs) {
-                jobLine += chalk`    [{blueBright ${needs.join(",")}}]`;
+                jobLine += chalk`    [{blueBright ${needs.map(n => n.job).join(",")}}]`;
             }
             writeStreams.stdout(`${jobLine}\n`);
         };

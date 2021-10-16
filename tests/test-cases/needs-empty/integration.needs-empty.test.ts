@@ -1,11 +1,13 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 
-test("gitignore <test-job> --needs", async () => {
+test("needs-empty <deploy-job> --shell-isolation", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: "tests/test-cases/gitignore",
+        cwd: "tests/test-cases/needs-empty",
+        job: ["deploy-job"],
         shellIsolation: true,
-        needs: true,
     }, writeStreams);
+
+    expect(writeStreams.stderrLines).toEqual([]);
 });
