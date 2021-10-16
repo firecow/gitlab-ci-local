@@ -418,7 +418,7 @@ export class Job {
 
         // Copy git tracked files to build folder if shell isolation enabled.
         if (!this.imageName && this.shellIsolation) {
-            await Utils.rsyncNonIgnoredFilesToBuilds(this.cwd, `${safeJobName}`);
+            await Utils.rsyncTrackedFiles(this.cwd, `${safeJobName}`);
         }
 
         if (this.interactive) {
