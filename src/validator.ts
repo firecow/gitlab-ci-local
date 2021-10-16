@@ -35,7 +35,10 @@ export class Validator {
             if (needs && needs.length === 0) continue;
             if (!dependencies || !needs) continue;
 
-            const everyIncluded = dependencies.every((dep: string) => needs.every(n => n.job === dep));
+
+            const everyIncluded = dependencies.every((dep: string) => {
+                return needs.some(n => n.job === dep);
+            });
             if (!everyIncluded) {
                 throw new ExitError(`${job.chalkJobName} needs: '${needs.map(n => n.job).join(",")}' doesn't fully contain dependencies: '${dependencies.join(",")}'`);
             }
