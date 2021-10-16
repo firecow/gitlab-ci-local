@@ -189,7 +189,7 @@ export class Parser {
 
             const fromFilePath = value.replace(/^~\/(.*)/, `${homeDir}/$1`);
             if (fs.existsSync(fromFilePath)) {
-                await fs.ensureDir(`/tmp/gitlab-ci-local-file-variables-${gitData.CI_PROJECT_PATH_SLUG}/`);
+                await fs.mkdirp(`/tmp/gitlab-ci-local-file-variables-${gitData.CI_PROJECT_PATH_SLUG}/`);
                 await fs.copyFile(fromFilePath, `/tmp/gitlab-ci-local-file-variables-${gitData.CI_PROJECT_PATH_SLUG}/${path.basename(fromFilePath)}`);
                 variables[key] = `/tmp/gitlab-ci-local-file-variables-${gitData.CI_PROJECT_PATH_SLUG}/${path.basename(fromFilePath)}`;
             }
@@ -232,7 +232,6 @@ export class Parser {
         jobExpanders.reference(gitlabData, gitlabData);
         jobExpanders.jobExtends(gitlabData);
         jobExpanders.artifacts(gitlabData);
-        jobExpanders.cache(gitlabData);
         jobExpanders.image(gitlabData);
         jobExpanders.services(gitlabData);
         jobExpanders.beforeScripts(gitlabData);

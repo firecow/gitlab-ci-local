@@ -65,21 +65,6 @@ export function artifacts(gitlabData: any) {
     });
 }
 
-export function cache(gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
-        let expandedCache = [];
-        if (!jobData.cache) {
-            return;
-        }
-        if (Array.isArray(jobData.cache)) {
-            expandedCache = jobData.cache;
-        } else if (jobData.cache && jobData.cache.paths) {
-            expandedCache = [jobData.cache];
-        }
-        jobData.cache = expandedCache;
-    });
-}
-
 export function services(gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedServices = jobData.services || (gitlabData.default || {}).services || gitlabData.services;
