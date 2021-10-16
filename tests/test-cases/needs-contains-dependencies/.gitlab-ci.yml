@@ -12,7 +12,9 @@ three:
     - echo "I'm three"
 
 test-job:
-  needs: [one, three]
+  needs:
+    - { job: one, artifacts: false }
+    - three
   dependencies: [one, two]
   script:
     - echo "Should fail during parsing and never get to this script"
