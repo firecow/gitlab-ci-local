@@ -14,4 +14,4 @@ test-job:
   needs: [pre-job]
   script:
     - cat path/crazylong/folder/log.txt
-    - if [ -f path/crazylong/folder/different.ext ]; then exit 1; fi
+    - (! test -f path/crazylong/folder/different.ext)

@@ -10,7 +10,8 @@ two:
 test-job:
   needs:
     - { job: one, artifacts: false }
-    - { job: two, artifacts: true }
+    - two
+  dependencies: [two, one]
   script:
     - test -f two.txt
     - (! test -f one.txt)
