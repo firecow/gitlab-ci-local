@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -e
+
+VERSION=$(jq -r ".version" < package.json)
+DESCRIPTION=$(jq -r ".description" < package.json)
+
+rm -rf "bin/gitlab-ci-local_${VERSION}_amd64"
+mkdir -p ppa
+
+# Generate package info file
+mkdir -p "bin/gitlab-ci-local_${VERSION}_amd64/DEBIAN/"
+cat << EOF > "bin/gitlab-ci-local_${VERSION}_amd64/DEBIAN/control"
+Package: gitlab-ci-local
+Version: ${VERSION}
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Description: ${DESCRIPTION}
+EOF
+
+mkdir -p "bin/gitlab-ci-local_${VERSION}_amd64/usr/local/bin/"
+cp bin/linux/gitlab-ci-local "bin/gitlab-ci-local_${VERSION}_amd64/usr/local/bin/"
+
+(cd bin/ && (dpkg-deb --root-owner-group --build "gitlab-ci-local_${VERSION}_amd64" || rm "bin/gitlab-ci-local_${VERSION}_amd64.deb"))
+mv "bin/gitlab-ci-local_${VERSION}_amd64.deb" "ppa/"
+
+# Packages & Packages.gz
+(cd ppa && dpkg-scanpackages --multiversion . > Packages)
+(cd ppa && gzip -k -f Packages)
+
+# Release, Release.gpg & InRelease
+(cd ppa && apt-ftparchive release . > Release)
+(cd ppa && gpg --default-key "madsjon@gmail.com" -abs -o - Release > Release.gpg)
+(cd ppa && gpg --default-key "madsjon@gmail.com" --clearsign -o - Release > InRelease)
+
+git add "ppa/gitlab-ci-local_${VERSION}_amd64.deb"
