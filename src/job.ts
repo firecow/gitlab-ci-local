@@ -742,6 +742,7 @@ export class Job {
         for (const entry of this.cache) {
             const uniqueCacheName = await Job.getUniqueCacheName(this.cwd, entry);
             entry.paths.forEach((path) => {
+                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
                 const cachedir = `/tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}`;
                 fs.ensureDirSync(cachedir);
                 cmd += `-v ${cachedir}:/builds/${safeJobName}/${path} `;
