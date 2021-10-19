@@ -49,7 +49,7 @@ export class Utils {
     }
 
     static getSafeJobName(jobName: string) {
-        return jobName.replace(/[^\w_-]+/g, (match) => {
+        return jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
         });
     }
@@ -63,13 +63,13 @@ export class Utils {
         }
     }
 
-    static getJobNamesFromPreviousStages(gitlabData: any, stages: readonly string[], currentStage: string) {
+    static getJobNamesFromPreviousStages(jobs: ReadonlyMap<string, Job>, stages: readonly string[], job: Job) {
         const jobNames: string[] = [];
-        const currentStageIndex = stages.indexOf(currentStage);
-        Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
-            const stageIndex = stages.indexOf(jobData.stage);
+        const currentStageIndex = stages.indexOf(job.stage);
+        jobs.forEach(job => {
+            const stageIndex = stages.indexOf(job.stage);
             if (stageIndex < currentStageIndex) {
-                jobNames.push(jobName);
+                jobNames.push(job.name);
             }
         });
         return jobNames;
@@ -169,11 +169,10 @@ export class Utils {
         return eval(evalStr);
     }
 
-    static async rsyncNonIgnoredFilesToBuilds(cwd: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
+    static async rsyncTrackedFiles(cwd: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
         const time = process.hrtime();
         await fs.ensureDir(`${cwd}/.gitlab-ci-local/builds/${target}`);
-        const excludeCmd = "git clean -xdn | sed 's/Would remove //g'";
-        await Utils.spawn(`rsync -a --delete --exclude-from=<(${excludeCmd}) --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
+        await Utils.spawn(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory) --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
 

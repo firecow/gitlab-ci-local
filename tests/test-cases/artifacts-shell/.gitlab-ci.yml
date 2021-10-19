@@ -14,5 +14,5 @@ consume:
   dependencies: [produce]
   script:
     - pwd
-    - if [ ! -f path/file1 ]; then exit 1; fi
-    - if [ -f path/file2 ]; then exit 1; fi
+    - test -f path/file1
+    - (! test -f path/file2)

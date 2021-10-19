@@ -69,8 +69,8 @@ export class JobExecutor {
             const loopJob = waitForLoopArray.pop();
             assert(loopJob != null, "Job not found in getPastToWaitFor, should be impossible!");
             if (loopJob.needs) {
-                loopJob.needs.forEach(needJob => {
-                    const found = jobs.get(needJob);
+                loopJob.needs.forEach(need => {
+                    const found = jobs.get(need.job);
                     if (found) {
                         if (found.when === "never") {
                             throw new ExitError(chalk`{blueBright ${found.name}} is when:never, but its needed by {blueBright ${loopJob.name}}`);

@@ -3,7 +3,6 @@ import deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import prettyHrtime from "pretty-hrtime";
-import fetch from "node-fetch";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
 import {ExitError} from "./types/exit-error";
@@ -14,6 +13,8 @@ import {WriteStreams} from "./types/write-streams";
 import {ParserOptions} from "./types/parser-options";
 import {Validator} from "./validator";
 import {GitData} from "./types/git-data";
+import {ParserIncludes} from "./parser-includes";
+import {Producers} from "./producers";
 
 export class Parser {
 
@@ -52,7 +53,7 @@ export class Parser {
 
         const time = process.hrtime();
         await parser.init();
-        await Validator.validateNeedsTags(parser.jobs, parser.stages);
+        await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
 
         if (opt.showInitMessage ?? true) {
@@ -198,12 +199,8 @@ export class Parser {
     }
 
     static normalizeProjectKey(key: string, writeStreams: WriteStreams): string {
-        if (!key.includes(":")) {
-            return key;
-        }
-
+        if (!key.includes(":")) return key;
         writeStreams.stderr(chalk`{yellow WARNING: Interpreting '${key}' as '${key.replace(":", "/")}'}\n`);
-
         return key.replace(":", "/");
     }
 
@@ -223,11 +220,11 @@ export class Parser {
         let ymlPath, yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiData, cwd, writeStreams, this._gitData, fetchIncludes, 0));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, writeStreams, this._gitData, fetchIncludes, 0));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await Parser.prepareIncludes(gitlabCiLocalData, cwd, writeStreams, this._gitData, fetchIncludes, 0));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, writeStreams, this._gitData, fetchIncludes, 0));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
@@ -293,43 +290,9 @@ export class Parser {
             this._jobs.set(jobName, job);
         });
 
-        // Generate producer lists for each job
-        Utils.forEachRealJob(gitlabData, (jobName) => {
-            const job = this._jobs.get(jobName);
-            assert(job != null, "job is null");
-            job.producers = this.getProducers(this._jobs, gitlabData, job);
-        });
-
-        // Check that `needs` fully contain `dependencies`
-        for (const job of this._jobs.values()) {
-            const needs = job.needs;
-            const dependencies = job.dependencies;
-            if (!dependencies || !needs) continue;
-            const everyIncluded = dependencies.every((dep: string) => needs.includes(dep));
-            if (!everyIncluded) {
-                throw new ExitError(`${job.chalkJobName} needs: '${needs.join(",")}' doesn't fully contain dependencies: '${dependencies.join(",")}'`);
-            }
-        }
-    }
-
-    getProducers(jobs: Map<string, Job>, gitlabData: any, job: Job) {
-        let producers: string[];
-        if (job.dependencies) {
-            producers = job.dependencies;
-        } else if (job.needs) {
-            producers = job.needs;
-        } else {
-            producers = Utils.getJobNamesFromPreviousStages(gitlabData, this.stages, job.stage);
-        }
-
-        producers = producers.filter((producerName) => {
-            const producerJob = jobs.get(producerName);
-            return producerJob && producerJob.artifacts && producerJob.when != "never";
-        });
-
-        return producers.map(producerName => {
-            const producerJob = jobs.get(producerName);
-            return {name: producerName, dotenv: producerJob?.artifacts?.reports?.dotenv ?? null};
+        // Generate producers for each job
+        this.jobs.forEach((job) => {
+            job.producers = Producers.init(this.jobs, this.stages, job);
         });
     }
 
@@ -351,7 +314,7 @@ export class Parser {
             interactiveMatch = !interactiveMatch ? line.match(/#[\s]?@[\s]?[Ii]nteractive/) : interactiveMatch;
             injectSSHAgent = !injectSSHAgent ? line.match(/#[\s]?@[\s]?[Ii]njectSSHAgent/) : injectSSHAgent;
             descriptionMatch = !descriptionMatch ? line.match(/#[\s]?@[\s]?[Dd]escription (?<description>.*)/) : descriptionMatch;
-            const jobMatch = line.match(/(?<jobname>\w):/);
+            const jobMatch = line.match(/\w:/);
             if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent)) {
                 if (interactiveMatch) {
                     fileSplitClone.splice(index + 1, 0, "  interactive: true");
@@ -382,110 +345,4 @@ export class Parser {
         return yaml.load(fileSplitClone.join("\n"), {schema}) || {};
     }
 
-    static async downloadIncludeRemote(cwd: string, url: string): Promise<void> {
-        const fsUrl = Utils.fsUrl(url);
-        const res = await fetch(url);
-        if (res.status !== 200) {
-            throw new ExitError(`Remote include could not be fetched ${url}`);
-        }
-        fs.outputFileSync(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`, await res.text());
-    }
-
-    static async downloadIncludeProjectFile(cwd: string, project: string, ref: string, file: string, gitRemoteDomain: string): Promise<void> {
-        fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`);
-        const normalizedFile = file.replace(/^\/+/, "");
-        try {
-            await Utils.spawn(`git archive --remote=git@${gitRemoteDomain}:${project}.git ${ref} ${normalizedFile} | tar -f - -xC .gitlab-ci-local/includes/${gitRemoteDomain}/${project}/${ref}/`, cwd);
-        } catch (e) {
-            throw new ExitError(`Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }`);
-        }
-    }
-
-    static async prepareIncludes(gitlabData: any, cwd: string, writeStreams: WriteStreams, gitData: GitData, fetchIncludes: boolean, depth: number): Promise<any[]> {
-        let includeDatas: any[] = [];
-        const promises = [];
-
-        assert(depth < 100, chalk`circular dependency detected in \`include\``);
-        depth++;
-
-        let include = gitlabData["include"] || [];
-        if (include && include.length == null) {
-            include = [ gitlabData["include"] ];
-        }
-        if (typeof include === "string") {
-            include = [{"local": include}];
-        }
-        for (const [index, entry] of Object.entries(include)) {
-            include[index] = typeof entry === "string" ? {"local": entry } : entry;
-        }
-
-        // Find files to fetch from remote and place in .gitlab-ci-local/includes
-        for (const value of include) {
-            if (!fetchIncludes) {
-                continue;
-            }
-            if (value["local"]) {
-                const fileExists = fs.existsSync(`${cwd}/${value["local"]}`);
-                if (!fileExists) {
-                    throw new ExitError(`Local include file cannot be found ${value["local"]}`);
-                }
-            } else if (value["file"]) {
-                promises.push(Parser.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", value["file"], gitData.remote.domain));
-            } else if (value["template"]) {
-                const {project, ref, file, domain} = Parser.parseTemplateInclude(value["template"]);
-                const url = `https://${domain}/${project}/-/raw/${ref}/${file}`;
-                promises.push(Parser.downloadIncludeRemote(cwd, url));
-            } else if (value["remote"]) {
-                promises.push(Parser.downloadIncludeRemote(cwd, value["remote"]));
-            }
-
-        }
-
-        await Promise.all(promises);
-
-        for (const value of include) {
-            if (value["local"]) {
-                const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(localDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
-            } else if (value["project"]) {
-                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.domain}/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
-
-                // Expand local includes inside a "project"-like include
-                (fileDoc["include"] || []).forEach((inner: any, i: number) => {
-                    if (inner["local"]) {
-                        fileDoc["include"][i] = {
-                            project: value["project"],
-                            file: inner["local"].replace(/^\//, ""),
-                            ref: value["ref"],
-                        };
-                    }
-                });
-
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
-            } else if (value["template"]) {
-                const {project, ref, file, domain} = Parser.parseTemplateInclude(value["template"]);
-                const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
-                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
-            } else if (value["remote"]) {
-                const fsUrl = Utils.fsUrl(value["remote"]);
-                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
-                includeDatas = includeDatas.concat(await Parser.prepareIncludes(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
-            } else {
-                throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
-            }
-        }
-
-        includeDatas.push(gitlabData);
-        return includeDatas;
-    }
-
-    static parseTemplateInclude(template: string): { project: string; ref: string; file: string; domain: string } {
-        return {
-            domain: "gitlab.com",
-            project: "gitlab-org/gitlab",
-            ref: "master",
-            file: `lib/gitlab/ci/templates/${template}`,
-        };
-    }
 }

@@ -1,2 +1,2 @@
 ---
-include: ".gitlab-ci-base.yml"
+include: ".gitlab-ci-short-single-base.yml"

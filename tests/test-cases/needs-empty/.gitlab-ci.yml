@@ -1,0 +1,16 @@
+---
+one:
+  script: touch one.txt
+  artifacts: { paths: ['**.txt'] }
+
+two:
+  script: touch two.txt
+  artifacts: { paths: ['**.txt'] }
+
+deploy-job:
+  stage: deploy
+  needs: []
+  dependencies: [one, two]
+  script:
+    - (! test -f one.txt)
+    - (! test -f two.txt)

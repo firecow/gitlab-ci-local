@@ -113,7 +113,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
         parser = await Parser.create({
             cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, shellIsolation,
         });
-        await Utils.rsyncNonIgnoredFilesToBuilds(cwd, ".docker");
+        await Utils.rsyncTrackedFiles(cwd, ".docker");
         await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.manual || [], argv.privileged || false);
         if (argv.needs === true) {
             writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
@@ -128,7 +128,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
         parser = await Parser.create({
             cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, shellIsolation,
         });
-        await Utils.rsyncNonIgnoredFilesToBuilds(cwd, ".docker");
+        await Utils.rsyncTrackedFiles(cwd, ".docker");
         await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged || false);
         writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
