@@ -759,7 +759,9 @@ export class Job {
             entry.paths.forEach((p) => {
                 const path = Utils.expandText(p, this.expandedVariables);
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
-                cmd += `-v /tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}:/builds/${safeJobName}/${path} `;
+                const cachedir = `/tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}`;
+                fs.ensureDirSync(cachedir);
+                cmd += `-v ${cachedir}:/builds/${safeJobName}/${path} `;
             });
         }
         return cmd;
