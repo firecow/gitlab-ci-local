@@ -1,0 +1,7 @@
+---
+# @NoArtifactsToSource
+produce:
+  stage: build
+  script: mkdir -p path/ && touch path/file1
+  artifacts:
+    paths: [path/]
