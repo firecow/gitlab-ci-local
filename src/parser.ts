@@ -309,19 +309,26 @@ export class Parser {
         let interactiveMatch = null;
         let descriptionMatch = null;
         let injectSSHAgent = null;
+        let noArtifactsToSourceMatch = null;
         let index = 0;
         for (const line of fileSplit) {
             interactiveMatch = !interactiveMatch ? line.match(/#[\s]?@[\s]?[Ii]nteractive/) : interactiveMatch;
             injectSSHAgent = !injectSSHAgent ? line.match(/#[\s]?@[\s]?[Ii]njectSSHAgent/) : injectSSHAgent;
+            noArtifactsToSourceMatch = !noArtifactsToSourceMatch ? line.match(/#[\s]?@[\s]?NoArtifactsToSource/i) : noArtifactsToSourceMatch;
             descriptionMatch = !descriptionMatch ? line.match(/#[\s]?@[\s]?[Dd]escription (?<description>.*)/) : descriptionMatch;
+
             const jobMatch = line.match(/\w:/);
-            if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent)) {
+            if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
                 if (interactiveMatch) {
                     fileSplitClone.splice(index + 1, 0, "  interactive: true");
                     index++;
                 }
                 if (injectSSHAgent) {
                     fileSplitClone.splice(index + 1, 0, "  injectSSHAgent: true");
+                    index++;
+                }
+                if (noArtifactsToSourceMatch) {
+                    fileSplitClone.splice(index + 1, 0, "  artifactsToSource: false");
                     index++;
                 }
                 if (descriptionMatch) {
@@ -331,6 +338,7 @@ export class Parser {
                 interactiveMatch = null;
                 descriptionMatch = null;
                 injectSSHAgent = null;
+                noArtifactsToSourceMatch = null;
             }
             index++;
         }
