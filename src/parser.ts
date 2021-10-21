@@ -5,16 +5,14 @@ import * as yaml from "js-yaml";
 import prettyHrtime from "pretty-hrtime";
 import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
-import {ExitError} from "./types/exit-error";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
-import * as path from "path";
-import {WriteStreams} from "./types/write-streams";
 import {ParserOptions} from "./types/parser-options";
 import {Validator} from "./validator";
-import {GitData} from "./types/git-data";
+import {GitData} from "./git-data";
 import {ParserIncludes} from "./parser-includes";
 import {Producers} from "./producers";
+import {HomeVariables} from "./home-variables";
 
 export class Parser {
 
@@ -63,147 +61,6 @@ export class Parser {
         return parser;
     }
 
-    static async initGitData(cwd: string): Promise<GitData> {
-        let gitlabUserEmail, gitlabUserName;
-
-        try {
-            const {stdout: gitConfigEmail} = await Utils.spawn("git config user.email", cwd);
-            gitlabUserEmail = gitConfigEmail.trimEnd();
-        } catch (e) {
-            gitlabUserEmail = "local@gitlab.com";
-        }
-        const gitlabUserLogin = gitlabUserEmail.replace(/@.*/, "");
-        try {
-            const {stdout: gitConfigUserName} = await Utils.spawn("git config user.name", cwd);
-            gitlabUserName = gitConfigUserName.trimEnd();
-        } catch (e) {
-            gitlabUserName = "Bob Local";
-        }
-
-        let gitConfig;
-        if (fs.existsSync(`${cwd}/.git/config`)) {
-            gitConfig = fs.readFileSync(`${cwd}/.git/config`, "utf8");
-        } else if (fs.existsSync(`${cwd}/.gitconfig`)) {
-            gitConfig = fs.readFileSync(`${cwd}/.gitconfig`, "utf8");
-        } else {
-            throw new ExitError("Could not locate.gitconfig or .git/config file");
-        }
-        const gitRemoteMatch = gitConfig.match(/url = .*(?:http[s]?:\/\/|@)(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*?)(?:\r?\n|\.git)/);
-        assert(gitRemoteMatch?.groups != null, "git config didn't provide valid matches");
-        assert(gitRemoteMatch.groups.domain != null, "<domain> not found in git config");
-        assert(gitRemoteMatch.groups.group != null, "<group> not found in git config");
-        assert(gitRemoteMatch.groups.project != null, "<project> not found in git config");
-
-        const {stdout: gitLogStdout} = await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd);
-        const gitLogOutput = gitLogStdout.replace(/\r?\n/g, "");
-        let gitLogMatch;
-        if (gitLogOutput.match(/HEAD, tag/)) {
-            gitLogMatch = gitLogOutput.match(/(?<short_sha>.*?) (?<sha>.*?) HEAD, tag: (?<ref_name>.*?),/);
-        } else {
-            gitLogMatch = gitLogOutput.match(/(?<short_sha>.*?) (?<sha>.*?) HEAD -> (?<ref_name>.*?)(?:,|$)/);
-        }
-        assert(gitLogMatch?.groups != null, "git log -1 didn't provide valid matches");
-        assert(gitLogMatch.groups.ref_name != null, "<ref_name> not found in git log -1");
-        assert(gitLogMatch.groups.sha != null, "<sha> not found in git log -1");
-        assert(gitLogMatch.groups.short_sha != null, "<short_sha> not found in git log -1");
-
-        return new GitData({
-            user: {
-                GITLAB_USER_LOGIN: gitlabUserLogin,
-                GITLAB_USER_EMAIL: gitlabUserEmail,
-                GITLAB_USER_NAME: gitlabUserName,
-            },
-            remote: {
-                domain: gitRemoteMatch.groups.domain,
-                group: gitRemoteMatch.groups.group,
-                project: gitRemoteMatch.groups.project,
-            },
-            commit: {
-                REF_NAME: gitLogMatch.groups.ref_name,
-                SHA: gitLogMatch.groups.sha,
-                SHORT_SHA: gitLogMatch.groups.short_sha,
-            },
-        });
-    }
-
-    static async initHomeVariables(cwd: string, writeStreams: WriteStreams, gitData: GitData, home: string): Promise<{ [key: string]: string }> {
-        const homeDir = home.replace(/\/$/, "");
-        const variablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
-        if (!fs.existsSync(variablesFile)) {
-            return {};
-        }
-
-        const data: any = yaml.load(await fs.readFile(variablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA});
-        let variables: { [key: string]: string } = {};
-
-        for (const [globalKey, globalEntry] of Object.entries(data?.global ?? [])) {
-            if (typeof globalEntry !== "string") {
-                continue;
-            }
-            variables[globalKey] = globalEntry;
-        }
-
-        const groupUrl = `${gitData.remote.domain}/${gitData.remote.group}/`;
-        for (const [groupKey, groupEntries] of Object.entries(data?.group ?? [])) {
-            if (!groupUrl.includes(Parser.normalizeProjectKey(groupKey, writeStreams))) {
-                continue;
-            }
-            if (typeof groupEntries !== "object") {
-                continue;
-            }
-            variables = {...variables, ...groupEntries};
-        }
-
-        const projectUrl = `${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}.git`;
-        for (const [projectKey, projectEntries] of Object.entries(data?.project ?? [])) {
-            if (!projectUrl.includes(Parser.normalizeProjectKey(projectKey, writeStreams))) {
-                continue;
-            }
-            if (typeof projectEntries !== "object") {
-                continue;
-            }
-            variables = {...variables, ...projectEntries};
-        }
-
-        const projectVariablesFile = `${cwd}/.gitlab-ci-local/variables.yml`;
-
-        if (fs.existsSync(projectVariablesFile)) {
-            const projectEntries: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA}) ?? {};
-            if (typeof projectEntries === "object") {
-                variables = {...variables, ...projectEntries};
-            }
-        }
-
-        // Generate files for file type variables
-        for (const [key, value] of Object.entries(variables)) {
-            if (typeof value !== "string") {
-                continue;
-            }
-            if (!value.match(/^[/|~]/)) {
-                continue;
-            }
-
-            if (value.match(/\/$/)) {
-                continue;
-            }
-
-            const fromFilePath = value.replace(/^~\/(.*)/, `${homeDir}/$1`);
-            if (fs.existsSync(fromFilePath)) {
-                await fs.mkdirp(`/tmp/gitlab-ci-local-file-variables-${gitData.CI_PROJECT_PATH_SLUG}/`);
-                await fs.copyFile(fromFilePath, `/tmp/gitlab-ci-local-file-variables-${gitData.CI_PROJECT_PATH_SLUG}/${path.basename(fromFilePath)}`);
-                variables[key] = `/tmp/gitlab-ci-local-file-variables-${gitData.CI_PROJECT_PATH_SLUG}/${path.basename(fromFilePath)}`;
-            }
-        }
-
-        return variables;
-    }
-
-    static normalizeProjectKey(key: string, writeStreams: WriteStreams): string {
-        if (!key.includes(":")) return key;
-        writeStreams.stderr(chalk`{yellow WARNING: Interpreting '${key}' as '${key.replace(":", "/")}'}\n`);
-        return key.replace(":", "/");
-    }
-
     async init() {
         const cwd = this.opt.cwd;
         const writeStreams = this.opt.writeStreams;
@@ -214,8 +71,8 @@ export class Parser {
         const extraHosts = this.opt.extraHosts || [];
         const volumes = this.opt.volumes || [];
 
-        this._gitData = await Parser.initGitData(cwd);
-        this._homeVariables = await Parser.initHomeVariables(cwd, writeStreams, this._gitData, home ?? process.env.HOME ?? "");
+        this._gitData = await GitData.init(cwd);
+        this._homeVariables = await HomeVariables.init(cwd, writeStreams, this._gitData, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;

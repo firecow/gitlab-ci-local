@@ -3,7 +3,7 @@ import fetch from "node-fetch";
 import {ExitError} from "./types/exit-error";
 import * as fs from "fs-extra";
 import {WriteStreams} from "./types/write-streams";
-import {GitData} from "./types/git-data";
+import {GitData} from "./git-data";
 import {assert} from "./asserts";
 import chalk from "chalk";
 import {Parser} from "./parser";
