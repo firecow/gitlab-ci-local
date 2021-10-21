@@ -20,8 +20,6 @@ export class Parser {
 
     private _jobs: Map<string, Job> = new Map();
     private _stages: string[] = [];
-    private _gitData: GitData | null = null;
-    private _homeVariables: { [key: string]: string } | null = null;
     private _gitlabData: any;
     private _jobNamePad = 0;
 
@@ -70,18 +68,18 @@ export class Parser {
         const pipelineIid = this.opt.pipelineIid;
         const extraHosts = this.opt.extraHosts || [];
         const volumes = this.opt.volumes || [];
-
-        this._gitData = await GitData.init(cwd);
-        this._homeVariables = await HomeVariables.init(cwd, writeStreams, this._gitData, home ?? process.env.HOME ?? "");
+        const projectVariables = this.opt.variables;
+        const gitData = await GitData.init(cwd);
+        const homeVariables = await HomeVariables.init(cwd, writeStreams, gitData, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, writeStreams, this._gitData, fetchIncludes, 0));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, writeStreams, gitData, fetchIncludes, 0));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, writeStreams, this._gitData, fetchIncludes, 0));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, writeStreams, gitData, fetchIncludes, 0));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
@@ -125,8 +123,8 @@ export class Parser {
 
         // Generate jobs and put them into stages
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
-            assert(this._gitData != null, "gitData must be set");
-            assert(this._homeVariables != null, "homeVariables must be set");
+            assert(gitData != null, "gitData must be set");
+            assert(homeVariables != null, "homeVariables must be set");
 
             const job = new Job({
                 volumes,
@@ -134,13 +132,14 @@ export class Parser {
                 writeStreams,
                 name: jobName,
                 namePad: this.jobNamePad,
-                homeVariables: this._homeVariables,
+                homeVariables,
+                projectVariables,
                 shellIsolation: this.opt.shellIsolation ?? false,
                 data: jobData,
                 cwd,
                 globals: gitlabData,
                 pipelineIid,
-                gitData: this._gitData,
+                gitData,
             });
             const foundStage = this.stages.includes(job.stage);
             assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
