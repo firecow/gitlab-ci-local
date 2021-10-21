@@ -1,4 +1,4 @@
-import {GitData} from "./git-data";
+import {GitData} from "../git-data";
 import {WriteStreams} from "./write-streams";
 
 export interface JobOptions {
