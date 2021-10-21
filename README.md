@@ -185,6 +185,18 @@ need-ssh:
     - ssh-add -L
 ```
 
+#### The `@NoArtifactsToSource` decorator
+
+Prevent artifacts from being copied to source folder
+
+```yml
+# @NoArtifactsToSource
+produce:
+  stage: build
+  script: mkdir -p path/ && touch path/file1
+  artifacts: {paths: [path/] }
+```
+
 ### Artifacts
 
 Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolation option to mimic correct artifact handling for shell jobs.
