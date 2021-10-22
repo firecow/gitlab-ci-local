@@ -181,7 +181,10 @@ export class Job {
         cacheData = Array.isArray(cacheData) ? cacheData : [cacheData];
         cacheData.forEach((c: any) => {
             const key = c["key"];
-            const policy = c["policy"] ?? "push-pull";
+            const policy = c["policy"] ?? "pull-push";
+            if (!["pull", "push", "pull-push"].includes(policy)) {
+                throw new ExitError("cache policy is not 'pull', 'push' or 'pull-push'");
+            }
             const paths = c["paths"] ?? [];
             cacheList.push({policy, key, paths});
         });
@@ -637,7 +640,7 @@ export class Job {
         if ((!this.imageName && !this.shellIsolation) || this.cache.length === 0) return;
 
         for (const c of this.cache) {
-            if (!["pull", "push-pull"].includes(c.policy)) return;
+            if (!["pull", "pull-push"].includes(c.policy)) return;
 
             const time = process.hrtime();
             const cacheName = await Job.getUniqueCacheName(this.cwd, c, this.expandedVariables);
@@ -682,7 +685,7 @@ export class Job {
 
         let time, endTime;
         for (const c of this.cache) {
-            if (!["push", "push-pull"].includes(c.policy)) return;
+            if (!["push", "pull-push"].includes(c.policy)) return;
             const cacheName = await Job.getUniqueCacheName(this.cwd, c, this.expandedVariables);
             for (const path of c.paths) {
                 time = process.hrtime();
