@@ -63,9 +63,9 @@ export class Utils {
         }
     }
 
-    static getJobNamesFromPreviousStages(jobs: ReadonlyMap<string, Job>, stages: readonly string[], job: Job) {
+    static getJobNamesFromPreviousStages(jobs: ReadonlyMap<string, Job>, stages: readonly string[], currentJob: Job) {
         const jobNames: string[] = [];
-        const currentStageIndex = stages.indexOf(job.stage);
+        const currentStageIndex = stages.indexOf(currentJob.stage);
         jobs.forEach(job => {
             const stageIndex = stages.indexOf(job.stage);
             if (stageIndex < currentStageIndex) {
