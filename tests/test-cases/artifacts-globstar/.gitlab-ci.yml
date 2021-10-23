@@ -15,3 +15,12 @@ test-job:
   script:
     - cat path/crazylong/folder/log.txt
     - (! test -f path/crazylong/folder/different.ext)
+
+no-match:
+  stage: .pre
+  needs: []
+  artifacts:
+    paths:
+      - '*/target'
+  script:
+    - echo "What eva not"

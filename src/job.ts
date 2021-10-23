@@ -710,7 +710,7 @@ export class Job {
         cpCmd += `mkdir -p ../../artifacts/${safeJobName}\n`;
         for (const artifactPath of this.artifacts?.paths ?? []) {
             const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
-            cpCmd += `rsync -Ra ${expandedPath} ../../artifacts/${safeJobName}/.\n`;
+            cpCmd += `rsync -Ra ${expandedPath} ../../artifacts/${safeJobName}/. || true\n`;
         }
 
         for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
@@ -727,7 +727,13 @@ export class Job {
         time = process.hrtime();
         await this.copyOut(cpCmd, "artifacts");
         endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright exported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+
+        const readdir = await fs.readdir(`${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}`);
+        if (readdir.length === 0) {
+            writeStreams.stdout(chalk`${this.chalkJobName} {yellow !! no artifacts was copied !!}\n`);
+        } else {
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright exported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+        }
 
         // Copy job artifacts to hosts "real" cwd
         time = process.hrtime();
