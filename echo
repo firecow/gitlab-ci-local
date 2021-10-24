@@ -1,0 +1,4 @@
+origin	git@github.com:aepfli/gitlab-ci-local.git (fetch)
+origin	git@github.com:aepfli/gitlab-ci-local.git (push)
+upstream	git@github.com:firecow/gitlab-ci-local.git (fetch)
+upstream	git@github.com:firecow/gitlab-ci-local.git (push)
