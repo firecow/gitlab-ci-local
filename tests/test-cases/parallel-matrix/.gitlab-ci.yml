@@ -7,7 +7,7 @@ pre-job:
 build-job:
   stage: build
   script:
-    - echo "Build-job ${NAME}"
+    - echo "NAME:'${NAME}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
   parallel:
     matrix:
       - NAME: [foo, bar]
@@ -17,11 +17,9 @@ test-job:
   stage: test
   needs: [build-job, pre-job]
   script:
-    - echo "Test-job ${NAME}"
-    - echo "Test-job ${SPIFFY}"
-    - echo "$CI_NODE_INDEX / $CI_NODE_TOTAL"
+    - echo "NAME:'${NAME}' SPIFFY:'${SPIFFY}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
   parallel:
     matrix:
       - NAME: [foo, bar]
-        SPIFFY: [hejsa, danling, dungling]
+        SPIFFY: [hey, dar, dun]
       - NAME: bear
