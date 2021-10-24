@@ -9,7 +9,7 @@ import {Utils} from "./utils";
 import {JobOptions} from "./types/job-options";
 import {WriteStreams} from "./types/write-streams";
 import {Service} from "./service";
-import {GitData} from "./types/git-data";
+import {GitData} from "./git-data";
 import {assert} from "./asserts";
 
 export class Job {
@@ -22,7 +22,6 @@ export class Job {
 
     readonly name: string;
     readonly jobNamePad: number;
-    readonly needs: string[] | null;
     readonly dependencies: string[] | null;
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
@@ -48,6 +47,7 @@ export class Job {
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
     private _producers: { name: string; dotenv: string | null }[] | null = null;
 
+    private readonly _needs: { job: string; artifacts: true }[] | string[] | null;
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
     private readonly extraHosts: string[];
@@ -73,7 +73,7 @@ export class Job {
 
         this.when = jobData.when || "on_success";
         this.allowFailure = jobData.allow_failure ?? false;
-        this.needs = jobData.needs || null;
+        this._needs = jobData.needs || null;
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
@@ -146,11 +146,17 @@ export class Job {
         }
     }
 
-    static async getUniqueCacheName(cwd: string, cacheEntry: { key: string | { files: string[] }; paths: string[] }) {
+    static async getUniqueCacheName(cwd: string, cacheEntry: { key: string | { files: string[] }; paths: string[] }, expandedVariables: { [key: string]: string }) {
         if (typeof cacheEntry.key === "string") {
-            return cacheEntry.key;
+            return Utils.expandText(cacheEntry.key);
         }
-        return "md-" + await Utils.checksumFiles(cacheEntry.key.files.map((f) => `${cwd}/${f}`));
+        return "md-" + await Utils.checksumFiles(cacheEntry.key.files.map(f => {
+            return `${cwd}/${Utils.expandText(f, expandedVariables)}`;
+        }));
+    }
+
+    get artifactsToSource() {
+        return this.jobData["artifactsToSource"] == null ? true : this.jobData["artifactsToSource"];
     }
 
     get chalkJobName() {
@@ -160,6 +166,19 @@ export class Job {
     get safeJobName() {
         return Utils.getSafeJobName(this.name);
     }
+
+    get needs(): {job: string; artifacts: boolean}[] | null {
+        if (!this._needs) return null;
+        const list: {job: string; artifacts: boolean}[] = [];
+        this._needs?.forEach((need) => {
+            list.push({
+                job: typeof need === "string" ? need : need.job,
+                artifacts: typeof need === "string" ? true : need.artifacts,
+            });
+        });
+        return list;
+    }
+
 
     get imageName(): string | null {
         const image = this.jobData["image"];
@@ -403,20 +422,20 @@ export class Job {
 
         // Copy git tracked files to build folder if shell isolation enabled.
         if (!this.imageName && this.shellIsolation) {
-            await Utils.rsyncNonIgnoredFilesToBuilds(this.cwd, `${safeJobName}`);
+            await Utils.rsyncTrackedFiles(this.cwd, `${safeJobName}`);
         }
 
         if (this.interactive) {
             const iCmd = this.generateScriptCommands(scripts);
-            const cp = childProcess.spawn(iCmd, {
+            const interactiveCp = childProcess.spawn(iCmd, {
                 shell: "bash",
                 stdio: ["inherit", "inherit", "inherit"],
                 cwd: this.cwd,
                 env: {...this.expandedVariables, ...process.env},
             });
             return new Promise<number>((resolve, reject) => {
-                cp.on("exit", (code) => resolve(code ?? 0));
-                cp.on("error", (err) => reject(err));
+                interactiveCp.on("exit", (code) => resolve(code ?? 0));
+                interactiveCp.on("error", (err) => reject(err));
             });
         }
 
@@ -699,14 +718,15 @@ export class Job {
         endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
 
-        // Copy job artifacts to hosts "real" cwd
-        time = process.hrtime();
-        await Utils.spawn(`rsync --exclude=/.gitlab-ci-reports/ -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${this.cwd}`);
-        if (reportDotenv != null) {
-            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${this.cwd}`);
+        if (this.artifactsToSource) {
+            time = process.hrtime();
+            await Utils.spawn(`rsync --exclude=/.gitlab-ci-reports/ -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${this.cwd}`);
+            if (reportDotenv != null) {
+                await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${this.cwd}`);
+            }
+            endTime = process.hrtime(time);
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
-        endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
     private refreshLongRunningSilentTimeout(writeStreams: WriteStreams) {
@@ -740,10 +760,13 @@ export class Job {
     private async createCacheDockerVolumeMounts(safeJobName: string, writeStreams: WriteStreams) {
         let cmd = "";
         for (const entry of this.cache) {
-            const uniqueCacheName = await Job.getUniqueCacheName(this.cwd, entry);
-            entry.paths.forEach((path) => {
+            const uniqueCacheName = await Job.getUniqueCacheName(this.cwd, entry, this.expandedVariables);
+            entry.paths.forEach((p) => {
+                const path = Utils.expandText(p, this.expandedVariables);
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
-                cmd += `-v /tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}:/builds/${safeJobName}/${path} `;
+                const cachedir = `/tmp/gitlab-ci-local/cache/${uniqueCacheName}/${path}`;
+                fs.ensureDirSync(cachedir);
+                cmd += `-v ${cachedir}:/builds/${safeJobName}/${path} `;
             });
         }
         return cmd;

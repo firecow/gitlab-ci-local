@@ -30,6 +30,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
 * [Quirks](#quirks)
+    * [Tracked Files](#tracked-files) 
     * [Home Variables](#home-variables)
     * [Decorators](#decorators)
     * [Artifacts](#artifacts)
@@ -108,6 +109,14 @@ gitlab-ci-local --completion >> ~/.bashrc
 
 ## Quirks
 
+### Tracked Files
+
+Untracked and ignored files will not be synced inside isolated jobs, only tracked files are synced.
+
+Remember `git add`
+
+
+
 ### Home variables
 
 Put a file like this in `$HOME/.gitlab-ci-local/variables.yml`
@@ -174,6 +183,18 @@ need-ssh:
   image: kroniak/ssh-client
   script:
     - ssh-add -L
+```
+
+#### The `@NoArtifactsToSource` decorator
+
+Prevent artifacts from being copied to source folder
+
+```yml
+# @NoArtifactsToSource
+produce:
+  stage: build
+  script: mkdir -p path/ && touch path/file1
+  artifacts: {paths: [path/] }
 ```
 
 ### Artifacts

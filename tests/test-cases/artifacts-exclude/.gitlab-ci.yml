@@ -1,7 +1,6 @@
 ---
 produce-artifacts:
   stage: build
-  image: debian:stable-slim
   script:
     - mkdir -p ux
     - touch ux/{q,r,s,t}
@@ -27,7 +26,6 @@ produce-artifacts:
 
 consume-artifacts:
   stage: test
-  image: debian:stable-slim
   needs: [produce-artifacts]
   dependencies: [produce-artifacts]
   script:

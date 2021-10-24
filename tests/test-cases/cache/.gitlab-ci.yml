@@ -1,9 +1,12 @@
 ---
+variables:
+  PACKAGE: fakepackage.json
+
 produce-cache-key-files:
   stage: build
   image: alpine
   cache:
-    - key: { files: [fakepackage.json, fakepackage1.json] }
+    - key: { files: [$PACKAGE, fakepackage1.json] }
       paths: [key-files]
     - key: global
       paths: [global]
