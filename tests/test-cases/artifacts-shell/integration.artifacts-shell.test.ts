@@ -1,5 +1,6 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
+import fs from "fs-extra";
 
 test.concurrent("artifacts-shell <consume> --needs --shell-isolation", async () => {
     const writeStreams = new MockWriteStreams();
@@ -16,7 +17,7 @@ test.concurrent("artifacts-shell <consume> --needs --shell-isolation", async () 
         return l.match(regex) !== null;
     });
     expect(found.length).toEqual(1);
-
+    expect(await fs.pathExists("tests/test-cases/artifacts-shell/path/file1")).toEqual(true);
     expect(writeStreams.stderrLines).toEqual([]);
 });
 

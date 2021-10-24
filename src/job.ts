@@ -156,6 +156,10 @@ export class Job {
         }));
     }
 
+    get artifactsToSource() {
+        return this.jobData["artifactsToSource"] == null ? true : this.jobData["artifactsToSource"];
+    }
+
     get chalkJobName() {
         return chalk`{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
     }
@@ -715,14 +719,15 @@ export class Job {
         endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright saved artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
 
-        // Copy job artifacts to hosts "real" cwd
-        time = process.hrtime();
-        await Utils.spawn(`rsync --exclude=/.gitlab-ci-reports/ -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${this.cwd}`);
-        if (reportDotenv != null) {
-            await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${this.cwd}`);
+        if (this.artifactsToSource) {
+            time = process.hrtime();
+            await Utils.spawn(`rsync --exclude=/.gitlab-ci-reports/ -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${this.cwd}`);
+            if (reportDotenv != null) {
+                await Utils.spawn(`rsync -a ${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${this.cwd}`);
+            }
+            endTime = process.hrtime(time);
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
-        endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
     private refreshLongRunningSilentTimeout(writeStreams: WriteStreams) {
