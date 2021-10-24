@@ -11,7 +11,7 @@ export class Validator {
         for (const [jobName, job] of jobs) {
             if (job.needs === null || job.needs.length === 0) continue;
 
-            const undefNeed = job.needs.filter((v) => !jobNames.some(jobName => jobName === v.job));
+            const undefNeed = job.needs.filter((v) => !jobNames.some(n => n === v.job));
             assert(
                 undefNeed.length !== job.needs.length,
                 chalk`[ {blueBright ${undefNeed.map(n => n.job).join(",")}} ] jobs are needed by {blueBright ${jobName}}, but they cannot be found`
