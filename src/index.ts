@@ -82,7 +82,7 @@ sourceMapSupport.install();
         })
         .option("variable", {
             type: "array",
-            description: "Add variable to jobs",
+            description: "Add variable to all executed jobs (--variable HELLO=world)",
             requiresArg: false,
         })
         .option("file", {
