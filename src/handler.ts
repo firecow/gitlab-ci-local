@@ -79,8 +79,9 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
     const shellIsolation = argv.shellIsolation;
 
     const variables: { [key: string]: string } = {};
-    (variablePairs ?? []).forEach(() => {
-        const exec = /(?<key>\w*?)(=)(?<value>\w.*)/.exec(variablePairs);
+
+    (variablePairs ?? []).forEach((variablePair: string) => {
+        const exec = /(?<key>\w*?)(=)(?<value>\w.*)/.exec(variablePair);
         if (exec?.groups?.key) {
             variables[exec.groups.key] = exec?.groups?.value;
         }
