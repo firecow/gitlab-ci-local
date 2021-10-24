@@ -82,12 +82,8 @@ export class GitData {
 
         const {stdout: gitLogStdout} = await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd);
         const gitLogOutput = gitLogStdout.replace(/\r?\n/g, "");
-        let gitLogMatch;
-        if (gitLogOutput.match(/HEAD, tag/)) {
-            gitLogMatch = gitLogOutput.match(/(?<short_sha>.*?) (?<sha>.*?) HEAD, tag: (?<ref_name>.*?),/);
-        } else {
-            gitLogMatch = gitLogOutput.match(/(?<short_sha>.*?) (?<sha>.*?) HEAD -> (?<ref_name>.*?)(?:,|$)/);
-        }
+        let gitLogMatch = gitLogOutput.match(/(?<short_sha>\S*?) (?<sha>\S*) .*HEAD( -> |, tag: |, )(?<ref_name>.*?)(?:,|$)/);
+
         assert(gitLogMatch?.groups != null, "git log -1 didn't provide valid matches");
         assert(gitLogMatch.groups.ref_name != null, "<ref_name> not found in git log -1");
         assert(gitLogMatch.groups.sha != null, "<sha> not found in git log -1");
