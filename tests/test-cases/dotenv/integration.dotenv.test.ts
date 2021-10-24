@@ -10,7 +10,8 @@ test("dotenv <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job} {greenBright >} Test something`,
+        chalk`{blueBright test-job} {greenBright >} world`,
+        chalk`{blueBright test-job} {greenBright >} doh`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
     expect(writeStreams.stderrLines).toEqual([]);

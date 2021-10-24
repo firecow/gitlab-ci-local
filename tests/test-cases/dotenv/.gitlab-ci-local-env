@@ -1,1 +1,2 @@
 FILE=doctor-strange.yml
+VARIABLE="HELLO=world SOME_ACTION=doh"

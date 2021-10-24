@@ -1,4 +1,5 @@
 ---
 test-job:
   script:
-    - echo "Test something"
+    - echo $HELLO
+    - echo $SOME_ACTION
