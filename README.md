@@ -58,15 +58,8 @@ sudo apt-get install gitlab-ci-local
 
 ### Macos
 
-Download and put binary in `/usr/local/bin`.
-
-Make sure you have bash > 4.x installed `brew install bash`
-
 ```bash
-sudo su # must be installed as root, if placed in /usr/local/bin/
-curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/macOS.gz | gunzip -c > /usr/local/bin/gitlab-ci-local
-chmod +x /usr/local/bin/gitlab-ci-local
-exit
+brew install gitlab-ci-local
 ```
 
 ### Windows (Git bash)
