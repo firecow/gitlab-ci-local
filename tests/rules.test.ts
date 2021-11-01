@@ -141,6 +141,18 @@ test("VAR regex not match fail - case insensitive", () => {
     expect(val).toBe(false);
 });
 
+test("VAR undefined", () => {
+    const ruleIf = "$VAR =~ /123/";
+    const val = Utils.evaluateRuleIf(ruleIf, {});
+    expect(val).toBe(false);
+});
+
+test("VAR undefined (2nd condition)", () => {
+    const ruleIf = "true && $VAR =~ /123/";
+    const val = Utils.evaluateRuleIf(ruleIf, {});
+    expect(val).toBe(false);
+});
+
 test("Conjunction success", () => {
     const ruleIf = "$VAR1 && $VAR2";
     const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "val", VAR2: "val"});
