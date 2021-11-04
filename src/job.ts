@@ -11,7 +11,8 @@ import {WriteStreams} from "./types/write-streams";
 import {Service} from "./service";
 import {GitData} from "./git-data";
 import {assert} from "./asserts";
-import {CICache} from "./types/ci-cache";
+import {CacheEntry} from "./cache-entry";
+import {Mutex} from "async-mutex";
 
 export class Job {
 
@@ -34,6 +35,7 @@ export class Job {
     readonly pipelineIid: number;
     readonly gitData: GitData;
     readonly shellIsolation: boolean;
+    readonly cacheMutexMap = new Map<string, Mutex>();
 
     private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
@@ -143,15 +145,6 @@ export class Job {
         }
     }
 
-    static async getUniqueCacheName(cwd: string, cacheEntry: CICache, env: { [key: string]: string }) {
-        if (typeof cacheEntry.key === "string") {
-            return Utils.expandText(cacheEntry.key);
-        }
-        return "md-" + await Utils.checksumFiles(cacheEntry.key.files.map(f => {
-            return `${cwd}/${Utils.expandText(f, env)}`;
-        }));
-    }
-
     get artifactsToSource() {
         return this.jobData["artifactsToSource"] == null ? true : this.jobData["artifactsToSource"];
     }
@@ -177,9 +170,9 @@ export class Job {
         return list;
     }
 
-    get cache(): CICache[] {
+    get cache(): CacheEntry[] {
         let cacheData = this.jobData["cache"];
-        const cacheList: CICache[] = [];
+        const cacheList: CacheEntry[] = [];
         if (!cacheData) return [];
 
         cacheData = Array.isArray(cacheData) ? cacheData : [cacheData];
@@ -190,7 +183,7 @@ export class Job {
                 throw new ExitError("cache policy is not 'pull', 'push' or 'pull-push'");
             }
             const paths = c["paths"] ?? [];
-            cacheList.push({policy, key, paths});
+            cacheList.push(new CacheEntry(key, paths, policy));
         });
         return cacheList;
     }
@@ -647,11 +640,15 @@ export class Job {
             if (!["pull", "pull-push"].includes(c.policy)) return;
 
             const time = process.hrtime();
-            const cacheName = await Job.getUniqueCacheName(this.cwd, c, this.expandedVariables);
+            const cacheName = await c.getUniqueCacheName(this.cwd, this.expandedVariables);
             const cacheFolder = `${this.cwd}/.gitlab-ci-local/cache/${cacheName}`;
             if (!await fs.pathExists(cacheFolder)) {
                 continue;
             }
+            this.cacheMutexMap.set(cacheName, this.cacheMutexMap.get(cacheName) ?? new Mutex());
+            const mutex = this.cacheMutexMap.get(cacheName);
+            assert(mutex != null, `${cacheName} could not be found in cacheMutexMap`);
+            await mutex.waitForUnlock();
             await this.copyIn(cacheFolder);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -690,13 +687,20 @@ export class Job {
         let time, endTime;
         for (const c of this.cache) {
             if (!["push", "pull-push"].includes(c.policy)) return;
-            const cacheName = await Job.getUniqueCacheName(this.cwd, c, this.expandedVariables);
+            const cacheName = await c.getUniqueCacheName(this.cwd, this.expandedVariables);
             for (const path of c.paths) {
                 time = process.hrtime();
                 const expandedPath = Utils.expandText(path, this.expandedVariables);
                 let cmd = "shopt -s globstar nullglob dotglob\n";
                 cmd += `mkdir -p ../../cache/${cacheName}\n`;
                 cmd += `rsync -Ra ${expandedPath} ../../cache/${cacheName}/.\n`;
+
+                this.cacheMutexMap.set(cacheName, this.cacheMutexMap.get(cacheName) ?? new Mutex());
+                const mutex = this.cacheMutexMap.get(cacheName);
+                assert(mutex != null, `${cacheName} could not be found in cacheMutexMap`);
+                await mutex.runExclusive(async () => {
+                    await this.copyOut(cmd, "cache");
+                });
                 await this.copyOut(cmd, "cache");
                 endTime = process.hrtime(time);
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright exported cache ${expandedPath} '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
