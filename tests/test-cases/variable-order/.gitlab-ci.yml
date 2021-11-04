@@ -1,0 +1,22 @@
+---
+
+variables:
+  PIPELINE_VARIABLE: pipeline-value
+  OVERRIDDEN_BY_JOB: pipeline-value
+  CI_PIPELINE_ID: pipeline-value
+
+test-job:
+  variables:
+    JOB_VARIABLE: job-value
+    OVERRIDDEN_BY_JOB: job-value
+    CI_JOB_ID: job-value
+    HOME_VARIABLE: job-value
+    PROJECT_VARIABLE: job-value
+  script:
+    - echo "PIPELINE_VARIABLE=${PIPELINE_VARIABLE}"
+    - echo "JOB_VARIABLE=${JOB_VARIABLE}"
+    - echo "OVERRIDDEN_BY_JOB=${OVERRIDDEN_BY_JOB}"
+    - echo "CI_PIPELINE_ID=${CI_PIPELINE_ID}"  # Global overrides predefined
+    - echo "CI_JOB_ID=${CI_JOB_ID}"  # Job overrides predefined
+    - echo "HOME_VARIABLE=${HOME_VARIABLE}"  # Home overrides all else
+    - echo "PROJECT_VARIABLE=${PROJECT_VARIABLE}"  # Project variables overrides everything

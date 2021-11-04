@@ -1,0 +1,4 @@
+---
+global:
+  HOME_VARIABLE: home-value
+  PROJECT_VARIABLE: home-value
