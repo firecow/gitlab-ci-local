@@ -1,7 +1,7 @@
-import {Utils} from "./utils";
+import { Utils } from "./utils";
 import * as fs from "fs-extra";
-import {ExitError} from "./types/exit-error";
-import {assert} from "./asserts";
+import { ExitError } from "./types/exit-error";
+import { assert } from "./asserts";
 
 interface GitRemote {
     domain: string;
@@ -23,11 +23,35 @@ interface GitUser {
 
 export class GitData {
 
+    static readonly GIT_COMMAND_USER_EMAIL: string = "git config user.email";
+    static readonly GIT_COMMAND_USER_USERNAME: string = "git config user.name";
+    static readonly GIT_COMMAND_REMOTE: string;
+    static readonly GIT_COMMAND_COMMIT: string;
+    static readonly GIT_COMMAND_AVAILABILITY: string = "git --version";
+    static readonly defaultData: GitData =
+        new GitData({
+            user: {
+                GITLAB_USER_LOGIN: "local",
+                GITLAB_USER_EMAIL: "local@gitlab.com",
+                GITLAB_USER_NAME: "Bob Local",
+            },
+            remote: {
+                domain: "fallback.domain",
+                group: "fallback.group",
+                project: "fallback.project",
+            },
+            commit: {
+                REF_NAME: "main",
+                SHA: "0000000000000000000000000000000000000000",
+                SHORT_SHA: "00000000",
+            },
+        });
+
     readonly remote: GitRemote;
     readonly commit: GitCommit;
     readonly user: GitUser;
 
-    constructor(data: {remote: GitRemote; commit: GitCommit; user: GitUser}) {
+    constructor(data: { remote: GitRemote; commit: GitCommit; user: GitUser }) {
         this.remote = data.remote;
         this.commit = data.commit;
         this.user = data.user;
@@ -50,61 +74,69 @@ export class GitData {
     }
 
     static async init(cwd: string): Promise<GitData> {
-        let gitlabUserEmail, gitlabUserName;
 
         try {
-            const {stdout: gitConfigEmail} = await Utils.spawn("git config user.email", cwd);
-            gitlabUserEmail = gitConfigEmail.trimEnd();
+            const { stdout: gitVersion } = await Utils.spawn(this.GIT_COMMAND_AVAILABILITY, cwd);
+            assert(gitVersion != null, "We do not think it is safe to use git without a proper version string!")
         } catch (e) {
-            gitlabUserEmail = "local@gitlab.com";
+            console.info("Git not available using fallback", e)
+            return this.defaultData
         }
-        const gitlabUserLogin = gitlabUserEmail.replace(/@.*/, "");
-        try {
-            const {stdout: gitConfigUserName} = await Utils.spawn("git config user.name", cwd);
-            gitlabUserName = gitConfigUserName.trimEnd();
-        } catch (e) {
-            gitlabUserName = "Bob Local";
-        }
-
-        let gitConfig;
-        if (fs.existsSync(`${cwd}/.git/config`)) {
-            gitConfig = fs.readFileSync(`${cwd}/.git/config`, "utf8");
-        } else if (fs.existsSync(`${cwd}/.gitconfig`)) {
-            gitConfig = fs.readFileSync(`${cwd}/.gitconfig`, "utf8");
-        } else {
-            throw new ExitError("Could not locate.gitconfig or .git/config file");
-        }
-        const gitRemoteMatch = gitConfig.match(/url = .*(?:http[s]?:\/\/|@)(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*?)(?:\r?\n|\.git)/);
-        assert(gitRemoteMatch?.groups != null, "git config didn't provide valid matches");
-        assert(gitRemoteMatch.groups.domain != null, "<domain> not found in git config");
-        assert(gitRemoteMatch.groups.group != null, "<group> not found in git config");
-        assert(gitRemoteMatch.groups.project != null, "<project> not found in git config");
-
-        const {stdout: gitLogStdout} = await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd);
-        const gitLogOutput = gitLogStdout.replace(/\r?\n/g, "");
-        let gitLogMatch = gitLogOutput.match(/(?<short_sha>\S*?) (?<sha>\S*) .*HEAD( -> |, tag: |, )(?<ref_name>.*?)(?:,|$)/);
-
-        assert(gitLogMatch?.groups != null, "git log -1 didn't provide valid matches");
-        assert(gitLogMatch.groups.ref_name != null, "<ref_name> not found in git log -1");
-        assert(gitLogMatch.groups.sha != null, "<sha> not found in git log -1");
-        assert(gitLogMatch.groups.short_sha != null, "<short_sha> not found in git log -1");
 
         return new GitData({
-            user: {
-                GITLAB_USER_LOGIN: gitlabUserLogin,
-                GITLAB_USER_EMAIL: gitlabUserEmail,
-                GITLAB_USER_NAME: gitlabUserName,
-            },
-            remote: {
-                domain: gitRemoteMatch.groups.domain,
-                group: gitRemoteMatch.groups.group,
-                project: gitRemoteMatch.groups.project,
-            },
-            commit: {
-                REF_NAME: gitLogMatch.groups.ref_name,
-                SHA: gitLogMatch.groups.sha,
-                SHORT_SHA: gitLogMatch.groups.short_sha,
-            },
+            user: await GitData.getUserData(cwd),
+            remote: await GitData.getRemoteData(cwd),
+            commit: await GitData.getCommitData(cwd)
         });
+    }
+
+    private static async getCommitData(cwd: string): Promise<GitCommit> {
+        try {
+            const { stdout: gitLogStdout } = await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd);
+            const gitLogOutput = gitLogStdout.replace(/\r?\n/g, "");
+            let gitLogMatch = gitLogOutput.match(/(?<short_sha>\S*?) (?<sha>\S*) .*HEAD( -> |, tag: |, )(?<ref_name>.*?)(?:,|$)/);
+
+            assert(gitLogMatch?.groups != null, "git log -1 didn't provide valid matches");
+            let commit = {} as GitCommit;
+            commit.REF_NAME = gitLogMatch.groups.ref_name
+            commit.SHA = gitLogMatch.groups.sha
+            commit.SHORT_SHA = gitLogMatch.groups.short_sha
+            return commit
+        } catch (e) {
+            console.info("Using fallback git commit data, as we could not resolve correct data.")
+            return this.defaultData.commit
+        }
+    }
+
+    private static async getRemoteData(cwd: string): Promise<GitRemote> {
+        try {
+            const { stdout: gitRemote } = await Utils.spawn("git remote -v", cwd);
+            const gitRemoteMatch = gitRemote.match(/.*(?:http[s]?:\/\/|@)(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*?)(?:\r?\n|\.git)/);
+            assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
+            let remote = {} as GitRemote;
+            remote.domain = gitRemoteMatch.groups.domain;
+            remote.group = gitRemoteMatch.groups.group;
+            remote.project = gitRemoteMatch.groups.project;
+            return remote
+        } catch (e) {
+            console.info("Using fallback remote data");
+            return this.defaultData.remote
+        }
+    }
+
+    private static async getUserData(cwd: string): Promise<GitUser> {
+        try {
+            const { stdout: gitConfigEmail } = await Utils.spawn(this.GIT_COMMAND_USER_EMAIL, cwd);
+            const mail = gitConfigEmail.trimEnd();
+            let user = {} as GitUser;
+            user.GITLAB_USER_EMAIL = mail;
+            user.GITLAB_USER_LOGIN = mail.replace(/@.*/, "");
+            const { stdout: gitConfigUserName } = await Utils.spawn(this.GIT_COMMAND_USER_USERNAME, cwd);
+            user.GITLAB_USER_NAME = gitConfigUserName.trimEnd();
+            return user;
+        } catch (e) {
+            console.info("Using fallback data for user")
+            return this.defaultData.user
+        }
     }
 }
