@@ -8,4 +8,5 @@ test("no-git-config", async () => {
         cwd: "tests/test-cases/no-git-config",
     }, writeStreams);
     expect(writeStreams.stderrLines).toEqual([]);
+    // Do we still need this test?
 });

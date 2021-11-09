@@ -25,8 +25,8 @@ export class GitData {
 
     static readonly GIT_COMMAND_USER_EMAIL: string = "git config user.email";
     static readonly GIT_COMMAND_USER_USERNAME: string = "git config user.name";
-    static readonly GIT_COMMAND_REMOTE: string;
-    static readonly GIT_COMMAND_COMMIT: string;
+    static readonly GIT_COMMAND_REMOTE: string = "git remote -v";
+    static readonly GIT_COMMAND_COMMIT: string = "git log -1 --pretty=format:'%h %H %D'";
     static readonly GIT_COMMAND_AVAILABILITY: string = "git --version";
     static readonly defaultData: GitData =
         new GitData({
@@ -90,9 +90,9 @@ export class GitData {
         });
     }
 
-    private static async getCommitData(cwd: string): Promise<GitCommit> {
+    static async getCommitData(cwd: string): Promise<GitCommit> {
         try {
-            const { stdout: gitLogStdout } = await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd);
+            const { stdout: gitLogStdout } = await Utils.spawn(this.GIT_COMMAND_COMMIT, cwd);
             const gitLogOutput = gitLogStdout.replace(/\r?\n/g, "");
             let gitLogMatch = gitLogOutput.match(/(?<short_sha>\S*?) (?<sha>\S*) .*HEAD( -> |, tag: |, )(?<ref_name>.*?)(?:,|$)/);
 
@@ -108,9 +108,9 @@ export class GitData {
         }
     }
 
-    private static async getRemoteData(cwd: string): Promise<GitRemote> {
+    static async getRemoteData(cwd: string): Promise<GitRemote> {
         try {
-            const { stdout: gitRemote } = await Utils.spawn("git remote -v", cwd);
+            const { stdout: gitRemote } = await Utils.spawn(this.GIT_COMMAND_REMOTE, cwd);
             const gitRemoteMatch = gitRemote.match(/.*(?:http[s]?:\/\/|@)(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*?)(?:\r?\n|\.git)/);
             assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
             let remote = {} as GitRemote;
@@ -124,7 +124,7 @@ export class GitData {
         }
     }
 
-    private static async getUserData(cwd: string): Promise<GitUser> {
+    static async getUserData(cwd: string): Promise<GitUser> {
         try {
             const { stdout: gitConfigEmail } = await Utils.spawn(this.GIT_COMMAND_USER_EMAIL, cwd);
             const mail = gitConfigEmail.trimEnd();
