@@ -56,6 +56,19 @@ describe("Creating git data", () => {
         expect(gitData.commit.SHORT_SHA).toEqual("0261898")
         expect(gitData.commit.REF_NAME).toEqual("master")
     })
+})
+
+describe("Git commit data", () => {
+    describe("for working output", () => {
+        const gitSha = "02618988a1864b3d06cfee3bd79f8baa2dd21407"
+        const gitShortSha = "0261898"
+        const gitLogs = [
+            `grafted, HEAD -> master, origin/master`,
+            `grafted, HEAD, pull/3/merge`,
+            `HEAD, pull/3/merge`,
+            `HEAD, tag: pull/3/merge`,
+            `HEAD -> master, origin/master`
+        ]
 
     describe("when git is", () => {
         describe("not available", () => {
@@ -210,6 +223,17 @@ describe("Creating git data", () => {
                 verifyFailures()
             })
         })
+    });
+
+    test("failing command", async () => {
+
+        when(mock)
+            .calledWith("git log -1 --pretty=format:'%h %H %D'", expect.any(String))
+            .mockRejectedValue(new Error("error"));
+        Utils.spawn = mock
+
+        const gitData = await GitData.init("./");
+        expect(gitData.commit).toEqual(GitData.defaultData.commit)
     })
 
 
