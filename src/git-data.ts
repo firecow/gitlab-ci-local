@@ -19,6 +19,7 @@ interface GitUser {
     GITLAB_USER_EMAIL: string;
     GITLAB_USER_LOGIN: string;
     GITLAB_USER_NAME: string;
+    GITLAB_USER_ID: string;
 }
 
 export class GitData {
@@ -50,7 +51,7 @@ export class GitData {
     }
 
     static async init(cwd: string): Promise<GitData> {
-        let gitlabUserEmail, gitlabUserName;
+        let gitlabUserEmail, gitlabUserName, gitlabUserId;
 
         try {
             const {stdout: gitConfigEmail} = await Utils.spawn("git config user.email", cwd);
@@ -64,6 +65,13 @@ export class GitData {
             gitlabUserName = gitConfigUserName.trimEnd();
         } catch (e) {
             gitlabUserName = "Bob Local";
+        }
+
+        try {
+            const {stdout: shellgitlabUserId} = await Utils.spawn("id -u");
+            gitlabUserId = shellgitlabUserId.trimEnd();
+        } catch (e) {
+            gitlabUserId = "1000";
         }
 
         let gitConfig;
@@ -98,6 +106,7 @@ export class GitData {
                 GITLAB_USER_LOGIN: gitlabUserLogin,
                 GITLAB_USER_EMAIL: gitlabUserEmail,
                 GITLAB_USER_NAME: gitlabUserName,
+                GITLAB_USER_ID: gitlabUserId,
             },
             remote: {
                 domain: gitRemoteMatch.groups.domain,
