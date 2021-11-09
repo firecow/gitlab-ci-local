@@ -223,19 +223,37 @@ describe("Git commit data", () => {
                 verifyFailures()
             })
         })
-    });
-
-    test("failing command", async () => {
-
-        when(mock)
-            .calledWith("git log -1 --pretty=format:'%h %H %D'", expect.any(String))
-            .mockRejectedValue(new Error("error"));
-        Utils.spawn = mock
-
-        const gitData = await GitData.init("./");
-        expect(gitData.commit).toEqual(GitData.defaultData.commit)
     })
 
+    describe("only for git commit data", () => {
+        describe("for working input", () => {
+            const gitSha = "02618988a1864b3d06cfee3bd79f8baa2dd21407"
+            const gitShortSha = "0261898"
+            const gitLogs = [
+                `grafted, HEAD -> master, origin/master`,
+                `grafted, HEAD, pull/3/merge`,
+                `HEAD, pull/3/merge`,
+                `HEAD, tag: pull/3/merge`,
+                `HEAD -> master, origin/master`
+            ]
+
+            gitLogs.forEach((gitLog, index) => {
+                test(`with '${gitLog}'`, async () => {
+                    const testSha = gitSha + index
+                    const testShortSha = gitShortSha + index
+                    when(mock)
+                        .calledWith(GitData.GIT_COMMAND_COMMIT, expect.any(String))
+                        .mockReturnValue({
+                            stdout: `${testShortSha} ${testSha} ${gitLog}`
+                        })
+
+                    Utils.spawn = mock
+                    const gitData = await GitData.getCommitData("./");
+                    expect(gitData.SHA).toEqual(testSha)
+                    expect(gitData.SHORT_SHA).toEqual(testShortSha)
+                })
+            })
+        })
 
     describe("only for git remote data", () => {
         describe("for working input via", () => {
