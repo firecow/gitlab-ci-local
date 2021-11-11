@@ -82,7 +82,7 @@ export class GitData {
         } else {
             throw new ExitError("Could not locate.gitconfig or .git/config file");
         }
-        const gitRemoteMatch = gitConfig.match(/url = .*(?:http[s]?:\/\/|@)(?<domain>.*?)[:|/](?<group>.*)\/(?<project>.*?)(?:\r?\n|\.git)/);
+        const gitRemoteMatch = gitConfig.match(/url = .*(?:http[s]?:\/\/|@)(?<domain>.*)[:|/](?<group>.*)\/(?<project>.*?)(?:\r?\n|\.git)/);
         assert(gitRemoteMatch?.groups != null, "git config didn't provide valid matches");
         assert(gitRemoteMatch.groups.domain != null, "<domain> not found in git config");
         assert(gitRemoteMatch.groups.group != null, "<group> not found in git config");
