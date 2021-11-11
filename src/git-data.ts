@@ -19,6 +19,7 @@ interface GitUser {
     GITLAB_USER_EMAIL: string;
     GITLAB_USER_LOGIN: string;
     GITLAB_USER_NAME: string;
+    GITLAB_USER_ID: string;
 }
 
 export class GitData {
@@ -28,12 +29,14 @@ export class GitData {
     static readonly GIT_COMMAND_REMOTE: string = "git remote -v";
     static readonly GIT_COMMAND_COMMIT: string = "git log -1 --pretty=format:'%h %H %D'";
     static readonly GIT_COMMAND_AVAILABILITY: string = "git --version";
+  
     static readonly defaultData: GitData =
         new GitData({
             user: {
                 GITLAB_USER_LOGIN: "local",
                 GITLAB_USER_EMAIL: "local@gitlab.com",
                 GITLAB_USER_NAME: "Bob Local",
+                GITLAB_USER_ID: "1000",
             },
             remote: {
                 domain: "fallback.domain",
@@ -74,7 +77,6 @@ export class GitData {
     }
 
     static async init(cwd: string): Promise<GitData> {
-
         try {
             const { stdout: gitVersion } = await Utils.spawn(this.GIT_COMMAND_AVAILABILITY, cwd);
             assert(gitVersion != null, "We do not think it is safe to use git without a proper version string!")
@@ -133,6 +135,8 @@ export class GitData {
             user.GITLAB_USER_LOGIN = mail.replace(/@.*/, "");
             const { stdout: gitConfigUserName } = await Utils.spawn(this.GIT_COMMAND_USER_USERNAME, cwd);
             user.GITLAB_USER_NAME = gitConfigUserName.trimEnd();
+            const { stdout: gitUserId } = await Utils.spawn('id -u', cwd);
+            user.GITLAB_USER_ID = gitUserId.trimEnd();
             return user;
         } catch (e) {
             console.info("Using fallback data for user")
