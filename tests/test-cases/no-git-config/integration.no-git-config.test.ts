@@ -1,6 +1,5 @@
 import { MockWriteStreams } from "../../../src/mock-write-streams";
 import { handler } from "../../../src/handler";
-import { assert } from "../../../src/asserts";
 
 test("no-git-config", async () => {
     const writeStreams = new MockWriteStreams();

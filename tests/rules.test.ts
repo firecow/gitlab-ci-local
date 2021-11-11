@@ -1,214 +1,204 @@
-import {Utils} from "../src/utils";
+import { Utils } from "../src/utils";
 
 test("GITLAB_CI on_success", () => {
     const rules = [
-        {if: "$GITLAB_CI == 'false'"},
+        { if: "$GITLAB_CI == 'false'" },
     ];
-    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false});
+    const rulesResult = Utils.getRulesResult(rules, { GITLAB_CI: "false" });
+    expect(rulesResult).toEqual({ when: "on_success", allowFailure: false });
 });
 
 test("Regex on undef var", () => {
     const rules = [
-        {if: "$CI_COMMIT_TAG =~ /^v\\d+.\\d+.\\d+/"},
-        {when: "manual"},
+        { if: "$CI_COMMIT_TAG =~ /^v\\d+.\\d+.\\d+/" },
+        { when: "manual" },
     ];
     const rulesResult = Utils.getRulesResult(rules, {});
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false});
+    expect(rulesResult).toEqual({ when: "manual", allowFailure: false });
 });
 
 test("GITLAB_CI fail and fallback", () => {
     const rules = [
-        {if: "$GITLAB_CI == 'true'"},
-        {when: "manual"},
+        { if: "$GITLAB_CI == 'true'" },
+        { when: "manual" },
     ];
-    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false});
+    const rulesResult = Utils.getRulesResult(rules, { GITLAB_CI: "false" });
+    expect(rulesResult).toEqual({ when: "manual", allowFailure: false });
 });
 
 test("Undefined if", () => {
     const rules = [
-        {when: "on_success"},
+        { when: "on_success" },
     ];
     const rulesResult = Utils.getRulesResult(rules, {});
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false});
+    expect(rulesResult).toEqual({ when: "on_success", allowFailure: false });
 });
 
 test("Undefined when", () => {
     const rules = [
-        {if: "$GITLAB_CI", allow_failure: false},
+        { if: "$GITLAB_CI", allow_failure: false },
     ];
-    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false});
+    const rulesResult = Utils.getRulesResult(rules, { GITLAB_CI: "false" });
+    expect(rulesResult).toEqual({ when: "on_success", allowFailure: false });
 });
 
 test("Early return", () => {
     const rules = [
-        {if: "$GITLAB_CI", when: "never"},
-        {when: "on_success"},
+        { if: "$GITLAB_CI", when: "never" },
+        { when: "on_success" },
     ];
-    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
-    expect(rulesResult).toEqual({when: "never", allowFailure: false});
+    const rulesResult = Utils.getRulesResult(rules, { GITLAB_CI: "false" });
+    expect(rulesResult).toEqual({ when: "never", allowFailure: false });
 });
 
-test("VAR exists positive", () => {
-    const ruleIf = "$VAR";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "set-value"});
-    expect(val).toBe(true);
-});
-
-test("VAR exists fail", () => {
-    const ruleIf = "$VAR";
-    const val = Utils.evaluateRuleIf(ruleIf, {});
-    expect(val).toBe(false);
-});
-
-test("VAR exists empty", () => {
-    const ruleIf = "$VAR";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: ""});
-    expect(val).toBe(false);
-});
-
-test("VAR not null success", () => {
-    const ruleIf = "$VAR != null";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: ""});
-    expect(val).toBe(true);
-});
-
-test("VAR not null fail", () => {
-    const ruleIf = "$VAR != null";
-    const val = Utils.evaluateRuleIf(ruleIf, {});
-    expect(val).toBe(false);
-});
-
-test("VAR equals true success", () => {
-    const ruleIf = "$VAR == 'true'";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "true"});
-    expect(val).toBe(true);
-});
-
-test("VAR equals true fail", () => {
-    const ruleIf = "$VAR == 'true'";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "false"});
-    expect(val).toBe(false);
-});
-
-test("VAR regex match success", () => {
-    const ruleIf = "$VAR =~ /testvalue/";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "testvalue"});
-    expect(val).toBe(true);
-});
-
-test("VAR regex match success - case insensitive", () => {
-    const ruleIf = "$VAR =~ /testvalue/i";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "testvalue"});
-    expect(val).toBe(true);
-});
-
-test("VAR regex match fail", () => {
-    const ruleIf = "$VAR =~ /testvalue/";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "spiffy"});
-    expect(val).toBe(false);
-});
-
-test("VAR regex match fail - case insensitive", () => {
-    const ruleIf = "$VAR =~ /testvalue/i";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "spiffy"});
-    expect(val).toBe(false);
-});
-
-test("VAR regex not match success", () => {
-    const ruleIf = "$VAR !~ /testvalue/";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "notamatch"});
-    expect(val).toBe(true);
-});
-
-test("VAR regex not match success - case insensitive", () => {
-    const ruleIf = "$VAR !~ /testvalue/i";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "notamatch"});
-    expect(val).toBe(true);
-});
-
-test("VAR regex not match fail", () => {
-    const ruleIf = "$VAR !~ /testvalue/";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "testvalue"});
-    expect(val).toBe(false);
-});
-
-test("VAR regex not match fail - case insensitive", () => {
-    const ruleIf = "$VAR !~ /testvalue/i";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR: "testvalue"});
-    expect(val).toBe(false);
-});
-
-test("VAR undefined", () => {
-    const ruleIf = "$VAR =~ /123/";
-    const val = Utils.evaluateRuleIf(ruleIf, {});
-    expect(val).toBe(false);
-});
-
-test("VAR undefined (2nd condition)", () => {
-    const ruleIf = "true && $VAR =~ /123/";
-    const val = Utils.evaluateRuleIf(ruleIf, {});
-    expect(val).toBe(false);
-});
-
-test("Conjunction success", () => {
-    const ruleIf = "$VAR1 && $VAR2";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "val", VAR2: "val"});
-    expect(val).toBe(true);
-});
-
-test("Conjunction fail", () => {
-    const ruleIf = "$VAR1 && $VAR2";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "val", VAR2: ""});
-    expect(val).toBe(false);
-});
-
-test("Disjunction success", () => {
-    const ruleIf = "$VAR1 || $VAR2";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "val", VAR2: ""});
-    expect(val).toBe(true);
-});
-
-test("Disjunction fail", () => {
-    const ruleIf = "$VAR1 || $VAR2";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "", VAR2: ""});
-    expect(val).toBe(false);
-});
-
-test("Complex parentheses junctions var exists success", () => {
-    const ruleIf = "$VAR1 && ($VAR2 || $VAR3)";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "val", VAR2: "val", VAR3: ""});
-    expect(val).toBe(true);
-});
-
-test("Complex parentheses junctions var exists fail", () => {
-    const ruleIf = "$VAR1 && ($VAR2 || $VAR3)";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "val", VAR2: "", VAR3: ""});
-    expect(val).toBe(false);
-});
-
-test("Complex parentheses junctions regex success", () => {
-    const ruleIf = "$VAR1 =~ /val/ && ($VAR2 =~ /val/ || $VAR3)";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "val", VAR2: "val", VAR3: ""});
-    expect(val).toBe(true);
-});
-
-test("Complex parentheses junctions regex success - case insensitive", () => {
-    const ruleIf = "$VAR1 =~ /val/i && ($VAR2 =~ /val/ || $VAR3)";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "VAL", VAR2: "val", VAR3: ""});
-    expect(val).toBe(true);
-});
-
-test("Complex parentheses junctions regex fail", () => {
-    const ruleIf = "$VAR1 =~ /val/ && ($VAR2 =~ /val/ || $VAR3)";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "val", VAR2: "not", VAR3: ""});
-    expect(val).toBe(false);
-});
-
-test("Complex parentheses junctions regex fail - case insensitive", () => {
-    const ruleIf = "$VAR1 =~ /val/i && ($VAR2 =~ /val/ || $VAR3)";
-    const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "VAL", VAR2: "not", VAR3: ""});
-    expect(val).toBe(false);
+describe("evaluate rules conditions", () => {
+    test.each([
+        {
+            rule: "$VAR",
+            variables: { VAR: "set-value" },
+            expected: true,
+        },
+        {
+            rule: "$VAR",
+            variables: {},
+            expected: false,
+        },
+        {
+            rule: "$VAR",
+            variables: { VAR: "" },
+            expected: false,
+        },
+        {
+            rule: "$VAR != null",
+            variables: { VAR: "" },
+            expected: true,
+        },
+        {
+            rule: "$VAR != null",
+            variables: {},
+            expected: false,
+        },
+        {
+            rule: "$VAR == 'true'",
+            variables: { VAR: "true" },
+            expected: true,
+        },
+        {
+            rule: "$VAR == 'false'",
+            variables: { VAR: "false" },
+            expected: true,
+        },
+        {
+            rule: "$VAR != 'true'",
+            variables: { VAR: "true" },
+            expected: false,
+        },
+        {
+            rule: "$VAR != 'false'",
+            variables: { VAR: "false" },
+            expected: false,
+        },
+        {
+            rule: "$VAR =~ /testvalue/",
+            variables: { VAR: "testvalue" },
+            expected: true,
+        },
+        {
+            rule: "$VAR =~ /testvalue/i",
+            variables: { VAR: "testvalue" },
+            expected: true,
+        },
+        {
+            rule: "$VAR =~ /testvalue/",
+            variables: { VAR: "spiffy" },
+            expected: false,
+        },
+        {
+            rule: "$VAR =~ /testvalue/i",
+            variables: { VAR: "spiffy" },
+            expected: false,
+        },
+        {
+            rule: "$VAR !~ /testvalue/",
+            variables: { VAR: "notamatch" },
+            expected: true,
+        },
+        {
+            rule: "$VAR !~ /testvalue/i",
+            variables: { VAR: "notamatch" },
+            expected: true,
+        },
+        {
+            rule: "$VAR !~ /testvalue/",
+            variables: { VAR: "testvalue" },
+            expected: false,
+        },
+        {
+            rule: "$VAR !~ /testvalue/i",
+            variables: { VAR: "testvalue" },
+            expected: false,
+        },
+        {
+            rule: "$VAR =~ /123/",
+            variables: {},
+            expected: false,
+        },
+        {
+            rule: "true && $VAR =~ /123/",
+            variables: {},
+            expected: false,
+        },
+        {
+            rule: "$VAR1 && $VAR2",
+            variables: { VAR1: "val", VAR2: "val" },
+            expected: true,
+        },
+        {
+            rule: "$VAR1 && $VAR2",
+            variables: { VAR1: "val", VAR2: "" },
+            expected: false,
+        },
+        {
+            rule: "$VAR1 || $VAR2",
+            variables: { VAR1: "val", VAR2: "" },
+            expected: true,
+        },
+        {
+            rule: "$VAR1 || $VAR2",
+            variables: { VAR1: "", VAR2: "" },
+            expected: false,
+        },
+        {
+            rule: "$VAR1 && ($VAR2 || $VAR3)",
+            variables: { VAR1: "val", VAR2: "val", VAR3: "" },
+            expected: true,
+        },
+        {
+            rule: "$VAR1 && ($VAR2 || $VAR3)",
+            variables: { VAR1: "val", VAR2: "", VAR3: "" },
+            expected: false,
+        },
+        {
+            rule: "$VAR1 =~ /val/ && ($VAR2 =~ /val/ || $VAR3)",
+            variables: { VAR1: "val", VAR2: "val", VAR3: "" },
+            expected: true,
+        },
+        {
+            rule: "$VAR1 =~ /val/i && ($VAR2 =~ /val/ || $VAR3)",
+            variables: { VAR1: "VAL", VAR2: "val", VAR3: "" },
+            expected: true,
+        },
+        {
+            rule: "$VAR1 =~ /val/ && ($VAR2 =~ /val/ || $VAR3)",
+            variables: { VAR1: "val", VAR2: "not", VAR3: "" },
+            expected: false,
+        },
+        {
+            rule: "$VAR1 =~ /val/i && ($VAR2 =~ /val/ || $VAR3)",
+            variables: { VAR1: "VAL", VAR2: "not", VAR3: "" },
+            expected: false,
+        },
+    ])("`$rule` \t with $variables \t to $expected", ({ rule, variables, expected }) => {
+        expect(Utils.evaluateRuleIf(rule, variables as { [key: string]: string })).toBe(expected);
+    });
 });
