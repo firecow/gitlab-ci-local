@@ -136,7 +136,7 @@ test("git log's (valid)", async() => {
     let index = 0;
     for (const stdout of variousStdouts) {
         const spawnMocks = [
-            WhenStatics.mockGitVersion, {cmd: "git log -1 --pretty=format:'%h %H %D'", returnValue: {stdout}}
+            WhenStatics.mockGitVersion, {cmd: "git log -1 --pretty=format:'%h %H %D'", returnValue: {stdout}},
         ];
         initSpawnMock(spawnMocks);
         const writeStreams = new MockWriteStreams();
