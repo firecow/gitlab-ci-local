@@ -2,19 +2,7 @@ import {GitData} from "../src/git-data";
 import {initSpawnMock, initSpawnSpy} from "./mocks/utils.mock";
 import {MockWriteStreams} from "../src/mock-write-streams";
 import chalk from "chalk";
-
-const mockGitVersion = {cmd: "git --version", returnValue: {stdout: "git version 2.25.1\n"}};
-const mockGitConfigEmail = {cmd: "git config user.email", returnValue: {stdout: "test@test.com\n"}};
-const mockGitConfigName = {cmd: "git config user.name", returnValue: {stdout: "Testersen\n"}};
-const mockUID = {cmd: "id -u", returnValue: {stdout: "990\n"}};
-const mockGitRemote = {
-    cmd: "git remote -v",
-    returnValue: {stdout: "origin\tgit@gitlab.com:gcl/test-project.git (fetch)\norigin\tgit@gitlab.com:gcl/test-project.git (push)\n"},
-};
-const mockGitCommit = {
-    cmd: "git log -1 --pretty=format:'%h %H %D'",
-    returnValue: {stdout: "0261898 02618988a1864b3d06cfee3bd79f8baa2dd21407 HEAD -> master, origin/master"},
-};
+import {WhenStatics} from "./mocks/when-statics";
 
 test("git --version (not present)", async() => {
     initSpawnMock([]);
@@ -44,7 +32,7 @@ test("git --version (not present)", async() => {
 });
 
 test("git config <user.name|user.email> and id -u (present)", async () => {
-    const spawnMocks = [mockGitVersion, mockGitConfigEmail, mockGitConfigName, mockUID];
+    const spawnMocks = [WhenStatics.mockGitVersion, WhenStatics.mockGitConfigEmail, WhenStatics.mockGitConfigName, WhenStatics.mockUID];
     initSpawnMock(spawnMocks);
     const writeStreams = new MockWriteStreams();
     const gitData = await GitData.init("./", writeStreams);
@@ -61,7 +49,7 @@ test("git config <user.name|user.email> and id -u (present)", async () => {
 });
 
 test("git remote -v (present)", async () => {
-    const spawnMocks = [mockGitVersion, mockGitRemote];
+    const spawnMocks = [WhenStatics.mockGitVersion, WhenStatics.mockGitRemote];
     initSpawnMock(spawnMocks);
     const writeStreams = new MockWriteStreams();
     const gitData = await GitData.init("./", writeStreams);
@@ -77,7 +65,7 @@ test("git remote -v (present)", async () => {
 });
 
 test("git remote -v (present with port)", async () => {
-    const spawnMocks = [mockGitVersion, {
+    const spawnMocks = [WhenStatics.mockGitVersion, {
         cmd: "git remote -v",
         returnValue: {stdout: "origin\tgit@gitlab.com:3324/gcl/test-project.git (fetch)\norigin\tgit@gitlab.com:3324/gcl/test-project.git (push)\n"},
     }];
@@ -96,7 +84,9 @@ test("git remote -v (present with port)", async () => {
 });
 
 test("git remote -v (not present)", async () => {
-    const spawnMocks = [mockGitVersion, mockGitCommit, mockGitConfigEmail, mockUID, mockGitConfigName];
+    const spawnMocks = [
+        WhenStatics.mockGitVersion, WhenStatics.mockGitCommit, WhenStatics.mockGitConfigEmail, WhenStatics.mockUID, WhenStatics.mockGitConfigName,
+    ];
     initSpawnMock(spawnMocks);
     const writeStreams = new MockWriteStreams();
     await GitData.init("./", writeStreams);
@@ -118,7 +108,7 @@ test("git remote -v (invalid)", async () => {
 });
 
 test("git log (not present)", async () => {
-    const spawnMocks = [mockGitVersion, mockGitRemote, mockGitConfigEmail, mockUID, mockGitConfigName];
+    const spawnMocks = [WhenStatics.mockGitVersion, WhenStatics.mockGitRemote, WhenStatics.mockGitConfigEmail, WhenStatics.mockUID, WhenStatics.mockGitConfigName];
     initSpawnMock(spawnMocks);
     const writeStreams = new MockWriteStreams();
     await GitData.init("./", writeStreams);
@@ -145,7 +135,9 @@ test("git log's (valid)", async() => {
 
     let index = 0;
     for (const stdout of variousStdouts) {
-        const spawnMocks = [mockGitVersion, {cmd: "git log -1 --pretty=format:'%h %H %D'", returnValue: {stdout}}];
+        const spawnMocks = [
+            WhenStatics.mockGitVersion, {cmd: "git log -1 --pretty=format:'%h %H %D'", returnValue: {stdout}}
+        ];
         initSpawnMock(spawnMocks);
         const writeStreams = new MockWriteStreams();
         const gitData = await GitData.init("./", writeStreams);
@@ -171,7 +163,8 @@ test("git log's (invalid)", async() => {
     let index = 0;
     for (const stdout of variousStdouts) {
         const spawnMocks = [
-            mockGitVersion, mockGitRemote, mockUID, mockGitConfigName, mockGitConfigEmail,
+            WhenStatics.mockGitVersion, WhenStatics.mockGitRemote, WhenStatics.mockUID,
+            WhenStatics.mockGitConfigName, WhenStatics.mockGitConfigEmail,
             {cmd: "git log -1 --pretty=format:'%h %H %D'", returnValue: {stdout}},
         ];
         initSpawnMock(spawnMocks);
