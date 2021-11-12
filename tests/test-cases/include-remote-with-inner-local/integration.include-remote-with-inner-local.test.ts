@@ -1,9 +1,15 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
+import {initSpawnSpy} from "../../mocks/utils.mock";
 
 test("include-remote-with-inner-local", async () => {
     const writeStreams = new MockWriteStreams();
+    const spyGitRemote = {
+        cmd: "git remote -v",
+        returnValue: {stdout: "origin\tgit@gitlab.com:gcl/include-remote-with-inner-local.git (fetch)\norigin\tgit@gitlab.com:gcl/include-remote-with-inner-local.git (push)\n"},
+    };
+    initSpawnSpy([spyGitRemote]);
     await handler({
         cwd: "tests/test-cases/include-remote-with-inner-local",
     }, writeStreams);

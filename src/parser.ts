@@ -69,7 +69,7 @@ export class Parser {
         const extraHosts = this.opt.extraHosts || [];
         const volumes = this.opt.volumes || [];
         const projectVariables = this.opt.variables;
-        const gitData = await GitData.init(cwd);
+        const gitData = await GitData.init(cwd, writeStreams);
         const homeVariables = await HomeVariables.init(cwd, writeStreams, gitData, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
