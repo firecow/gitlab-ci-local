@@ -1,5 +1,11 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
+import {initSpawnSpy} from "../../mocks/utils.mock";
+import {WhenStatics} from "../../mocks/when-statics";
+
+beforeAll(() => {
+    initSpawnSpy(WhenStatics.all);
+});
 
 test("needs-empty <deploy-job> --shell-isolation", async () => {
     const writeStreams = new MockWriteStreams();

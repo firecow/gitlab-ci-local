@@ -3,6 +3,12 @@ import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import fs from "fs-extra";
 import {assert} from "../../../src/asserts";
+import {initSpawnSpy} from "../../mocks/utils.mock";
+import {WhenStatics} from "../../mocks/when-statics";
+
+beforeAll(() => {
+    initSpawnSpy(WhenStatics.all);
+});
 
 test("plain", async () => {
     const writeStreams = new MockWriteStreams();

@@ -1,6 +1,12 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import fs from "fs-extra";
+import {initSpawnSpy} from "../../mocks/utils.mock";
+import {WhenStatics} from "../../mocks/when-statics";
+
+beforeAll(() => {
+    initSpawnSpy(WhenStatics.all);
+});
 
 test("needs-artifacts <test-job> --needs --shell-isolation", async () => {
     // Test if one.txt is actually remove from consumer (test-job) before script execution

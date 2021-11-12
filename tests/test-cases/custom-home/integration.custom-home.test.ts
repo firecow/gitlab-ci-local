@@ -2,13 +2,14 @@ import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
+import {WhenStatics} from "../../mocks/when-statics";
 
 beforeAll(() => {
     const spyGitRemote = {
         cmd: "git remote -v",
         returnValue: {stdout: "origin\tgit@gitlab.com:gcl/custom-home.git (fetch)\norigin\tgit@gitlab.com:gcl/custom-home.git (push)\n"},
     };
-    initSpawnSpy([spyGitRemote]);
+    initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 });
 
 test.concurrent("custom-home <test-job>", async () => {
