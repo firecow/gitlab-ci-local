@@ -43,6 +43,23 @@ test("git --version (not present)", async() => {
     ]);
 });
 
+test("git config <user.name|user.email> and id -u (present)", async () => {
+    const spawnMocks = [mockGitVersion, mockGitConfigEmail, mockGitConfigName, mockUID];
+    initSpawnMock(spawnMocks);
+    const writeStreams = new MockWriteStreams();
+    const gitData = await GitData.init("./", writeStreams);
+    expect(gitData.user).toEqual({
+        "GITLAB_USER_EMAIL": "test@test.com",
+        "GITLAB_USER_ID": "990",
+        "GITLAB_USER_LOGIN": "test",
+        "GITLAB_USER_NAME": "Testersen",
+    });
+    expect(writeStreams.stderrLines).toEqual([
+        chalk`{yellow Using fallback git remote data}`,
+        chalk`{yellow Using fallback git commit data}`,
+    ]);
+});
+
 test("git remote -v (present)", async () => {
     const spawnMocks = [mockGitVersion, mockGitRemote];
     initSpawnMock(spawnMocks);
@@ -59,19 +76,21 @@ test("git remote -v (present)", async () => {
     ]);
 });
 
-test("git config <user.name|user.email> and id -u (present)", async () => {
-    const spawnMocks = [mockGitVersion, mockGitConfigEmail, mockGitConfigName, mockUID];
+test("git remote -v (present with port)", async () => {
+    const spawnMocks = [mockGitVersion, {
+        cmd: "git remote -v",
+        returnValue: {stdout: "origin\tgit@gitlab.com:3324/gcl/test-project.git (fetch)\norigin\tgit@gitlab.com:3324/gcl/test-project.git (push)\n"},
+    }];
     initSpawnMock(spawnMocks);
     const writeStreams = new MockWriteStreams();
     const gitData = await GitData.init("./", writeStreams);
-    expect(gitData.user).toEqual({
-        "GITLAB_USER_EMAIL": "test@test.com",
-        "GITLAB_USER_ID": "990",
-        "GITLAB_USER_LOGIN": "test",
-        "GITLAB_USER_NAME": "Testersen",
+    expect(gitData.remote).toEqual({
+        domain: "gitlab.com",
+        group: "gcl",
+        project: "test-project",
     });
     expect(writeStreams.stderrLines).toEqual([
-        chalk`{yellow Using fallback git remote data}`,
+        chalk`{yellow Using fallback git user data}`,
         chalk`{yellow Using fallback git commit data}`,
     ]);
 });
