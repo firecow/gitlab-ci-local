@@ -5,7 +5,8 @@ import chalk from "chalk";
 import {ExitError} from "./types/exit-error";
 
 interface GitRemote {
-    domain: string;
+    port: string;
+    host: string;
     group: string;
     project: string;
 }
@@ -34,7 +35,8 @@ export class GitData {
                 GITLAB_USER_ID: "1000",
             },
             remote: {
-                domain: "fallback.domain",
+                port: "22",
+                host: "gitlab.com",
                 group: "fallback.group",
                 project: "fallback.project",
             },
@@ -60,7 +62,7 @@ export class GitData {
     }
 
     get CI_REGISTRY() {
-        return `local-registry.${this.remote.domain}`;
+        return `local-registry.${this.remote.host}`;
     }
 
     get CI_REGISTRY_IMAGE() {
@@ -112,12 +114,13 @@ export class GitData {
     static async getRemoteData(cwd: string, writeStreams: WriteStreams): Promise<GitRemote> {
         try {
             const { stdout: gitRemote } = await Utils.spawn("git remote -v", cwd);
-            const gitRemoteMatch = gitRemote.match(/.*(?:http[s]?:\/\/|@)(?<domain>[^:/]*)((:\d+\/)|:|\/)(?<group>.*)\/(?<project>.*?)(?:\r?\n|\.git)/);
+            const gitRemoteMatch = gitRemote.match(/.*(?:\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>.*?)(?:\r?\n|\.git)/);
 
             assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
 
             return {
-                domain: gitRemoteMatch.groups.domain,
+                port: gitRemoteMatch.groups.port ?? "22",
+                host: gitRemoteMatch.groups.host,
                 group: gitRemoteMatch.groups.group,
                 project: gitRemoteMatch.groups.project,
             };

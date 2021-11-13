@@ -24,7 +24,7 @@ export class HomeVariables {
             variables[globalKey] = globalEntry;
         }
 
-        const groupUrl = `${gitData.remote.domain}/${gitData.remote.group}/`;
+        const groupUrl = `${gitData.remote.host}/${gitData.remote.group}/`;
         for (const [groupKey, groupEntries] of Object.entries(data?.group ?? [])) {
             if (!groupUrl.includes(this.normalizeProjectKey(groupKey, writeStreams))) {
                 continue;
@@ -35,7 +35,7 @@ export class HomeVariables {
             variables = {...variables, ...groupEntries};
         }
 
-        const projectUrl = `${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}.git`;
+        const projectUrl = `${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}.git`;
         for (const [projectKey, projectEntries] of Object.entries(data?.project ?? [])) {
             if (!projectUrl.includes(this.normalizeProjectKey(projectKey, writeStreams))) {
                 continue;
