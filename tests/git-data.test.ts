@@ -15,7 +15,8 @@ test("git --version (not present)", async() => {
             "SHORT_SHA": "00000000",
         },
         remote: {
-            "domain": "fallback.domain",
+            "port": "22",
+            "host": "gitlab.com",
             "group": "fallback.group",
             "project": "fallback.project",
         },
@@ -49,38 +50,43 @@ test("git config <user.name|user.email> and id -u (present)", async () => {
 });
 
 test("git remote -v (present)", async () => {
-    const spawnMocks = [WhenStatics.mockGitVersion, WhenStatics.mockGitRemote];
-    initSpawnMock(spawnMocks);
-    const writeStreams = new MockWriteStreams();
-    const gitData = await GitData.init("./", writeStreams);
-    expect(gitData.remote).toEqual({
-        domain: "gitlab.com",
-        group: "gcl",
-        project: "test-project",
-    });
-    expect(writeStreams.stderrLines).toEqual([
-        chalk`{yellow Using fallback git user data}`,
-        chalk`{yellow Using fallback git commit data}`,
-    ]);
-});
+    const variousStdouts = [
+        "origin git@gitlab.com:gcl/test-project.git (fetch)\n",
+        "origin https://git@gitlab.com:gcl/test-project.git (fetch)\n",
+        "origin ssh://git@gitlab.com:gcl/test-project.git (fetch)\n",
 
-test("git remote -v (present with port)", async () => {
-    const spawnMocks = [WhenStatics.mockGitVersion, {
-        cmd: "git remote -v",
-        returnValue: {stdout: "origin\tgit@gitlab.com:3324/gcl/test-project.git (fetch)\norigin\tgit@gitlab.com:3324/gcl/test-project.git (push)\n"},
-    }];
-    initSpawnMock(spawnMocks);
-    const writeStreams = new MockWriteStreams();
-    const gitData = await GitData.init("./", writeStreams);
-    expect(gitData.remote).toEqual({
-        domain: "gitlab.com",
-        group: "gcl",
-        project: "test-project",
-    });
-    expect(writeStreams.stderrLines).toEqual([
-        chalk`{yellow Using fallback git user data}`,
-        chalk`{yellow Using fallback git commit data}`,
-    ]);
+        "origin git@gitlab.com:3324/gcl/test-project.git (fetch)\n",
+        "origin https://git@gitlab.com:3324/gcl/test-project.git (fetch)\n",
+        "origin ssh://git@gitlab.com:3324/gcl/test-project.git (fetch)\n",
+    ];
+    const expectedStderrLines = [
+        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
+        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
+        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
+
+        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
+        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
+        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
+    ];
+    const expectedRemotes = [
+        {host: "gitlab.com", group: "gcl", project: "test-project", port: "22"},
+        {host: "gitlab.com", group: "gcl", project: "test-project", port: "22"},
+        {host: "gitlab.com", group: "gcl", project: "test-project", port: "22"},
+
+        {host: "gitlab.com", group: "gcl", project: "test-project", port: "3324"},
+        {host: "gitlab.com", group: "gcl", project: "test-project", port: "3324"},
+        {host: "gitlab.com", group: "gcl", project: "test-project", port: "3324"},
+    ];
+
+    let index = 0;
+    for (const stdout of variousStdouts) {
+        initSpawnMock([WhenStatics.mockGitVersion, {cmd: "git remote -v", returnValue: {stdout: stdout}}]);
+        const writeStreams = new MockWriteStreams();
+        const gitData = await GitData.init("./", writeStreams);
+        expect(gitData.remote).toEqual(expectedRemotes[index]);
+        expect(writeStreams.stderrLines).toEqual(expectedStderrLines[index]);
+        index++;
+    }
 });
 
 test("git remote -v (not present)", async () => {
