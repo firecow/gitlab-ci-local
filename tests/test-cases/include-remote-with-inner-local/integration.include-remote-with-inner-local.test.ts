@@ -8,7 +8,7 @@ test("include-remote-with-inner-local", async () => {
     const writeStreams = new MockWriteStreams();
     const spyGitRemote = {
         cmd: "git remote -v",
-        returnValue: {stdout: "origin\tgit@gitlab.com:gcl/include-remote-with-inner-local.git (fetch)\norigin\tgit@gitlab.com:gcl/include-remote-with-inner-local.git (push)\n"},
+        returnValue: {stdout: "origin\tgit@gitlab.com:aepfli/include-remote-with-inner-local.git (fetch)\norigin\tgit@gitlab.com:aepfli/include-remote-with-inner-local.git (push)\n"},
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
     await handler({
