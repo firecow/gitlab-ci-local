@@ -84,7 +84,7 @@ jobs:
           # Deploy token with just read permissions
           key: ${{ steps.sshDeployKey.outputs.content }}
           known_hosts: ${{ steps.sshKnownHosts.outputs.content }}
-      - name: run tests
+      - name: Run Tests
         run: |
           eval $(ssh-agent -s)
           ssh-add
