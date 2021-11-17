@@ -1,11 +1,7 @@
 ---
 name: build
 on:
-  push:
-    # somehow a force to pullrequest for documentational purposes, this means that on a normal branch there is no build
-    branches: 'master'
-  pull_request:
-    branches: '*'
+  pull_request_target:
 
 jobs:
 
