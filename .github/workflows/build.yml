@@ -1,7 +1,8 @@
 ---
 name: build
 on:
-  pull_request_target
+  - push
+  - pull_request_target
 
 jobs:
 
