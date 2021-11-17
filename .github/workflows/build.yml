@@ -93,8 +93,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }} #only in main repo
-  
+        if: github.event_name != 'pull_request'
+
 
   code-ql:
     name: CodeQL
