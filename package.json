@@ -38,7 +38,7 @@
     "@types/checksum": "0.1.33",
     "@types/deep-extend": "0.4.32",
     "@types/fs-extra": "9.0.13",
-    "@types/jest": "27.0.2",
+    "@types/jest": "27.0.3",
     "@types/jest-when": "2.7.3",
     "@types/js-yaml": "4.0.4",
     "@types/node-fetch": "2.5.12",
