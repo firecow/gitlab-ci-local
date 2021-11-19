@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "base64url": "^3.0.1",
-    "camelcase": "^6.2.0",
+    "camelcase": "^6.2.1",
     "chalk": "^4.1.2",
     "checksum": "^1.0.0",
     "deep-extend": "^0.6.0",
@@ -30,7 +30,7 @@
     "js-yaml": "^4.1.0",
     "node-fetch": "^2.6.5",
     "pretty-hrtime": "^1.0.3",
-    "source-map-support": "^0.5.20",
+    "source-map-support": "^0.5.21",
     "yargs": "^17.2.1"
   },
   "devDependencies": {
@@ -38,15 +38,15 @@
     "@types/checksum": "0.1.33",
     "@types/deep-extend": "0.4.32",
     "@types/fs-extra": "9.0.13",
-    "@types/jest": "27.0.2",
+    "@types/jest": "27.0.3",
     "@types/jest-when": "2.7.3",
-    "@types/js-yaml": "4.0.4",
+    "@types/js-yaml": "4.0.5",
     "@types/node-fetch": "2.5.12",
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.4",
-    "@types/yargs": "17.0.5",
-    "@typescript-eslint/eslint-plugin": "5.3.1",
-    "@typescript-eslint/parser": "5.3.1",
+    "@types/yargs": "17.0.7",
+    "@typescript-eslint/eslint-plugin": "5.4.0",
+    "@typescript-eslint/parser": "5.4.0",
     "depcheck": "1.4.2",
     "eslint": "8.2.0",
     "jest": "27.3.1",
@@ -54,7 +54,7 @@
     "pkg": "5.4.1",
     "ts-jest": "27.0.7",
     "ts-node": "10.4.0",
-    "typescript": "4.4.4"
+    "typescript": "4.5.2"
   },
   "engines": {
     "node": ">=16.10.0"
