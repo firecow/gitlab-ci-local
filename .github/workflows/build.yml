@@ -1,11 +1,8 @@
 ---
 name: build
 on:
-  push:
-    # somehow a force to pullrequest for documentational purposes, this means that on a normal branch there is no build
-    branches: 'master'
-  pull_request:
-    branches: '*'
+  - push
+  - pull_request_target
 
 jobs:
 
@@ -84,7 +81,7 @@ jobs:
           # Deploy token with just read permissions
           key: ${{ steps.sshDeployKey.outputs.content }}
           known_hosts: ${{ steps.sshKnownHosts.outputs.content }}
-      - name: run tests
+      - name: Run Tests
         run: |
           eval $(ssh-agent -s)
           ssh-add
@@ -93,8 +90,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }} #only in main repo
-  
+        # if: github.event_name != 'pull_request'
+
 
   code-ql:
     name: CodeQL
