@@ -75,14 +75,24 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
 
     const volumes = typeof argv.volume == "string" ? argv.volume.split(" ") : argv.volume;
     const extraHosts = typeof argv.extraHost == "string" ? argv.extraHost.split(" ") : argv.extraHost;
+    const variablePairs = typeof argv.variable == "string" ? argv.variable.split(" ") : argv.variable;
     const shellIsolation = argv.shellIsolation;
+
+    const variables: { [key: string]: string } = {};
+
+    (variablePairs ?? []).forEach((variablePair: string) => {
+        const exec = /(?<key>\w*?)(=)(?<value>\w.*)/.exec(variablePair);
+        if (exec?.groups?.key) {
+            variables[exec.groups.key] = exec?.groups?.value;
+        }
+    });
 
     if (argv.completion != null) {
         yargs.showCompletionScript();
     } else if (argv.preview != null) {
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, showInitMessage: false, file: argv.file, home: argv.home, extraHosts, volumes,
+            cwd, writeStreams, pipelineIid, showInitMessage: false, file: argv.file, home: argv.home, extraHosts, volumes, variables,
         });
         const gitlabData = parser.gitlabData;
         for (const jobName of Object.keys(gitlabData)) {
@@ -98,7 +108,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, showInitMessage: false, file: argv.file, home: argv.home, extraHosts, volumes,
+            cwd, writeStreams, pipelineIid, showInitMessage: false, file: argv.file, home: argv.home, extraHosts, volumes, variables,
         });
         Commander.runList(parser, writeStreams, argv.listAll != null);
     } else if (argv.job) {
@@ -111,7 +121,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
         }
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, shellIsolation,
+            cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, shellIsolation, variables,
         });
         await Utils.rsyncTrackedFiles(cwd, ".docker");
         await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.manual || [], argv.privileged || false);
@@ -126,7 +136,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, shellIsolation,
+            cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, shellIsolation, variables,
         });
         await Utils.rsyncTrackedFiles(cwd, ".docker");
         await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged || false);

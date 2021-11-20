@@ -1,6 +1,12 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import fs from "fs-extra";
+import {initSpawnSpy} from "../../mocks/utils.mock";
+import {WhenStatics} from "../../mocks/when-statics";
+
+beforeAll(() => {
+    initSpawnSpy(WhenStatics.all);
+});
 
 test.concurrent("artifacts-shell <consume> --needs --shell-isolation", async () => {
     const writeStreams = new MockWriteStreams();

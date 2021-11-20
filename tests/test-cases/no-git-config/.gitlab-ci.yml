@@ -1,4 +1,0 @@
----
-test-job:
-  script:
-    - echo "git config is missing"

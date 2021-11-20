@@ -20,3 +20,47 @@ SHA1: 708d2eaa2b1568305b4c7b9930ea4169f6e53e61
 SHA256: 3c7b9824d7707a3d2d379738b093d6f10366296f291cb2d065d3a03e83bbc13b
 Description: Tired of pushing to test your .gitlab-ci.yml?
 
+Package: gitlab-ci-local
+Version: 4.26.0
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Filename: ./gitlab-ci-local_4.26.0_amd64.deb
+Size: 12809860
+MD5sum: 662f0bdbde4bd9d38770fb9f8e858a06
+SHA1: dc90f6fe5706d411ef35d1d3ca238d9c5014940b
+SHA256: cf8e1c50b7d875359cbc1bf815b2beaf7d26f5faa9b1c1ff2cf1bf72c7650705
+Description: Tired of pushing to test your .gitlab-ci.yml?
+
+Package: gitlab-ci-local
+Version: 4.26.1
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Filename: ./gitlab-ci-local_4.26.1_amd64.deb
+Size: 12799428
+MD5sum: b1870a493921d89e6c2d87edf37d9c49
+SHA1: f5fb0fdbada093a338a55aef033c25c7abb4974d
+SHA256: a9ecc644dccd9bc159ab6b185175612ed8f7758f9edbe21a3fbc8ee238dec69f
+Description: Tired of pushing to test your .gitlab-ci.yml?
+
+Package: gitlab-ci-local
+Version: 4.26.2
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Filename: ./gitlab-ci-local_4.26.2_amd64.deb
+Size: 12798564
+MD5sum: 7d127942e5f6179cba71709eb03757a4
+SHA1: 633e91f48968a144a3a8747de12b63a295a24b35
+SHA256: 520c45ee28e40fdfec81a3d9140158cb0d32db3cbf1e9e645b2b3a91085f20cc
+Description: Tired of pushing to test your .gitlab-ci.yml?
+
+Package: gitlab-ci-local
+Version: 4.26.3
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Filename: ./gitlab-ci-local_4.26.3_amd64.deb
+Size: 12802260
+MD5sum: 433b6423c96c8fc81688256b21d73009
+SHA1: fac03bea6900b2e3d3547139135fb269eb20c946
+SHA256: fc6e1443853f58578b0750bd8509e2d4e1e94559e718a80ba1a61cee81dfc830
+Description: Tired of pushing to test your .gitlab-ci.yml?
+

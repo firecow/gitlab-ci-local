@@ -58,6 +58,7 @@ export class Job {
         const gitData = opt.gitData;
         const globals = opt.globals;
         const homeVariables = opt.homeVariables;
+        const projectVariables = opt.projectVariables;
 
         this.extraHosts = opt.extraHosts;
         this.volumes = opt.volumes;
@@ -90,6 +91,7 @@ export class Job {
             GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
             GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
             GITLAB_USER_NAME: gitData.user["GITLAB_USER_NAME"],
+            GITLAB_USER_ID: gitData.user["GITLAB_USER_ID"],
             CI_COMMIT_SHORT_SHA: gitData.commit.SHORT_SHA, // Changes
             CI_COMMIT_SHA: gitData.commit.SHA,
             CI_PROJECT_DIR,
@@ -111,12 +113,14 @@ export class Job {
             CI_JOB_ID: `${this.jobId}`,
             CI_PIPELINE_ID: `${this.pipelineIid + 1000}`,
             CI_PIPELINE_IID: `${this.pipelineIid}`,
-            CI_SERVER_HOST: `${gitData.remote.domain}`,
-            CI_SERVER_URL: `https://${gitData.remote.domain}:443`,
-            CI_API_V4_URL: `https://${gitData.remote.domain}/api/v4`,
-            CI_PROJECT_URL: `https://${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}`,
-            CI_JOB_URL: `https://${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`, // Changes on rerun.
-            CI_PIPELINE_URL: `https://${gitData.remote.domain}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`,
+            CI_SERVER_HOST: `${gitData.remote.host}`,
+            CI_SERVER_PORT: `${gitData.remote.port}`,
+            CI_SERVER_URL: `https://${gitData.remote.host}:443`,
+            CI_SERVER_PROTOCOL: "https",
+            CI_API_V4_URL: `https://${gitData.remote.host}/api/v4`,
+            CI_PROJECT_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}`,
+            CI_JOB_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`, // Changes on rerun.
+            CI_PIPELINE_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`,
             CI_JOB_NAME: `${this.name}`,
             CI_JOB_STAGE: `${this.stage}`,
             CI_REGISTRY: gitData.CI_REGISTRY,
@@ -125,10 +129,10 @@ export class Job {
         };
 
         // Create expanded variables
-        const envs = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...homeVariables};
+        const envs = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...homeVariables, ...projectVariables};
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
-        this.expandedVariables = {...expandedGlobalVariables, ...expandedJobVariables, ...predefinedVariables, ...homeVariables};
+        this.expandedVariables = {...predefinedVariables, ...expandedGlobalVariables, ...expandedJobVariables, ...homeVariables, ...projectVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {

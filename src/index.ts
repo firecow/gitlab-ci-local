@@ -80,6 +80,11 @@ sourceMapSupport.install();
             description: "Run needed jobs, when executing a single job",
             requiresArg: false,
         })
+        .option("variable", {
+            type: "array",
+            description: "Add variable to all executed jobs (--variable HELLO=world)",
+            requiresArg: false,
+        })
         .option("file", {
             type: "string",
             description: "Specify custom location of the .gitlab-ci.yml. Relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
@@ -121,6 +126,7 @@ sourceMapSupport.install();
                     showInitMessage: false,
                     fetchIncludes: false,
                     file: yargsArgv.file,
+                    variables: {},
                 });
                 return [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
             } catch (e) {

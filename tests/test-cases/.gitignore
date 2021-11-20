@@ -2,4 +2,5 @@
 artifacts/log.txt
 
 !custom-home/.home/.gitlab-ci-local
+!variable-order/.home/.gitlab-ci-local
 !gitignore/.gitlab-ci-local

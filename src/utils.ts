@@ -139,18 +139,18 @@ export class Utils {
             let subEval = subRule;
 
             if (subRule.includes("!~")) {
-                subEval = subRule.replace(/\s*!~\s*(\/.*\/[igmsuy]*)/, ".match($1) == null");
+                subEval = subRule.replace(/\s*!~\s*(\/.*\/[igmsuy]*)/g, ".match($1) == null").trim();
                 subEval = subEval.match(/^null/) ? "false" : subEval;
             } else if (subRule.includes("=~")) {
-                subEval = subRule.replace(/\s*=~\s*(\/.*\/[igmsuy]*)/, ".match($1) != null");
+                subEval = subRule.replace(/\s*=~\s*(\/.*\/[igmsuy]*)/g, ".match($1) != null").trim();
                 subEval = subEval.match(/^null/) ? "false" : subEval;
             } else if (!subRule.match(/==|!=/)) {
                 if (subRule.match(/null/)) {
-                    subEval = subRule.replace(/(\s*)\S*(\s*)/, "$1false$2");
+                    subEval = subRule.replace(/(\s*)\S*(\s*)/, "$1false$2").trim();
                 } else if (subRule.match(/''/)) {
-                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, "$1false$2");
+                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, "$1false$2").trim();
                 } else {
-                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, "$1true$2");
+                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, "$1true$2").trim();
                 }
             }
 
