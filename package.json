@@ -48,7 +48,7 @@
     "@typescript-eslint/eslint-plugin": "5.4.0",
     "@typescript-eslint/parser": "5.4.0",
     "depcheck": "1.4.2",
-    "eslint": "8.2.0",
+    "eslint": "8.3.0",
     "jest": "27.3.1",
     "jest-when": "3.4.2",
     "pkg": "5.4.1",
