@@ -5,7 +5,6 @@ export interface JobOptions {
     writeStreams: WriteStreams;
     data: any;
     name: string;
-    namePad: number;
     cwd: string;
     globals: any;
     pipelineIid: number;

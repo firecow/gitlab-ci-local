@@ -21,7 +21,6 @@ export class Job {
     ];
 
     readonly name: string;
-    readonly jobNamePad: number;
     readonly dependencies: string[] | null;
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
@@ -46,6 +45,7 @@ export class Job {
     private _containerVolumeNames: string[] = [];
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
     private _producers: { name: string; dotenv: string | null }[] | null = null;
+    private _jobNamePad: number|null = null;
 
     private readonly _needs: { job: string; artifacts: true }[] | string[] | null;
     private readonly jobData: any;
@@ -63,7 +63,6 @@ export class Job {
         this.extraHosts = opt.extraHosts;
         this.volumes = opt.volumes;
         this.writeStreams = opt.writeStreams;
-        this.jobNamePad = opt.namePad;
         this.gitData = opt.gitData;
         this.name = opt.name;
         this.cwd = opt.cwd;
@@ -208,6 +207,16 @@ export class Job {
 
     get services(): Service[] {
         return this.jobData["services"];
+    }
+
+    set jobNamePad(jobNamePad: number) {
+        assert(this._jobNamePad == null, "this._jobNamePad can only be set once");
+        this._jobNamePad = jobNamePad;
+    }
+
+    get jobNamePad(): number {
+        assert(this._jobNamePad != null, "jobNamePad cannot be used before initialized");
+        return this._jobNamePad;
     }
 
     get producers(): { name: string; dotenv: string | null }[] | null {

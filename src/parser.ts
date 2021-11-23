@@ -21,7 +21,7 @@ export class Parser {
     private _jobs: Map<string, Job> = new Map();
     private _stages: string[] = [];
     private _gitlabData: any;
-    private _jobNamePad = 0;
+    private _jobNamePad: number|null = null;
 
     private constructor(opt: ParserOptions) {
         this.opt = opt;
@@ -40,6 +40,7 @@ export class Parser {
     }
 
     get jobNamePad(): number {
+        assert(this._jobNamePad != null, "jobNamePad is uinitialized");
         return this._jobNamePad;
     }
 
@@ -104,11 +105,6 @@ export class Parser {
         }
         this._stages = gitlabData.stages;
 
-        // Find longest job name
-        Utils.forEachRealJob(gitlabData, (jobName) => {
-            this._jobNamePad = Math.max(this.jobNamePad, jobName.length);
-        });
-
         // Check job variables for invalid hash of key value pairs
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             for (const [key, value] of Object.entries(jobData.variables || {})) {
@@ -126,24 +122,56 @@ export class Parser {
             assert(gitData != null, "gitData must be set");
             assert(homeVariables != null, "homeVariables must be set");
 
-            const job = new Job({
-                volumes,
-                extraHosts,
-                writeStreams,
-                name: jobName,
-                namePad: this.jobNamePad,
-                homeVariables,
-                projectVariables,
-                shellIsolation: this.opt.shellIsolation ?? false,
-                data: jobData,
-                cwd,
-                globals: gitlabData,
-                pipelineIid,
-                gitData,
-            });
-            const foundStage = this.stages.includes(job.stage);
-            assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
-            this._jobs.set(jobName, job);
+            const matrixVariablesList = Utils.matrixVariablesList(jobData, jobName);
+            if (matrixVariablesList === null) {
+                const job = new Job({
+                    volumes,
+                    extraHosts,
+                    writeStreams,
+                    name: jobName,
+                    homeVariables,
+                    projectVariables,
+                    shellIsolation: this.opt.shellIsolation ?? false,
+                    data: jobData,
+                    cwd,
+                    globals: gitlabData,
+                    pipelineIid,
+                    gitData,
+                });
+                const foundStage = this.stages.includes(job.stage);
+                assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
+                this._jobs.set(jobName, job);
+            } else {
+                for (const matrixVariables of matrixVariablesList) {
+                    const job = new Job({
+                        volumes,
+                        extraHosts,
+                        writeStreams,
+                        name: `${jobName}[${Object.values(matrixVariables).join(",")}]`,
+                        homeVariables,
+                        projectVariables,
+                        shellIsolation: this.opt.shellIsolation ?? false,
+                        data: jobData,
+                        cwd,
+                        globals: gitlabData,
+                        pipelineIid,
+                        gitData,
+                    });
+                    const foundStage = this.stages.includes(job.stage);
+                    assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
+                    this._jobs.set(`${jobName}[${Object.values(matrixVariables).join(",")}]`, job);
+                }
+            }
+        });
+
+        // Find jobNamePad
+        this.jobs.forEach((job) => {
+            this._jobNamePad = Math.max(job.name.length, this._jobNamePad ?? 0);
+        });
+
+        // Set jobNamePad on all jobs
+        this.jobs.forEach((job) => {
+            job.jobNamePad = this.jobNamePad;
         });
 
         // Generate producers for each job
