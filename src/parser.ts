@@ -68,6 +68,7 @@ export class Parser {
         const pipelineIid = this.opt.pipelineIid;
         const extraHosts = this.opt.extraHosts || [];
         const volumes = this.opt.volumes || [];
+        const mountCache = this.opt.mountCache ?? false;
         const projectVariables = this.opt.variables;
         const gitData = await GitData.init(cwd, writeStreams);
         const homeVariables = await HomeVariables.init(cwd, writeStreams, gitData, home ?? process.env.HOME ?? "");
@@ -137,6 +138,7 @@ export class Parser {
                 data: jobData,
                 cwd,
                 globals: gitlabData,
+                mountCache,
                 pipelineIid,
                 gitData,
             });

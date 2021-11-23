@@ -29,7 +29,7 @@ export class Utils {
                 if ((status ?? 0) === 0) {
                     return setTimeout(() => resolve({stdout, stderr, output, status: status ?? 0}), 10);
                 }
-                return setTimeout(() => reject(new ExitError(`${output}`)), 10);
+                return setTimeout(() => reject(new ExitError(`${output !== "" ? output : "$? [" + status + "]"}`)), 10);
             });
             cp.on("error", (e) => {
                 return setTimeout(() => reject(new ExitError(`'${command}' had errors\n${e}`)), 10);

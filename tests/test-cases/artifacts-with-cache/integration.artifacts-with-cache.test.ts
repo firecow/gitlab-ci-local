@@ -14,6 +14,7 @@ test("artifacts-with-cache <test-job> --needs", async () => {
         cwd: "tests/test-cases/artifacts-with-cache",
         job: ["test-job"],
         needs: true,
+        mountCache: true,
     }, writeStreams);
 
     const expected = [

@@ -36,6 +36,7 @@ export class Job {
     readonly gitData: GitData;
     readonly shellIsolation: boolean;
     readonly cacheMutexMap = new Map<string, Mutex>();
+    readonly mountCache: boolean;
 
     private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
@@ -61,6 +62,7 @@ export class Job {
         const homeVariables = opt.homeVariables;
         const projectVariables = opt.projectVariables;
 
+        this.mountCache = opt.mountCache;
         this.extraHosts = opt.extraHosts;
         this.volumes = opt.volumes;
         this.writeStreams = opt.writeStreams;
@@ -146,6 +148,17 @@ export class Job {
 
         if (this.injectSSHAgent && this.imageName === null) {
             throw new ExitError(`${this.chalkJobName} @InjectSSHAgent can only be used with image:`);
+        }
+
+        if (this.imageName && this.mountCache) {
+            for (const c of this.cache) {
+                c.paths.forEach((p) => {
+                    const path = Utils.expandText(p, this.expandedVariables);
+                    if (path.includes("*")) {
+                        throw new ExitError(`${this.name} cannot have * in cache paths, when --mount-cache is enabled`);
+                    }
+                });
+            }
         }
     }
 
@@ -406,6 +419,22 @@ export class Job {
         return cmd;
     }
 
+    private async mountCacheCmd(safeJobName: string, writeStreams: WriteStreams) {
+        if (this.imageName && !this.mountCache) return "";
+
+        let cmd = "";
+        for (const c of this.cache) {
+            const uniqueCacheName = await c.getUniqueCacheName(this.cwd, this.expandedVariables);
+            c.paths.forEach((p) => {
+                const path = Utils.expandText(p, this.expandedVariables);
+                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
+                const cacheMount = `gcl-${this.expandedVariables.CI_PROJECT_PATH_SLUG}-${uniqueCacheName}`;
+                cmd += `-v ${cacheMount}:/builds/${safeJobName}/${path} `;
+            });
+        }
+        return cmd;
+    }
+
     private async execScripts(scripts: string[], privileged: boolean): Promise<number> {
         const safeJobName = this.safeJobName;
         const outputFilesPath = `${this.cwd}/.gitlab-ci-local/output/${safeJobName}.log`;
@@ -490,6 +519,8 @@ export class Job {
             for (const [key, value] of Object.entries(reportsDotenvVariables)) {
                 dockerCmd += `-e ${key}='${String(value).trim()}' `;
             }
+
+            dockerCmd += await this.mountCacheCmd(safeJobName, writeStreams);
 
             dockerCmd += `${this.imageName} sh -c "\n`;
             dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
@@ -638,6 +669,7 @@ export class Job {
     }
 
     private async copyCacheIn(writeStreams: WriteStreams) {
+        if (this.mountCache && this.imageName) return;
         if ((!this.imageName && !this.shellIsolation) || this.cache.length === 0) return;
 
         for (const c of this.cache) {
@@ -686,6 +718,7 @@ export class Job {
     }
 
     private async copyCacheOut(writeStreams: WriteStreams) {
+        if (this.mountCache && this.imageName) return;
         if ((!this.imageName && !this.shellIsolation) || this.cache.length === 0) return;
 
         let time, endTime;
@@ -703,9 +736,8 @@ export class Job {
                 const mutex = this.cacheMutexMap.get(cacheName);
                 assert(mutex != null, `${cacheName} could not be found in cacheMutexMap`);
                 await mutex.runExclusive(async () => {
-                    await this.copyOut(cmd, "cache");
+                    await this.copyOut(cmd, "cache", []);
                 });
-                await this.copyOut(cmd, "cache");
                 endTime = process.hrtime(time);
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright exported cache ${expandedPath} '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
             }
@@ -737,7 +769,8 @@ export class Job {
         }
 
         time = process.hrtime();
-        await this.copyOut(cpCmd, "artifacts");
+        const dockerCmdExtras = this.mountCache ? [await this.mountCacheCmd(this.safeJobName, writeStreams)] : [];
+        await this.copyOut(cpCmd, "artifacts", dockerCmdExtras);
         endTime = process.hrtime(time);
 
         const readdir = await fs.readdir(`${this.cwd}/.gitlab-ci-local/artifacts/${safeJobName}`);
@@ -758,14 +791,14 @@ export class Job {
         }
     }
 
-    private async copyOut(cmd: string, type: "artifacts" | "cache") {
+    private async copyOut(cmd: string, type: "artifacts" | "cache", dockerCmdExtras: string[]) {
         const safeJobName = this.safeJobName;
         const buildVolumeName = this.buildVolumeName;
 
         await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/${type}`);
 
         if (this.imageName) {
-            const {stdout: cid} = await Utils.spawn(`docker create -i -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ firecow/gitlab-ci-local-util bash -c "${cmd}"`, this.cwd);
+            const {stdout: cid} = await Utils.spawn(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ firecow/gitlab-ci-local-util bash -c "${cmd}"`, this.cwd);
             const containerId = cid.replace(/\r?\n/g, "");
             this._containersToClean.push(containerId);
             await Utils.spawn(`docker start ${containerId} --attach`);

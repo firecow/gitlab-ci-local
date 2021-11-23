@@ -100,6 +100,11 @@ sourceMapSupport.install();
             description: "Enable artifact isolation for shell-executor jobs",
             requiresArg: false,
         })
+        .option("mount-cache", {
+            type: "boolean",
+            description: "Enable docker mount based caching",
+            requiresArg: false,
+        })
         .option("privileged", {
             type: "boolean",
             description: "Set docker executor to privileged mode",

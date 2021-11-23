@@ -15,4 +15,5 @@ export interface JobOptions {
     homeVariables: { [name: string]: string };
     projectVariables: { [name: string]: string };
     shellIsolation: boolean;
+    mountCache: boolean;
 }
