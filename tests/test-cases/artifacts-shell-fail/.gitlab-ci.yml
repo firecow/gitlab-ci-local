@@ -1,0 +1,5 @@
+---
+produce:
+  script: exit 0
+  artifacts:
+    paths: [path/]

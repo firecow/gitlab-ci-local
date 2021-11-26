@@ -624,8 +624,10 @@ export class Job {
             }
         });
 
-        await this.copyCacheOut(writeStreams);
-        await this.copyArtifactsOut(writeStreams);
+        if (exitCode == 0) {
+            await this.copyCacheOut(writeStreams);
+            await this.copyArtifactsOut(writeStreams);
+        }
 
         return exitCode;
     }
@@ -730,7 +732,7 @@ export class Job {
                 const expandedPath = Utils.expandText(path, this.expandedVariables);
                 let cmd = "shopt -s globstar nullglob dotglob\n";
                 cmd += `mkdir -p ../../cache/${cacheName}\n`;
-                cmd += `rsync -Ra ${expandedPath} ../../cache/${cacheName}/.\n`;
+                cmd += `rsync -Ra ${expandedPath} ../../cache/${cacheName}/. || true\n`;
 
                 this.cacheMutexMap.set(cacheName, this.cacheMutexMap.get(cacheName) ?? new Mutex());
                 const mutex = this.cacheMutexMap.get(cacheName);
@@ -738,8 +740,15 @@ export class Job {
                 await mutex.runExclusive(async () => {
                     await this.copyOut(cmd, "cache", []);
                 });
+
                 endTime = process.hrtime(time);
-                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright exported cache ${expandedPath} '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
+
+                const readdir = await fs.readdir(`${this.cwd}/.gitlab-ci-local/cache/${cacheName}`);
+                if (readdir.length === 0) {
+                    writeStreams.stdout(chalk`${this.chalkJobName} {yellow !! no cache was copied for ${path} !!}\n`);
+                } else {
+                    writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright exported cache ${expandedPath} '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
+                }
             }
         }
     }
