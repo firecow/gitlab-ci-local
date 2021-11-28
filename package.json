@@ -20,7 +20,7 @@
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
-    "async-mutex": "^0.3.2",
+    "async-lock": "^1.3.0",
     "base64url": "^3.0.1",
     "camelcase": "^6.2.1",
     "chalk": "^4.1.2",
@@ -35,6 +35,7 @@
     "yargs": "^17.2.1"
   },
   "devDependencies": {
+    "@types/async-lock": "^1.1.3",
     "@types/chalk": "2.2.0",
     "@types/checksum": "0.1.33",
     "@types/deep-extend": "0.4.32",

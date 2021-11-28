@@ -12,7 +12,9 @@ import {Service} from "./service";
 import {GitData} from "./git-data";
 import {assert} from "./asserts";
 import {CacheEntry} from "./cache-entry";
-import {Mutex} from "async-mutex";
+import AsyncLock from "async-lock";
+
+const lock = new AsyncLock();
 
 export class Job {
 
@@ -35,7 +37,6 @@ export class Job {
     readonly pipelineIid: number;
     readonly gitData: GitData;
     readonly shellIsolation: boolean;
-    readonly cacheMutexMap = new Map<string, Mutex>();
     readonly mountCache: boolean;
 
     private _prescriptsExitCode: number | null = null;
@@ -683,14 +684,23 @@ export class Job {
             if (!await fs.pathExists(cacheFolder)) {
                 continue;
             }
-            this.cacheMutexMap.set(cacheName, this.cacheMutexMap.get(cacheName) ?? new Mutex());
-            const mutex = this.cacheMutexMap.get(cacheName);
-            assert(mutex != null, `${cacheName} could not be found in cacheMutexMap`);
-            await mutex.waitForUnlock();
+
+            await this.waitForLock(cacheName);
             await this.copyIn(cacheFolder);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
+    }
+
+    private async waitForLock(key: string) {
+        return new Promise<void>((resolve) => {
+            const intervalKey = setInterval(function() {
+                if (!lock.isBusy(key)) {
+                    clearInterval(intervalKey);
+                    return resolve();
+                }
+            }, 10);
+        });
     }
 
     private async copyArtifactsIn(writeStreams: WriteStreams) {
@@ -734,13 +744,9 @@ export class Job {
                 cmd += `mkdir -p ../../cache/${cacheName}\n`;
                 cmd += `rsync -Ra ${expandedPath} ../../cache/${cacheName}/. || true\n`;
 
-                this.cacheMutexMap.set(cacheName, this.cacheMutexMap.get(cacheName) ?? new Mutex());
-                const mutex = this.cacheMutexMap.get(cacheName);
-                assert(mutex != null, `${cacheName} could not be found in cacheMutexMap`);
-                await mutex.runExclusive(async () => {
+                await lock.acquire(cacheName, async() => {
                     await this.copyOut(cmd, "cache", []);
                 });
-
                 endTime = process.hrtime(time);
 
                 const readdir = await fs.readdir(`${this.cwd}/.gitlab-ci-local/cache/${cacheName}`);
