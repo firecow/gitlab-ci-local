@@ -460,6 +460,7 @@ export class Job {
                 for (const service of this.services) {
                     await this.pullImage(writeStreams, service.getName(this.expandedVariables));
                     await this.startService(writeStreams, service, privileged);
+                    await this.serviceHealthCheck(writeStreams, service);
                 }
             }
 
@@ -814,5 +815,39 @@ export class Job {
         this.refreshLongRunningSilentTimeout(writeStreams);
         const endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${aliases.join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
+    }
+
+    private async serviceHealthCheck(writeStreams: WriteStreams, service: Service) {
+        const dockerInspectCmd = `docker inspect ${service.getName(this.expandedVariables)}`;
+        const {stdout: imageDetails} = await Utils.spawn(dockerInspectCmd, this.cwd);
+        const imageDetailObj = JSON.parse(imageDetails);
+
+        // Copied from the startService block. Important thing is that the aliases match
+        const serviceAlias = service.getAlias(this.expandedVariables);
+        const serviceName = service.getName(this.expandedVariables);
+        const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
+        const aliases = [serviceNameWithoutVersion.replace("/", "-"), serviceNameWithoutVersion.replace("/", "__")];
+        if (serviceAlias) {
+            aliases.push(serviceAlias);
+        }
+
+        // Iterate over each port defined in the image, and try to connect to the alias
+        for(const port of Object.keys(imageDetailObj[0].ContainerConfig.ExposedPorts)) {
+            if(port.endsWith("/tcp")) {
+                const portNum = parseInt(port.replace("/tcp", ""));
+
+                let dockerCmd = `docker run -d --network gitlab-ci-local-${this.jobId} `;
+
+                dockerCmd += ` willwill/wait-for-it "${aliases[0]}:${portNum}" -t 30`;
+                const time = process.hrtime();
+                const {status: result} = await Utils.spawn(dockerCmd, this.cwd);
+                const endTime = process.hrtime(time);
+                if(result == 0){
+                    writeStreams.stdout(chalk`${this.chalkJobName} {greenBright service image: ${serviceName} healthcheck passed: ${aliases[0]}:${portNum}} in {green ${prettyHrtime(endTime)}}\n`);
+                }else{
+                    writeStreams.stdout(chalk`${this.chalkJobName} {redBright service image: ${serviceName} healthcheck failed: ${aliases[0]}:${portNum}} in {red ${prettyHrtime(endTime)}}\n`);
+                }
+            }
+        }
     }
 }
