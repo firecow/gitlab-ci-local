@@ -12,9 +12,7 @@ import {Service} from "./service";
 import {GitData} from "./git-data";
 import {assert} from "./asserts";
 import {CacheEntry} from "./cache-entry";
-import AsyncLock from "async-lock";
-
-const lock = new AsyncLock();
+import {Mutex} from "./mutex";
 
 export class Job {
 
@@ -685,22 +683,11 @@ export class Job {
                 continue;
             }
 
-            await this.waitForLock(cacheName);
+            await Mutex.waitForLock(cacheName);
             await this.copyIn(cacheFolder);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
-    }
-
-    private async waitForLock(key: string) {
-        return new Promise<void>((resolve) => {
-            const intervalKey = setInterval(function() {
-                if (!lock.isBusy(key)) {
-                    clearInterval(intervalKey);
-                    return resolve();
-                }
-            }, 10);
-        });
     }
 
     private async copyArtifactsIn(writeStreams: WriteStreams) {
@@ -744,7 +731,7 @@ export class Job {
                 cmd += `mkdir -p ../../cache/${cacheName}\n`;
                 cmd += `rsync -Ra ${expandedPath} ../../cache/${cacheName}/. || true\n`;
 
-                await lock.acquire(cacheName, async() => {
+                await Mutex.exclusive(cacheName, async() => {
                     await this.copyOut(cmd, "cache", []);
                 });
                 endTime = process.hrtime(time);
