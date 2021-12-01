@@ -34,7 +34,6 @@
     "yargs": "^17.2.1"
   },
   "devDependencies": {
-    "@types/chalk": "2.2.0",
     "@types/checksum": "0.1.33",
     "@types/deep-extend": "0.4.32",
     "@types/fs-extra": "9.0.13",
@@ -44,11 +43,11 @@
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.4",
     "@types/yargs": "17.0.7",
-    "@typescript-eslint/eslint-plugin": "5.4.0",
-    "@typescript-eslint/parser": "5.4.0",
+    "@typescript-eslint/eslint-plugin": "5.5.0",
+    "@typescript-eslint/parser": "5.5.0",
     "depcheck": "1.4.2",
     "eslint": "8.3.0",
-    "jest": "27.3.1",
+    "jest": "27.4.2",
     "jest-when": "3.4.2",
     "pkg": "5.5.1",
     "ts-jest": "27.0.7",
