@@ -64,3 +64,14 @@ SHA1: fac03bea6900b2e3d3547139135fb269eb20c946
 SHA256: fc6e1443853f58578b0750bd8509e2d4e1e94559e718a80ba1a61cee81dfc830
 Description: Tired of pushing to test your .gitlab-ci.yml?
 
+Package: gitlab-ci-local
+Version: 4.26.4
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Filename: ./gitlab-ci-local_4.26.4_amd64.deb
+Size: 12781148
+MD5sum: 65903df4250852a64dfd668c71c6a4c9
+SHA1: 29c86517e3795b81c6e3b24baa938fdcb98cd5fa
+SHA256: b7045e7f22f168b2b91c750067cdf5c6cc5822801d3a851e15bfbfa16a0c32e5
+Description: Tired of pushing to test your .gitlab-ci.yml?
+
