@@ -5,7 +5,7 @@ import * as yaml from "js-yaml";
 import path from "path";
 import chalk from "chalk";
 
-export class HomeVariables {
+export class VariablesFromFiles {
 
     static async init(cwd: string, writeStreams: WriteStreams, gitData: GitData, home: string): Promise<{ [key: string]: string }> {
         const homeDir = home.replace(/\/$/, "");
@@ -46,7 +46,7 @@ export class HomeVariables {
             variables = {...variables, ...projectEntries};
         }
 
-        const projectVariablesFile = `${cwd}/.gitlab-ci-local/variables.yml`;
+        const projectVariablesFile = `${cwd}/.gitlab-ci-local-variables.yml`;
 
         if (fs.existsSync(projectVariablesFile)) {
             const projectEntries: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA}) ?? {};
