@@ -11,7 +11,7 @@ export interface JobOptions {
     gitData: GitData;
     extraHosts: string[];
     volumes: string[];
-    homeVariables: { [name: string]: string };
-    projectVariables: { [name: string]: string };
+    variablesFromFiles: { [name: string]: string };
+    cliVariables: { [name: string]: string };
     shellIsolation: boolean;
 }

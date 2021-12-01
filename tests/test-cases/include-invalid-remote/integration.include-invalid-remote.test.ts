@@ -17,6 +17,6 @@ test("include-invalid-remote", async () => {
         expect(true).toBe(false);
     } catch (e) {
         assert(e instanceof Error, "e is not instanceof Error");
-        expect(e.message).toBe("Remote include could not be fetched https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml");
+        expect(e.message).toBe("Remote include could not be fetched https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml Error: Request failed with status code 404");
     }
 });
