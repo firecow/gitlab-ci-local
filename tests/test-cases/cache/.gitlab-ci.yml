@@ -8,8 +8,7 @@ produce-cache-key-files:
   cache:
     - key: { files: [$PACKAGE, fakepackage1.json] }
       paths: [key-files]
-    - key: global
-      paths: [global]
+    - paths: [global]
   script:
     - mkdir -p key-files
     - touch key-files/file1

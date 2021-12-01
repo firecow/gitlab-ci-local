@@ -151,8 +151,8 @@ export class Job {
     }
 
     static async getUniqueCacheName(cwd: string, cacheEntry: { key: string | { files: string[] }; paths: string[] }, expandedVariables: { [key: string]: string }) {
-        if (typeof cacheEntry.key === "string") {
-            return Utils.expandText(cacheEntry.key);
+        if (typeof cacheEntry.key === "string" || cacheEntry.key == null) {
+            return Utils.expandText(cacheEntry.key ?? "default");
         }
         return "md-" + await Utils.checksumFiles(cacheEntry.key.files.map(f => {
             return `${cwd}/${Utils.expandText(f, expandedVariables)}`;
