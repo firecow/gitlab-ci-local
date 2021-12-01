@@ -57,8 +57,8 @@ export class Job {
         const jobData = opt.data;
         const gitData = opt.gitData;
         const globals = opt.globals;
-        const homeVariables = opt.homeVariables;
-        const projectVariables = opt.projectVariables;
+        const variablesFromFiles = opt.variablesFromFiles;
+        const cliVariables = opt.cliVariables;
 
         this.extraHosts = opt.extraHosts;
         this.volumes = opt.volumes;
@@ -129,10 +129,10 @@ export class Job {
         };
 
         // Create expanded variables
-        const envs = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...homeVariables, ...projectVariables};
+        const envs = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...variablesFromFiles, ...cliVariables};
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
-        this.expandedVariables = {...predefinedVariables, ...expandedGlobalVariables, ...expandedJobVariables, ...homeVariables, ...projectVariables};
+        this.expandedVariables = {...predefinedVariables, ...expandedGlobalVariables, ...expandedJobVariables, ...variablesFromFiles, ...cliVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
