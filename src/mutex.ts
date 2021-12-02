@@ -6,7 +6,7 @@ export class Mutex {
 
     private static locks = new Set();
 
-    static async waitForLock(key: string) {
+    private static async waitForLock(key: string) {
         return new Promise<void>((resolve) => {
             const intervalKey = setInterval(() => {
                 if (!Mutex.locks.has(key)) {

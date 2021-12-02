@@ -684,8 +684,9 @@ export class Job {
                 continue;
             }
 
-            await Mutex.waitForLock(cacheName);
-            await this.copyIn(cacheFolder);
+            await Mutex.exclusive(cacheName, async() => {
+                await this.copyIn(cacheFolder);
+            });
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
