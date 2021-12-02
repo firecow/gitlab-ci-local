@@ -161,15 +161,6 @@ export class Job {
         }
     }
 
-    static async getUniqueCacheName(cwd: string, cacheEntry: { key: string | { files: string[] }; paths: string[] }, expandedVariables: { [key: string]: string }) {
-        if (typeof cacheEntry.key === "string" || cacheEntry.key == null) {
-            return Utils.expandText(cacheEntry.key ?? "default");
-        }
-        return "md-" + await Utils.checksumFiles(cacheEntry.key.files.map(f => {
-            return `${cwd}/${Utils.expandText(f, expandedVariables)}`;
-        }));
-    }
-
     get artifactsToSource() {
         return this.jobData["artifactsToSource"] == null ? true : this.jobData["artifactsToSource"];
     }
@@ -912,7 +903,7 @@ export class Job {
                 dockerCmd += ` willwill/wait-for-it "${aliases[0]}:${portNum}" -t 30`;
                 const time = process.hrtime();
                 const {status: result, stdout} = await Utils.spawn(dockerCmd, this.cwd);
-                this._serviceIds.push(stdout.replace(/\r?\n/g, ""));
+                this._containersToClean.push(stdout.replace(/\r?\n/g, ""));
                 const endTime = process.hrtime(time);
                 if(result == 0){
                     writeStreams.stdout(chalk`${this.chalkJobName} {greenBright service image: ${serviceName} healthcheck passed: ${aliases[0]}:${portNum}} in {green ${prettyHrtime(endTime)}}\n`);

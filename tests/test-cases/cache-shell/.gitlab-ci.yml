@@ -2,7 +2,6 @@
 produce-cache:
   stage: build
   cache:
-    key: global
     paths: [cache/**.txt]
   script: mkdir -p cache && touch cache/file1.txt
 
@@ -11,7 +10,6 @@ consume-cache:
   needs: [produce-cache]
   dependencies: [produce-cache]
   cache:
-    key: global
     paths: [cache]
     policy: pull
   script: test -f cache/file1.txt
