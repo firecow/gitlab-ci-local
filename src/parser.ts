@@ -12,7 +12,7 @@ import {Validator} from "./validator";
 import {GitData} from "./git-data";
 import {ParserIncludes} from "./parser-includes";
 import {Producers} from "./producers";
-import {HomeVariables} from "./home-variables";
+import {VariablesFromFiles} from "./variables-from-files";
 
 export class Parser {
 
@@ -69,9 +69,9 @@ export class Parser {
         const extraHosts = this.opt.extraHosts || [];
         const volumes = this.opt.volumes || [];
         const mountCache = this.opt.mountCache ?? false;
-        const projectVariables = this.opt.variables;
+        const cliVariables = this.opt.variables;
         const gitData = await GitData.init(cwd, writeStreams);
-        const homeVariables = await HomeVariables.init(cwd, writeStreams, gitData, home ?? process.env.HOME ?? "");
+        const variablesFromFiles = await VariablesFromFiles.init(cwd, writeStreams, gitData, home ?? process.env.HOME ?? "");
 
         let ymlPath, yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
@@ -124,7 +124,7 @@ export class Parser {
         // Generate jobs and put them into stages
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             assert(gitData != null, "gitData must be set");
-            assert(homeVariables != null, "homeVariables must be set");
+            assert(variablesFromFiles != null, "homeVariables must be set");
 
             const job = new Job({
                 volumes,
@@ -132,8 +132,8 @@ export class Parser {
                 writeStreams,
                 name: jobName,
                 namePad: this.jobNamePad,
-                homeVariables,
-                projectVariables,
+                variablesFromFiles: variablesFromFiles,
+                cliVariables: cliVariables,
                 shellIsolation: this.opt.shellIsolation ?? false,
                 data: jobData,
                 cwd,

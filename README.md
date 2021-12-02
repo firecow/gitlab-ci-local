@@ -135,6 +135,20 @@ global:
 
 Variables will now appear in your jobs, if project or group matches git remote, global's are always present
 
+### Project variables
+
+Put a file like this in `$CWD/.gitlab-ci-local-variables.yml`
+
+```yaml
+---
+AUTHORIZATION_PASSWORD: djwqiod910321
+DOCKER_LOGIN_PASSWORD: dij3213n123n12in3
+# Will be type File, because value is a file path
+KNOWN_HOSTS: '~/.ssh/known_hosts'
+```
+
+Variables will now appear in your jobs.
+
 ### Decorators
 
 #### The `@Description` decorator
