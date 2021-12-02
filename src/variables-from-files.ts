@@ -9,15 +9,16 @@ export class VariablesFromFiles {
 
     static async init(cwd: string, writeStreams: WriteStreams, gitData: GitData, home: string): Promise<{ [key: string]: string }> {
         const homeDir = home.replace(/\/$/, "");
-        const variablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
-        if (!fs.existsSync(variablesFile)) {
-            return {};
+        const homeVariablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
+        let variables: { [key: string]: string } = {};
+        let homeFileData: any;
+        if (!fs.existsSync(homeVariablesFile)) {
+            homeFileData =  {};
+        } else {
+            homeFileData = yaml.load(await fs.readFile(homeVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA});
         }
 
-        const data: any = yaml.load(await fs.readFile(variablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA});
-        let variables: { [key: string]: string } = {};
-
-        for (const [globalKey, globalEntry] of Object.entries(data?.global ?? [])) {
+        for (const [globalKey, globalEntry] of Object.entries(homeFileData?.global ?? [])) {
             if (typeof globalEntry !== "string") {
                 continue;
             }
@@ -25,7 +26,7 @@ export class VariablesFromFiles {
         }
 
         const groupUrl = `${gitData.remote.host}/${gitData.remote.group}/`;
-        for (const [groupKey, groupEntries] of Object.entries(data?.group ?? [])) {
+        for (const [groupKey, groupEntries] of Object.entries(homeFileData?.group ?? [])) {
             if (!groupUrl.includes(this.normalizeProjectKey(groupKey, writeStreams))) {
                 continue;
             }
@@ -36,7 +37,7 @@ export class VariablesFromFiles {
         }
 
         const projectUrl = `${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}.git`;
-        for (const [projectKey, projectEntries] of Object.entries(data?.project ?? [])) {
+        for (const [projectKey, projectEntries] of Object.entries(homeFileData?.project ?? [])) {
             if (!projectUrl.includes(this.normalizeProjectKey(projectKey, writeStreams))) {
                 continue;
             }
@@ -47,11 +48,10 @@ export class VariablesFromFiles {
         }
 
         const projectVariablesFile = `${cwd}/.gitlab-ci-local-variables.yml`;
-
         if (fs.existsSync(projectVariablesFile)) {
-            const projectEntries: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA}) ?? {};
-            if (typeof projectEntries === "object") {
-                variables = {...variables, ...projectEntries};
+            const projectFileData: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA}) ?? {};
+            if (typeof projectFileData === "object") {
+                variables = {...variables, ...projectFileData};
             }
         }
 
