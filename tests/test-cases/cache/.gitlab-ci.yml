@@ -22,7 +22,7 @@ consume-cache-key-files:
   dependencies: [produce-cache-key-files]
   cache:
     - { key: { files: [fakepackage.json, fakepackage1.json] }, paths: [key-files] }
-    - { key: global, paths: [global] }
+    - { paths: [global] }
   script:
     - if [ ! -f key-files/file1 ]; then exit 1; fi
     - if [ ! -f global/file1 ]; then exit 1; fi
