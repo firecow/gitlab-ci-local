@@ -32,6 +32,7 @@ Get rid of all those dev specific shell scripts and make files.
 * [Quirks](#quirks)
     * [Tracked Files](#tracked-files) 
     * [Home Variables](#home-variables)
+    * [Project Variables](#project-variables)
     * [Decorators](#decorators)
     * [Artifacts](#artifacts)
 * [Development](#development)
