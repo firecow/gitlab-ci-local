@@ -1,8 +1,16 @@
 ---
-
 default:
   services:
     - nginx
+
+pre-job:
+  stage: .pre
+  image: alpine
+  services:
+    - name: docker:20.10.7-dind
+      command: ["/bin/sh", "-c", "echo foo > /foo.txt"]
+  script:
+    - echo bar
 
 test-job:
   services: []

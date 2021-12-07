@@ -8,6 +8,19 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
+test.concurrent("services <pre-job>", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["test-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{black.bgRed  PASS } {blueBright pre-job   }`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
 test.concurrent("services <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
