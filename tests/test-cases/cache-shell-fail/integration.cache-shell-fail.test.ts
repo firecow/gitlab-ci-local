@@ -1,26 +1,25 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
-import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
+import chalk from "chalk";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("artifacts-with-cache <test-job> --needs", async () => {
+test.concurrent("cache-shell-fail <consume-cache> --shell-isolation --needs", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
-        cwd: "tests/test-cases/artifacts-with-cache",
-        job: ["test-job"],
+        cwd: "tests/test-cases/cache-shell-fail",
+        job: ["consume-cache"],
         needs: true,
-        mountCache: true,
+        shellIsolation: true,
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright pre-job }`,
-        chalk`{black.bgGreenBright  PASS } {blueBright test-job}`,
+        chalk`{blueBright produce-cache} {yellow !! no cache was copied for cache/**/* !!}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-
+    expect(writeStreams.stderrLines).toEqual([]);
 });

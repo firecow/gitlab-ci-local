@@ -15,4 +15,5 @@ export interface JobOptions {
     variablesFromFiles: { [name: string]: string };
     cliVariables: { [name: string]: string };
     shellIsolation: boolean;
+    mountCache: boolean;
 }

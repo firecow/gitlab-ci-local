@@ -68,6 +68,7 @@ export class Parser {
         const pipelineIid = this.opt.pipelineIid;
         const extraHosts = this.opt.extraHosts || [];
         const volumes = this.opt.volumes || [];
+        const mountCache = this.opt.mountCache ?? false;
         const cliVariables = this.opt.variables;
         const gitData = await GitData.init(cwd, writeStreams);
         const variablesFromFiles = await VariablesFromFiles.init(cwd, writeStreams, gitData, home ?? process.env.HOME ?? "");
@@ -87,7 +88,6 @@ export class Parser {
         jobExpanders.reference(gitlabData, gitlabData);
         jobExpanders.jobExtends(gitlabData);
         jobExpanders.artifacts(gitlabData);
-        jobExpanders.cache(gitlabData);
         jobExpanders.image(gitlabData);
         jobExpanders.services(gitlabData);
         jobExpanders.beforeScripts(gitlabData);
@@ -138,6 +138,7 @@ export class Parser {
                 data: jobData,
                 cwd,
                 globals: gitlabData,
+                mountCache,
                 pipelineIid,
                 gitData,
             });

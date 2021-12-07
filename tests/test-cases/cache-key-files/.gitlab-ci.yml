@@ -1,0 +1,22 @@
+---
+variables:
+  PACKAGE: fakepackage.json
+
+produce-cache:
+  stage: build
+  cache:
+    - { key: { files: [$PACKAGE, fakepackage1.json] }, paths: [key-files] }
+    - { key: global, paths: [global] }
+  script:
+    - mkdir -p key-files && touch key-files/file1
+    - mkdir -p global && touch global/file1
+
+consume-cache:
+  stage: test
+  needs: [produce-cache]
+  cache:
+    - { key: { files: [fakepackage.json, fakepackage1.json] }, paths: [key-files] }
+    - { key: global, paths: [global] }
+  script:
+    - test -f key-files/file1
+    - test -f global/file1

@@ -4,18 +4,12 @@ pre-job:
   image: alpine
   cache:
     key: cache
-    paths:
-      - path/
+    paths: [path]
   artifacts:
-    paths:
-      - path/
-  script:
-    - mkdir -p path/
-    - echo "Pre something" > path/log.txt
-    - test -f path/log.txt
+    paths: [path/]
+  script: mkdir -p path/ && echo "Pre something" > path/log.txt
 
 test-job:
   needs: [pre-job]
   image: alpine
-  script:
-    - test -f path/log.txt
+  script: test -f path/log.txt

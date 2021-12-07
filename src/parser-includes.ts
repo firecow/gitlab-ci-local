@@ -114,7 +114,7 @@ export class ParserIncludes {
 
     static async downloadIncludeProjectFile(cwd: string, project: string, ref: string, file: string, gitData: GitData): Promise<void> {
         const remote = gitData.remote;
-        fs.ensureDirSync(`${cwd}/.gitlab-ci-local/includes/${remote.host}/${project}/${ref}/`);
+        await fs.mkdirp(`${cwd}/.gitlab-ci-local/includes/${remote.host}/${project}/${ref}/`);
         const normalizedFile = file.replace(/^\/+/, "");
         try {
             const target = `.gitlab-ci-local/includes/${remote.host}/${project}/${ref}/`;

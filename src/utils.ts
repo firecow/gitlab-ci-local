@@ -29,7 +29,7 @@ export class Utils {
                 if ((status ?? 0) === 0) {
                     return setTimeout(() => resolve({stdout, stderr, output, status: status ?? 0}), 10);
                 }
-                return setTimeout(() => reject(new ExitError(`${output}`)), 10);
+                return setTimeout(() => reject(new ExitError(`${output !== "" ? output : "$? [" + status + "]"}`)), 10);
             });
             cp.on("error", (e) => {
                 return setTimeout(() => reject(new ExitError(`'${command}' had errors\n${e}`)), 10);
@@ -171,7 +171,7 @@ export class Utils {
 
     static async rsyncTrackedFiles(cwd: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
         const time = process.hrtime();
-        await fs.ensureDir(`${cwd}/.gitlab-ci-local/builds/${target}`);
+        await fs.mkdirp(`${cwd}/.gitlab-ci-local/builds/${target}`);
         await Utils.spawn(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory) --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }

@@ -1,0 +1,17 @@
+---
+produce-cache:
+  stage: build
+  cache:
+    key: global
+    paths: [cache/**/*]
+  script: exit 0
+
+consume-cache:
+  stage: test
+  needs: [produce-cache]
+  dependencies: [produce-cache]
+  cache:
+    key: global
+    paths: [cache]
+    policy: pull
+  script: (! test -f cache/file1.txt)
