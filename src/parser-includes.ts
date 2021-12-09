@@ -30,7 +30,7 @@ export class ParserIncludes {
                     throw new ExitError(`Local include file cannot be found ${value["local"]}`);
                 }
             } else if (value["file"]) {
-                if(typeof value["file"] === 'string') {
+                if(typeof value["file"] === "string") {
                     promises.push(this.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", value["file"], gitData));
                 }
                 else {
@@ -55,7 +55,7 @@ export class ParserIncludes {
                 const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
                 includeDatas = includeDatas.concat(await this.init(localDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
             } else if (value["project"]) {
-                if(typeof value["file"] === 'string'){
+                if(typeof value["file"] === "string"){
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
 
                 // Expand local includes inside a "project"-like include
