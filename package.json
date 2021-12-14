@@ -48,7 +48,7 @@
     "depcheck": "1.4.2",
     "eslint": "8.4.1",
     "jest": "27.4.3",
-    "jest-when": "3.4.2",
+    "jest-when": "3.5.0",
     "pkg": "5.5.1",
     "ts-jest": "27.1.0",
     "ts-node": "10.4.0",
