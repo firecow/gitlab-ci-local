@@ -567,7 +567,7 @@ export class Job {
 
         if (this.imageName) {
             // Files in docker-executor build folder must be root owned.
-            await Utils.spawn(`docker run --rm -w /app/ -v ${buildVolumeName}:/app/ firecow/gitlab-ci-local-util bash -c "chown 0:0 -R . && chmod a+rw -R ."`);
+            await Utils.spawn(`docker run --rm -v ${tmpVolumeName}:/tmp/ -v ${buildVolumeName}:/app/ firecow/gitlab-ci-local-util bash -c "chown 0:0 -R /app/ && chmod a+rw -R /app/ && chmod a+rw -R /tmp/"`);
         }
 
         let cmd = "set -eo pipefail\n";
