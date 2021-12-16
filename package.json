@@ -23,7 +23,7 @@
     "axios": "^0.24.0",
     "base64url": "^3.0.1",
     "camelcase": "^6.2.1",
-    "chalk": "^4.1.2",
+    "chalk": "^5.0.0",
     "checksum": "^1.0.0",
     "deep-extend": "^0.6.0",
     "dotenv": "^10.0.0",
