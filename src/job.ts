@@ -863,7 +863,7 @@ export class Job {
         }
 
         for (const [key, value] of Object.entries(this.expandedVariables)) {
-            dockerCmd += `-e ${key}="${String(value).trim()}" `;
+            dockerCmd += `-e ${key}='${String(value).trim()}' `;
         }
 
         dockerCmd += `${serviceName}`;
