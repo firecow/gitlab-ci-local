@@ -3,7 +3,7 @@
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.27.0",
+  "version": "4.27.1",
   "scripts": {
     "prepublishOnly": "npm run check-all && chmod +x src/index.js",
     "pkg-linux": "pkg src/index.js --public -t node16-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
@@ -43,16 +43,16 @@
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.4",
     "@types/yargs": "17.0.7",
-    "@typescript-eslint/eslint-plugin": "5.6.0",
-    "@typescript-eslint/parser": "5.6.0",
+    "@typescript-eslint/eslint-plugin": "5.7.0",
+    "@typescript-eslint/parser": "5.7.0",
     "depcheck": "1.4.2",
     "eslint": "8.4.1",
-    "jest": "27.4.3",
-    "jest-when": "3.4.2",
+    "jest": "27.4.5",
+    "jest-when": "3.5.0",
     "pkg": "5.5.1",
-    "ts-jest": "27.1.0",
+    "ts-jest": "27.1.1",
     "ts-node": "10.4.0",
-    "typescript": "4.5.2"
+    "typescript": "4.5.4"
   },
   "engines": {
     "node": ">=16.10.0"

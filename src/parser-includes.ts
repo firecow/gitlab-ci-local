@@ -30,7 +30,14 @@ export class ParserIncludes {
                     throw new ExitError(`Local include file cannot be found ${value["local"]}`);
                 }
             } else if (value["file"]) {
-                promises.push(this.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", value["file"], gitData));
+                if(typeof value["file"] === "string") {
+                    promises.push(this.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", value["file"], gitData));
+                }
+                else {
+                    for (const fileValue of value["file"]) {
+                        promises.push(this.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", fileValue, gitData));
+                    }
+                }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const url = `https://${domain}/${project}/-/raw/${ref}/${file}`;
@@ -48,6 +55,7 @@ export class ParserIncludes {
                 const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
                 includeDatas = includeDatas.concat(await this.init(localDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
             } else if (value["project"]) {
+                if(typeof value["file"] === "string"){
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
 
                 // Expand local includes inside a "project"-like include
@@ -61,6 +69,22 @@ export class ParserIncludes {
                 });
 
                 includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
+            } else {
+                for (const fileValue of value["file"]) {
+                    const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "master"}/${fileValue}`);
+                    // Expand local includes inside a "project"-like include
+                    this.expandInclude(fileDoc["include"]).forEach((inner: any, i: number) => {
+                        if (!inner["local"]) return;
+                        fileDoc["include"][i] = {
+                            project: value["project"],
+                            file: inner["local"].replace(/^\//, ""),
+                            ref: value["ref"],
+                        };
+                    });
+    
+                    includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
+                }
+            }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
