@@ -124,7 +124,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
             cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, shellIsolation, variables, mountCache: argv.mountCache,
         });
         await Utils.rsyncTrackedFiles(cwd, ".docker");
-        await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.manual || [], argv.privileged || false);
+        await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.manual || [], argv.privileged || false, cwd);
         if (argv.needs === true) {
             writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
         }
@@ -139,7 +139,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
             cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, shellIsolation, variables, mountCache: argv.mountCache,
         });
         await Utils.rsyncTrackedFiles(cwd, ".docker");
-        await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged || false);
+        await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged || false, cwd);
         writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();
