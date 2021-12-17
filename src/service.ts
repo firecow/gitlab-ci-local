@@ -22,12 +22,12 @@ export class Service {
         return this.serviceData.entrypoint;
     }
 
-    public getCommand(expandedVariables: { [key: string]: string }): string | null {
+    public getCommand(): string[] | null {
         if (!this.serviceData || !this.serviceData.command) {
             return null;
         }
-
-        return Utils.expandText(this.serviceData.command, expandedVariables);
+        assert(Array.isArray(this.serviceData.command), "service:command must be an array");
+        return this.serviceData.command;
     }
 
     public getAlias(expandedVariables: { [key: string]: string }): string | null {
