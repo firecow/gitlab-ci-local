@@ -1,8 +1,12 @@
 ---
 name: build
 on:
-  - push
-  - pull_request
+  push:
+    tags-ignore:
+      - '**'
+    branches:
+      - master
+  pull_request: {}
 
 jobs:
 
