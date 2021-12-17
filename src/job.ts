@@ -848,9 +848,11 @@ export class Job {
         const serviceAlias = service.getAlias(this.expandedVariables);
         const serviceName = service.getName(this.expandedVariables);
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
-        const aliases = [serviceNameWithoutVersion.replace("/", "-"), serviceNameWithoutVersion.replace("/", "__")];
+        const aliases = new Set<string>();
+        aliases.add(serviceNameWithoutVersion.replace("/", "-"));
+        aliases.add(serviceNameWithoutVersion.replace("/", "__"));
         if (serviceAlias) {
-            aliases.push(serviceAlias);
+            aliases.add(serviceAlias);
         }
 
         for(const alias of aliases) {
@@ -885,7 +887,7 @@ export class Job {
         this._containersToClean.push(containerId.replace(/\r?\n/g, ""));
         this.refreshLongRunningSilentTimeout(writeStreams);
         const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${aliases.join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
+        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
         return containerId.replace(/\r?\n/g, "");
     }
 
