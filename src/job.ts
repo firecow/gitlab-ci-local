@@ -904,7 +904,7 @@ export class Job {
         }
 
         if ((imageInspect[0]?.ContainerConfig?.ExposedPorts ?? null) === null) {
-            writeStreams.stderr(chalk`${this.chalkJobName} {yellow Could not find exposed tcp ports ${service.getName(this.expandedVariables)}}\n`)
+            writeStreams.stderr(chalk`${this.chalkJobName} {yellow Could not find exposed tcp ports ${service.getName(this.expandedVariables)}}\n`);
             const {output} = await Utils.spawn(`docker logs ${containerId}`);
             output.split(/\r?\n/g).slice(0, -1).forEach(line => writeStreams.stderr(chalk`${this.chalkJobName} {cyan >} ${line}\n`));
             return ;
