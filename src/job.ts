@@ -228,9 +228,7 @@ export class Job {
         if (!image || !image.entrypoint) {
             return null;
         }
-        if (typeof image.entrypoint !== "object") {
-            throw new ExitError("image:entrypoint must be an array");
-        }
+        assert(Array.isArray(image.entrypoint), "image:entrypoint must be an array");
         return image.entrypoint;
     }
 
