@@ -228,9 +228,7 @@ export class Job {
         if (!image || !image.entrypoint) {
             return null;
         }
-        if (typeof image.entrypoint !== "object") {
-            throw new ExitError("image:entrypoint must be an array");
-        }
+        assert(Array.isArray(image.entrypoint), "image:entrypoint must be an array");
         return image.entrypoint;
     }
 
@@ -483,8 +481,8 @@ export class Job {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
                 for (const service of this.services) {
                     await this.pullImage(writeStreams, service.getName(this.expandedVariables));
-                    await this.startService(writeStreams, service, privileged);
-                    await this.serviceHealthCheck(writeStreams, service);
+                    const containerId = await this.startService(writeStreams, service, privileged);
+                    await this.serviceHealthCheck(writeStreams, service, containerId);
                 }
             }
 
@@ -847,15 +845,14 @@ export class Job {
             dockerCmd += "--privileged ";
         }
 
-        (service.getEntrypoint() ?? []).forEach((e) => {
-            dockerCmd += `--entrypoint "${e}" `;
-        });
         const serviceAlias = service.getAlias(this.expandedVariables);
         const serviceName = service.getName(this.expandedVariables);
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
-        const aliases = [serviceNameWithoutVersion.replace("/", "-"), serviceNameWithoutVersion.replace("/", "__")];
+        const aliases = new Set<string>();
+        aliases.add(serviceNameWithoutVersion.replace("/", "-"));
+        aliases.add(serviceNameWithoutVersion.replace("/", "__"));
         if (serviceAlias) {
-            aliases.push(serviceAlias);
+            aliases.add(serviceAlias);
         }
 
         for(const alias of aliases) {
@@ -866,24 +863,38 @@ export class Job {
             dockerCmd += `-e ${key}='${String(value).trim()}' `;
         }
 
-        dockerCmd += `${serviceName}`;
-        const command = service.getCommand(this.expandedVariables);
-        if (command) {
-            dockerCmd += ` ${command}`;
-        }
+        (service.getEntrypoint() ?? []).forEach((e) => {
+            dockerCmd += `--entrypoint "${e}" `;
+        });
+
+        dockerCmd += `${serviceName} `;
+
+        let prevWasOpt = false;
+        (service.getCommand() ?? []).forEach((e) => {
+            if (e.startsWith("-") || e.startsWith("--")) {
+                prevWasOpt = true;
+                return dockerCmd += `${e} "`;
+            }
+            dockerCmd += `${e}` + (!prevWasOpt ? " " : "");
+            if (prevWasOpt) {
+                dockerCmd += "\" ";
+            }
+            prevWasOpt = false;
+        });
 
         const time = process.hrtime();
         const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd);
         this._containersToClean.push(containerId.replace(/\r?\n/g, ""));
         this.refreshLongRunningSilentTimeout(writeStreams);
         const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${aliases.join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
+        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
+        return containerId.replace(/\r?\n/g, "");
     }
 
-    private async serviceHealthCheck(writeStreams: WriteStreams, service: Service) {
-        const dockerInspectCmd = `docker inspect ${service.getName(this.expandedVariables)}`;
-        const {stdout: imageDetails} = await Utils.spawn(dockerInspectCmd, this.cwd);
-        const imageDetailObj = JSON.parse(imageDetails);
+    private async serviceHealthCheck(writeStreams: WriteStreams, service: Service, containerId: string) {
+        const dockerInspectCmd = `docker image inspect ${service.getName(this.expandedVariables)}`;
+        const {stdout} = await Utils.spawn(dockerInspectCmd, this.cwd);
+        const imageInspect = JSON.parse(stdout);
 
         // Copied from the startService block. Important thing is that the aliases match
         const serviceAlias = service.getAlias(this.expandedVariables);
@@ -894,8 +905,15 @@ export class Job {
             aliases.push(serviceAlias);
         }
 
+        if ((imageInspect[0]?.ContainerConfig?.ExposedPorts ?? null) === null) {
+            writeStreams.stderr(chalk`${this.chalkJobName} {yellow Could not find exposed tcp ports ${service.getName(this.expandedVariables)}}\n`);
+            const {output} = await Utils.spawn(`docker logs ${containerId}`);
+            output.split(/\r?\n/g).slice(0, -1).forEach(line => writeStreams.stderr(chalk`${this.chalkJobName} {cyan >} ${line}\n`));
+            return ;
+        }
+
         // Iterate over each port defined in the image, and try to connect to the alias
-        for(const port of Object.keys(imageDetailObj[0].ContainerConfig.ExposedPorts)) {
+        for(const port of Object.keys(imageInspect[0].ContainerConfig.ExposedPorts)) {
             if(port.endsWith("/tcp")) {
                 const portNum = parseInt(port.replace("/tcp", ""));
 

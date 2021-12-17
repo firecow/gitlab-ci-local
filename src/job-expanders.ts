@@ -74,7 +74,7 @@ export function services(gitlabData: any) {
                 jobData.services[index] = new Service({
                     name: typeof expandedService === "string" ? expandedService : expandedService.name,
                     entrypoint: expandedService.entrypoint,
-                    command: typeof expandedService.command === "string" ? expandedService.command : expandedService.command?.join(" "),
+                    command: expandedService.command,
                     alias: expandedService.alias,
 
                 });
