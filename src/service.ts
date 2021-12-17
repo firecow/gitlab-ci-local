@@ -18,7 +18,7 @@ export class Service {
         if (!this.serviceData || !this.serviceData.entrypoint) {
             return null;
         }
-        assert(typeof this.serviceData.entrypoint !== "object", "services:entrypoint must be an array");
+        assert(Array.isArray(this.serviceData.entrypoint), "services:entrypoint must be an array");
         return this.serviceData.entrypoint;
     }
 
