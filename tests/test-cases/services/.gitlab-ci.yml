@@ -1,8 +1,16 @@
 ---
-
 default:
   services:
     - nginx
+
+pre-job:
+  stage: .pre
+  image: alpine
+  services:
+    - name: alpine
+      command: ["/bin/sh", "-c", "echo 'foo\nhey' > /foo.txt && cat /foo.txt", "/bin/sh"]
+  script:
+    - cat /foo.txt
 
 test-job:
   services: []
