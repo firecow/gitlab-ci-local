@@ -10,7 +10,7 @@ import axios from "axios";
 
 export class ParserIncludes {
 
-    static async init(gitlabData: any, cwd: string, writeStreams: WriteStreams, gitData: GitData, fetchIncludes: boolean, depth: number): Promise<any[]> {
+    static async init(gitlabData: any, cwd: string, writeStreams: WriteStreams, gitData: GitData, depth: number): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
 
@@ -21,9 +21,6 @@ export class ParserIncludes {
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
-            if (!fetchIncludes) {
-                continue;
-            }
             if (value["local"]) {
                 const fileExists = fs.existsSync(`${cwd}/${value["local"]}`);
                 if (!fileExists) {
@@ -53,24 +50,9 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["local"]) {
                 const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
-                includeDatas = includeDatas.concat(await this.init(localDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
+                includeDatas = includeDatas.concat(await this.init(localDoc, cwd, writeStreams, gitData, depth));
             } else if (value["project"]) {
-                if(typeof value["file"] === "string"){
-                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "master"}/${value["file"]}`);
-
-                // Expand local includes inside a "project"-like include
-                this.expandInclude(fileDoc["include"]).forEach((inner: any, i: number) => {
-                    if (!inner["local"]) return;
-                    fileDoc["include"][i] = {
-                        project: value["project"],
-                        file: inner["local"].replace(/^\//, ""),
-                        ref: value["ref"],
-                    };
-                });
-
-                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
-            } else {
-                for (const fileValue of value["file"]) {
+                for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
                     const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "master"}/${fileValue}`);
                     // Expand local includes inside a "project"-like include
                     this.expandInclude(fileDoc["include"]).forEach((inner: any, i: number) => {
@@ -81,19 +63,18 @@ export class ParserIncludes {
                             ref: value["ref"],
                         };
                     });
-    
-                    includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
+
+                    includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, depth));
                 }
-            }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
-                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
+                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, depth));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
                 const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
-                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, fetchIncludes, depth));
+                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, depth));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }

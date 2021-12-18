@@ -44,8 +44,8 @@ test("git config <user.name|user.email> and id -u (present)", async () => {
         "GITLAB_USER_NAME": "Testersen",
     });
     expect(writeStreams.stderrLines).toEqual([
-        chalk`{yellow Using fallback git remote data}`,
         chalk`{yellow Using fallback git commit data}`,
+        chalk`{yellow Using fallback git remote data}`,
     ]);
 });
 
@@ -60,13 +60,12 @@ test("git remote -v (present)", async () => {
         "origin ssh://git@gitlab.com:3324/gcl/test-project.git (fetch)\n",
     ];
     const expectedStderrLines = [
-        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
-        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
-        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
-
-        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
-        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
-        [chalk`{yellow Using fallback git user data}`, chalk`{yellow Using fallback git commit data}`],
+        [chalk`{yellow Using fallback git commit data}`, chalk`{yellow Using fallback git user.name}`, chalk`{yellow Using fallback git user.email}`, chalk`{yellow Using fallback linux user id}`],
+        [chalk`{yellow Using fallback git commit data}`, chalk`{yellow Using fallback git user.name}`, chalk`{yellow Using fallback git user.email}`, chalk`{yellow Using fallback linux user id}`],
+        [chalk`{yellow Using fallback git commit data}`, chalk`{yellow Using fallback git user.name}`, chalk`{yellow Using fallback git user.email}`, chalk`{yellow Using fallback linux user id}`],
+        [chalk`{yellow Using fallback git commit data}`, chalk`{yellow Using fallback git user.name}`, chalk`{yellow Using fallback git user.email}`, chalk`{yellow Using fallback linux user id}`],
+        [chalk`{yellow Using fallback git commit data}`, chalk`{yellow Using fallback git user.name}`, chalk`{yellow Using fallback git user.email}`, chalk`{yellow Using fallback linux user id}`],
+        [chalk`{yellow Using fallback git commit data}`, chalk`{yellow Using fallback git user.name}`, chalk`{yellow Using fallback git user.email}`, chalk`{yellow Using fallback linux user id}`],
     ];
     const expectedRemotes = [
         {host: "gitlab.com", group: "gcl", project: "test-project", port: "22"},

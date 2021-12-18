@@ -13,6 +13,7 @@ import {GitData} from "./git-data";
 import {ParserIncludes} from "./parser-includes";
 import {Producers} from "./producers";
 import {VariablesFromFiles} from "./variables-from-files";
+import {isCompletionMode} from "./completion-mode";
 
 export class Parser {
 
@@ -52,9 +53,7 @@ export class Parser {
         await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
 
-        if (opt.showInitMessage ?? true) {
-            writeStreams.stdout(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
-        }
+        if (!isCompletionMode()) writeStreams.stdout(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
 
         return parser;
     }
@@ -64,7 +63,6 @@ export class Parser {
         const writeStreams = this.opt.writeStreams;
         const home = this.opt.home;
         const file = this.opt.file;
-        const fetchIncludes = this.opt.fetchIncludes ?? true;
         const pipelineIid = this.opt.pipelineIid;
         const extraHosts = this.opt.extraHosts || [];
         const volumes = this.opt.volumes || [];
@@ -76,11 +74,11 @@ export class Parser {
         let ymlPath, yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, writeStreams, gitData, fetchIncludes, 0));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, writeStreams, gitData, 0));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, writeStreams, gitData, fetchIncludes, 0));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, writeStreams, gitData, 0));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
