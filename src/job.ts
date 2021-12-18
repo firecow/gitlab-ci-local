@@ -869,18 +869,7 @@ export class Job {
 
         dockerCmd += `${serviceName} `;
 
-        let prevWasOpt = false;
-        (service.getCommand() ?? []).forEach((e) => {
-            if (e.startsWith("-") || e.startsWith("--")) {
-                prevWasOpt = true;
-                return dockerCmd += `${e} "`;
-            }
-            dockerCmd += `${e}` + (!prevWasOpt ? " " : "");
-            if (prevWasOpt) {
-                dockerCmd += "\" ";
-            }
-            prevWasOpt = false;
-        });
+        (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
 
         const time = process.hrtime();
         const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd);
