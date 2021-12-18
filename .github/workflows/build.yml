@@ -71,10 +71,7 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
       - run: npm install
       - name: Run Tests
-        run: |
-          eval $(ssh-agent -s)
-          ssh-add
-          FORCE_COLOR=1 npx jest --coverage --testTimeout 90000
+        run: FORCE_COLOR=1 npx jest --coverage --testTimeout 90000
       - uses: sonarsource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
