@@ -27,13 +27,8 @@ export class ParserIncludes {
                     throw new ExitError(`Local include file cannot be found ${value["local"]}`);
                 }
             } else if (value["file"]) {
-                if(typeof value["file"] === "string") {
-                    promises.push(this.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", value["file"], gitData));
-                }
-                else {
-                    for (const fileValue of value["file"]) {
-                        promises.push(this.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", fileValue, gitData));
-                    }
+                for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
+                    promises.push(this.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", fileValue, gitData));
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
