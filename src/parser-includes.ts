@@ -116,11 +116,11 @@ export class ParserIncludes {
 
     static async downloadIncludeProjectFile(cwd: string, project: string, ref: string, file: string, gitData: GitData): Promise<void> {
         const remote = gitData.remote;
-        await fs.mkdirp(`${cwd}/.gitlab-ci-local/includes/${remote.host}/${project}/${ref}/`);
         const normalizedFile = file.replace(/^\/+/, "");
         try {
             const target = `.gitlab-ci-local/includes/${remote.host}/${project}/${ref}/`;
             if (await fs.pathExists(`${cwd}/${target}`)) return;
+            await fs.mkdirp(`${cwd}/${target}`);
             await Utils.spawn(`git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}`, cwd);
         } catch (e) {
             throw new ExitError(`Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }`);
