@@ -10,7 +10,7 @@ import {ExitError} from "./types/exit-error";
 import {ProcessWriteStreams} from "./process-write-streams";
 import {handler} from "./handler";
 import {JobExecutor} from "./job-executor";
-import {setCompletionModeEnabled} from "./completion-mode";
+import {setTabCompletionMode} from "./tab-completion-mode";
 
 sourceMapSupport.install();
 
@@ -123,7 +123,7 @@ sourceMapSupport.install();
         })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
-                setCompletionModeEnabled(true);
+                setTabCompletionMode(true);
                 const cwd = yargsArgv.cwd || process.cwd();
                 const pipelineIid = await state.getPipelineIid(cwd);
                 const parser = await Parser.create({

@@ -13,7 +13,7 @@ import {GitData} from "./git-data";
 import {ParserIncludes} from "./parser-includes";
 import {Producers} from "./producers";
 import {VariablesFromFiles} from "./variables-from-files";
-import {isCompletionMode} from "./completion-mode";
+import {isInTabCompletionMode} from "./tab-completion-mode";
 
 export class Parser {
 
@@ -53,7 +53,7 @@ export class Parser {
         await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
 
-        if (!isCompletionMode()) writeStreams.stdout(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
+        if (!isInTabCompletionMode()) writeStreams.stdout(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
 
         return parser;
     }

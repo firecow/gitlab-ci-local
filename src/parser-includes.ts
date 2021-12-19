@@ -105,8 +105,10 @@ export class ParserIncludes {
     static async downloadIncludeRemote(cwd: string, url: string): Promise<void> {
         const fsUrl = Utils.fsUrl(url);
         try {
+            const target = `${cwd}/.gitlab-ci-local/includes/${fsUrl}`;
+            if (await fs.pathExists(target)) return;
             const res = await axios.get(url);
-            await fs.outputFile(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`, res.data);
+            await fs.outputFile(target, res.data);
         } catch (e) {
             throw new ExitError(`Remote include could not be fetched ${url} ${e}`);
         }
@@ -118,6 +120,7 @@ export class ParserIncludes {
         const normalizedFile = file.replace(/^\/+/, "");
         try {
             const target = `.gitlab-ci-local/includes/${remote.host}/${project}/${ref}/`;
+            if (await fs.pathExists(target)) return;
             await Utils.spawn(`git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}`, cwd);
         } catch (e) {
             throw new ExitError(`Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }`);

@@ -34,6 +34,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [Home Variables](#home-variables)
     * [Project Variables](#project-variables)
     * [Decorators](#decorators)
+    * [Includes](#includes)
     * [Artifacts](#artifacts)
 * [Development](#development)
     * [Scripts](#scripts)
@@ -204,6 +205,9 @@ produce:
   script: mkdir -p path/ && touch path/file1
   artifacts: {paths: [path/] }
 ```
+
+### Includes
+Includes from external sources are only fetched once. Use `--fetch-includes` to invoke an external fetching rutine.
 
 ### Artifacts
 
