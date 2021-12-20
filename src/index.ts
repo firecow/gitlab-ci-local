@@ -121,6 +121,11 @@ sourceMapSupport.install();
             description: "Add extra docker host entries",
             requiresArg: false,
         })
+        .option("fetch-includes", {
+            type: "boolean",
+            description: "Fetch all external includes one more time",
+            requiresArg: false,
+        })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
                 setTabCompletionMode(true);

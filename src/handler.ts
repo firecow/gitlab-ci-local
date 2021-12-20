@@ -87,6 +87,13 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
         }
     });
 
+    if (argv["fetch-includes"] != null && argv["fetch-includes"]) {
+        parser = await Parser.create({
+            cwd, writeStreams, pipelineIid: 0, file: argv.file, home: argv.home, extraHosts, volumes, variables, mountCache: argv.mountCache,
+        });
+        return new Map<string, Job>();
+    }
+
     if (argv.completion != null) {
         yargs.showCompletionScript();
     } else if (argv.preview != null) {
