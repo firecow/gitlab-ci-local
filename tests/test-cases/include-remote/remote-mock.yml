@@ -1,0 +1,4 @@
+---
+test-job:
+  stage: test
+  script: echo "Test something"
