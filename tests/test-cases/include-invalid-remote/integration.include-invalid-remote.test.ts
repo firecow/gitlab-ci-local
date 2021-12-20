@@ -3,12 +3,16 @@ import {handler} from "../../../src/handler";
 import {assert} from "../../../src/asserts";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
+import AxiosMockAdapter from "axios-mock-adapter";
+import axios from "axios";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
 test("include-invalid-remote", async () => {
+    const mock = new AxiosMockAdapter(axios);
+    mock.onGet("https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml").reply(404);
     try {
         const writeStreams = new MockWriteStreams();
         await handler({
