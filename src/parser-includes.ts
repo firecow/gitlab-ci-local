@@ -119,7 +119,7 @@ export class ParserIncludes {
         const normalizedFile = file.replace(/^\/+/, "");
         try {
             const target = `.gitlab-ci-local/includes/${remote.host}/${project}/${ref}/`;
-            if (await fs.pathExists(`${cwd}/${target}`)) return;
+            if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`)) return;
             await fs.mkdirp(`${cwd}/${target}`);
             await Utils.spawn(`git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}`, cwd);
         } catch (e) {
