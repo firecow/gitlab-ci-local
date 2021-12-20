@@ -3,7 +3,6 @@ import {assert} from "./asserts";
 import {WriteStreams} from "./types/write-streams";
 import chalk from "chalk";
 import {ExitError} from "./types/exit-error";
-import {isInTabCompletionMode} from "./tab-completion-mode";
 
 export class GitData {
 
@@ -49,7 +48,7 @@ export class GitData {
             const gitVersion = (await Utils.spawn("git --version", cwd)).stdout.trimEnd();
             assert(gitVersion != null, "We do not think it is safe to use git without a proper version string!");
         } catch (e) {
-            if (!isInTabCompletionMode()) writeStreams.stderr(chalk`{yellow Git not available using fallback}\n`);
+            writeStreams.stderr(chalk`{yellow Git not available using fallback}\n`);
             return gitData;
         }
         await gitData.initCommitData(cwd, writeStreams);
@@ -70,10 +69,10 @@ export class GitData {
             this.commit.SHORT_SHA = gitLogMatch.groups.short_sha;
         } catch (e) {
             if (e instanceof ExitError) {
-                if (!isInTabCompletionMode()) writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
+                writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
                 return;
             }
-            if (!isInTabCompletionMode()) writeStreams.stderr(chalk`{yellow Using fallback git commit data}\n`);
+            writeStreams.stderr(chalk`{yellow Using fallback git commit data}\n`);
         }
     }
 
@@ -90,10 +89,10 @@ export class GitData {
             this.remote.project = gitRemoteMatch.groups.project;
         } catch (e) {
             if (e instanceof ExitError) {
-                if (!isInTabCompletionMode())  writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
+                writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
                 return;
             }
-            if (!isInTabCompletionMode()) writeStreams.stderr(chalk`{yellow Using fallback git remote data}\n`);
+            writeStreams.stderr(chalk`{yellow Using fallback git remote data}\n`);
         }
     }
 
@@ -101,7 +100,7 @@ export class GitData {
         try {
             this.user.GITLAB_USER_NAME = (await Utils.spawn("git config user.name", cwd)).stdout.trimEnd();
         } catch(e) {
-            if (!isInTabCompletionMode()) writeStreams.stderr(chalk`{yellow Using fallback git user.name}\n`);
+            writeStreams.stderr(chalk`{yellow Using fallback git user.name}\n`);
         }
 
         try {
@@ -109,13 +108,13 @@ export class GitData {
             this.user.GITLAB_USER_EMAIL = email;
             this.user.GITLAB_USER_LOGIN = email.replace(/@.*/, "");
         } catch (e) {
-            if (!isInTabCompletionMode()) writeStreams.stderr(chalk`{yellow Using fallback git user.email}\n`);
+            writeStreams.stderr(chalk`{yellow Using fallback git user.email}\n`);
         }
 
         try {
             this.user.GITLAB_USER_ID = (await Utils.spawn("id -u", cwd)).stdout.trimEnd();
         } catch(e) {
-            if (!isInTabCompletionMode()) writeStreams.stderr(chalk`{yellow Using fallback linux user id}\n`);
+            writeStreams.stderr(chalk`{yellow Using fallback linux user id}\n`);
         }
     }
 }

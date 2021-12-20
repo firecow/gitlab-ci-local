@@ -11,4 +11,5 @@ export interface ParserOptions {
     file?: string;
     shellIsolation?: boolean;
     mountCache?: boolean;
+    fetchIncludes?: boolean;
 }
