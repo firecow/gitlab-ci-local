@@ -10,6 +10,7 @@ import {ExitError} from "./types/exit-error";
 import {ProcessWriteStreams} from "./process-write-streams";
 import {handler} from "./handler";
 import {JobExecutor} from "./job-executor";
+import {MockWriteStreams} from "./mock-write-streams";
 
 sourceMapSupport.install();
 
@@ -120,16 +121,19 @@ sourceMapSupport.install();
             description: "Add extra docker host entries",
             requiresArg: false,
         })
+        .option("fetch-includes", {
+            type: "boolean",
+            description: "Fetch all external includes one more time",
+            requiresArg: false,
+        })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
                 const cwd = yargsArgv.cwd || process.cwd();
                 const pipelineIid = await state.getPipelineIid(cwd);
                 const parser = await Parser.create({
                     cwd,
-                    writeStreams: new ProcessWriteStreams(),
+                    writeStreams: new MockWriteStreams(),
                     pipelineIid,
-                    showInitMessage: false,
-                    fetchIncludes: false,
                     file: yargsArgv.file,
                     variables: {},
                 });
