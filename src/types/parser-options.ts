@@ -5,12 +5,11 @@ export interface ParserOptions {
     writeStreams: WriteStreams;
     pipelineIid: number;
     variables: { [key: string]: string };
-    showInitMessage?: boolean;
-    fetchIncludes?: boolean;
     extraHosts?: string[];
     volumes?: string[];
     home?: string;
     file?: string;
     shellIsolation?: boolean;
     mountCache?: boolean;
+    fetchIncludes?: boolean;
 }

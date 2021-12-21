@@ -52,9 +52,7 @@ export class Parser {
         await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
 
-        if (opt.showInitMessage ?? true) {
-            writeStreams.stdout(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
-        }
+        writeStreams.stdout(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
 
         return parser;
     }
@@ -64,10 +62,10 @@ export class Parser {
         const writeStreams = this.opt.writeStreams;
         const home = this.opt.home;
         const file = this.opt.file;
-        const fetchIncludes = this.opt.fetchIncludes ?? true;
         const pipelineIid = this.opt.pipelineIid;
         const extraHosts = this.opt.extraHosts || [];
         const volumes = this.opt.volumes || [];
+        const fetchIncludes = this.opt.fetchIncludes ?? false;
         const mountCache = this.opt.mountCache ?? false;
         const cliVariables = this.opt.variables;
         const gitData = await GitData.init(cwd, writeStreams);
@@ -76,11 +74,11 @@ export class Parser {
         let ymlPath, yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
         const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, writeStreams, gitData, fetchIncludes, 0));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, writeStreams, gitData, 0, fetchIncludes));
 
         ymlPath = `${cwd}/.gitlab-ci-local.yml`;
         const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, writeStreams, gitData, fetchIncludes, 0));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, writeStreams, gitData, 0, fetchIncludes));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 

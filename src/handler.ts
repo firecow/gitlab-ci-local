@@ -87,12 +87,19 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
         }
     });
 
+    if (argv["fetch-includes"] != null && argv["fetch-includes"]) {
+        parser = await Parser.create({
+            cwd, writeStreams, pipelineIid: 0, file: argv.file, home: argv.home, extraHosts, volumes, variables, mountCache: argv.mountCache, fetchIncludes: true,
+        });
+        return new Map<string, Job>();
+    }
+
     if (argv.completion != null) {
         yargs.showCompletionScript();
     } else if (argv.preview != null) {
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, showInitMessage: false, file: argv.file, home: argv.home, extraHosts, volumes, variables, mountCache: argv.mountCache,
+            cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, variables, mountCache: argv.mountCache,
         });
         const gitlabData = parser.gitlabData;
         for (const jobName of Object.keys(gitlabData)) {
@@ -108,7 +115,7 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
         checkFolderAndFile(cwd, argv.file);
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, showInitMessage: false, file: argv.file, home: argv.home, extraHosts, volumes, variables, mountCache: argv.mountCache,
+            cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, variables, mountCache: argv.mountCache,
         });
         Commander.runList(parser, writeStreams, argv.listAll != null);
     } else if (argv.job) {
