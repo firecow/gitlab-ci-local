@@ -4,10 +4,11 @@ import {Parser} from "./parser";
 import {Utils} from "./utils";
 import {WriteStreams} from "./types/write-streams";
 import {JobExecutor} from "./job-executor";
+import fs from "fs-extra";
 
 export class Commander {
 
-    static async runPipeline(parser: Parser, writeStreams: WriteStreams, manualOpts: string[], privileged: boolean) {
+    static async runPipeline(parser: Parser, writeStreams: WriteStreams, manualOpts: string[], privileged: boolean, cwd: string) {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
@@ -15,10 +16,10 @@ export class Commander {
         potentialStarters = potentialStarters.filter(j => j.when !== "never");
         potentialStarters = potentialStarters.filter(j => j.when !== "manual" || manualOpts.includes(j.name));
         await JobExecutor.runLoop(jobs, stages, potentialStarters, manualOpts, privileged);
-        await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad);
+        await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad, cwd);
     }
 
-    static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobArgs: string[], needs: boolean, manualOpts: string[], privileged: boolean) {
+    static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobArgs: string[], needs: boolean, manualOpts: string[], privileged: boolean, cwd: string) {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
@@ -34,10 +35,10 @@ export class Commander {
         });
 
         await JobExecutor.runLoop(jobPoolMap, stages, potentialStarters, manualOpts, privileged);
-        await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad);
+        await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad, cwd);
     }
 
-    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyMap<string, Job>, stages: readonly string[], jobNamePad: number) => {
+    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyMap<string, Job>, stages: readonly string[], jobNamePad: number, cwd: string) => {
         writeStreams.stdout("\n");
 
         const preScripts: { successful: Job[]; failed: Job[]; warned: Job[] } = {
@@ -83,10 +84,15 @@ export class Commander {
 
         if (preScripts.warned.length !== 0) {
             preScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            preScripts.warned.forEach(({name}) => {
+            for (const {name} of preScripts.warned) {
                 const namePad = name.padEnd(jobNamePad);
+                const safeName = Utils.getSafeJobName(name);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  pre_script\n`);
-            });
+                const outputLog = await fs.readFile(`${cwd}/.gitlab-ci-local/output/${safeName}.log`, "utf8");
+                for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
+                    writeStreams.stdout(chalk`  {yellow >} ${line}\n`);
+                }
+            }
         }
 
         if (afterScripts.warned.length !== 0) {
@@ -99,10 +105,15 @@ export class Commander {
 
         if (preScripts.failed.length !== 0) {
             preScripts.failed.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            preScripts.failed.forEach(({name}) => {
+            for (const {name} of preScripts.failed) {
                 const namePad = name.padEnd(jobNamePad);
+                const safeName = Utils.getSafeJobName(name);
                 writeStreams.stdout(chalk`{black.bgRed  FAIL } {blueBright ${namePad}}\n`);
-            });
+                const outputLog = await fs.readFile(`${cwd}/.gitlab-ci-local/output/${safeName}.log`, "utf8");
+                for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
+                    writeStreams.stdout(chalk`  {red >} ${line}\n`);
+                }
+            }
         }
 
         for (const job of preScripts.successful) {

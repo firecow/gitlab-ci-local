@@ -17,6 +17,9 @@ test("script-failures <test-job>", async () => {
 
     const expected = [
         chalk`{black.bgRed  FAIL } {blueBright test-job                  }`,
+        chalk`  {red >} Test something`,
+        chalk`  {red >} That fails`,
+        chalk`  {red >} Something in the log`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -44,6 +47,7 @@ test("script-failures <allow-failure-job>", async () => {
 
     const expected = [
         chalk`{black.bgYellowBright  WARN } {blueBright allow-failure-job         }  pre_script`,
+        chalk`  {yellow >} This is printed right before the failure`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
