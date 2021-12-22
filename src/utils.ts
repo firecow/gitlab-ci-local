@@ -128,7 +128,7 @@ export class Utils {
     }
 
     static evaluateRuleIf(ruleIf: string, envs: { [key: string]: string }) {
-        const expandedRule = ruleIf.replace(/[$]\w*/g, (match) => {
+        const expandedRule = ruleIf.replace(/[$]\w+/g, (match) => {
             const sub = envs[match.replace(/^[$]/, "")];
             return sub != null ? `'${sub}'` : "null";
         });

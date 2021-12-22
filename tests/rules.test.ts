@@ -212,3 +212,11 @@ test("Complex parentheses junctions regex fail - case insensitive", () => {
     const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "VAL", VAR2: "not", VAR3: ""});
     expect(val).toBe(false);
 });
+
+test("https://github.com/firecow/gitlab-ci-local/issues/350", () => {
+    const rules = [
+        {if: "$CI_COMMIT_BRANCH =~ /master$/", when: "manual"},
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {CI_COMMIT_BRANCH: "master"});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false});
+});
