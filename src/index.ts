@@ -1,8 +1,8 @@
 #!/usr/bin/env node
+import "source-map-support/register";
 import chalk from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as sourceMapSupport from "source-map-support";
 import yargs from "yargs";
 import {Parser} from "./parser";
 import * as state from "./state";
@@ -11,8 +11,6 @@ import {ProcessWriteStreams} from "./process-write-streams";
 import {handler} from "./handler";
 import {JobExecutor} from "./job-executor";
 import {MockWriteStreams} from "./mock-write-streams";
-
-sourceMapSupport.install();
 
 (() => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
