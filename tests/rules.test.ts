@@ -11,10 +11,17 @@ test("GITLAB_CI on_success", () => {
 test("Regex on undef var", () => {
     const rules = [
         {if: "$CI_COMMIT_TAG =~ /^v\\d+.\\d+.\\d+/"},
-        {when: "manual"},
     ];
     const rulesResult = Utils.getRulesResult(rules, {});
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false});
+    expect(rulesResult).toEqual({when: "never", allowFailure: false});
+});
+
+test("Negated regex on undef var", () => {
+    const rules = [
+        {if: "$CI_COMMIT_TAG !~ /^v\\d+.\\d+.\\d+/"},
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {});
+    expect(rulesResult).toEqual({when: "never", allowFailure: false});
 });
 
 test("GITLAB_CI fail and fallback", () => {
@@ -211,4 +218,35 @@ test("Complex parentheses junctions regex fail - case insensitive", () => {
     const ruleIf = "$VAR1 =~ /val/i && ($VAR2 =~ /val/ || $VAR3)";
     const val = Utils.evaluateRuleIf(ruleIf, {VAR1: "VAL", VAR2: "not", VAR3: ""});
     expect(val).toBe(false);
+});
+
+test("https://github.com/firecow/gitlab-ci-local/issues/350", () => {
+    let rules, rulesResult;
+
+    rules = [
+        {if: "$CI_COMMIT_BRANCH =~ /master$/", when: "manual"},
+    ];
+    rulesResult = Utils.getRulesResult(rules, {CI_COMMIT_BRANCH: "master"});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false});
+
+    rules = [
+        {if: "$CI_COMMIT_BRANCH =~ /$BRANCHNAME/", when: "manual"},
+    ];
+    rulesResult = Utils.getRulesResult(rules, {CI_COMMIT_BRANCH: "master", BRANCHNAME: "master"});
+    expect(rulesResult).toEqual({when: "never", allowFailure: false});
+});
+
+test("https://github.com/firecow/gitlab-ci-local/issues/300", () => {
+    let rules, rulesResult;
+    rules = [
+        {if: "$VAR1 && (($VAR3 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR3 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))", when: "manual"},
+    ];
+    rulesResult = Utils.getRulesResult(rules, {VAR1: "val", VAR2: "ci-skip-job-", VAR3: "ci-skip-job-"});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false});
+
+    rules = [
+        {if: "$VAR1 && (($VAR3 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR3 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))", when: "manual"},
+    ];
+    rulesResult = Utils.getRulesResult(rules, {VAR1: "val", VAR2: "ci-skip-stage-", VAR3: "ci-skip-stage-"});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false});
 });
