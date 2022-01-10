@@ -128,45 +128,28 @@ export class Utils {
     }
 
     static evaluateRuleIf(ruleIf: string, envs: { [key: string]: string }) {
-        const expandedRule = ruleIf.replace(/[$]\w+/g, (match) => {
+        let evalStr = ruleIf;
+
+        // Expand all variables
+        evalStr = evalStr.replace(/[$]\w+/g, (match) => {
             const sub = envs[match.replace(/^[$]/, "")];
             return sub != null ? `'${sub}'` : "null";
         });
 
-        const subRules = expandedRule.split(/&&|\|\|/g);
-        const subEvals = [];
-        for (const subRule of subRules) {
-            let subEval = subRule;
+        // Convert =~ to match function
+        evalStr = evalStr.replace(/\s*=~\s*(\/.*?\/[igmsuy]*)/g, ".match($1) != null");
+        evalStr = evalStr.replace(/\s*=~\s(.+?)(\)*?)(?:\s|$)/g, ".match(new RegExp($1)) != null$2"); // Without forward slashes
 
-            if (subRule.includes("!~")) {
-                subEval = subRule.replace(/\s*!~\s*(\/.*\/[igmsuy]*)/g, ".match($1) == null").trim();
-                subEval = subEval.match(/^null/) ? "false" : subEval;
-            } else if (subRule.includes("=~")) {
-                subEval = subRule.replace(/\s*=~\s*(\/.*\/[igmsuy]*)/g, ".match($1) != null").trim();
-                subEval = subEval.match(/^null/) ? "false" : subEval;
-            } else if (!subRule.match(/==|!=/)) {
-                if (subRule.match(/null/)) {
-                    subEval = subRule.replace(/(\s*)\S*(\s*)/, "$1false$2").trim();
-                } else if (subRule.match(/''/)) {
-                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, "$1false$2").trim();
-                } else {
-                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, "$1true$2").trim();
-                }
-            }
+        // Convert !~ to match function
+        evalStr = evalStr.replace(/\s*!~\s*(\/.*?\/[igmsuy]*)/g, ".match($1) == null");
+        evalStr = evalStr.replace(/\s*!~\s(.+?)(\)*?)(?:\s|$)/g, ".match(new RegExp($1)) == null$2"); // Without forward slashes
 
-            subEvals.push(subEval);
-        }
+        // Convert all null.match functions to false
+        evalStr = evalStr.replace(/null.match\(.+?\) != null/g, "false");
+        evalStr = evalStr.replace(/null.match\(.+?\) == null/g, "false");
 
-        const conditions = expandedRule.match(/&&|\|\|/g);
-
-        let evalStr = "";
-
-        subEvals.forEach((subEval, index) => {
-            evalStr += subEval;
-            evalStr += conditions && conditions[index] ? conditions[index] : "";
-        });
-
-        return eval(evalStr);
+        // noinspection BadExpressionStatementJS
+        return eval(`if (${evalStr}) { true } else { false }`);
     }
 
     static async rsyncTrackedFiles(cwd: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
