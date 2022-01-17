@@ -61,7 +61,7 @@ export class GitData {
         try {
             this.commit.REF_NAME = (await Utils.spawn("git rev-parse --abbrev-ref HEAD", cwd)).stdout.trimEnd();
             this.commit.SHA = (await Utils.spawn("git rev-parse  HEAD", cwd)).stdout.trimEnd();
-            this.commit.SHORT_SHA = (await Utils.spawn("git rev-parse --short HEAD", cwd)).stdout.trimEnd();;
+            this.commit.SHORT_SHA = (await Utils.spawn("git rev-parse --short HEAD", cwd)).stdout.trimEnd();
         } catch (e) {
             if (e instanceof ExitError) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
