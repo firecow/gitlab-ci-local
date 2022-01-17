@@ -59,14 +59,9 @@ export class GitData {
 
     private async initCommitData(cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
-            const gitLogStdout = (await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd)).stdout.replace(/\r?\n/g, "");
-            const gitLogMatch = gitLogStdout.match(/(?<short_sha>\S*?) (?<sha>\S*) .*HEAD( -> |, tag: |, )(?<ref_name>.*?)(?:,|$)/);
-
-            assert(gitLogMatch?.groups != null, "git log -1 didn't provide valid matches");
-
             this.commit.REF_NAME = (await Utils.spawn("git rev-parse --abbrev-ref HEAD", cwd)).stdout.trimEnd();
-            this.commit.SHA = gitLogMatch.groups.sha;
-            this.commit.SHORT_SHA = gitLogMatch.groups.short_sha;
+            this.commit.SHA = (await Utils.spawn("git rev-parse  HEAD", cwd)).stdout.trimEnd();
+            this.commit.SHORT_SHA = (await Utils.spawn("git rev-parse --short HEAD", cwd)).stdout.trimEnd();;
         } catch (e) {
             if (e instanceof ExitError) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
