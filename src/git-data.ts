@@ -64,7 +64,7 @@ export class GitData {
 
             assert(gitLogMatch?.groups != null, "git log -1 didn't provide valid matches");
 
-            this.commit.REF_NAME = gitLogMatch.groups.ref_name;
+            this.commit.REF_NAME = (await Utils.spawn("git rev-parse --abbrev-ref HEAD", cwd)).stdout.trimEnd();
             this.commit.SHA = gitLogMatch.groups.sha;
             this.commit.SHORT_SHA = gitLogMatch.groups.short_sha;
         } catch (e) {
