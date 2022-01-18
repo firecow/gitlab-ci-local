@@ -9,11 +9,15 @@ export function initSpawnSpy(spyMocks: {cmd: string; returnValue: any}[]) {
     }
 }
 
-export function initSpawnMock(spawnMocks: {cmd: string; returnValue: any}[]) {
+export function initSpawnMock(spawnMocks: {cmd: string; returnValue: any; exitCode?: number}[]) {
     const mock = jest.fn();
 
     for (const spawnMock of spawnMocks) {
-        when(mock).calledWith(spawnMock.cmd, expect.any(String)).mockResolvedValue(spawnMock.returnValue);
+        if (spawnMock.exitCode && spawnMock.exitCode > 0) {
+            when(mock).mockRejectedValue("Fatal error");
+        } else {
+            when(mock).calledWith(spawnMock.cmd, expect.any(String)).mockResolvedValue(spawnMock.returnValue);
+        }
     }
 
     Utils.spawn = mock;
