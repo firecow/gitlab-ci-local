@@ -8,17 +8,24 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("artifacts-shell-fail <produce-> --shell-isolation", async () => {
+test.concurrent("artifacts-shell-fail <build|test|deploy> --shell-isolation", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/artifacts-shell-fail",
-        job: ["produce"],
+        job: ["build", "test", "deploy"],
         shellIsolation: true,
     }, writeStreams);
 
-    const expected = [
-        chalk`{blueBright produce} {yellow !! no artifacts was copied !!}`,
+    let expected;
+    expected = [
+        chalk`{blueBright build } {yellow !! no artifacts was copied !!}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
+
+    expected = [
+        chalk`{blueBright test  } {yellow artifacts from {blueBright build} was empty}`,
+        chalk`{blueBright deploy} {yellow artifacts from {blueBright build} was empty}`,
+        chalk`{blueBright deploy} {yellow artifacts from {blueBright test} was empty}`,
+    ];
+    expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 });

@@ -699,8 +699,14 @@ export class Job {
             const producerSafeName = Utils.getSafeJobName(producer.name);
             const artifactFolder = `${this.cwd}/.gitlab-ci-local/artifacts/${producerSafeName}`;
             if (!await fs.pathExists(artifactFolder)) {
-                throw new ExitError(`${artifactFolder} doesn't exist, did you forget --needs`);
+                await fs.mkdirp(artifactFolder);
             }
+
+            const readdir = await fs.readdir(artifactFolder);
+            if (readdir.length === 0) {
+                writeStreams.stderr(chalk`${this.chalkJobName} {yellow artifacts from {blueBright ${producerSafeName}} was empty}\n`);
+            }
+
             promises.push(this.copyIn(artifactFolder));
         }
         await Promise.all(promises);
