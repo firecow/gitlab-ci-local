@@ -85,10 +85,17 @@ export class ParserIncludes {
             include = [ i ];
         }
         if (typeof include === "string") {
-            include = [{"local": include}];
+            include = [include];
         }
         for (const [index, entry] of Object.entries(include)) {
-            include[index] = typeof entry === "string" ? {"local": entry } : entry;
+            if (typeof entry === "string" && (entry.startsWith("https:") || entry.startsWith("http:"))) {
+                include[index] = {"remote": entry};
+            } else if (typeof entry === "string") {
+                include[index] = {"local": entry };
+            } else {
+                include[index] = entry;
+            }
+
         }
         return include;
     }
