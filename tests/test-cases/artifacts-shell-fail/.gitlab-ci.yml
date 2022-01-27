@@ -1,5 +1,21 @@
 ---
-produce:
+build:
+  stage: build
   script: exit 0
   artifacts:
-    paths: [path/]
+    paths:
+      - build.log
+
+test:
+  stage: test
+  script:
+    - exit 1
+  artifacts:
+    paths:
+      - a-file-that-didnt-get-created.txt
+
+deploy:
+  stage: deploy
+  when: always
+  script:
+    - echo "Deploy something"
