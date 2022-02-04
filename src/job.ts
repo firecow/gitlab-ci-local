@@ -719,7 +719,7 @@ export class Job {
         if (!this.imageName && this.shellIsolation) {
             return Utils.spawn(`rsync -a ${source}/. ${this.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
         }
-        return Utils.spawn(`docker cp ${source}/. ${this._containerId}:/builds/${safeJobName}`);
+        return Utils.spawn(`docker cp ${source}/. ${this._containerId}:/builds/${this.gitData.remote.project}`);
     }
 
     private async copyCacheOut(writeStreams: WriteStreams) {
@@ -806,7 +806,7 @@ export class Job {
         await fs.mkdirp(`${this.cwd}/.gitlab-ci-local/${type}`);
 
         if (this.imageName) {
-            const {stdout: cid} = await Utils.spawn(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ firecow/gitlab-ci-local-util bash -c "${cmd}"`, this.cwd);
+            const {stdout: cid} = await Utils.spawn(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/builds/${this.gitData.remote.project}/ -w /builds/${this.gitData.remote.project}/ firecow/gitlab-ci-local-util bash -c "${cmd}"`, this.cwd);
             const containerId = cid.replace(/\r?\n/g, "");
             this._containersToClean.push(containerId);
             await Utils.spawn(`docker start ${containerId} --attach`);
