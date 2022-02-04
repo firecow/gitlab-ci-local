@@ -622,9 +622,28 @@ export class Job {
             }
         });
 
-        if (exitCode == 0) {
-            await this.copyCacheOut(writeStreams);
+        if (this.jobData.artifacts.when && this.jobData.artifacts.when === "always") {
             await this.copyArtifactsOut(writeStreams);
+        }
+
+        if (this.jobData.artifacts.when && this.jobData.artifacts.when === "on_failure" && exitCode != 0) {
+            await this.copyArtifactsOut(writeStreams);
+        }
+
+        if (!this.jobData.artifacts.when || this.jobData.artifacts.when === "on_success" && exitCode == 0) {
+            await this.copyArtifactsOut(writeStreams);
+        }
+
+        if (this.jobData.cache.when && this.jobData.cache.when === "always") {
+            await this.copyCacheOut(writeStreams);
+        }
+
+        if (this.jobData.cache.when && this.jobData.cache.when === "on_failure" && exitCode != 0) {
+            await this.copyCacheOut(writeStreams);
+        }
+
+        if (!this.jobData.cache.when || this.jobData.cache.when === "on_success" && exitCode == 0) {
+            await this.copyCacheOut(writeStreams);
         }
 
         return exitCode;
