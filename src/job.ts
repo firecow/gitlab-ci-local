@@ -488,14 +488,14 @@ export class Job {
 
             const volumePromises = [];
             volumePromises.push(Utils.spawn(`docker volume create ${buildVolumeName}`, this.cwd));
-            volumePromises.push(Utils.spawn(`docker volume create ${tmpVolumeName}`, this.cwd));
-            dockerCmd += `--volume ${buildVolumeName}:/builds/${safeJobName} `;
+            volumePromises.push(Utils.spawn(`docker volume create --opt type=tmpfs --opt device=tmpfs ${tmpVolumeName}`, this.cwd));
+            dockerCmd += `--volume ${buildVolumeName}:/builds/${this.gitData.remote.project} `;
             dockerCmd += `--volume ${tmpVolumeName}:/tmp/ `;
             this._containerVolumeNames.push(buildVolumeName);
             this._containerVolumeNames.push(tmpVolumeName);
             await Promise.all(volumePromises);
 
-            dockerCmd += `--workdir /builds/${safeJobName} `;
+            dockerCmd += `--workdir /builds/${this.gitData.remote.project} `;
 
             for (const volume of this.volumes) {
                 dockerCmd += `--volume ${volume} `;
@@ -546,7 +546,7 @@ export class Job {
 
             time = process.hrtime();
             // Copy source files into container.
-            await Utils.spawn(`docker cp .gitlab-ci-local/builds/.docker/. ${this._containerId}:/builds/${safeJobName}`, this.cwd);
+            await Utils.spawn(`docker cp .gitlab-ci-local/builds/.docker/. ${this._containerId}:/builds/${this.gitData.remote.project}`, this.cwd);
             this.refreshLongRunningSilentTimeout(writeStreams);
 
             // Copy file variables into container.

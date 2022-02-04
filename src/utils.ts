@@ -155,7 +155,8 @@ export class Utils {
     static async rsyncTrackedFiles(cwd: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
         const time = process.hrtime();
         await fs.mkdirp(`${cwd}/.gitlab-ci-local/builds/${target}`);
-        await Utils.spawn(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory) --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
+        //await Utils.spawn(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory) --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
+        await Utils.spawn(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory --deduplicate | awk '{print "./" $0}') --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
 
