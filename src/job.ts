@@ -552,7 +552,7 @@ export class Job {
             // Copy file variables into container.
             const fileVariablesFolder = `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/`;
             if (await fs.pathExists(fileVariablesFolder)) {
-                await Utils.spawn(`docker cp ${fileVariablesFolder} ${this._containerId}:${fileVariablesFolder}/`, this.cwd);
+                await Utils.spawn(`docker cp "${fileVariablesFolder}" "${this._containerId}:${fileVariablesFolder}/"`, this.cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
 
