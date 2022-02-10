@@ -162,7 +162,8 @@ export class Job {
     }
 
     get artifactsToSource() {
-        return this.jobData["artifactsToSource"] == null ? true : this.jobData["artifactsToSource"];
+        // dont export back to source if not explicitly set
+        return this.jobData["artifactsToSource"] == null ? false : this.jobData["artifactsToSource"];
     }
 
     get chalkJobName() {
@@ -622,27 +623,38 @@ export class Job {
             }
         });
 
-        if (this.jobData.artifacts.when && this.jobData.artifacts.when === "always") {
+        let publish_artifacts = false;
+        let publish_cache = false;
+
+        if (this.jobData?.artifacts?.when) {
+            switch (this.jobData.artifacts.when) {
+                case "always": publish_artifacts = true;
+                    break;
+                case "on_failure": publish_artifacts = (exitCode !== 0);
+                    break;
+                case "on success": publish_artifacts = (exitCode === 0);
+                    break;
+                default: publish_artifacts = !exitCode;
+            }
+        }
+
+        if (publish_artifacts) {
             await this.copyArtifactsOut(writeStreams);
         }
 
-        if (this.jobData.artifacts.when && this.jobData.artifacts.when === "on_failure" && exitCode != 0) {
-            await this.copyArtifactsOut(writeStreams);
+        if (this.jobData?.cache?.when) {
+            switch (this.jobData.cache.when) {
+                case "always": publish_cache = true;
+                    break;
+                case "on_failure": publish_cache = (exitCode !== 0);
+                    break;
+                case "on success": publish_cache = (exitCode === 0);
+                    break;
+                default: publish_cache = !exitCode;
+            }
         }
 
-        if (!this.jobData.artifacts.when || this.jobData.artifacts.when === "on_success" && exitCode == 0) {
-            await this.copyArtifactsOut(writeStreams);
-        }
-
-        if (this.jobData.cache.when && this.jobData.cache.when === "always") {
-            await this.copyCacheOut(writeStreams);
-        }
-
-        if (this.jobData.cache.when && this.jobData.cache.when === "on_failure" && exitCode != 0) {
-            await this.copyCacheOut(writeStreams);
-        }
-
-        if (!this.jobData.cache.when || this.jobData.cache.when === "on_success" && exitCode == 0) {
+        if (publish_cache) {
             await this.copyCacheOut(writeStreams);
         }
 
