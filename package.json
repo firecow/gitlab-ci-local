@@ -26,7 +26,7 @@
     "chalk": "^4.1.2",
     "checksum": "^1.0.0",
     "deep-extend": "^0.6.0",
-    "dotenv": "^15.0.1",
+    "dotenv": "^16.0.0",
     "fs-extra": "^10.0.0",
     "js-yaml": "^4.1.0",
     "pretty-hrtime": "^1.0.3",
