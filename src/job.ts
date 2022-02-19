@@ -845,7 +845,9 @@ export class Job {
     }
 
     private async startService(writeStreams: WriteStreams, service: Service, privileged: boolean) {
-        let dockerCmd = `docker run -d --network gitlab-ci-local-${this.jobId} `;
+        let dockerCmd = `docker create -u 0:0 -i --network gitlab-ci-local-${this.jobId} `;
+
+        this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (privileged) {
             dockerCmd += "--privileged ";
@@ -881,9 +883,6 @@ export class Job {
         const {stdout} = await Utils.spawn(dockerCmd, this.cwd);
         const containerId = stdout.replace(/\r?\n/g, "");
         this._containersToClean.push(containerId);
-        this.refreshLongRunningSilentTimeout(writeStreams);
-        const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
 
         // Copy file variables into service container.
         const fileVariablesFolder = `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/`;
@@ -891,6 +890,11 @@ export class Job {
             await Utils.spawn(`docker cp ${fileVariablesFolder} ${containerId}:${fileVariablesFolder}/`, this.cwd);
             this.refreshLongRunningSilentTimeout(writeStreams);
         }
+
+        await Utils.spawn(`docker start ${containerId}`);
+
+        const endTime = process.hrtime(time);
+        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
 
         return containerId;
     }
