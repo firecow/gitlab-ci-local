@@ -878,12 +878,21 @@ export class Job {
         (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
 
         const time = process.hrtime();
-        const {stdout: containerId} = await Utils.spawn(dockerCmd, this.cwd);
-        this._containersToClean.push(containerId.replace(/\r?\n/g, ""));
+        const {stdout} = await Utils.spawn(dockerCmd, this.cwd);
+        const containerId = stdout.replace(/\r?\n/g, "");
+        this._containersToClean.push(containerId);
         this.refreshLongRunningSilentTimeout(writeStreams);
         const endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
-        return containerId.replace(/\r?\n/g, "");
+
+        // Copy file variables into service container.
+        const fileVariablesFolder = `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/`;
+        if (await fs.pathExists(fileVariablesFolder)) {
+            await Utils.spawn(`docker cp ${fileVariablesFolder} ${containerId}:${fileVariablesFolder}/`, this.cwd);
+            this.refreshLongRunningSilentTimeout(writeStreams);
+        }
+
+        return containerId;
     }
 
     private async serviceHealthCheck(writeStreams: WriteStreams, service: Service, containerId: string) {
