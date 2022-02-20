@@ -1,19 +1,15 @@
 import {GitData} from "../git-data";
 import {WriteStreams} from "./write-streams";
+import {Argv} from "../argv";
 
 export interface JobOptions {
+    argv: Argv;
     writeStreams: WriteStreams;
     data: any;
     name: string;
     namePad: number;
-    cwd: string;
     globals: any;
     pipelineIid: number;
     gitData: GitData;
-    extraHosts: string[];
-    volumes: string[];
     variablesFromFiles: { [name: string]: string };
-    cliVariables: { [name: string]: string };
-    shellIsolation: boolean;
-    mountCache: boolean;
 }

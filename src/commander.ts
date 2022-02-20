@@ -5,23 +5,27 @@ import {Utils} from "./utils";
 import {WriteStreams} from "./types/write-streams";
 import {JobExecutor} from "./job-executor";
 import fs from "fs-extra";
+import {Argv} from "./argv";
 
 export class Commander {
 
-    static async runPipeline(parser: Parser, writeStreams: WriteStreams, manualOpts: string[], privileged: boolean, cwd: string) {
+    static async runPipeline(argv: Argv, parser: Parser, writeStreams: WriteStreams) {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
         let potentialStarters = [...jobs.values()];
         potentialStarters = potentialStarters.filter(j => j.when !== "never");
-        potentialStarters = potentialStarters.filter(j => j.when !== "manual" || manualOpts.includes(j.name));
-        await JobExecutor.runLoop(jobs, stages, potentialStarters, manualOpts, privileged);
-        await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad, cwd);
+        potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
+        await JobExecutor.runLoop(argv, jobs, stages, potentialStarters);
+        await Commander.printReport(argv.cwd, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobArgs: string[], needs: boolean, manualOpts: string[], privileged: boolean, cwd: string) {
+    static async runJobs(argv: Argv, parser: Parser, writeStreams: WriteStreams) {
+        const needs = argv.needs;
+        const jobArgs = argv.job;
         const jobs = parser.jobs;
         const stages = parser.stages;
+
 
         let potentialStarters: Job[] = [];
         const jobPoolMap = needs ? new Map<string, Job>(jobs) : new Map<string, Job>();
@@ -29,16 +33,17 @@ export class Commander {
             const job = Utils.getJobByName(jobs, jobName);
             jobPoolMap.set(jobName, job);
             if (needs) {
-                potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, job, manualOpts));
+                potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, job, argv.manual));
             }
             potentialStarters.push(job);
         });
 
-        await JobExecutor.runLoop(jobPoolMap, stages, potentialStarters, manualOpts, privileged);
-        await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad, cwd);
+        await JobExecutor.runLoop(argv, jobPoolMap, stages, potentialStarters);
+        await Commander.printReport(argv.cwd, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyMap<string, Job>, stages: readonly string[], jobNamePad: number, cwd: string) => {
+    static printReport = async (cwd: string, writeStreams: WriteStreams, jobs: ReadonlyMap<string, Job>, stages: readonly string[], jobNamePad: number) => {
+
         writeStreams.stdout("\n");
 
         const preScripts: { successful: Job[]; failed: Job[]; warned: Job[] } = {
