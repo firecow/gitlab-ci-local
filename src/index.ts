@@ -51,17 +51,17 @@ import {Argv} from "./argv";
             requiresArg: true,
         })
         .option("list", {
-            type: "string",
+            type: "boolean",
             description: "List jobs and job information, when:never excluded",
             requiresArg: false,
         })
         .option("list-all", {
-            type: "string",
+            type: "boolean",
             description: "List jobs and job information, when:never included",
             requiresArg: false,
         })
         .option("preview", {
-            type: "string",
+            type: "boolean",
             description: "Print YML with defaults, includes, extends and reference's expanded",
             requiresArg: false,
         })

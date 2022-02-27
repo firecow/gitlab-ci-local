@@ -123,10 +123,11 @@ export class Job {
         };
 
         // Create expanded variables
-        const envs = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...variablesFromFiles, ...argv.variable};
+        const argvVariables = argv.variable;
+        const envs = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...variablesFromFiles, ...argvVariables};
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
-        this.expandedVariables = {...predefinedVariables, ...expandedGlobalVariables, ...expandedJobVariables, ...variablesFromFiles, ...argv.variable};
+        this.expandedVariables = {...predefinedVariables, ...expandedGlobalVariables, ...expandedJobVariables, ...variablesFromFiles, ...argvVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {

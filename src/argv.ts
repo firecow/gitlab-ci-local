@@ -24,21 +24,19 @@ export class Argv {
         }
     }
 
-
     get cwd(): string {
-        let cwd = this.map.get("cwd");
+        let cwd = this.map.get("cwd") ?? process.cwd();
         assert(typeof cwd != "object", "--cwd option cannot be an array");
-        cwd = cwd?.replace(/\/$/, "") ?? process.cwd();
+        cwd = cwd.replace(/\/$/, "");
         assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
         return cwd;
     }
 
-    get file(): boolean {
-        const cwd = this.cwd;
+    get file(): string {
         const file = this.map.get("file");
-        const gitlabFilePath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
-        assert(fs.existsSync(gitlabFilePath), `${cwd} does not contain ${file ?? ".gitlab-ci.yml"}`);
-        return file;
+        const gitlabFilePath = file ? `${file}` : `.gitlab-ci.yml`;
+        assert(fs.existsSync(gitlabFilePath), `${gitlabFilePath} could not be found`);
+        return gitlabFilePath;
     }
 
     get home(): string {
