@@ -848,7 +848,7 @@ export class Job {
         this._serviceNetworkId = networkId.replace(/\r?\n/g, "");
     }
 
-    private async startService(writeStreams: WriteStreams, service: Service, privileged: boolean) {
+    private async startService(writeStreams: WriteStreams, service: Service) {
         const cwd = this.argv.cwd;
         let dockerCmd = `docker create -u 0:0 -i --network gitlab-ci-local-${this.jobId} `;
         this.refreshLongRunningSilentTimeout(writeStreams);
@@ -884,14 +884,14 @@ export class Job {
         (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
 
         const time = process.hrtime();
-        const {stdout} = await Utils.spawn(dockerCmd, this.cwd);
+        const {stdout} = await Utils.spawn(dockerCmd, cwd);
         const containerId = stdout.replace(/\r?\n/g, "");
         this._containersToClean.push(containerId);
 
         // Copy file variables into service container.
         const fileVariablesFolder = `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/`;
         if (await fs.pathExists(fileVariablesFolder)) {
-            await Utils.spawn(`docker cp ${fileVariablesFolder} ${containerId}:${fileVariablesFolder}/`, this.cwd);
+            await Utils.spawn(`docker cp ${fileVariablesFolder} ${containerId}:${fileVariablesFolder}/`, cwd);
             this.refreshLongRunningSilentTimeout(writeStreams);
         }
 
