@@ -7,24 +7,29 @@ import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
-import {ParserOptions} from "./types/parser-options";
 import {Validator} from "./validator";
 import {GitData} from "./git-data";
 import {ParserIncludes} from "./parser-includes";
 import {Producers} from "./producers";
 import {VariablesFromFiles} from "./variables-from-files";
+import {Argv} from "./argv";
+import {WriteStreams} from "./types/write-streams";
 
 export class Parser {
-
-    private readonly opt: ParserOptions;
 
     private _jobs: Map<string, Job> = new Map();
     private _stages: string[] = [];
     private _gitlabData: any;
     private _jobNamePad = 0;
 
-    private constructor(opt: ParserOptions) {
-        this.opt = opt;
+    readonly argv: Argv;
+    readonly writeStreams: WriteStreams;
+    readonly pipelineIid: number;
+
+    private constructor(argv: Argv, writeStreams: WriteStreams, pipelineIid: number) {
+        this.argv = argv;
+        this.writeStreams = writeStreams;
+        this.pipelineIid = pipelineIid;
     }
 
     get jobs(): ReadonlyMap<string, Job> {
@@ -43,10 +48,8 @@ export class Parser {
         return this._jobNamePad;
     }
 
-    static async create(opt: ParserOptions) {
-        const writeStreams = opt.writeStreams;
-        const parser = new Parser(opt);
-
+    static async create(argv: Argv, writeStreams: WriteStreams, pipelineIid: number) {
+        const parser = new Parser(argv, writeStreams, pipelineIid);
         const time = process.hrtime();
         await parser.init();
         await Validator.run(parser.jobs, parser.stages);
@@ -58,18 +61,14 @@ export class Parser {
     }
 
     async init() {
-        const cwd = this.opt.cwd;
-        const writeStreams = this.opt.writeStreams;
-        const home = this.opt.home;
-        const file = this.opt.file;
-        const pipelineIid = this.opt.pipelineIid;
-        const extraHosts = this.opt.extraHosts || [];
-        const volumes = this.opt.volumes || [];
-        const fetchIncludes = this.opt.fetchIncludes ?? false;
-        const mountCache = this.opt.mountCache ?? false;
-        const cliVariables = this.opt.variables;
+        const argv = this.argv;
+        const cwd = argv.cwd;
+        const writeStreams = this.writeStreams;
+        const file = argv.file;
+        const pipelineIid = this.pipelineIid;
+        const fetchIncludes = argv.fetchIncludes;
         const gitData = await GitData.init(cwd, writeStreams);
-        const variablesFromFiles = await VariablesFromFiles.init(cwd, writeStreams, gitData, home ?? process.env.HOME ?? "");
+        const variablesFromFiles = await VariablesFromFiles.init(argv, writeStreams, gitData);
 
         let ymlPath, yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
@@ -125,18 +124,13 @@ export class Parser {
             assert(variablesFromFiles != null, "homeVariables must be set");
 
             const job = new Job({
-                volumes,
-                extraHosts,
+                argv,
                 writeStreams,
+                data: jobData,
                 name: jobName,
                 namePad: this.jobNamePad,
                 variablesFromFiles: variablesFromFiles,
-                cliVariables: cliVariables,
-                shellIsolation: this.opt.shellIsolation ?? false,
-                data: jobData,
-                cwd,
                 globals: gitlabData,
-                mountCache,
                 pipelineIid,
                 gitData,
             });
