@@ -5,21 +5,12 @@ import * as yargs from "yargs";
 import {Commander} from "./commander";
 import {Parser} from "./parser";
 import * as state from "./state";
-import {assert} from "./asserts";
-import * as dotenv from "dotenv";
-import camelCase from "camelcase";
 import prettyHrtime from "pretty-hrtime";
 import {WriteStreams} from "./types/write-streams";
 import {Job} from "./job";
 import {Utils} from "./utils";
 import {ExitError} from "./types/exit-error";
-
-const checkFolderAndFile = (cwd: string, file?: string) => {
-    assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
-
-    const gitlabFilePath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
-    assert(fs.existsSync(gitlabFilePath), `${cwd} does not contain ${file ?? ".gitlab-ci.yml"}`);
-};
+import {Argv} from "./argv";
 
 const generateGitIgnore = (cwd: string) => {
     const gitIgnoreFilePath = `${cwd}/.gitlab-ci-local/.gitignore`;
@@ -40,9 +31,9 @@ const cleanupResources = async(parser: Parser|null) => {
     await Promise.all(promises);
 };
 
-export async function handler(argv: any, writeStreams: WriteStreams): Promise<ReadonlyMap<string, Job>> {
-    assert(typeof argv.cwd != "object", "--cwd option cannot be an array");
-    const cwd = argv.cwd?.replace(/\/$/, "") ?? process.cwd();
+export async function handler(args: any, writeStreams: WriteStreams): Promise<ReadonlyMap<string, Job>> {
+    const argv = new Argv(args);
+    const cwd = argv.cwd;
 
     process.on("unhandledRejection", async (e) => {
         if (e instanceof ExitError) {
@@ -63,44 +54,16 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
 
     let parser: Parser | null = null;
 
-    if (fs.existsSync(`${cwd}/.gitlab-ci-local-env`)) {
-        const config = dotenv.parse(fs.readFileSync(`${cwd}/.gitlab-ci-local-env`));
-        for (const [key, value] of Object.entries(config)) {
-            const argKey = camelCase(key);
-            if (argv[argKey] == null) {
-                argv[argKey] = value;
-            }
-        }
-    }
-
-    const volumes = typeof argv.volume == "string" ? argv.volume.split(" ") : argv.volume;
-    const extraHosts = typeof argv.extraHost == "string" ? argv.extraHost.split(" ") : argv.extraHost;
-    const variablePairs = typeof argv.variable == "string" ? argv.variable.split(" ") : argv.variable;
-    const shellIsolation = argv.shellIsolation;
-
-    const variables: { [key: string]: string } = {};
-
-    (variablePairs ?? []).forEach((variablePair: string) => {
-        const exec = /(?<key>\w*?)(=)(?<value>\w.*)/.exec(variablePair);
-        if (exec?.groups?.key) {
-            variables[exec.groups.key] = exec?.groups?.value;
-        }
-    });
-
-    if (argv["fetch-includes"] != null && argv["fetch-includes"]) {
-        parser = await Parser.create({
-            cwd, writeStreams, pipelineIid: 0, file: argv.file, home: argv.home, extraHosts, volumes, variables, mountCache: argv.mountCache, fetchIncludes: true,
-        });
+    if (argv.fetchIncludes) {
+        parser = await Parser.create(argv, writeStreams, 0);
         return new Map<string, Job>();
     }
 
-    if (argv.completion != null) {
+    if (argv.completion) {
         yargs.showCompletionScript();
-    } else if (argv.preview != null) {
+    } else if (argv.preview) {
         const pipelineIid = await state.getPipelineIid(cwd);
-        parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, variables, mountCache: argv.mountCache,
-        });
+        parser = await Parser.create(argv, writeStreams, pipelineIid);
         const gitlabData = parser.gitlabData;
         for (const jobName of Object.keys(gitlabData)) {
             if (jobName === "stages") {
@@ -111,42 +74,33 @@ export async function handler(argv: any, writeStreams: WriteStreams): Promise<Re
             }
         }
         writeStreams.stdout(`---\n${yaml.dump(gitlabData, {lineWidth: 160})}`);
-    } else if (argv.list != null || argv.listAll != null) {
-        checkFolderAndFile(cwd, argv.file);
+    } else if (argv.list || argv.listAll) {
         const pipelineIid = await state.getPipelineIid(cwd);
-        parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, variables, mountCache: argv.mountCache,
-        });
-        Commander.runList(parser, writeStreams, argv.listAll != null);
-    } else if (argv.job) {
+        parser = await Parser.create(argv, writeStreams, pipelineIid);
+        Commander.runList(parser, writeStreams, argv.listAll);
+    } else if (argv.job.length > 0) {
         const time = process.hrtime();
-        checkFolderAndFile(cwd, argv.file);
-        generateGitIgnore(cwd);
-        if (argv.needs === true) {
+        generateGitIgnore(argv.cwd);
+        if (argv.needs) {
             await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
             await state.incrementPipelineIid(cwd);
         }
         const pipelineIid = await state.getPipelineIid(cwd);
-        parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, shellIsolation, variables, mountCache: argv.mountCache,
-        });
+        parser = await Parser.create(argv, writeStreams, pipelineIid);
         await Utils.rsyncTrackedFiles(cwd, ".docker");
-        await Commander.runSingleJob(parser, writeStreams, argv.job, argv.needs || false, argv.manual || [], argv.privileged || false, cwd);
-        if (argv.needs === true) {
+        await Commander.runJobs(argv, parser, writeStreams);
+        if (argv.needs) {
             writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
         }
     } else {
         const time = process.hrtime();
-        checkFolderAndFile(cwd, argv.file);
-        generateGitIgnore(cwd);
+        generateGitIgnore(argv.cwd);
         await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
-        parser = await Parser.create({
-            cwd, writeStreams, pipelineIid, file: argv.file, home: argv.home, extraHosts, volumes, shellIsolation, variables, mountCache: argv.mountCache,
-        });
+        parser = await Parser.create(argv, writeStreams, pipelineIid);
         await Utils.rsyncTrackedFiles(cwd, ".docker");
-        await Commander.runPipeline(parser, writeStreams, argv.manual || [], argv.privileged || false, cwd);
+        await Commander.runPipeline(argv, parser, writeStreams);
         writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();

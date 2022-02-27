@@ -4,14 +4,16 @@ import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import path from "path";
 import chalk from "chalk";
+import {Argv} from "./argv";
 
 export class VariablesFromFiles {
 
-    static async init(cwd: string, writeStreams: WriteStreams, gitData: GitData, home: string): Promise<{ [key: string]: string }> {
-        const homeDir = home.replace(/\/$/, "");
+    static async init(argv: Argv, writeStreams: WriteStreams, gitData: GitData): Promise<{ [key: string]: string }> {
+        const homeDir = argv.home;
         const homeVariablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         let variables: { [key: string]: string } = {};
         let homeFileData: any;
+
         if (!fs.existsSync(homeVariablesFile)) {
             homeFileData =  {};
         } else {
@@ -47,7 +49,7 @@ export class VariablesFromFiles {
             variables = {...variables, ...projectEntries};
         }
 
-        const projectVariablesFile = `${cwd}/.gitlab-ci-local-variables.yml`;
+        const projectVariablesFile = `${argv.cwd}/.gitlab-ci-local-variables.yml`;
         if (fs.existsSync(projectVariablesFile)) {
             const projectFileData: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA}) ?? {};
             if (typeof projectFileData === "object") {

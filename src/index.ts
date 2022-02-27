@@ -11,6 +11,7 @@ import {ProcessWriteStreams} from "./process-write-streams";
 import {handler} from "./handler";
 import {JobExecutor} from "./job-executor";
 import {MockWriteStreams} from "./mock-write-streams";
+import {Argv} from "./argv";
 
 (() => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
@@ -126,15 +127,9 @@ import {MockWriteStreams} from "./mock-write-streams";
         })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
-                const cwd = yargsArgv.cwd || process.cwd();
-                const pipelineIid = await state.getPipelineIid(cwd);
-                const parser = await Parser.create({
-                    cwd,
-                    writeStreams: new MockWriteStreams(),
-                    pipelineIid,
-                    file: yargsArgv.file,
-                    variables: {},
-                });
+                const argv = new Argv(yargsArgv);
+                const pipelineIid = await state.getPipelineIid(argv.cwd);
+                const parser = await Parser.create(argv, new MockWriteStreams(), pipelineIid);
                 return [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
             } catch (e) {
                 return ["Parser-Failed!"];
