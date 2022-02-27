@@ -848,9 +848,10 @@ export class Job {
         this._serviceNetworkId = networkId.replace(/\r?\n/g, "");
     }
 
-    private async startService(writeStreams: WriteStreams, service: Service) {
+    private async startService(writeStreams: WriteStreams, service: Service, privileged: boolean) {
         const cwd = this.argv.cwd;
-        let dockerCmd = `docker run -d --network gitlab-ci-local-${this.jobId} `;
+        let dockerCmd = `docker create -u 0:0 -i --network gitlab-ci-local-${this.jobId} `;
+        this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (this.argv.privileged) {
             dockerCmd += "--privileged ";
@@ -883,12 +884,23 @@ export class Job {
         (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
 
         const time = process.hrtime();
-        const {stdout: containerId} = await Utils.spawn(dockerCmd, cwd);
-        this._containersToClean.push(containerId.replace(/\r?\n/g, ""));
-        this.refreshLongRunningSilentTimeout(writeStreams);
+        const {stdout} = await Utils.spawn(dockerCmd, this.cwd);
+        const containerId = stdout.replace(/\r?\n/g, "");
+        this._containersToClean.push(containerId);
+
+        // Copy file variables into service container.
+        const fileVariablesFolder = `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/`;
+        if (await fs.pathExists(fileVariablesFolder)) {
+            await Utils.spawn(`docker cp ${fileVariablesFolder} ${containerId}:${fileVariablesFolder}/`, this.cwd);
+            this.refreshLongRunningSilentTimeout(writeStreams);
+        }
+
+        await Utils.spawn(`docker start ${containerId}`);
+
         const endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
-        return containerId.replace(/\r?\n/g, "");
+
+        return containerId;
     }
 
     private async serviceHealthCheck(writeStreams: WriteStreams, service: Service, containerId: string) {
