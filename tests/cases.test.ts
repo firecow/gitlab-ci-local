@@ -35,6 +35,6 @@ test("docs (no .gitlab-ci.yml)", async () => {
         expect(true).toBe(false);
     } catch (e) {
         assert(e instanceof Error, "e is not instanceof Error");
-        expect(e.message).toBe(chalk`docs does not contain .gitlab-ci.yml`);
+        expect(e.message).toBe(chalk`docs/.gitlab-ci.yml could not be found`);
     }
 });

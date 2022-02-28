@@ -15,7 +15,7 @@ beforeAll(() => {
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 });
 
-test("cache-docker-mount <consume-cache> --needs", async () => {
+test("cache-docker-mount <consume-cache> --mount-cache --needs", async () => {
     await Utils.spawn("docker volume rm -f glc-cache-docker-mount-maven");
     const writeStreams = new MockWriteStreams();
     await handler({
