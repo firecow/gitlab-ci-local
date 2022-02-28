@@ -33,10 +33,7 @@ export class Argv {
     }
 
     get file(): string {
-        const file = this.map.get("file");
-        const gitlabFilePath = file ? `${file}` : `.gitlab-ci.yml`;
-        assert(fs.existsSync(gitlabFilePath), `${gitlabFilePath} could not be found`);
-        return gitlabFilePath;
+        return this.map.get("file") ?? ".gitlab-ci.yml";
     }
 
     get home(): string {

@@ -11,8 +11,10 @@ import {Job} from "./job";
 import {Utils} from "./utils";
 import {ExitError} from "./types/exit-error";
 import {Argv} from "./argv";
+import {assert} from "./asserts";
 
-const generateGitIgnore = (cwd: string) => {
+const generateGitIgnore = (cwd: string, file: string) => {
+    assert(fs.existsSync(`${cwd}/${file}`), `${cwd}/${file} could not be found`);
     const gitIgnoreFilePath = `${cwd}/.gitlab-ci-local/.gitignore`;
     const gitIgnoreContent = "*\n!.gitignore\n";
     if (!fs.existsSync(gitIgnoreFilePath)) {
@@ -34,6 +36,7 @@ const cleanupResources = async(parser: Parser|null) => {
 export async function handler(args: any, writeStreams: WriteStreams): Promise<ReadonlyMap<string, Job>> {
     const argv = new Argv(args);
     const cwd = argv.cwd;
+    const file = argv.file;
 
     process.on("unhandledRejection", async (e) => {
         if (e instanceof ExitError) {
@@ -80,7 +83,7 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
         Commander.runList(parser, writeStreams, argv.listAll);
     } else if (argv.job.length > 0) {
         const time = process.hrtime();
-        generateGitIgnore(argv.cwd);
+        generateGitIgnore(cwd, file);
         if (argv.needs) {
             await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
             await state.incrementPipelineIid(cwd);
@@ -94,7 +97,7 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
         }
     } else {
         const time = process.hrtime();
-        generateGitIgnore(argv.cwd);
+        generateGitIgnore(cwd, file);
         await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
         await state.incrementPipelineIid(cwd);
         const pipelineIid = await state.getPipelineIid(cwd);
