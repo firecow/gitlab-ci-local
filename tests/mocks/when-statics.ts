@@ -2,7 +2,7 @@ export class WhenStatics {
 
     public static mockGitVersion = {
         cmdArgs: ["git", "--version"],
-        returnValue: {stdout: "git version 2.25.1\n"}
+        returnValue: {stdout: "git version 2.25.1\n"},
     };
     public static mockGitConfigEmail = {
         cmdArgs: ["git", "config", "user.email"],
@@ -14,7 +14,7 @@ export class WhenStatics {
     };
     public static mockUID = {
         cmdArgs: ["id", "-u"],
-        returnValue: {stdout: "990\n"}
+        returnValue: {stdout: "990\n"},
     };
     public static mockGitRemote = {
         cmdArgs: ["git", "remote", "-v"],
