@@ -90,7 +90,8 @@ test("git remote -v (present)", async () => {
 
 test("git remote -v (not present)", async () => {
     const spawnMocks = [
-        WhenStatics.mockGitVersion, WhenStatics.mockGitCommit, WhenStatics.mockGitConfigEmail, WhenStatics.mockUID, WhenStatics.mockGitConfigName,
+        WhenStatics.mockGitVersion, WhenStatics.mockGitBranchName, WhenStatics.mockGitCommitSha, WhenStatics.mockGitCommitShaShort,
+        WhenStatics.mockGitConfigEmail, WhenStatics.mockUID, WhenStatics.mockGitConfigName,
     ];
     initSpawnMock(spawnMocks);
     const writeStreams = new MockWriteStreams();
@@ -121,62 +122,4 @@ test("git log (not present)", async () => {
     expect(writeStreams.stderrLines).toEqual([
         chalk`{yellow Using fallback git commit data}`,
     ]);
-});
-
-test("git log's (valid)", async() => {
-    const variousStdouts = [
-        "4ff3b65 4ff3b656e6cfa615289da905c42446df4bbd0355 grafted, HEAD -> master, origin/master",
-        "4ff3b66 4ff3b666e6cfa615289da905c42446df4bbd0355 grafted, HEAD, origin/somebranch",
-        "4ff3b67 4ff3b676e6cfa615289da905c42446df4bbd0355 HEAD, pull/3/merge",
-        "4ff3b68 4ff3b686e6cfa615289da905c42446df4bbd0355 HEAD, tag: 1.3.0",
-        "4ff3b69 4ff3b696e6cfa615289da905c42446df4bbd0355 HEAD -> main, origin/main",
-    ];
-    const expected = [
-        {"SHA": "4ff3b656e6cfa615289da905c42446df4bbd0355", "SHORT_SHA": "4ff3b65", "REF_NAME": "master"},
-        {"SHA": "4ff3b666e6cfa615289da905c42446df4bbd0355", "SHORT_SHA": "4ff3b66", "REF_NAME": "origin/somebranch"},
-        {"SHA": "4ff3b676e6cfa615289da905c42446df4bbd0355", "SHORT_SHA": "4ff3b67", "REF_NAME": "pull/3/merge"},
-        {"SHA": "4ff3b686e6cfa615289da905c42446df4bbd0355", "SHORT_SHA": "4ff3b68", "REF_NAME": "1.3.0"},
-        {"SHA": "4ff3b696e6cfa615289da905c42446df4bbd0355", "SHORT_SHA": "4ff3b69", "REF_NAME": "main"},
-    ];
-
-    let index = 0;
-    for (const stdout of variousStdouts) {
-        const spawnMocks = [
-            WhenStatics.mockGitVersion, {cmdArgs: ["git", "log", "-1", "--pretty=format:'%h %H %D'"], returnValue: {stdout}},
-        ];
-        initSpawnMock(spawnMocks);
-        const writeStreams = new MockWriteStreams();
-        const gitData = await GitData.init("./", writeStreams);
-        expect(gitData.commit).toEqual(expected[index]);
-        index++;
-    }
-});
-
-test("git log's (invalid)", async() => {
-    const variousStdouts = [
-        "4ff3b65 4ff3b656e6cfa615289da905c42446df4bbd0355 asd -> master, origin/master",
-        "4ff3b65 4ff3b656e6cfa615289da905c42446df4bbd0355 tag: asdf, origin/master",
-        "non valid log",
-        "",
-    ];
-    const expected = [
-        chalk`{yellow git log -1 didn't provide valid matches}`,
-        chalk`{yellow git log -1 didn't provide valid matches}`,
-        chalk`{yellow git log -1 didn't provide valid matches}`,
-        chalk`{yellow git log -1 didn't provide valid matches}`,
-    ];
-
-    let index = 0;
-    for (const stdout of variousStdouts) {
-        const spawnMocks = [
-            WhenStatics.mockGitVersion, WhenStatics.mockGitRemote, WhenStatics.mockUID,
-            WhenStatics.mockGitConfigName, WhenStatics.mockGitConfigEmail,
-            {cmdArgs: ["git", "log", "-1", "--pretty=format:'%h %H %D'"], returnValue: {stdout}},
-        ];
-        initSpawnMock(spawnMocks);
-        const writeStreams = new MockWriteStreams();
-        await GitData.init("./", writeStreams);
-        expect(writeStreams.stderrLines).toEqual([expected[index]]);
-        index++;
-    }
 });
