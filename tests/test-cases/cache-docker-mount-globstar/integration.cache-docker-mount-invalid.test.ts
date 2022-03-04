@@ -8,7 +8,7 @@ jest.setTimeout(30000);
 
 beforeAll(() => {
     const spyGitRemote = {
-        cmd: "git remote -v",
+        cmdArgs: ["git", "remote", "-v"],
         returnValue: {stdout: "origin\tgit@gitlab.com:gcl/cache-docker-mount-invalid.git (fetch)\norigin\tgit@gitlab.com:gcl/cache-docker-mount-invalid.git (push)\n"},
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);

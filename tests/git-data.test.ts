@@ -79,7 +79,7 @@ test("git remote -v (present)", async () => {
 
     let index = 0;
     for (const stdout of variousStdouts) {
-        initSpawnMock([WhenStatics.mockGitVersion, {cmd: "git remote -v", returnValue: {stdout: stdout}}]);
+        initSpawnMock([WhenStatics.mockGitVersion, {cmdArgs: ["git", "remote", "-v"], returnValue: {stdout: stdout}}]);
         const writeStreams = new MockWriteStreams();
         const gitData = await GitData.init("./", writeStreams);
         expect(gitData.remote).toEqual(expectedRemotes[index]);
@@ -101,9 +101,10 @@ test("git remote -v (not present)", async () => {
 });
 
 test("git remote -v (invalid)", async () => {
-    const spawnMocks = [
-        {cmd: "git remote -v", returnValue: {stdout: "Very invalid git remote -v\n"}},
-    ];
+    const spawnMocks = [{
+        cmdArgs: ["git", "remote", "-v"],
+        returnValue: {stdout: "Very invalid git remote -v\n"},
+    }];
     initSpawnSpy(spawnMocks);
     const writeStreams = new MockWriteStreams();
     await GitData.init("./", writeStreams);
@@ -141,7 +142,7 @@ test("git log's (valid)", async() => {
     let index = 0;
     for (const stdout of variousStdouts) {
         const spawnMocks = [
-            WhenStatics.mockGitVersion, {cmd: "git log -1 --pretty=format:'%h %H %D'", returnValue: {stdout}},
+            WhenStatics.mockGitVersion, {cmdArgs: ["git", "log", "-1", "--pretty=format:'%h %H %D'"], returnValue: {stdout}},
         ];
         initSpawnMock(spawnMocks);
         const writeStreams = new MockWriteStreams();
@@ -170,7 +171,7 @@ test("git log's (invalid)", async() => {
         const spawnMocks = [
             WhenStatics.mockGitVersion, WhenStatics.mockGitRemote, WhenStatics.mockUID,
             WhenStatics.mockGitConfigName, WhenStatics.mockGitConfigEmail,
-            {cmd: "git log -1 --pretty=format:'%h %H %D'", returnValue: {stdout}},
+            {cmdArgs: ["git", "log", "-1", "--pretty=format:'%h %H %D'"], returnValue: {stdout}},
         ];
         initSpawnMock(spawnMocks);
         const writeStreams = new MockWriteStreams();

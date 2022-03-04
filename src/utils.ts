@@ -9,7 +9,7 @@ import base64url from "base64url";
 
 export class Utils {
 
-    static spawn(command: string, cwd = process.cwd()): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
+    static bash(command: string, cwd = process.cwd()): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
         return new Promise((resolve, reject) => {
             const cp = childProcess.spawn(`${command}`, {shell: "bash", env: process.env, cwd});
 
@@ -33,6 +33,35 @@ export class Utils {
             });
             cp.on("error", (e) => {
                 return setTimeout(() => reject(new ExitError(`'${command}' had errors\n${e}`)), 10);
+            });
+
+        });
+    }
+
+    static spawn(cmdArgs: string[], cwd = process.cwd()): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
+        return new Promise((resolve, reject) => {
+            const cp = childProcess.spawn(cmdArgs[0], cmdArgs.slice(1), {env: process.env, cwd});
+
+            let output = "";
+            let stdout = "";
+            let stderr = "";
+
+            cp.stderr.on("data", (buff) => {
+                stderr += buff.toString();
+                output += buff.toString();
+            });
+            cp.stdout.on("data", (buff) => {
+                stdout += buff.toString();
+                output += buff.toString();
+            });
+            cp.on("exit", (status) => {
+                if ((status ?? 0) === 0) {
+                    return setTimeout(() => resolve({stdout, stderr, output, status: status ?? 0}), 10);
+                }
+                return setTimeout(() => reject(new ExitError(`${output !== "" ? output : "$? [" + status + "]"}`)), 10);
+            });
+            cp.on("error", (e) => {
+                return setTimeout(() => reject(new ExitError(`'${JSON.stringify(cmdArgs)}' had errors\n${e}`)), 10);
             });
 
         });
@@ -155,7 +184,7 @@ export class Utils {
     static async rsyncTrackedFiles(cwd: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
         const time = process.hrtime();
         await fs.mkdirp(`${cwd}/.gitlab-ci-local/builds/${target}`);
-        await Utils.spawn(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory) --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
+        await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory) --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
 

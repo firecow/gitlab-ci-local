@@ -359,7 +359,7 @@ export class Job {
 
         for (const id of this._containersToClean) {
             try {
-                await Utils.spawn(`docker rm -f ${id}`);
+                await Utils.spawn(["docker", "rm", "-f", `${id}`]);
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
@@ -368,7 +368,7 @@ export class Job {
 
         if (this._serviceNetworkId) {
             try {
-                await Utils.spawn(`docker network rm ${this._serviceNetworkId}`);
+                await Utils.spawn(["docker", "network", "rm", `${this._serviceNetworkId}`]);
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
@@ -378,7 +378,7 @@ export class Job {
         if (this._containerVolumeNames.length > 0) {
             try {
                 for (const containerVolume of this._containerVolumeNames) {
-                    await Utils.spawn(`docker volume rm ${containerVolume}`);
+                    await Utils.spawn(["docker", "volume", "rm", `${containerVolume}`]);
                 }
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
@@ -484,8 +484,8 @@ export class Job {
             }
 
             const volumePromises = [];
-            volumePromises.push(Utils.spawn(`docker volume create ${buildVolumeName}`, cwd));
-            volumePromises.push(Utils.spawn(`docker volume create ${tmpVolumeName}`, cwd));
+            volumePromises.push(Utils.spawn(["docker", "volume", "create", `${buildVolumeName}`], cwd));
+            volumePromises.push(Utils.spawn(["docker", "volume", "create", `${tmpVolumeName}`], cwd));
             dockerCmd += `--volume ${buildVolumeName}:/builds/${safeJobName} `;
             dockerCmd += `--volume ${tmpVolumeName}:/tmp/ `;
             this._containerVolumeNames.push(buildVolumeName);
@@ -537,19 +537,19 @@ export class Job {
             dockerCmd += "\texit 1\n";
             dockerCmd += "fi\n\"";
 
-            const {stdout: containerId} = await Utils.spawn(dockerCmd, cwd);
+            const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
             this._containerId = containerId.replace(/\r?\n/g, "");
             this._containersToClean.push(this._containerId);
 
             time = process.hrtime();
             // Copy source files into container.
-            await Utils.spawn(`docker cp .gitlab-ci-local/builds/.docker/. ${this._containerId}:/builds/${safeJobName}`, cwd);
+            await Utils.spawn(["docker", "cp", ".gitlab-ci-local/builds/.docker/." , `${this._containerId}:/builds/${safeJobName}`], cwd);
             this.refreshLongRunningSilentTimeout(writeStreams);
 
             // Copy file variables into container.
             const fileVariablesFolder = `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/`;
             if (await fs.pathExists(fileVariablesFolder)) {
-                await Utils.spawn(`docker cp ${fileVariablesFolder} ${this._containerId}:${fileVariablesFolder}/`, cwd);
+                await Utils.spawn(["docker", "cp", `${fileVariablesFolder}`, `${this._containerId}:${fileVariablesFolder}/`], cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
 
@@ -562,7 +562,10 @@ export class Job {
 
         if (this.imageName) {
             // Files in docker-executor build folder must be root owned.
-            await Utils.spawn(`docker run --rm -v ${tmpVolumeName}:/tmp/ -v ${buildVolumeName}:/app/ firecow/gitlab-ci-local-util bash -c "chown 0:0 -R /app/ && chmod a+rw -R /app/ && chmod a+rw -R /tmp/"`);
+            await Utils.spawn([
+                "docker", "run", "--rm", "-v", `${tmpVolumeName}:/tmp/`, "-v", `${buildVolumeName}:/app/`, "firecow/gitlab-ci-local-util",
+                "bash", "-c", "chown 0:0 -R /app/ && chmod a+rw -R /app/ && chmod a+rw -R /tmp/",
+            ]);
         }
 
         let cmd = "set -eo pipefail\n";
@@ -579,7 +582,7 @@ export class Job {
         await fs.chmod(`${cwd}/.gitlab-ci-local/scripts/${safeJobName}`, "0755");
 
         if (this.imageName) {
-            await Utils.spawn(`docker cp .gitlab-ci-local/scripts/. ${this._containerId}:/gcl-scripts/`, cwd);
+            await Utils.spawn(["docker", "cp", ".gitlab-ci-local/scripts/.", `${this._containerId}:/gcl-scripts/`], cwd);
         }
 
         const cp = childProcess.spawn(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
@@ -635,7 +638,7 @@ export class Job {
         pullCmd += `\techo "Pulling ${imageToPull}"\n`;
         pullCmd += `\tdocker pull ${imageToPull}\n`;
         pullCmd += "fi\n";
-        await Utils.spawn(pullCmd, this.argv.cwd);
+        await Utils.bash(pullCmd, this.argv.cwd);
         this.refreshLongRunningSilentTimeout(writeStreams);
         const endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -718,9 +721,9 @@ export class Job {
     copyIn(source: string) {
         const safeJobName = this.safeJobName;
         if (!this.imageName && this.argv.shellIsolation) {
-            return Utils.spawn(`rsync -a ${source}/. ${this.argv.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+            return Utils.bash(`rsync -a ${source}/. ${this.argv.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
         }
-        return Utils.spawn(`docker cp ${source}/. ${this._containerId}:/builds/${safeJobName}`);
+        return Utils.bash(`docker cp ${source}/. ${this._containerId}:/builds/${safeJobName}`);
     }
 
     private async copyCacheOut(writeStreams: WriteStreams) {
@@ -794,9 +797,9 @@ export class Job {
 
         if (this.artifactsToSource) {
             time = process.hrtime();
-            await Utils.spawn(`rsync --exclude=/.gitlab-ci-reports/ -a ${cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${cwd}`);
+            await Utils.bash(`rsync --exclude=/.gitlab-ci-reports/ -a ${cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${cwd}`);
             if (reportDotenv != null) {
-                await Utils.spawn(`rsync -a ${cwd}/.gitlab-ci-local/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${cwd}`);
+                await Utils.bash(`rsync -a ${cwd}/.gitlab-ci-local/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${cwd}`);
             }
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -811,13 +814,13 @@ export class Job {
         await fs.mkdirp(`${cwd}/.gitlab-ci-local/${type}`);
 
         if (this.imageName) {
-            const {stdout: cid} = await Utils.spawn(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
+            const {stdout: cid} = await Utils.bash(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
             const containerId = cid.replace(/\r?\n/g, "");
             this._containersToClean.push(containerId);
-            await Utils.spawn(`docker start ${containerId} --attach`);
-            await Utils.spawn(`docker cp ${containerId}:/${type}/. .gitlab-ci-local/${type}/.`, cwd);
+            await Utils.bash(`docker start ${containerId} --attach`);
+            await Utils.bash(`docker cp ${containerId}:/${type}/. .gitlab-ci-local/${type}/.`, cwd);
         } else if (this.argv.shellIsolation) {
-            await Utils.spawn(`bash -eo pipefail -c "${cmd}"`, `${cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+            await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}/.gitlab-ci-local/builds/${safeJobName}`);
         }
     }
 
@@ -845,7 +848,7 @@ export class Job {
     }
 
     private async createDockerNetwork(networkName: string) {
-        const {stdout: networkId} = await Utils.spawn(`docker network create ${networkName}`);
+        const {stdout: networkId} = await Utils.spawn(["docker", "network", "create", `${networkName}`]);
         this._serviceNetworkId = networkId.replace(/\r?\n/g, "");
     }
 
@@ -885,18 +888,18 @@ export class Job {
         (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
 
         const time = process.hrtime();
-        const {stdout} = await Utils.spawn(dockerCmd, cwd);
+        const {stdout} = await Utils.bash(dockerCmd, cwd);
         const containerId = stdout.replace(/\r?\n/g, "");
         this._containersToClean.push(containerId);
 
         // Copy file variables into service container.
         const fileVariablesFolder = `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/`;
         if (await fs.pathExists(fileVariablesFolder)) {
-            await Utils.spawn(`docker cp ${fileVariablesFolder} ${containerId}:${fileVariablesFolder}/`, cwd);
+            await Utils.bash(`docker cp ${fileVariablesFolder} ${containerId}:${fileVariablesFolder}/`, cwd);
             this.refreshLongRunningSilentTimeout(writeStreams);
         }
 
-        await Utils.spawn(`docker start ${containerId}`);
+        await Utils.spawn(["docker", "start", `${containerId}`]);
 
         const endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -907,7 +910,7 @@ export class Job {
     private async serviceHealthCheck(writeStreams: WriteStreams, service: Service, containerId: string) {
         const cwd = this.argv.cwd;
         const dockerInspectCmd = `docker image inspect ${service.getName(this.expandedVariables)}`;
-        const {stdout} = await Utils.spawn(dockerInspectCmd, cwd);
+        const {stdout} = await Utils.bash(dockerInspectCmd, cwd);
         const imageInspect = JSON.parse(stdout);
 
         // Copied from the startService block. Important thing is that the aliases match
@@ -921,7 +924,7 @@ export class Job {
 
         if ((imageInspect[0]?.ContainerConfig?.ExposedPorts ?? null) === null) {
             writeStreams.stderr(chalk`${this.chalkJobName} {yellow Could not find exposed tcp ports ${service.getName(this.expandedVariables)}}\n`);
-            const {output} = await Utils.spawn(`docker logs ${containerId}`);
+            const {output} = await Utils.bash(`docker logs ${containerId}`);
             output.split(/\r?\n/g).slice(0, -1).forEach(line => writeStreams.stderr(chalk`${this.chalkJobName} {cyan >} ${line}\n`));
             return ;
         }
@@ -935,7 +938,7 @@ export class Job {
 
                 dockerCmd += ` willwill/wait-for-it "${aliases[0]}:${portNum}" -t 30`;
                 const time = process.hrtime();
-                const {status: result, stdout} = await Utils.spawn(dockerCmd, cwd);
+                const {status: result, stdout} = await Utils.bash(dockerCmd, cwd);
                 this._containersToClean.push(stdout.replace(/\r?\n/g, ""));
                 const endTime = process.hrtime(time);
                 if(result == 0){

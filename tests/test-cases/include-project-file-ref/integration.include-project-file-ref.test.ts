@@ -1,7 +1,7 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
-import {initSpawnSpy} from "../../mocks/utils.mock";
+import {initBashSpy, initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 import fs from "fs-extra";
 
@@ -9,7 +9,7 @@ test("include-project-file-ref <deploy-job>", async () => {
     await fs.rm("tests/test-cases/include-project-file-ref/.gitlab-ci-local", {recursive: true, force: true});
     const writeStreams = new MockWriteStreams();
     const spyGitRemote = {
-        cmd: "git remote -v",
+        cmdArgs: ["git", "remote", "-v"],
         returnValue: {stdout: "origin\tgit@gitlab.com:gcl/test-hest.git (fetch)\norigin\tgit@gitlab.com:gcl/test-hest.git (push)\n"},
     };
     const target = ".gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/master/";
@@ -17,7 +17,8 @@ test("include-project-file-ref <deploy-job>", async () => {
         cmd: `git archive --remote=ssh://git@gitlab.com:22/firecow/gitlab-ci-local-includes.git master .gitlab-module.yml | tar -f - -xC ${target}`,
         returnValue: {output: ""},
     };
-    initSpawnSpy([...WhenStatics.all, spyGitRemote, spyGitArchive]);
+    initBashSpy([spyGitArchive]);
+    initSpawnSpy([...WhenStatics.all, spyGitRemote]);
     const mock = "tests/test-cases/include-project-file-ref/mock-gitlab-module.yml";
     const mockTarget = "tests/test-cases/include-project-file-ref/.gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/master/.gitlab-module.yml";
     await fs.ensureFile(mockTarget);
