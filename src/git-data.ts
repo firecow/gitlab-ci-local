@@ -45,7 +45,7 @@ export class GitData {
     static async init(cwd: string, writeStreams: WriteStreams): Promise<GitData> {
         const gitData = new GitData();
         try {
-            const gitVersion = (await Utils.spawn("git --version", cwd)).stdout.trimEnd();
+            const gitVersion = (await Utils.spawn(["git", "--version"], cwd)).stdout.trimEnd();
             assert(gitVersion != null, "We do not think it is safe to use git without a proper version string!");
         } catch (e) {
             writeStreams.stderr(chalk`{yellow Git not available using fallback}\n`);
@@ -59,7 +59,7 @@ export class GitData {
 
     private async initCommitData(cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
-            const gitLogStdout = (await Utils.spawn("git log -1 --pretty=format:'%h %H %D'", cwd)).stdout.replace(/\r?\n/g, "");
+            const gitLogStdout = (await Utils.spawn(["git", "log", "-1", "--pretty=format:'%h %H %D'"], cwd)).stdout.replace(/\r?\n/g, "");
             const gitLogMatch = gitLogStdout.match(/(?<short_sha>\S*?) (?<sha>\S*) .*HEAD( -> |, tag: |, )(?<ref_name>.*?)(?:,|$)/);
 
             assert(gitLogMatch?.groups != null, "git log -1 didn't provide valid matches");
@@ -78,7 +78,7 @@ export class GitData {
 
     private async initRemoteData(cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
-            const { stdout: gitRemote } = await Utils.spawn("git remote -v", cwd);
+            const { stdout: gitRemote } = await Utils.spawn(["git", "remote", "-v"], cwd);
             const gitRemoteMatch = gitRemote.match(/.*(?:\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>.*?)(?:\r?\n|\.git)/);
 
             assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
@@ -98,13 +98,13 @@ export class GitData {
 
     async initUserData(cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
-            this.user.GITLAB_USER_NAME = (await Utils.spawn("git config user.name", cwd)).stdout.trimEnd();
+            this.user.GITLAB_USER_NAME = (await Utils.spawn(["git", "config", "user.name"], cwd)).stdout.trimEnd();
         } catch(e) {
             writeStreams.stderr(chalk`{yellow Using fallback git user.name}\n`);
         }
 
         try {
-            const email = (await Utils.spawn("git config user.email", cwd)).stdout.trimEnd();
+            const email = (await Utils.spawn(["git", "config", "user.email"], cwd)).stdout.trimEnd();
             this.user.GITLAB_USER_EMAIL = email;
             this.user.GITLAB_USER_LOGIN = email.replace(/@.*/, "");
         } catch (e) {
@@ -112,7 +112,7 @@ export class GitData {
         }
 
         try {
-            this.user.GITLAB_USER_ID = (await Utils.spawn("id -u", cwd)).stdout.trimEnd();
+            this.user.GITLAB_USER_ID = (await Utils.spawn(["id", "-u"], cwd)).stdout.trimEnd();
         } catch(e) {
             writeStreams.stderr(chalk`{yellow Using fallback linux user id}\n`);
         }

@@ -9,14 +9,14 @@ jest.setTimeout(30000);
 
 beforeAll(() => {
     const spyGitRemote = {
-        cmd: "git remote -v",
+        cmdArgs: ["git", "remote", "-v"],
         returnValue: {stdout: "origin\tgit@gitlab.com:gcl/cache-docker-mount.git (fetch)\norigin\tgit@gitlab.com:gcl/cache-docker-mount.git (push)\n"},
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 });
 
 test("cache-docker-mount <consume-cache> --mount-cache --needs", async () => {
-    await Utils.spawn("docker volume rm -f glc-cache-docker-mount-maven");
+    await Utils.spawn(["docker", "volume", "rm", "-f", "glc-cache-docker-mount-maven"]);
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/cache-docker-mount",
@@ -26,7 +26,7 @@ test("cache-docker-mount <consume-cache> --mount-cache --needs", async () => {
     }, writeStreams);
 
     expect(await fs.pathExists("tests/test-cases/cache-docker-mount/.gitlab-ci-local/cache/maven/")).toEqual(false);
-    expect((await Utils.spawn("docker volume ls | grep -w gcl-gcl-cache-docker-mount-maven")).status).toBe(0);
+    expect((await Utils.bash("docker volume ls | grep -w gcl-gcl-cache-docker-mount-maven")).status).toBe(0);
 
     expect(writeStreams.stderrLines).toEqual([]);
 });
