@@ -67,7 +67,7 @@ export class GitData {
         });
         promises.push(shaPromise);
 
-        const shortShaPromise = Utils.spawn(["git", "rev-parse", "--short", "HEAD"], cwd)
+        const shortShaPromise = Utils.spawn(["git", "rev-parse", "--short", "HEAD"], cwd);
         shortShaPromise.then(({stdout}) => {
             this.commit.SHORT_SHA = stdout.trimEnd();
         });
