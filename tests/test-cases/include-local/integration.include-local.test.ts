@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("include-local <build-job>", async () => {
+test("include-local <build-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/include-local",
@@ -24,7 +24,7 @@ test.concurrent("include-local <build-job>", async () => {
     expect(writeStreams.stderrLines).toEqual([]);
 });
 
-test.concurrent("include-local <test-job> (short-list)", async () => {
+test("include-local <test-job> (short-list)", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/include-local",
@@ -39,7 +39,7 @@ test.concurrent("include-local <test-job> (short-list)", async () => {
     expect(writeStreams.stderrLines).toEqual([]);
 });
 
-test.concurrent("include-local <deploy-job> (short-single)", async () => {
+test("include-local <deploy-job> (short-single)", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/include-local",

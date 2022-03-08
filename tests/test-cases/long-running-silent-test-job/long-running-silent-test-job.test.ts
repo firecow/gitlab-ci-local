@@ -10,7 +10,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("long-running-silent-test-job <test-job>", async () => {
+test("long-running-silent-test-job <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/long-running-silent-test-job",

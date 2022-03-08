@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("image <test job>", async () => {
+test("image <test job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
@@ -18,7 +18,7 @@ test.concurrent("image <test job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <test-entrypoint>", async () => {
+test("image <test-entrypoint>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
@@ -36,7 +36,7 @@ test.concurrent("image <test-entrypoint>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <test-entrypoint-override>", async () => {
+test("image <test-entrypoint-override>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
@@ -49,7 +49,7 @@ test.concurrent("image <test-entrypoint-override>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <test-from-scratch>", async () => {
+test("image <test-from-scratch>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
