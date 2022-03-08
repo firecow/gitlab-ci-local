@@ -12,7 +12,7 @@ beforeAll(() => {
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 });
 
-test.concurrent("custom-home <test-job>", async () => {
+test("custom-home <test-job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",
@@ -32,7 +32,7 @@ test.concurrent("custom-home <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("custom-home <test-image>", async () => {
+test("custom-home <test-image>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",
@@ -48,7 +48,7 @@ test.concurrent("custom-home <test-image>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("custom-home <test-normalize-key>", async () => {
+test("custom-home <test-normalize-key>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",
@@ -63,7 +63,7 @@ test.concurrent("custom-home <test-normalize-key>", async () => {
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("custom-home <test-predefined-overwrite>", async () => {
+test("custom-home <test-predefined-overwrite>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",

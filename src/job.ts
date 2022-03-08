@@ -612,8 +612,8 @@ export class Job {
             cp.stdout.on("data", (e) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
             cp.stderr.on("data", (e) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
 
-            cp.on("exit", (code) => setTimeout(() => resolve(code ?? 0), 10));
-            cp.on("error", (err) => setTimeout(() => reject(err), 10));
+            cp.on("exit", (code) => setTimeout(() => resolve(code ?? 0), 5));
+            cp.on("error", (err) => setTimeout(() => reject(err), 5));
 
             if (this.imageName) {
                 cp.stdin.end(`/gcl-scripts/${safeJobName}`);

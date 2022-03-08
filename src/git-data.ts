@@ -44,28 +44,40 @@ export class GitData {
 
     static async init(cwd: string, writeStreams: WriteStreams): Promise<GitData> {
         const gitData = new GitData();
-        try {
-            const gitVersion = (await Utils.spawn(["git", "--version"], cwd)).stdout.trimEnd();
-            assert(gitVersion != null, "We do not think it is safe to use git without a proper version string!");
-        } catch (e) {
-            writeStreams.stderr(chalk`{yellow Git not available using fallback}\n`);
-            return gitData;
-        }
-        await gitData.initCommitData(cwd, writeStreams);
-        await gitData.initRemoteData(cwd, writeStreams);
-        await gitData.initUserData(cwd, writeStreams);
+        const promises = [];
+        promises.push(gitData.initCommitData(cwd, writeStreams));
+        promises.push(gitData.initRemoteData(cwd, writeStreams));
+        promises.push(gitData.initUserData(cwd, writeStreams));
+        await Promise.all(promises);
         return gitData;
     }
 
     private async initCommitData(cwd: string, writeStreams: WriteStreams): Promise<void> {
+        const promises = [];
+
+        const refNamePromise = Utils.spawn(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd);
+        refNamePromise.then(({stdout}) => {
+            this.commit.REF_NAME = stdout.trimEnd();
+        });
+        promises.push(refNamePromise);
+
+        const shaPromise = Utils.spawn(["git", "rev-parse", "HEAD"], cwd);
+        shaPromise.then(({stdout}) => {
+            this.commit.SHA = stdout.trimEnd();
+        });
+        promises.push(shaPromise);
+
+        const shortShaPromise = Utils.spawn(["git", "rev-parse", "--short", "HEAD"], cwd)
+        shortShaPromise.then(({stdout}) => {
+            this.commit.SHORT_SHA = stdout.trimEnd();
+        });
+        promises.push(shortShaPromise);
+
         try {
-            this.commit.REF_NAME = (await Utils.spawn(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd)).stdout.trimEnd();
-            this.commit.SHA = (await Utils.spawn(["git", "rev-parse", "HEAD"], cwd)).stdout.trimEnd();
-            this.commit.SHORT_SHA = (await Utils.spawn(["git", "rev-parse", "--short", "HEAD"], cwd)).stdout.trimEnd();
+            await Promise.all(promises);
         } catch (e) {
             if (e instanceof ExitError) {
-                writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
-                return;
+                return writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
             }
             writeStreams.stderr(chalk`{yellow Using fallback git commit data}\n`);
         }
@@ -92,24 +104,31 @@ export class GitData {
     }
 
     async initUserData(cwd: string, writeStreams: WriteStreams): Promise<void> {
-        try {
-            this.user.GITLAB_USER_NAME = (await Utils.spawn(["git", "config", "user.name"], cwd)).stdout.trimEnd();
-        } catch(e) {
-            writeStreams.stderr(chalk`{yellow Using fallback git user.name}\n`);
-        }
+        const promises = [];
 
-        try {
-            const email = (await Utils.spawn(["git", "config", "user.email"], cwd)).stdout.trimEnd();
+        const gitUsernamePromise = Utils.spawn(["git", "config", "user.name"], cwd).then(({stdout}) => {
+            this.user.GITLAB_USER_NAME = stdout.trimEnd();
+        }).catch(() => {
+            writeStreams.stderr(chalk`{yellow Using fallback git user.name}\n`);
+        });
+        promises.push(gitUsernamePromise);
+
+        const gitEmailPromise = Utils.spawn(["git", "config", "user.email"], cwd).then(({stdout}) => {
+            const email = stdout.trimEnd();
             this.user.GITLAB_USER_EMAIL = email;
             this.user.GITLAB_USER_LOGIN = email.replace(/@.*/, "");
-        } catch (e) {
+        }).catch(() => {
             writeStreams.stderr(chalk`{yellow Using fallback git user.email}\n`);
-        }
+        });
+        promises.push(gitEmailPromise);
 
-        try {
-            this.user.GITLAB_USER_ID = (await Utils.spawn(["id", "-u"], cwd)).stdout.trimEnd();
-        } catch(e) {
+        const osUidPromise = Utils.spawn(["id", "-u"], cwd).then(({stdout}) => {
+            this.user.GITLAB_USER_ID = stdout.trimEnd();
+        }).catch(() => {
             writeStreams.stderr(chalk`{yellow Using fallback linux user id}\n`);
-        }
+        });
+        promises.push(osUidPromise);
+
+        await Promise.all(promises);
     }
 }
