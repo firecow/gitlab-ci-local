@@ -20,7 +20,7 @@
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
-    "axios": "^0.26.0",
+    "axios": "^0.26.1",
     "base64url": "^3.0.1",
     "camelcase": "^6.3.0",
     "chalk": "^4.1.2",
@@ -43,8 +43,8 @@
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.4",
     "@types/yargs": "17.0.9",
-    "@typescript-eslint/eslint-plugin": "5.14.0",
-    "@typescript-eslint/parser": "5.14.0",
+    "@typescript-eslint/eslint-plugin": "5.15.0",
+    "@typescript-eslint/parser": "5.15.0",
     "axios-mock-adapter": "1.20.0",
     "depcheck": "1.4.3",
     "eslint": "8.11.0",
