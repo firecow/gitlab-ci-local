@@ -8,7 +8,7 @@ import {Argv} from "./argv";
 
 export class VariablesFromFiles {
 
-    static async init(argv: Argv, writeStreams: WriteStreams, gitData: GitData): Promise<{ [key: string]: string }> {
+    static async init(argv: Argv, writeStreams: WriteStreams, gitData: GitData): Promise<{ [name: string]: string|Record<string, string> }> {
         const homeDir = argv.home;
         const homeVariablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         let variables: { [key: string]: string } = {};

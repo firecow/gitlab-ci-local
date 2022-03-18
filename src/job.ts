@@ -124,10 +124,26 @@ export class Job {
 
         // Create expanded variables
         const argvVariables = argv.variable;
-        const envs = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...variablesFromFiles, ...argvVariables};
+
+        const environmentExpandedVariablesFromFiles: {[key: string]: string} = {};
+        for (const [envMatcher, value] of Object.entries(variablesFromFiles)) {
+            if (typeof value === "string") {
+                environmentExpandedVariablesFromFiles[envMatcher] = value;
+            } else {
+                for (const [envWildcard, v] of Object.entries(value).sort()) {
+                    const regexp = new RegExp(envWildcard.replace(/\*/g, ".*?"), "g");
+                    if (this.environment?.name.match(regexp)) {
+                        environmentExpandedVariablesFromFiles[envMatcher] = v;
+                        break;
+                    }
+                }
+            }
+        }
+
+        const envs = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...environmentExpandedVariablesFromFiles, ...argvVariables};
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
-        this.expandedVariables = {...predefinedVariables, ...expandedGlobalVariables, ...expandedJobVariables, ...variablesFromFiles, ...argvVariables};
+        this.expandedVariables = {...predefinedVariables, ...expandedGlobalVariables, ...expandedJobVariables, ...environmentExpandedVariablesFromFiles, ...argvVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
