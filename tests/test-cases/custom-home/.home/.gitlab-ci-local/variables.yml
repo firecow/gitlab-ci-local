@@ -1,7 +1,9 @@
 ---
 project:
   gitlab.com/gcl/custom-home:
-    GROUP_VAR: project-group-var-override-value
+    GROUP_VAR:
+      '*staging*': staging-project-group-var-override-value
+      '*production*': production-project-group-var-override-value
     PROJECT_VAR: project-var-value
     CI_PROJECT_ID: 12345678
     DOUBLE_QUOTE_VAR: |

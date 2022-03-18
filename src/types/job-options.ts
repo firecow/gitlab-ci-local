@@ -11,5 +11,5 @@ export interface JobOptions {
     globals: any;
     pipelineIid: number;
     gitData: GitData;
-    variablesFromFiles: { [name: string]: string };
+    variablesFromFiles: { [name: string]: string|Record<string, string> };
 }
