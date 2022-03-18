@@ -12,22 +12,36 @@ beforeAll(() => {
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 });
 
-test("custom-home <test-job>", async () => {
+test("custom-home <test-staging>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",
-        job: ["test-job"],
+        job: ["test-staging"],
         home: "tests/test-cases/custom-home/.home",
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job                 } {greenBright >} group-global-var-override-value`,
-        chalk`{blueBright test-job                 } {greenBright >} project-group-var-override-value`,
-        chalk`{blueBright test-job                 } {greenBright >} project-var-value`,
-        chalk`{blueBright test-job                 } {greenBright >} ~/dir/`,
-        chalk`{blueBright test-job                 } {greenBright >} Im content of a file variable`,
-        chalk`{blueBright test-job                 } {greenBright >} "This is crazy"`,
-        chalk`{blueBright test-job                 } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
+        chalk`{blueBright test-staging             } {greenBright >} group-global-var-override-value`,
+        chalk`{blueBright test-staging             } {greenBright >} staging-project-group-var-override-value`,
+        chalk`{blueBright test-staging             } {greenBright >} project-var-value`,
+        chalk`{blueBright test-staging             } {greenBright >} ~/dir/`,
+        chalk`{blueBright test-staging             } {greenBright >} Im content of a file variable`,
+        chalk`{blueBright test-staging             } {greenBright >} "This is crazy"`,
+        chalk`{blueBright test-staging             } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test("custom-home <test-production>", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/custom-home",
+        job: ["test-production"],
+        home: "tests/test-cases/custom-home/.home",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-production          } {greenBright >} production-project-group-var-override-value`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

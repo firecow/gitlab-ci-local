@@ -127,7 +127,7 @@ export class Parser {
                 data: jobData,
                 name: jobName,
                 namePad: this.jobNamePad,
-                variablesFromFiles: variablesFromFiles,
+                variablesFromFiles,
                 globals: gitlabData,
                 pipelineIid,
                 gitData,
