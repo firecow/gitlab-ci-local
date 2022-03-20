@@ -109,6 +109,7 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
     writeStreams.flush();
 
     if (parser) {
+        await cleanupResources(parser);
         return parser.jobs;
     }
 
