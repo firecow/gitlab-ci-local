@@ -317,7 +317,7 @@ export class Job {
     }
 
     get fileVariablesDir() {
-        return `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/${this.jobId}`;
+        return `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}-${this.jobId}`;
     }
 
     async start(): Promise<void> {
@@ -339,14 +339,12 @@ export class Job {
         this._prescriptsExitCode = await this.execScripts(prescripts);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
-            await this.cleanupResources();
             this._running = false;
             return;
         }
 
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
-            await this.cleanupResources();
             this._running = false;
             return;
         }
@@ -373,7 +371,6 @@ export class Job {
             this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, this.jobData.coverage, safeJobname);
         }
 
-        await this.cleanupResources();
         this._running = false;
     }
 
@@ -408,6 +405,13 @@ export class Job {
                 assert(e instanceof Error, "e is not instanceof Error");
                 writeStreams.stderr(chalk`{yellow ${e.message}}`);
             }
+        }
+
+        const fileVariablesDir = this.fileVariablesDir;
+        try {
+            await fs.rm(fileVariablesDir, { recursive: true, force: true });
+        } catch (e) {
+            writeStreams.stderr(chalk`{yellow ${fileVariablesDir} could not be removed}`);
         }
     }
 
