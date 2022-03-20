@@ -24,10 +24,10 @@ test("custom-home <test-staging>", async () => {
         chalk`{blueBright test-staging             } {greenBright >} group-global-var-override-value`,
         chalk`{blueBright test-staging             } {greenBright >} staging-project-group-var-override-value`,
         chalk`{blueBright test-staging             } {greenBright >} project-var-value`,
-        chalk`{blueBright test-staging             } {greenBright >} ~/dir/`,
-        // chalk`{blueBright test-staging             } {greenBright >} Im content of a file variable`,
-        // chalk`{blueBright test-staging             } {greenBright >} "This is crazy"`,
-        // chalk`{blueBright test-staging             } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
+        chalk`{blueBright test-staging             } {greenBright >} warn: INVALID_DIR_VAR is pointing to invalid path`,
+        chalk`{blueBright test-staging             } {greenBright >} Im content of a file variable`,
+        chalk`{blueBright test-staging             } {greenBright >} "This is crazy"`,
+        chalk`{blueBright test-staging             } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

@@ -13,6 +13,7 @@ export interface CICDVariable {
         regexp: RegExp;
         regexpPriority: number;
         scopePriority: number;
+        fileSource?: string;
     }[];
 }
 
@@ -37,10 +38,19 @@ export class VariablesFromFiles {
         };
         const addToVariables = async (key: string, val: any, scopePriority: number) => {
             for (const [envMatcher, content] of Object.entries(typeof val === "string" ? initAllMatcher(val) : val)) {
-                if (typeof content === "string") {
+                if (typeof content === "string" && !content.match(/^[/|~]/)) {
                     const regexp = new RegExp(envMatcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "variable", environments: []};
-                    variables[key].environments.push({content, regexp, regexpPriority: envMatcher.length, scopePriority });
+                    variables[key].environments.push({content, regexp, regexpPriority: envMatcher.length, scopePriority});
+                } else if (typeof content === "string" && content.match(/^[/|~]/)) {
+                    const fileSource = content.replace(/^~\/(.*)/, `${homeDir}/$1`);
+                    const regexp = new RegExp(envMatcher.replace(/\*/g, ".*"), "g");
+                    variables[key] = variables[key] ?? {type: "file", environments: []};
+                    if (fs.existsSync(fileSource)) {
+                        variables[key].environments.push({content, regexp, regexpPriority: envMatcher.length, scopePriority, fileSource});
+                    } else {
+                        variables[key].environments.push({content: `warn: ${key} is pointing to invalid path\n`, regexp, regexpPriority: envMatcher.length, scopePriority});
+                    }
                 } else {
                     assert(content != null, `${key}.file content cannot be null/undefined`);
                     assert(typeof content == "object", `${key}.${envMatcher}.file must be text or multiline text`);
@@ -74,6 +84,16 @@ export class VariablesFromFiles {
             assert(typeof projectEntries === "object", "projectEntries must be object");
             for (const [k, v] of Object.entries(projectEntries)) {
                 await addToVariables(k, v, 2);
+            }
+        }
+
+        const projectVariablesFile = `${argv.cwd}/.gitlab-ci-local-variables.yml`;
+        if (fs.existsSync(projectVariablesFile)) {
+            const projectVariablesFileData: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA}) ?? {};
+            assert(projectVariablesFileData != null, "projectEntries cannot be null/undefined");
+            assert(typeof projectVariablesFileData === "object", "projectEntries must be object");
+            for (const [k, v] of Object.entries(projectVariablesFileData)) {
+                await addToVariables(k, v, 3);
             }
         }
 

@@ -5,7 +5,7 @@ test-staging:
     - echo ${GLOBAL_VAR}
     - echo ${GROUP_VAR}
     - echo ${PROJECT_VAR}
-    - echo ${INVALID_DIR_VAR}
+    - cat ${INVALID_DIR_VAR}
     - cat ${GLOBAL_FILE_VAR}
     - echo ${DOUBLE_QUOTE_VAR}
     - echo ${COMPLEX_VAR}
