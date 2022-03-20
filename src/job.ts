@@ -129,10 +129,14 @@ export class Job {
         for (const [k, v] of Object.entries(variablesFromFiles)) {
             for (const entry of v.environments) {
                 if (this.environment?.name.match(entry.regexp) || entry.regexp.source === ".*") {
-                    if (v.type === "file") {
+                    if (v.type === "file" && !entry.fileSource) {
                         variablesFromCWDOrHome[k] = `${fileVariablesDir}/${k}`;
                         fs.mkdirpSync(`${fileVariablesDir}`);
                         fs.writeFileSync(`${fileVariablesDir}/${k}`, entry.content);
+                    } else if (v.type === "file" && entry.fileSource) {
+                        variablesFromCWDOrHome[k] = `${fileVariablesDir}/${k}`;
+                        fs.mkdirpSync(`${fileVariablesDir}`);
+                        fs.copyFileSync(entry.fileSource, `${fileVariablesDir}/${k}`);
                     } else {
                         variablesFromCWDOrHome[k] = entry.content;
                     }
