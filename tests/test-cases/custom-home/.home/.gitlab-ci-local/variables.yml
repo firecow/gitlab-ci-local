@@ -12,6 +12,12 @@ project:
       {
         "private_key": "-----BEGIN PRIVATE KEY-----\n"
       }
+    FILE:
+      '*production*':
+        file: |
+          I'm the content of a file variable
+          I'm the 2nd line of file variable
+
   gitlab.com/gcl/no-match:
     PROJECT_VAR: no-match
 

@@ -9,11 +9,14 @@ test-staging:
     - cat ${GLOBAL_FILE_VAR}
     - echo ${DOUBLE_QUOTE_VAR}
     - echo ${COMPLEX_VAR}
+    - echo ${FILE}
 
 test-production:
   environment: production
   script:
     - echo ${GROUP_VAR}
+    - echo ${FILE}
+    - cat ${FILE}
 
 # Test file variables are working with docker-executor jobs
 test-image:
