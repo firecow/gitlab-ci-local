@@ -24,7 +24,7 @@ const generateGitIgnore = (cwd: string, file: string) => {
 
 const cleanupResources = async(parser: Parser|null) => {
     if (!parser) {
-        process.exit(1);
+        return;
     }
     const promises = [];
     for (const job of parser.jobs.values()) {
