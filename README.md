@@ -133,6 +133,17 @@ group:
 global:
   # Will be type File, because value is a file path
   KNOWN_HOSTS: '~/.ssh/known_hosts'
+  DEPLOY_ENV_SPECIFIC:
+    type: variable # Optional and defaults to variable
+    values:
+      '*production*': 'Im production only value'
+      'staging': 'Im staging only value'
+  FILE_CONTENT_IN_VALLUES:
+    type: file
+    values:
+      '*': |
+        Im staging only value
+        I'm great for certs n' stuff
 ```
 
 Variables will now appear in your jobs, if project or group matches git remote, global's are always present

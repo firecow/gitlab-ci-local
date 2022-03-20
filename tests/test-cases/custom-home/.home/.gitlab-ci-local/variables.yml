@@ -2,8 +2,9 @@
 project:
   gitlab.com/gcl/custom-home:
     GROUP_VAR:
-      '*staging*': staging-project-group-var-override-value
-      '*production*': production-project-group-var-override-value
+      values:
+        '*staging*': staging-project-group-var-override-value
+        '*production*': production-project-group-var-override-value
     PROJECT_VAR: project-var-value
     CI_PROJECT_ID: 12345678
     DOUBLE_QUOTE_VAR: |
@@ -13,8 +14,9 @@ project:
         "private_key": "-----BEGIN PRIVATE KEY-----\n"
       }
     FILE:
-      '*production*':
-        file: |
+      type: file
+      values:
+        '*production*': |
           I'm the content of a file variable
           I'm the 2nd line of file variable
 
