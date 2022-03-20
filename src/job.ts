@@ -124,26 +124,26 @@ export class Job {
 
         // Create expanded variables
         const argvVariables = argv.variable;
-
-        const environmentExpandedVariablesFromFiles: {[key: string]: string} = {};
-        for (const [envMatcher, value] of Object.entries(variablesFromFiles)) {
-            if (typeof value === "string") {
-                environmentExpandedVariablesFromFiles[envMatcher] = value;
-            } else {
-                for (const [envWildcard, v] of Object.entries(value).sort()) {
-                    const regexp = new RegExp(envWildcard.replace(/\*/g, ".*?"), "g");
-                    if (this.environment?.name.match(regexp)) {
-                        environmentExpandedVariablesFromFiles[envMatcher] = v;
-                        break;
+        const variablesFromCWDOrHome: { [key: string]: string} = {};
+        const fileVariablesDir = this.fileVariablesDir;
+        for (const [k, v] of Object.entries(variablesFromFiles)) {
+            for (const entry of v.environments) {
+                if (this.environment?.name.match(entry.regexp) || entry.regexp.source === ".*") {
+                    if (v.type === "file") {
+                        variablesFromCWDOrHome[k] = `${fileVariablesDir}/${k}`;
+                        fs.mkdirpSync(`${fileVariablesDir}`);
+                        fs.writeFileSync(`${fileVariablesDir}/${k}`, entry.content);
+                    } else {
+                        variablesFromCWDOrHome[k] = entry.content;
                     }
+                    break;
                 }
             }
         }
-
-        const envs = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...environmentExpandedVariablesFromFiles, ...argvVariables};
+        const envs = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...variablesFromCWDOrHome, ...argvVariables};
         const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
         const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
-        this.expandedVariables = {...predefinedVariables, ...expandedGlobalVariables, ...expandedJobVariables, ...environmentExpandedVariablesFromFiles, ...argvVariables};
+        this.expandedVariables = {...predefinedVariables, ...expandedGlobalVariables, ...expandedJobVariables, ...variablesFromCWDOrHome, ...argvVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
@@ -310,6 +310,10 @@ export class Job {
 
     get coveragePercent(): string | null {
         return this._coveragePercent;
+    }
+
+    get fileVariablesDir() {
+        return `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/${this.jobId}`;
     }
 
     async start(): Promise<void> {
@@ -563,9 +567,9 @@ export class Job {
             this.refreshLongRunningSilentTimeout(writeStreams);
 
             // Copy file variables into container.
-            const fileVariablesFolder = `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/`;
-            if (await fs.pathExists(fileVariablesFolder)) {
-                await Utils.spawn(["docker", "cp", `${fileVariablesFolder}`, `${this._containerId}:${fileVariablesFolder}/`], cwd);
+            const fileVariablesDir = this.fileVariablesDir;
+            if (await fs.pathExists(fileVariablesDir)) {
+                await Utils.spawn(["docker", "cp", `${fileVariablesDir}`, `${this._containerId}:${fileVariablesDir}/`], cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
 
@@ -909,9 +913,9 @@ export class Job {
         this._containersToClean.push(containerId);
 
         // Copy file variables into service container.
-        const fileVariablesFolder = `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}/`;
-        if (await fs.pathExists(fileVariablesFolder)) {
-            await Utils.bash(`docker cp ${fileVariablesFolder} ${containerId}:${fileVariablesFolder}/`, cwd);
+        const fileVariablesDir = this.fileVariablesDir;
+        if (await fs.pathExists(fileVariablesDir)) {
+            await Utils.spawn(["docker", "cp", `${fileVariablesDir}`, `${containerId}:${fileVariablesDir}/`], cwd);
             this.refreshLongRunningSilentTimeout(writeStreams);
         }
 

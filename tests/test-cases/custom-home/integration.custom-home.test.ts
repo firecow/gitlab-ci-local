@@ -25,9 +25,9 @@ test("custom-home <test-staging>", async () => {
         chalk`{blueBright test-staging             } {greenBright >} staging-project-group-var-override-value`,
         chalk`{blueBright test-staging             } {greenBright >} project-var-value`,
         chalk`{blueBright test-staging             } {greenBright >} ~/dir/`,
-        chalk`{blueBright test-staging             } {greenBright >} Im content of a file variable`,
-        chalk`{blueBright test-staging             } {greenBright >} "This is crazy"`,
-        chalk`{blueBright test-staging             } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
+        // chalk`{blueBright test-staging             } {greenBright >} Im content of a file variable`,
+        // chalk`{blueBright test-staging             } {greenBright >} "This is crazy"`,
+        // chalk`{blueBright test-staging             } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -42,6 +42,8 @@ test("custom-home <test-production>", async () => {
 
     const expected = [
         chalk`{blueBright test-production          } {greenBright >} production-project-group-var-override-value`,
+        chalk`{blueBright test-production          } {greenBright >} I'm the content of a file variable`,
+        chalk`{blueBright test-production          } {greenBright >} I'm the 2nd line of file variable`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
