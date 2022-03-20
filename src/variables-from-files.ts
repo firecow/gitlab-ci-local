@@ -31,34 +31,41 @@ export class VariablesFromFiles {
             homeFileData = yaml.load(await fs.readFile(homeVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA});
         }
 
-        const initAllMatcher = (v: any) => {
-            const allEnvironment: {[key: string]: any} = {};
-            allEnvironment["*"] = v;
-            return allEnvironment;
+        const unpack  = (v: any): { values: any; type: "file"|"variable"} => {
+            if (typeof v === "string") {
+                const catchAll: { values: any; type: "file"|"variable"} = { values: {}, type: "variable"};
+                catchAll.values = {};
+                catchAll.values["*"] = v;
+                return catchAll;
+            }
+            if (v.type == null) {
+                v.type = "variable";
+            }
+            return v;
         };
         const addToVariables = async (key: string, val: any, scopePriority: number) => {
-            for (const [envMatcher, content] of Object.entries(typeof val === "string" ? initAllMatcher(val) : val)) {
-                if (typeof content === "string" && !content.match(/^[/|~]/)) {
-                    const regexp = new RegExp(envMatcher.replace(/\*/g, ".*"), "g");
+            const {type, values} = unpack(val);
+            for (const [matcher, content] of Object.entries(values)) {
+                assert(typeof content == "string", `${key}.${matcher} content must be text or multiline text`);
+                if (type === "variable" && typeof content === "string" && !content.match(/^[/|~]/)) {
+                    const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "variable", environments: []};
-                    variables[key].environments.push({content, regexp, regexpPriority: envMatcher.length, scopePriority});
-                } else if (typeof content === "string" && content.match(/^[/|~]/)) {
+                    variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
+                } else if (type === "variable" && typeof content === "string" && content.match(/^[/|~]/)) {
                     const fileSource = content.replace(/^~\/(.*)/, `${homeDir}/$1`);
-                    const regexp = new RegExp(envMatcher.replace(/\*/g, ".*"), "g");
+                    const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};
                     if (fs.existsSync(fileSource)) {
-                        variables[key].environments.push({content, regexp, regexpPriority: envMatcher.length, scopePriority, fileSource});
+                        variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority, fileSource});
                     } else {
-                        variables[key].environments.push({content: `warn: ${key} is pointing to invalid path\n`, regexp, regexpPriority: envMatcher.length, scopePriority});
+                        variables[key].environments.push({content: `warn: ${key} is pointing to invalid path\n`, regexp, regexpPriority: matcher.length, scopePriority});
                     }
-                } else {
-                    assert(content != null, `${key}.file content cannot be null/undefined`);
-                    assert(typeof content == "object", `${key}.${envMatcher}.file must be text or multiline text`);
-                    const fileContent = (content as Record<string, string>).file;
-                    assert(typeof fileContent == "string", `${key}.${envMatcher}.file must be text or multiline text`);
-                    const regexp = new RegExp(envMatcher.replace(/\*/g, ".*"), "g");
+                } else if (type === "file") {
+                    const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};
-                    variables[key].environments.push({content: fileContent, regexp, regexpPriority: envMatcher.length, scopePriority });
+                    variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority });
+                } else {
+                    assert(false, `${key} was not handled properly`);
                 }
             }
         };
@@ -99,7 +106,7 @@ export class VariablesFromFiles {
 
         for (const varObj of Object.values(variables)) {
             varObj.environments.sort((a, b) => b.scopePriority - a.scopePriority);
-            varObj.environments.sort((a, b) => b.regexpPriority - a.scopePriority);
+            varObj.environments.sort((a, b) => b.regexpPriority - a.regexpPriority);
         }
 
         return variables;
