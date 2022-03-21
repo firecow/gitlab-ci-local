@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '16'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
@@ -37,7 +37,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '16'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '16'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
@@ -65,7 +65,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '16'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
