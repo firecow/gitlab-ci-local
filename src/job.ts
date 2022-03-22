@@ -544,11 +544,8 @@ export class Job {
                 });
             }
 
-            for (const [key, value] of Object.entries(this.expandedVariables)) {
-                dockerCmd += `-e ${key}='${String(value).trim()}' `;
-            }
-            for (const [key, value] of Object.entries(reportsDotenvVariables)) {
-                dockerCmd += `-e ${key}='${String(value).trim()}' `;
+            for (const key of Object.keys({...this.expandedVariables, ...reportsDotenvVariables})) {
+                dockerCmd += `-e ${key} `;
             }
 
             dockerCmd += await this.mountCacheCmd(safeJobName, writeStreams);
@@ -573,7 +570,7 @@ export class Job {
             dockerCmd += "\texit 1\n";
             dockerCmd += "fi\n\"";
 
-            const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
+            const {stdout: containerId} = await Utils.bash(dockerCmd, cwd, {...this.expandedVariables, ...reportsDotenvVariables});
             this._containerId = containerId.replace(/\r?\n/g, "");
             this._containersToClean.push(this._containerId);
 
@@ -625,7 +622,7 @@ export class Job {
             cwd,
             shell: "bash",
             stdio: ["pipe", "pipe", "pipe"],
-            env: this.imageName ? {...process.env} : {...this.expandedVariables, ...reportsDotenvVariables, ...process.env},
+            env: {...this.expandedVariables, ...reportsDotenvVariables, ...process.env},
         });
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
@@ -911,8 +908,8 @@ export class Job {
             dockerCmd += `--network-alias=${alias} `;
         }
 
-        for (const [key, value] of Object.entries(this.expandedVariables)) {
-            dockerCmd += `-e ${key}='${String(value).trim()}' `;
+        for (const key of Object.keys(this.expandedVariables)) {
+            dockerCmd += `-e ${key} `;
         }
 
         (service.getEntrypoint() ?? []).forEach((e) => {
@@ -924,7 +921,7 @@ export class Job {
         (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
 
         const time = process.hrtime();
-        const {stdout} = await Utils.bash(dockerCmd, cwd);
+        const {stdout} = await Utils.bash(dockerCmd, cwd, this.expandedVariables);
         const containerId = stdout.replace(/\r?\n/g, "");
         this._containersToClean.push(containerId);
 

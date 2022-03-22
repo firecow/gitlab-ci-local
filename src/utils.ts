@@ -9,9 +9,9 @@ import base64url from "base64url";
 
 export class Utils {
 
-    static bash(command: string, cwd = process.cwd()): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
+    static bash(command: string, cwd = process.cwd(), env = process.env): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
         return new Promise((resolve, reject) => {
-            const cp = childProcess.spawn(`${command}`, {shell: "bash", env: process.env, cwd});
+            const cp = childProcess.spawn(`${command}`, {shell: "bash", env, cwd});
 
             let output = "";
             let stdout = "";
