@@ -144,10 +144,18 @@ export class Job {
                 }
             }
         }
-        const envs = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...variablesFromCWDOrHome, ...argvVariables};
-        const expandedGlobalVariables = Utils.expandVariables(globals.variables || {}, envs);
-        const expandedJobVariables = Utils.expandVariables(jobData.variables || {}, envs);
-        this.expandedVariables = {...predefinedVariables, ...expandedGlobalVariables, ...expandedJobVariables, ...variablesFromCWDOrHome, ...argvVariables};
+
+        // Variable merging and expansion
+        this.expandedVariables = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...variablesFromCWDOrHome, ...argvVariables};
+        let variableSyntaxFound, i = 0;
+        do {
+            assert(i < 100, "Recursive variable expansion reached 100 iterations");
+            for (const [k, v] of Object.entries(this.expandedVariables)) {
+                this.expandedVariables[k] = Utils.expandText(v, this.expandedVariables);
+            }
+            variableSyntaxFound = Object.values(this.expandedVariables).find((v) => Utils.textHasVariable(v));
+            i++;
+        } while (variableSyntaxFound);
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {

@@ -141,6 +141,13 @@ export class Utils {
         return expandedVariables;
     }
 
+    static textHasVariable(text?: any): boolean {
+        if (typeof text !== "string") {
+            return false;
+        }
+        return text.match(/[$][{]?\w*[}]?/g) != null;
+    }
+
     static getRulesResult(rules: { if?: string; when?: string; allow_failure?: boolean }[], variables: { [key: string]: string }): { when: string; allowFailure: boolean } {
         let when = "never";
         let allowFailure = false;
