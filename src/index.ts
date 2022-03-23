@@ -14,8 +14,10 @@ import {MockWriteStreams} from "./mock-write-streams";
 import {Argv} from "./argv";
 
 (() => {
+    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
     yargs(process.argv.slice(2))
         .showHelpOnFail(false)
+        .version(packageJson["version"])
         .wrap(yargs.terminalWidth())
         .command({
             handler: async (argv) => {
