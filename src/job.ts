@@ -151,7 +151,9 @@ export class Job {
         do {
             assert(i < 100, "Recursive variable expansion reached 100 iterations");
             for (const [k, v] of Object.entries(this.expandedVariables)) {
-                this.expandedVariables[k] = Utils.expandText(v, this.expandedVariables);
+                const envsWithoutSelf = {...this.expandedVariables};
+                delete envsWithoutSelf[k];
+                this.expandedVariables[k] = Utils.expandText(v, envsWithoutSelf);
             }
             variableSyntaxFound = Object.values(this.expandedVariables).find((v) => Utils.textHasVariable(v));
             i++;
