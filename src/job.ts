@@ -350,12 +350,14 @@ export class Job {
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
             this._running = false;
+            await this.cleanupResources();
             return;
         }
 
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
             this._running = false;
+            await this.cleanupResources();
             return;
         }
 
@@ -382,6 +384,7 @@ export class Job {
         }
 
         this._running = false;
+        await this.cleanupResources();
     }
 
     async cleanupResources() {
