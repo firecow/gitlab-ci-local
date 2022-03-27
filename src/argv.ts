@@ -50,6 +50,10 @@ export class Argv {
         return typeof val == "string" ? val.split(" ") : val;
     }
 
+    get remoteVariables(): string {
+        return this.map.get("remoteVariables");
+    }
+
     get variable(): { [key: string]: string } {
         const val = this.map.get("variable");
         const variables: { [key: string]: string } = {};
