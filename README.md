@@ -30,7 +30,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
 * [Quirks](#quirks)
-    * [Tracked Files](#tracked-files) 
+    * [Tracked Files](#tracked-files)
     * [Home Variables](#home-variables)
     * [Project Variables](#project-variables)
     * [Decorators](#decorators)
@@ -56,7 +56,6 @@ sudo curl -s -o /etc/apt/sources.list.d/gitlab-ci-local.list "https://firecow.gi
 sudo apt-get update
 sudo apt-get install gitlab-ci-local
 ```
-
 
 ### Macos
 
@@ -110,8 +109,6 @@ Untracked and ignored files will not be synced inside isolated jobs, only tracke
 
 Remember `git add`
 
-
-
 ### Home variables
 
 Put a file like this in `$HOME/.gitlab-ci-local/variables.yml`
@@ -147,6 +144,11 @@ global:
 ```
 
 Variables will now appear in your jobs, if project or group matches git remote, global's are always present
+
+### Remote file variables
+```shell
+gitlab-ci-local --remote-variables git@gitlab.com:firecow/exmaple.git=gitlab-variables.yml=master
+```
 
 ### Project variables
 
@@ -214,10 +216,11 @@ Prevent artifacts from being copied to source folder
 produce:
   stage: build
   script: mkdir -p path/ && touch path/file1
-  artifacts: {paths: [path/] }
+  artifacts: { paths: [path/] }
 ```
 
 ### Includes
+
 Includes from external sources are only fetched once. Use `--fetch-includes` to invoke an external fetching rutine.
 
 ### Artifacts

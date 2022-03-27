@@ -5,6 +5,7 @@ import * as yaml from "js-yaml";
 import chalk from "chalk";
 import {Argv} from "./argv";
 import {assert} from "./asserts";
+import {Utils} from "./utils";
 
 export interface CICDVariable {
     type: "file"|"variable";
@@ -20,14 +21,26 @@ export interface CICDVariable {
 export class VariablesFromFiles {
 
     static async init(argv: Argv, writeStreams: WriteStreams, gitData: GitData): Promise<{ [name: string]: CICDVariable }> {
+        const cwd = argv.cwd;
         const homeDir = argv.home;
+        const remoteVariables = argv.remoteVariables;
         const homeVariablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         const variables: { [name: string]: CICDVariable } = {};
-        let homeFileData: any;
+        let remoteFileData: any = {};
+        let homeFileData: any = {};
 
-        if (!await fs.pathExists(homeVariablesFile)) {
-            homeFileData =  {};
-        } else {
+        if (remoteVariables) {
+            const match = remoteVariables.match(/(?<url>git@.*?)=(?<file>.*?)=(?<ref>.*)/);
+            assert(match != null, "--remote-variables is malformed use 'git@gitlab.com:firecow/exmaple.git=gitlab-variables.yml=master' syntax");
+            const url = match.groups?.url;
+            const file = match.groups?.file;
+            const ref = match.groups?.ref;
+            await fs.ensureDir(`${cwd}/.gitlab-ci-local/variables/`);
+            await Utils.bash(`git archive --remote=${url} ${ref} ${file} | tar -xC .gitlab-ci-local/variables/`, cwd);
+            remoteFileData = yaml.load(await fs.readFile(`${cwd}/.gitlab-ci-local/variables/${file}`, "utf8"));
+        }
+
+        if (await fs.pathExists(homeVariablesFile)) {
             homeFileData = yaml.load(await fs.readFile(homeVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA});
         }
 
@@ -70,29 +83,34 @@ export class VariablesFromFiles {
             }
         };
 
-        for (const [globalKey, globalEntry] of Object.entries(homeFileData?.global ?? {})) {
-            await addToVariables(globalKey, globalEntry, 0);
-        }
-
-        const groupUrl = `${gitData.remote.host}/${gitData.remote.group}/`;
-        for (const [groupKey, groupEntries] of Object.entries(homeFileData?.group ?? {})) {
-            if (!groupUrl.includes(this.normalizeProjectKey(groupKey, writeStreams))) continue;
-            assert(groupEntries != null, "groupEntries cannot be null/undefined");
-            assert(typeof groupEntries === "object", "groupEntries must be object");
-            for (const [k, v] of Object.entries(groupEntries)) {
-                await addToVariables(k, v, 1);
+        const addVariableFileToVariables = async(fileData: any) => {
+            for (const [globalKey, globalEntry] of Object.entries(fileData?.global ?? {})) {
+                await addToVariables(globalKey, globalEntry, 0);
             }
-        }
 
-        const projectUrl = `${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}.git`;
-        for (const [projectKey, projectEntries] of Object.entries(homeFileData?.project ?? [])) {
-            if (!projectUrl.includes(this.normalizeProjectKey(projectKey, writeStreams))) continue;
-            assert(projectEntries != null, "projectEntries cannot be null/undefined");
-            assert(typeof projectEntries === "object", "projectEntries must be object");
-            for (const [k, v] of Object.entries(projectEntries)) {
-                await addToVariables(k, v, 2);
+            const groupUrl = `${gitData.remote.host}/${gitData.remote.group}/`;
+            for (const [groupKey, groupEntries] of Object.entries(fileData?.group ?? {})) {
+                if (!groupUrl.includes(this.normalizeProjectKey(groupKey, writeStreams))) continue;
+                assert(groupEntries != null, "groupEntries cannot be null/undefined");
+                assert(typeof groupEntries === "object", "groupEntries must be object");
+                for (const [k, v] of Object.entries(groupEntries)) {
+                    await addToVariables(k, v, 1);
+                }
             }
-        }
+
+            const projectUrl = `${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}.git`;
+            for (const [projectKey, projectEntries] of Object.entries(fileData?.project ?? [])) {
+                if (!projectUrl.includes(this.normalizeProjectKey(projectKey, writeStreams))) continue;
+                assert(projectEntries != null, "projectEntries cannot be null/undefined");
+                assert(typeof projectEntries === "object", "projectEntries must be object");
+                for (const [k, v] of Object.entries(projectEntries)) {
+                    await addToVariables(k, v, 2);
+                }
+            }
+        };
+
+        await addVariableFileToVariables(remoteFileData);
+        await addVariableFileToVariables(homeFileData);
 
         const projectVariablesFile = `${argv.cwd}/.gitlab-ci-local-variables.yml`;
         if (fs.existsSync(projectVariablesFile)) {
