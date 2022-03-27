@@ -83,9 +83,9 @@ export class VariablesFromFiles {
             }
         };
 
-        const addVariableFileToVariables = async(fileData: any) => {
+        const addVariableFileToVariables = async(fileData: any, filePriority: number) => {
             for (const [globalKey, globalEntry] of Object.entries(fileData?.global ?? {})) {
-                await addToVariables(globalKey, globalEntry, 0);
+                await addToVariables(globalKey, globalEntry, 1 + filePriority);
             }
 
             const groupUrl = `${gitData.remote.host}/${gitData.remote.group}/`;
@@ -94,7 +94,7 @@ export class VariablesFromFiles {
                 assert(groupEntries != null, "groupEntries cannot be null/undefined");
                 assert(typeof groupEntries === "object", "groupEntries must be object");
                 for (const [k, v] of Object.entries(groupEntries)) {
-                    await addToVariables(k, v, 1);
+                    await addToVariables(k, v, 2 + filePriority);
                 }
             }
 
@@ -104,13 +104,13 @@ export class VariablesFromFiles {
                 assert(projectEntries != null, "projectEntries cannot be null/undefined");
                 assert(typeof projectEntries === "object", "projectEntries must be object");
                 for (const [k, v] of Object.entries(projectEntries)) {
-                    await addToVariables(k, v, 2);
+                    await addToVariables(k, v, 3 + filePriority);
                 }
             }
         };
 
-        await addVariableFileToVariables(remoteFileData);
-        await addVariableFileToVariables(homeFileData);
+        await addVariableFileToVariables(remoteFileData, 0);
+        await addVariableFileToVariables(homeFileData, 10);
 
         const projectVariablesFile = `${argv.cwd}/.gitlab-ci-local-variables.yml`;
         if (fs.existsSync(projectVariablesFile)) {
@@ -118,7 +118,7 @@ export class VariablesFromFiles {
             assert(projectVariablesFileData != null, "projectEntries cannot be null/undefined");
             assert(typeof projectVariablesFileData === "object", "projectEntries must be object");
             for (const [k, v] of Object.entries(projectVariablesFileData)) {
-                await addToVariables(k, v, 3);
+                await addToVariables(k, v, 24);
             }
         }
 
