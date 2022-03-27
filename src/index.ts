@@ -85,6 +85,11 @@ import {Argv} from "./argv";
             description: "Add variable to all executed jobs (--variable HELLO=world)",
             requiresArg: false,
         })
+        .option("remote-variables", {
+            type: "string",
+            description: "Fetch variables file from remote location",
+            requiresArg: false,
+        })
         .option("file", {
             type: "string",
             description: "Specify custom location of the .gitlab-ci.yml. Relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
