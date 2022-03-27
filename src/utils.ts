@@ -1,70 +1,19 @@
 import chalk from "chalk";
-import * as childProcess from "child_process";
-import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
 import {assert} from "./asserts";
 import * as fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
+import execa from "execa";
 
 export class Utils {
 
-    static bash(command: string, cwd = process.cwd(), env = process.env): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
-        return new Promise((resolve, reject) => {
-            const cp = childProcess.spawn(`${command}`, {shell: "bash", env, cwd});
-
-            let output = "";
-            let stdout = "";
-            let stderr = "";
-
-            cp.stderr.on("data", (buff) => {
-                stderr += buff.toString();
-                output += buff.toString();
-            });
-            cp.stdout.on("data", (buff) => {
-                stdout += buff.toString();
-                output += buff.toString();
-            });
-            cp.on("exit", (status) => {
-                if ((status ?? 0) === 0) {
-                    return resolve({stdout, stderr, output, status: status ?? 0});
-                }
-                return reject(new ExitError(`${output !== "" ? output : "$? [" + status + "]"}`));
-            });
-            cp.on("error", (e) => {
-                return reject(new ExitError(`'${command}' had errors\n${e}`));
-            });
-
-        });
+    static bash(shellScript: string, cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
+        return execa(shellScript, {shell: "bash", cwd, env, all: true});
     }
 
-    static spawn(cmdArgs: string[], cwd = process.cwd()): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
-        return new Promise((resolve, reject) => {
-            const cp = childProcess.spawn(cmdArgs[0], cmdArgs.slice(1), {env: process.env, cwd});
-
-            let output = "";
-            let stdout = "";
-            let stderr = "";
-
-            cp.stderr.on("data", (buff) => {
-                stderr += buff.toString();
-                output += buff.toString();
-            });
-            cp.stdout.on("data", (buff) => {
-                stdout += buff.toString();
-                output += buff.toString();
-            });
-            cp.on("exit", (status) => {
-                if ((status ?? 0) === 0) {
-                    return resolve({stdout, stderr, output, status: status ?? 0});
-                }
-                return reject(new ExitError(`${output !== "" ? output : "$? [" + status + "]"}`));
-            });
-            cp.on("error", (e) => {
-                return reject(new ExitError(`'${JSON.stringify(cmdArgs)}' had errors\n${e}`));
-            });
-
-        });
+    static spawn(cmdArgs: string[], cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
+        return execa(cmdArgs[0], cmdArgs.slice(1), {cwd, env, all: true});
     }
 
     static fsUrl(url: string): string {

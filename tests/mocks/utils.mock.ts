@@ -16,13 +16,3 @@ export function initSpawnSpy(spyMocks: {cmdArgs: string[]; returnValue: any}[]) 
         when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockResolvedValue(spyMock.returnValue);
     }
 }
-
-export function initSpawnMock(spawnMocks: {cmdArgs: string[]; returnValue: any}[]) {
-    const mock = jest.fn();
-
-    for (const spawnMock of spawnMocks) {
-        when(mock).calledWith(spawnMock.cmdArgs, expect.any(String)).mockResolvedValue(spawnMock.returnValue);
-    }
-
-    Utils.spawn = mock;
-}
