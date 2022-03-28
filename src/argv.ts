@@ -76,6 +76,10 @@ export class Argv {
         return this.map.get("job") ?? [];
     }
 
+    get autoCompleting(): boolean {
+        return this.map.get("autoCompleting") ?? false;
+    }
+
     get privileged(): boolean {
         return this.map.get("privileged") ?? false;
     }

@@ -132,7 +132,7 @@ import {Argv} from "./argv";
         })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
-                const argv = new Argv(yargsArgv);
+                const argv = new Argv({...yargsArgv, autoCompleting: true});
                 const pipelineIid = await state.getPipelineIid(argv.cwd);
                 const parser = await Parser.create(argv, new MockWriteStreams(), pipelineIid);
                 return [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
