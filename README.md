@@ -147,7 +147,7 @@ Variables will now appear in your jobs, if project or group matches git remote, 
 
 ### Remote file variables
 ```shell
-gitlab-ci-local --remote-variables git@gitlab.com:firecow/exmaple.git=gitlab-variables.yml=master
+gitlab-ci-local --remote-variables git@gitlab.com:firecow/example.git=gitlab-variables.yml=master
 ```
 
 ### Project variables
