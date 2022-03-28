@@ -32,13 +32,12 @@ export class VariablesFromFiles {
 
         if (remoteVariables && !autoCompleting) {
             const match = remoteVariables.match(/(?<url>git@.*?)=(?<file>.*?)=(?<ref>.*)/);
-            assert(match != null, "--remote-variables is malformed use 'git@gitlab.com:firecow/exmaple.git=gitlab-variables.yml=master' syntax");
+            assert(match != null, "--remote-variables is malformed use 'git@gitlab.com:firecow/example.git=gitlab-variables.yml=master' syntax");
             const url = match.groups?.url;
             const file = match.groups?.file;
             const ref = match.groups?.ref;
-            await fs.ensureDir(`${cwd}/.gitlab-ci-local/variables/`);
-            await Utils.bash(`git archive --remote=${url} ${ref} ${file} | tar -xC .gitlab-ci-local/variables/`, cwd);
-            remoteFileData = yaml.load(await fs.readFile(`${cwd}/.gitlab-ci-local/variables/${file}`, "utf8"));
+            const res = await Utils.bash(`git archive --remote=${url} ${ref} ${file} | tar -xO ${file}`, cwd);
+            remoteFileData = yaml.load(`${res.stdout}`);
         }
 
         if (await fs.pathExists(homeVariablesFile)) {
