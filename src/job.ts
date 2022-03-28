@@ -58,6 +58,7 @@ export class Job {
         const variablesFromFiles = opt.variablesFromFiles;
         const argv = opt.argv;
         const cwd = argv.cwd;
+        const argvVariables = argv.variable;
 
         this.argv = argv;
         this.writeStreams = opt.writeStreams;
@@ -122,8 +123,14 @@ export class Job {
             GITLAB_CI: "false",
         };
 
+        // Expand environment
+        this.expandedVariables = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...argvVariables};
+        if (this.environment) {
+            this.environment.name = Utils.expandText(this.environment.name, this.expandedVariables);
+            this.environment.url = Utils.expandText(this.environment.url, this.expandedVariables);
+        }
+
         // Create expanded variables
-        const argvVariables = argv.variable;
         const variablesFromCWDOrHome: { [key: string]: string} = {};
         const fileVariablesDir = this.fileVariablesDir;
         for (const [k, v] of Object.entries(variablesFromFiles)) {
