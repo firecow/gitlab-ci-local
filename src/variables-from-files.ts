@@ -24,12 +24,13 @@ export class VariablesFromFiles {
         const cwd = argv.cwd;
         const homeDir = argv.home;
         const remoteVariables = argv.remoteVariables;
+        const autoCompleting = argv.autoCompleting;
         const homeVariablesFile = `${homeDir}/.gitlab-ci-local/variables.yml`;
         const variables: { [name: string]: CICDVariable } = {};
         let remoteFileData: any = {};
         let homeFileData: any = {};
 
-        if (remoteVariables) {
+        if (remoteVariables && !autoCompleting) {
             const match = remoteVariables.match(/(?<url>git@.*?)=(?<file>.*?)=(?<ref>.*)/);
             assert(match != null, "--remote-variables is malformed use 'git@gitlab.com:firecow/exmaple.git=gitlab-variables.yml=master' syntax");
             const url = match.groups?.url;
