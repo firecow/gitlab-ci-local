@@ -11,11 +11,15 @@ mkdir -p ppa
 # Generate package info file
 mkdir -p "bin/gitlab-ci-local_${VERSION}_amd64/DEBIAN/"
 cat << EOF > "bin/gitlab-ci-local_${VERSION}_amd64/DEBIAN/control"
+Name: gitlab-ci-local
 Package: gitlab-ci-local
 Version: ${VERSION}
 Architecture: amd64
+Author: Mads Jon Nielsen <madsjon@gmail.com>
 Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
 Description: ${DESCRIPTION}
+Homepage: https://github.com/firecow/gitlab-ci-local
+Website: https://github.com/firecow/gitlab-ci-local
 EOF
 
 mkdir -p "bin/gitlab-ci-local_${VERSION}_amd64/usr/local/bin/"
