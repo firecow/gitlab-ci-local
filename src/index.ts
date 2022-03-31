@@ -71,7 +71,7 @@ import {Argv} from "./argv";
             requiresArg: true,
         })
         .option("completion", {
-            type: "string",
+            type: "boolean",
             description: "Generate tab completion script",
             requiresArg: false,
         })
