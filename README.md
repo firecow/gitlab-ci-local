@@ -77,7 +77,7 @@ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.
 
 ### DotEnv file
 
-Add a `.gitlab-ci-local-env` file to the current working directory
+Add a `.gitlab-ci-local.env` file to the current working directory
 
 ```
 # Overrides .gitlab-ci.yml as the default git ci/cd file
