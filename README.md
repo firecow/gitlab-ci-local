@@ -26,6 +26,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [docker-swarm-php](./examples/docker-swarm-php/README.md)
 * [Installation](#installation)
 * [Convenience](#convenience)
+    * [Options from shell environment](#options-from-shell-environment) 
     * [DotEnv file](#dotenv-file)
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
@@ -74,6 +75,15 @@ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.
 ```
 
 ## Convenience
+
+### Options from shell environment
+
+```
+# Overrides .gitlab-ci.yml as the default git ci/cd file
+export GCL_NEEDS='true' >> ~/.bashrc
+export GCL_FILE='.gitlab-ci-local.yml' >> ~/.bashrc
+export VARIABLES="IMAGE=someimage SOMEOTHERIMAGE=someotherimage"
+```
 
 ### DotEnv file
 
@@ -146,6 +156,7 @@ global:
 Variables will now appear in your jobs, if project or group matches git remote, global's are always present
 
 ### Remote file variables
+
 ```shell
 gitlab-ci-local --remote-variables git@gitlab.com:firecow/example.git=gitlab-variables.yml=master
 ```
@@ -225,7 +236,8 @@ Includes from external sources are only fetched once. Use `--fetch-includes` to 
 
 ### Artifacts
 
-Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolation option to mimic correct artifact handling for shell jobs.
+Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolation option to mimic correct artifact
+handling for shell jobs.
 
 Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
 
