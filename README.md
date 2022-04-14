@@ -76,13 +76,13 @@ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.
 
 ## Convenience
 
-### Options from shell environment
+### CLI options via shell environment
 
 ```
 # Overrides .gitlab-ci.yml as the default git ci/cd file
 export GCL_NEEDS='true' >> ~/.bashrc
 export GCL_FILE='.gitlab-ci-local.yml' >> ~/.bashrc
-export VARIABLES="IMAGE=someimage SOMEOTHERIMAGE=someotherimage"
+export GLC_VARIABLES="IMAGE=someimage SOMEOTHERIMAGE=someotherimage"
 ```
 
 ### DotEnv file
