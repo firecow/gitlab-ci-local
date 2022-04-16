@@ -21,7 +21,7 @@ test("variable-order <test-job> --needs", async () => {
         chalk`{blueBright test-job} {greenBright >} PIPELINE_VARIABLE=pipeline-value`,
         chalk`{blueBright test-job} {greenBright >} JOB_VARIABLE=job-value`,
         chalk`{blueBright test-job} {greenBright >} OVERRIDDEN_BY_JOB=job-value`,
-        chalk`{blueBright test-job} {greenBright >} CI_PIPELINE_ID=pipeline-value`,
+        chalk`{blueBright test-job} {greenBright >} CI_PIPELINE_ID=1000`,
         chalk`{blueBright test-job} {greenBright >} HOME_VARIABLE=home-value`,
         chalk`{blueBright test-job} {greenBright >} PROJECT_VARIABLE=project-value`,
     ];
