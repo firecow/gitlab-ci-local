@@ -124,7 +124,7 @@ export class Job {
         };
 
         // Expand environment
-        this.expandedVariables = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...argvVariables};
+        this.expandedVariables = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...argvVariables};
         if (this.environment) {
             this.environment.name = Utils.expandText(this.environment.name, this.expandedVariables);
             this.environment.url = Utils.expandText(this.environment.url, this.expandedVariables);
@@ -153,7 +153,7 @@ export class Job {
         }
 
         // Variable merging and expansion
-        this.expandedVariables = {...predefinedVariables, ...globals.variables || {}, ...jobData.variables || {}, ...variablesFromCWDOrHome, ...argvVariables};
+        this.expandedVariables = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...variablesFromCWDOrHome, ...argvVariables};
         let variableSyntaxFound, i = 0;
         do {
             assert(i < 100, "Recursive variable expansion reached 100 iterations");
