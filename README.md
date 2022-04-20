@@ -26,7 +26,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [docker-swarm-php](./examples/docker-swarm-php/README.md)
 * [Installation](#installation)
 * [Convenience](#convenience)
-    * [Options from shell environment](#options-from-shell-environment) 
+    * [CLI options via shell](#cli-options-via-shell) 
     * [DotEnv file](#dotenv-file)
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
@@ -77,7 +77,7 @@ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.
 
 ## Convenience
 
-### CLI options via shell environment
+### CLI options via shell
 
 ```
 # Overrides .gitlab-ci.yml as the default git ci/cd file
