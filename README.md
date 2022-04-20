@@ -32,8 +32,9 @@ Get rid of all those dev specific shell scripts and make files.
     * [Tab completion](#tab-completion)
 * [Quirks](#quirks)
     * [Tracked Files](#tracked-files)
-    * [Home Variables](#home-variables)
-    * [Project Variables](#project-variables)
+    * [Home File Variables](#home-file-variables)
+    * [Remote File Variables](#remote-file-variables)
+    * [Project File Variables](#project-file-variables)
     * [Decorators](#decorators)
     * [Includes](#includes)
     * [Artifacts](#artifacts)
@@ -119,7 +120,7 @@ Untracked and ignored files will not be synced inside isolated jobs, only tracke
 
 Remember `git add`
 
-### Home variables
+### Home file variables
 
 Put a file like this in `$HOME/.gitlab-ci-local/variables.yml`
 
@@ -161,7 +162,7 @@ Variables will now appear in your jobs, if project or group matches git remote, 
 gitlab-ci-local --remote-variables git@gitlab.com:firecow/example.git=gitlab-variables.yml=master
 ```
 
-### Project variables
+### Project file variables
 
 Put a file like this in `$CWD/.gitlab-ci-local-variables.yml`
 
