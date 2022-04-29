@@ -312,6 +312,10 @@ export class Job {
         return this.jobData["script"];
     }
 
+    get trigger(): any {
+        return this.jobData["trigger"];
+    }
+
     get preScriptsExitCode() {
         return this._prescriptsExitCode;
     }
