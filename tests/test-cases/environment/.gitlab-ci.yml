@@ -12,6 +12,9 @@ deploy-stage-job:
   stage: deploy
   script:
     - echo "Deploy stage something"
+    - echo ${CI_ENVIRONMENT_SLUG}
+    - echo ${CI_ENVIRONMENT_NAME}
+    - echo ${CI_ENVIRONMENT_URL}
   environment:
-    name: stage-domain
+    name: Stage Domain
     url: http://stage.domain.com

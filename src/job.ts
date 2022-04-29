@@ -121,6 +121,9 @@ export class Job {
             CI_REGISTRY: gitData.CI_REGISTRY,
             CI_REGISTRY_IMAGE: gitData.CI_REGISTRY_IMAGE,
             GITLAB_CI: "false",
+            CI_ENVIRONMENT_NAME: this.environment?.name ?? "",
+            CI_ENVIRONMENT_SLUG: this.environment?.name?.replace(/(?:\/|\s)/g, "-").toLowerCase() ?? "",
+            CI_ENVIRONMENT_URL: this.environment?.url ?? "",
         };
 
         // Expand environment
