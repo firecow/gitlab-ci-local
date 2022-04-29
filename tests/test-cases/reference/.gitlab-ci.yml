@@ -8,3 +8,9 @@ test-job:
   script:
     - !reference [.setup, script]
     - echo ${MYVAR}
+
+never:
+  rules:
+    - !reference [.rules-never, rules]
+  script:
+    - exit 1

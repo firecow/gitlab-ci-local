@@ -1,4 +1,8 @@
 ---
+.rules-never:
+  rules:
+    - { when: never }
+
 .ancient:
   script:
     - echo "Ancient"
