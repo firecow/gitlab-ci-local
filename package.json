@@ -20,7 +20,7 @@
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
-    "axios": "^0.27.0",
+    "axios": "^0.27.2",
     "base64url": "^3.0.1",
     "camelcase": "^6.3.0",
     "chalk": "^4.1.2",
@@ -54,7 +54,7 @@
     "pkg": "5.6.0",
     "ts-jest": "27.1.4",
     "ts-node": "10.7.0",
-    "typescript": "4.6.3"
+    "typescript": "4.6.4"
   },
   "engines": {
     "node": ">=16.10.0"
