@@ -48,9 +48,18 @@ export class Validator {
         }
     }
 
+    private static cache(jobs: ReadonlyMap<string, Job>) {
+        for (const [jobName, job] of jobs) {
+            job.cache.forEach((c, i) => {
+                assert(Array.isArray(c.paths), chalk`{blue ${jobName}} cache[${i}].paths must be array`);
+            });
+        }
+    }
+
     static async run(jobs: ReadonlyMap<string, Job>, stages: readonly string[]) {
         this.scriptBlank(jobs);
         this.needs(jobs, stages);
+        this.cache(jobs);
         this.dependenciesContainment(jobs);
     }
 }
