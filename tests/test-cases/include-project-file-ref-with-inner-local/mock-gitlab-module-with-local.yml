@@ -1,6 +1,5 @@
 ---
-include:
-  - /.gitlab-local.yml
+include: /.gitlab-local.yml
 
 deploy-job:
   stage: deploy
