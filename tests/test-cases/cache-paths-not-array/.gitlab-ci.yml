@@ -1,0 +1,6 @@
+---
+test-job:
+  cache:
+    key: global
+    paths: folder
+  script: exit 0
