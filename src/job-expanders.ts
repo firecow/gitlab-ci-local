@@ -121,6 +121,6 @@ export function scripts(gitlabData: any) {
 export function flattenLists(gitlabData: any) {
     traverse(gitlabData, ({ parent, key, value }) => {
         if (!Array.isArray(value) || parent == null || typeof key != "string") return;
-        parent[key] = value.flat(10);
+        parent[key] = value.flat(5);
     });
 }

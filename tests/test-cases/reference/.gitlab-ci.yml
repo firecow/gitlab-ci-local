@@ -6,11 +6,13 @@ test-job:
   variables:
     MYVAR: !reference [.setup, variables, MYVAR]
   script:
-    - !reference [.setup, script]
+    - !reference [.jibof2, script]
     - echo ${MYVAR}
 
-never:
-  rules:
-    - !reference [.rules-never, rules]
+.jibof2: # Job in 2nd bottom of file
   script:
-    - exit 1
+    - !reference [.jibof, script]
+
+.jibof: # Job in bottom of file
+  script:
+    - !reference [.setup, script]

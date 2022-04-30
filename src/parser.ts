@@ -14,7 +14,6 @@ import {Producers} from "./producers";
 import {VariablesFromFiles} from "./variables-from-files";
 import {Argv} from "./argv";
 import {WriteStreams} from "./types/write-streams";
-import {flattenLists} from "./job-expanders";
 
 export class Parser {
 
