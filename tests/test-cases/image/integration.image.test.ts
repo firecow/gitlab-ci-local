@@ -56,9 +56,11 @@ test("image <test-from-scratch>", async () => {
         job: ["test-from-scratch"],
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines[5]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 0:0 .gitlab-ci.yml`);
-    expect(writeStreams.stdoutLines[7]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 666 .gitlab-ci.yml`);
-    expect(writeStreams.stdoutLines[9]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 777 folder/`);
-    expect(writeStreams.stdoutLines[11]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 777 executable.sh`);
-    expect(writeStreams.stderrLines).toEqual([]);
+    const expected = [
+        chalk`{blueBright test-from-scratch       } {greenBright >} 0:0 .gitlab-ci.yml`,
+        chalk`{blueBright test-from-scratch       } {greenBright >} 666 .gitlab-ci.yml`,
+        chalk`{blueBright test-from-scratch       } {greenBright >} 777 folder/`,
+        chalk`{blueBright test-from-scratch       } {greenBright >} 777 executable.sh`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

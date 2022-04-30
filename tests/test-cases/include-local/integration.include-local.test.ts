@@ -21,7 +21,6 @@ test("include-local <build-job>", async () => {
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });
 
 test("include-local <test-job> (short-list)", async () => {
@@ -36,7 +35,6 @@ test("include-local <test-job> (short-list)", async () => {
         chalk`{blueBright test-job} {greenBright >} Test something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });
 
 test("include-local <deploy-job> (short-single)", async () => {
@@ -51,5 +49,4 @@ test("include-local <deploy-job> (short-single)", async () => {
         chalk`{blueBright deploy-job} {greenBright >} Deploy something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });

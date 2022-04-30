@@ -19,5 +19,4 @@ test("needs-artifacts <test-job> --needs --shell-isolation", async () => {
         needs: true,
         shellIsolation: true,
     }, writeStreams);
-    expect(writeStreams.stderrLines).toEqual([]);
 });

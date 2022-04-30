@@ -21,5 +21,4 @@ test.concurrent("cache-shell-fail <consume-cache> --shell-isolation --needs", as
         chalk`{blueBright produce-cache} {yellow !! no cache was copied for cache/**/* !!}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });

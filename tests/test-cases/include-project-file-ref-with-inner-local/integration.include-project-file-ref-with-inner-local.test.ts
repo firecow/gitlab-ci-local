@@ -42,5 +42,4 @@ test("include-project-file-ref-with-inner-local", async () => {
         chalk`{blueBright deploy-job} {greenBright >} Deploy something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });
