@@ -9,10 +9,10 @@ test-job:
     - !reference [.jibof2, script]
     - echo ${MYVAR}
 
-.jibof2: # Job in 2nd bottom of file
+.jibof2:
   script:
     - !reference [.jibof, script]
 
-.jibof: # Job in bottom of file
+.jibof:
   script:
     - !reference [.setup, script]
