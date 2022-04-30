@@ -14,6 +14,7 @@ import {Producers} from "./producers";
 import {VariablesFromFiles} from "./variables-from-files";
 import {Argv} from "./argv";
 import {WriteStreams} from "./types/write-streams";
+import {flattenLists} from "./job-expanders";
 
 export class Parser {
 
@@ -88,7 +89,7 @@ export class Parser {
         jobExpanders.beforeScripts(gitlabData);
         jobExpanders.afterScripts(gitlabData);
         jobExpanders.scripts(gitlabData);
-
+        jobExpanders.flattenLists(gitlabData);
 
         assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
         if (!gitlabData.stages.includes(".pre")) {
