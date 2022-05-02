@@ -61,6 +61,8 @@ sudo apt-get install gitlab-ci-local
 
 ### Macos
 
+*bash version must be above or equal 4.x.x*
+
 ```bash
 brew install gitlab-ci-local
 ```
