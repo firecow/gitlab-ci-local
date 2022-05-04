@@ -20,5 +20,4 @@ test("script-multidimension <test-job>", async () => {
         chalk`{blueBright test-job} {greenBright >} Test something else`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });

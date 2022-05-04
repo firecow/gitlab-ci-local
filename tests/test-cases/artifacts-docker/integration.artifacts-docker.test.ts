@@ -14,6 +14,4 @@ test("artifacts-docker <consume artifacts> --needs", async () => {
         job: ["consume artifacts 🏗️"],
         needs: true,
     }, writeStreams);
-
-    expect(writeStreams.stderrLines).toEqual([]);
 });

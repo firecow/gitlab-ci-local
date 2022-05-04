@@ -30,5 +30,4 @@ test("include-remote <test-job|build-job>", async () => {
         chalk`{blueBright build-job} {greenBright >} Build something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });

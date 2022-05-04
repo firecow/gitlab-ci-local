@@ -17,7 +17,9 @@ test("long-running-silent-test-job <test-job>", async () => {
         job: ["test-job"],
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines[3]).toEqual(chalk`{blueBright test-job} {grey > still running...}`);
-    expect(writeStreams.stdoutLines[5]).toEqual(chalk`{blueBright test-job} {greenBright >} Test something`);
-    expect(writeStreams.stderrLines).toEqual([]);
+    const expected = [
+        chalk`{blueBright test-job} {grey > still running...}`,
+        chalk`{blueBright test-job} {greenBright >} Test something`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

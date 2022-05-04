@@ -20,7 +20,6 @@ test("hang-forever <test-debian>", async() => {
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });
 
 test("hang-forever <test-alpine>", async() => {
@@ -35,7 +34,6 @@ test("hang-forever <test-alpine>", async() => {
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });
 
 test("hang-forever <test-shell>", async() => {
@@ -50,5 +48,4 @@ test("hang-forever <test-shell>", async() => {
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });

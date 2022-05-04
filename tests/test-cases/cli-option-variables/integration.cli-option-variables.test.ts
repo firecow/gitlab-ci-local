@@ -21,5 +21,4 @@ test("cli-option-variables <test-job> --variable \"CLI_VAR=hello world\"", async
         chalk`{blueBright test-job} {greenBright >} dotdot`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });

@@ -29,5 +29,4 @@ test.concurrent("cache-double-run <test-job> --shell-isolation", async () => {
     }, writeStreams);
     const expectedStdout = [chalk`{blueBright test-job} {greenBright >} Cache warm`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdout));
-    expect(writeStreams.stderrLines).toEqual([]);
 });

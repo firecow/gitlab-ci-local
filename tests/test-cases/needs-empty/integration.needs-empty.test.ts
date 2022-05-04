@@ -15,5 +15,5 @@ test("needs-empty <deploy-job> --shell-isolation", async () => {
         shellIsolation: true,
     }, writeStreams);
 
-    expect(writeStreams.stderrLines).toEqual([]);
+    
 });
