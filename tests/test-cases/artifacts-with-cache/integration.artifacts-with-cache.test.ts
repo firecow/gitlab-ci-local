@@ -22,5 +22,4 @@ test("artifacts-with-cache <test-job> --needs", async () => {
         chalk`{black.bgGreenBright  PASS } {blueBright test-job}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-
 });

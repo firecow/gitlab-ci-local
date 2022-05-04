@@ -55,7 +55,7 @@ export class Parser {
         await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
 
-        writeStreams.stdout(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
+        writeStreams.stderr(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
 
         return parser;
     }

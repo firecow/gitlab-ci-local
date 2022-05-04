@@ -100,7 +100,7 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
         await Utils.rsyncTrackedFiles(cwd, ".docker");
         await Commander.runJobs(argv, parser, writeStreams);
         if (argv.needs) {
-            writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+            writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
         }
     } else {
         generateGitIgnore(cwd);
@@ -111,7 +111,7 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
         parser = await Parser.create(argv, writeStreams, pipelineIid);
         await Utils.rsyncTrackedFiles(cwd, ".docker");
         await Commander.runPipeline(argv, parser, writeStreams);
-        writeStreams.stdout(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+        writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();
 

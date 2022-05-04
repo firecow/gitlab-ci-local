@@ -19,5 +19,4 @@ test("include-template <test-job>", async () => {
         chalk`{blueBright test-job} {greenBright >} Test something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
 });

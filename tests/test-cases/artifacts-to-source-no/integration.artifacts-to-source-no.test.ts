@@ -18,5 +18,4 @@ test.concurrent("artifacts-to-source-no <produce> --needs --shell-isolation", as
     }, writeStreams);
 
     expect(await fs.pathExists("tests/test-cases/artifacts-to-source-no/path/file1")).toEqual(false);
-    expect(writeStreams.stderrLines).toEqual([]);
 });

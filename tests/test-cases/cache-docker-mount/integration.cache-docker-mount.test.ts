@@ -28,5 +28,4 @@ test("cache-docker-mount <consume-cache> --mount-cache --needs", async () => {
     expect(await fs.pathExists("tests/test-cases/cache-docker-mount/.gitlab-ci-local/cache/maven/")).toEqual(false);
     expect((await Utils.bash("docker volume ls | grep -w gcl-gcl-cache-docker-mount-maven")).exitCode).toBe(0);
 
-    expect(writeStreams.stderrLines).toEqual([]);
 });

@@ -17,5 +17,4 @@ test.concurrent("cache-docker <consume-cache> --needs", async () => {
         needs: true,
     }, writeStreams);
 
-    expect(writeStreams.stderrLines).toEqual([]);
 });
