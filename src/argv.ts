@@ -104,6 +104,10 @@ export class Argv {
         return this.map.get("listAll") ?? false;
     }
 
+    get listJson(): boolean {
+        return this.map.get("listJson") ?? false;
+    }
+
     get preview(): boolean {
         return this.map.get("preview") ?? false;
     }
