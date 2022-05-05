@@ -60,6 +60,11 @@ import {Argv} from "./argv";
             description: "List jobs and job information, when:never included",
             requiresArg: false,
         })
+        .option("list-json", {
+            type: "boolean",
+            description: "List jobs and job information in json format, when:never included",
+            requiresArg: false,
+        })
         .option("preview", {
             type: "boolean",
             description: "Print YML with defaults, includes, extends and reference's expanded",
