@@ -177,4 +177,22 @@ export class Commander {
         jobs.forEach((job) => renderLine(job));
     }
 
+    static runJson(parser: Parser, writeStreams: WriteStreams) {
+        const jobs = [...parser.jobs.values()];
+        const json: any[] = [];
+
+        jobs.forEach((job) => {
+            json.push({
+                name: job.name,
+                description: job.description,
+                stage: job.stage,
+                when: job.when,
+                allow_failure: job.allowFailure,
+                needs: job.needs,
+            });
+        });
+
+        writeStreams.stdout(`${JSON.stringify(json, null, 2)}\n`);
+    }
+
 }

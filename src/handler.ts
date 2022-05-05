@@ -88,6 +88,10 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
         const pipelineIid = await state.getPipelineIid(cwd);
         parser = await Parser.create(argv, writeStreams, pipelineIid);
         Commander.runList(parser, writeStreams, argv.listAll);
+    } else if (argv.listJson) {
+        const pipelineIid = await state.getPipelineIid(cwd);
+        parser = await Parser.create(argv, writeStreams, pipelineIid);
+        Commander.runJson(parser, writeStreams);
     } else if (argv.job.length > 0) {
         generateGitIgnore(cwd);
         const time = process.hrtime();
