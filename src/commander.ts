@@ -21,7 +21,7 @@ export class Commander {
     }
 
     static async runJobs(argv: Argv, parser: Parser, writeStreams: WriteStreams) {
-        const needs = argv.needs;
+        const needs = argv.needs || argv.onlyNeeds;
         const jobArgs = argv.job;
         const jobs = parser.jobs;
         const stages = parser.stages;
@@ -37,6 +37,12 @@ export class Commander {
             }
             potentialStarters.push(job);
         });
+
+        if (argv.onlyNeeds) {
+            jobArgs.forEach((j) => {
+                potentialStarters = potentialStarters.filter(p => p.name !== j);
+            });
+        }
 
         await JobExecutor.runLoop(argv, jobPoolMap, stages, potentialStarters);
         await Commander.printReport(argv.cwd, writeStreams, jobs, stages, parser.jobNamePad);

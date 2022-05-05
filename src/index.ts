@@ -77,7 +77,12 @@ import {Argv} from "./argv";
         })
         .option("needs", {
             type: "boolean",
-            description: "Run needed jobs, when executing a single job",
+            description: "Run needed jobs, when executing specific jobs",
+            requiresArg: false,
+        })
+        .option("onlyNeeds", {
+            type: "boolean",
+            description: "Run needed jobs, except the specified jobs themselves",
             requiresArg: false,
         })
         .option("variable", {

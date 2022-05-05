@@ -91,7 +91,7 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
     } else if (argv.job.length > 0) {
         generateGitIgnore(cwd);
         const time = process.hrtime();
-        if (argv.needs) {
+        if (argv.needs || argv.onlyNeeds) {
             await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
             await state.incrementPipelineIid(cwd);
         }
@@ -99,7 +99,7 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
         parser = await Parser.create(argv, writeStreams, pipelineIid);
         await Utils.rsyncTrackedFiles(cwd, ".docker");
         await Commander.runJobs(argv, parser, writeStreams);
-        if (argv.needs) {
+        if (argv.needs || argv.onlyNeeds) {
             writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
         }
     } else {

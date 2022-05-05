@@ -88,6 +88,10 @@ export class Argv {
         return this.map.get("needs") ?? false;
     }
 
+    get onlyNeeds(): boolean {
+        return this.map.get("onlyNeeds") ?? false;
+    }
+
     get completion(): boolean {
         return this.map.get("completion") ?? false;
     }
