@@ -50,7 +50,7 @@ Get rid of all those dev specific shell scripts and make files.
 npm install -g gitlab-ci-local
 ```
 
-### Linux
+### Linux based on Debian
 
 ```bash
 curl -s "https://firecow.github.io/gitlab-ci-local/ppa/pubkey.gpg" | sudo apt-key add -
