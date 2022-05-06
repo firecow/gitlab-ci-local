@@ -52,7 +52,7 @@
     "axios-mock-adapter": "1.20.0",
     "depcheck": "1.4.3",
     "eslint": "8.14.0",
-    "jest": "^28.0.3",
+    "jest": "28.1.0",
     "jest-when": "3.5.1",
     "pkg": "5.6.0",
     "ts-jest": "^28.0.1",
