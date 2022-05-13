@@ -542,8 +542,8 @@ export class Job {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
                 for (const service of this.services) {
                     await this.pullImage(writeStreams, service.getName(this.expandedVariables));
-                    const containerId = await this.startService(writeStreams, service);
-                    await this.serviceHealthCheck(writeStreams, service, containerId);
+                    const serviceContainerId = await this.startService(writeStreams, service);
+                    await this.serviceHealthCheck(writeStreams, service, serviceContainerId);
                 }
             }
 
@@ -1000,8 +1000,8 @@ export class Job {
 
                 dockerCmd += ` willwill/wait-for-it "${aliases[0]}:${portNum}" -t 30`;
                 const time = process.hrtime();
-                const {exitCode, stdout: containerId} = await Utils.bash(dockerCmd, cwd);
-                this._containersToClean.push(containerId);
+                const {exitCode, stdout: serviceContainerId} = await Utils.bash(dockerCmd, cwd);
+                this._containersToClean.push(serviceContainerId);
                 const endTime = process.hrtime(time);
                 if(exitCode == 0){
                     writeStreams.stdout(chalk`${this.chalkJobName} {greenBright service image: ${serviceName} healthcheck passed: ${aliases[0]}:${portNum}} in {green ${prettyHrtime(endTime)}}\n`);
