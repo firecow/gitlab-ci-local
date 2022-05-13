@@ -8,7 +8,6 @@ export interface JobOptions {
     writeStreams: WriteStreams;
     data: any;
     name: string;
-    namePad: number;
     globals: any;
     pipelineIid: number;
     gitData: GitData;

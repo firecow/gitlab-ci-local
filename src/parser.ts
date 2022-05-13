@@ -45,7 +45,7 @@ export class Parser {
     }
 
     get jobNamePad(): number {
-        assert(this._jobNamePad != null, "jobNamePad is uinitialized");
+        assert(this._jobNamePad != null, "jobNamePad is uninitialized");
         return this._jobNamePad;
     }
 
@@ -120,18 +120,14 @@ export class Parser {
             const matrixVariablesList = Utils.matrixVariablesList(jobData, jobName);
             if (matrixVariablesList === null) {
                 const job = new Job({
-                    volumes,
-                    extraHosts,
+                    argv,
                     writeStreams,
-                    name: jobName,
-                    variablesFromFiles: variablesFromFiles,
-                    cliVariables: cliVariables,
-                    shellIsolation: this.opt.shellIsolation ?? false,
                     data: jobData,
-                    cwd,
+                    name: jobName,
                     globals: gitlabData,
-                    pipelineIid,
+                    pipelineIid: pipelineIid,
                     gitData,
+                    variablesFromFiles,
                 });
                 const foundStage = this.stages.includes(job.stage);
                 assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
@@ -139,18 +135,14 @@ export class Parser {
             } else {
                 for (const matrixVariables of matrixVariablesList) {
                     const job = new Job({
-                        volumes,
-                        extraHosts,
+                        argv,
                         writeStreams,
-                        name: `${jobName}[${Object.values(matrixVariables).join(",")}]`,
-                        variablesFromFiles: variablesFromFiles,
-                        cliVariables: cliVariables,
-                        shellIsolation: this.opt.shellIsolation ?? false,
                         data: jobData,
-                        cwd,
+                        name: jobName,
                         globals: gitlabData,
-                        pipelineIid,
+                        pipelineIid: pipelineIid,
                         gitData,
+                        variablesFromFiles,
                     });
                     const foundStage = this.stages.includes(job.stage);
                     assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
@@ -191,10 +183,10 @@ export class Parser {
         let noArtifactsToSourceMatch = null;
         let index = 0;
         for (const line of fileSplit) {
-            interactiveMatch = !interactiveMatch ? line.match(/#[\s]?@[\s]?[Ii]nteractive/) : interactiveMatch;
-            injectSSHAgent = !injectSSHAgent ? line.match(/#[\s]?@[\s]?[Ii]njectSSHAgent/) : injectSSHAgent;
-            noArtifactsToSourceMatch = !noArtifactsToSourceMatch ? line.match(/#[\s]?@[\s]?NoArtifactsToSource/i) : noArtifactsToSourceMatch;
-            descriptionMatch = !descriptionMatch ? line.match(/#[\s]?@[\s]?[Dd]escription (?<description>.*)/) : descriptionMatch;
+            interactiveMatch = !interactiveMatch ? line.match(/#\s?@\s?[Ii]nteractive/) : interactiveMatch;
+            injectSSHAgent = !injectSSHAgent ? line.match(/#\s?@\s?[Ii]njectSSHAgent/) : injectSSHAgent;
+            noArtifactsToSourceMatch = !noArtifactsToSourceMatch ? line.match(/#\s?@\s?NoArtifactsToSource/i) : noArtifactsToSourceMatch;
+            descriptionMatch = !descriptionMatch ? line.match(/#\s?@\s?[Dd]escription (?<description>.*)/) : descriptionMatch;
 
             const jobMatch = line.match(/\w:/);
             if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
