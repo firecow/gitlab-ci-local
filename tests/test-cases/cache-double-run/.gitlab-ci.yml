@@ -1,0 +1,9 @@
+---
+test-job:
+  cache:
+    key: global
+    paths: [cache/**.txt]
+    policy: pull-push
+  script:
+    - test -d cache/ && echo "Cache warm" || >&2 echo "Cache not warm"
+    - mkdir -p cache && touch cache/file1.txt

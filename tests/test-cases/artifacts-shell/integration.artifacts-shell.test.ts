@@ -24,7 +24,6 @@ test.concurrent("artifacts-shell <consume> --needs --shell-isolation", async () 
     });
     expect(found.length).toEqual(1);
     expect(await fs.pathExists("tests/test-cases/artifacts-shell/path/file1")).toEqual(true);
-    expect(writeStreams.stderrLines).toEqual([]);
 });
 
 test.concurrent("artifacts-shell --file .gitlab-ci-when-never.yml --shell-isolation", async () => {
@@ -35,5 +34,5 @@ test.concurrent("artifacts-shell --file .gitlab-ci-when-never.yml --shell-isolat
         shellIsolation: true,
     }, writeStreams);
 
-     expect(writeStreams.stderrLines).toEqual([]);
+     
 });

@@ -1,5 +1,6 @@
 import {MockWriteStreams} from "../../../src/mock-write-streams";
 import {handler} from "../../../src/handler";
+import fs from "fs-extra";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
@@ -8,7 +9,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("image <test job>", async () => {
+test("image <test job>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
@@ -18,7 +19,7 @@ test.concurrent("image <test job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <test-entrypoint>", async () => {
+test("image <test-entrypoint>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
@@ -36,7 +37,7 @@ test.concurrent("image <test-entrypoint>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <test-entrypoint-override>", async () => {
+test("image <test-entrypoint-override>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
@@ -49,16 +50,41 @@ test.concurrent("image <test-entrypoint-override>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <test-from-scratch>", async () => {
+test("image <test-from-scratch>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test-from-scratch"],
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines[5]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 0:0 .gitlab-ci.yml`);
-    expect(writeStreams.stdoutLines[7]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 666 .gitlab-ci.yml`);
-    expect(writeStreams.stdoutLines[9]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 777 folder/`);
-    expect(writeStreams.stdoutLines[11]).toEqual(chalk`{blueBright test-from-scratch       } {greenBright >} 777 executable.sh`);
-    expect(writeStreams.stderrLines).toEqual([]);
+    const expected = [
+        chalk`{blueBright test-from-scratch       } {greenBright >} 0:0 .gitlab-ci.yml`,
+        chalk`{blueBright test-from-scratch       } {greenBright >} 666 .gitlab-ci.yml`,
+        chalk`{blueBright test-from-scratch       } {greenBright >} 777 folder/`,
+        chalk`{blueBright test-from-scratch       } {greenBright >} 777 executable.sh`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+// Regression test for #452. We create a test-file.txt at root of repo which is
+// ignored. The bug would cause this to also ignore test-file.txt in ./folder,
+// which it should not. Expected output will differ if ./folder/test-file.txt
+// is also ignored.
+test("image <test-ignore-regression>", async () => {
+    const writeStreams = new MockWriteStreams();
+
+    try {
+        await fs.writeFile("tests/test-cases/image/test-file.txt", "I'm ignored\n");
+        await handler({
+            cwd: "tests/test-cases/image",
+            job: ["test-entrypoint"],
+        }, writeStreams);
+    } finally {
+        await fs.rm("tests/test-cases/image/test-file.txt", {force: true});
+    }
+
+    const expected = [
+        chalk`{blueBright test-entrypoint         } {greenBright >} I'm a test file`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

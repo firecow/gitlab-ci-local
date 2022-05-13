@@ -1,25 +1,29 @@
 ---
 name: build
 on:
-  - push
-  - pull_request
+  push:
+    tags-ignore:
+      - '**'
+    branches:
+      - master
+  pull_request: {}
 
 jobs:
 
   yamllint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: ibiqlik/action-yamllint@v3
 
   eslint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
@@ -29,11 +33,11 @@ jobs:
   typescript-compile:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
@@ -43,11 +47,11 @@ jobs:
   unused-deps:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
@@ -57,31 +61,17 @@ jobs:
   jest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
+      - uses: actions/cache@v3
+        with:
+          path: 'node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
       - run: npm install
-      - name: Read SSH KEY file
-        uses: juliangruber/read-file-action@v1
-        id: sshDeployKey
-        with:
-          path: .ssh/deploy-read-token
-      - name: Read Known hosts file
-        uses: juliangruber/read-file-action@v1
-        id: sshKnownHosts
-        with:
-          path: .ssh/known_hosts
-      - uses: shimataro/ssh-key-action@v2
-        with:
-          # Deploy token with just read permissions
-          key: ${{ steps.sshDeployKey.outputs.content }}
-          known_hosts: ${{ steps.sshKnownHosts.outputs.content }}
       - name: Run Tests
-        run: |
-          eval $(ssh-agent -s)
-          ssh-add
-          FORCE_COLOR=1 npx jest --coverage --testTimeout 90000
+        run: FORCE_COLOR=1 npx jest --coverage --testTimeout 90000
       - uses: sonarsource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -103,15 +93,15 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
+      uses: github/codeql-action/autobuild@v2
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+      uses: github/codeql-action/analyze@v2

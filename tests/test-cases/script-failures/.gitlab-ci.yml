@@ -1,7 +1,10 @@
 ---
 test-job:
   script:
+    - echo "Not printed"
     - echo "Test something"
+    - echo "That fails"
+    - echo "Something in the log"
     - exit 1
 
 test-job-after-script:
@@ -13,6 +16,7 @@ test-job-after-script:
 allow-failure-job:
   allow_failure: true
   script:
+    - echo "This is printed right before the failure"
     - exit 1
 
 allow-failure-after-script:

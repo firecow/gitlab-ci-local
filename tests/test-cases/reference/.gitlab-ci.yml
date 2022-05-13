@@ -6,5 +6,13 @@ test-job:
   variables:
     MYVAR: !reference [.setup, variables, MYVAR]
   script:
-    - !reference [.setup, script]
+    - !reference [.jibof2, script]
     - echo ${MYVAR}
+
+.jibof2:
+  script:
+    - !reference [.jibof, script]
+
+.jibof:
+  script:
+    - !reference [.setup, script]

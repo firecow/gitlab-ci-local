@@ -1,8 +1,8 @@
 #!/usr/bin/env node
+import "source-map-support/register";
 import chalk from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as sourceMapSupport from "source-map-support";
 import yargs from "yargs";
 import {Parser} from "./parser";
 import * as state from "./state";
@@ -10,14 +10,14 @@ import {ExitError} from "./types/exit-error";
 import {ProcessWriteStreams} from "./process-write-streams";
 import {handler} from "./handler";
 import {JobExecutor} from "./job-executor";
-
-sourceMapSupport.install();
+import {MockWriteStreams} from "./mock-write-streams";
+import {Argv} from "./argv";
 
 (() => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
     yargs(process.argv.slice(2))
-        .version(packageJson["version"])
         .showHelpOnFail(false)
+        .version(packageJson["version"])
         .wrap(yargs.terminalWidth())
         .command({
             handler: async (argv) => {
@@ -51,17 +51,22 @@ sourceMapSupport.install();
             requiresArg: true,
         })
         .option("list", {
-            type: "string",
+            type: "boolean",
             description: "List jobs and job information, when:never excluded",
             requiresArg: false,
         })
         .option("list-all", {
-            type: "string",
+            type: "boolean",
             description: "List jobs and job information, when:never included",
             requiresArg: false,
         })
+        .option("list-json", {
+            type: "boolean",
+            description: "List jobs and job information in json format, when:never included",
+            requiresArg: false,
+        })
         .option("preview", {
-            type: "string",
+            type: "boolean",
             description: "Print YML with defaults, includes, extends and reference's expanded",
             requiresArg: false,
         })
@@ -71,18 +76,28 @@ sourceMapSupport.install();
             requiresArg: true,
         })
         .option("completion", {
-            type: "string",
+            type: "boolean",
             description: "Generate tab completion script",
             requiresArg: false,
         })
         .option("needs", {
             type: "boolean",
-            description: "Run needed jobs, when executing a single job",
+            description: "Run needed jobs, when executing specific jobs",
+            requiresArg: false,
+        })
+        .option("onlyNeeds", {
+            type: "boolean",
+            description: "Run needed jobs, except the specified jobs themselves",
             requiresArg: false,
         })
         .option("variable", {
             type: "array",
             description: "Add variable to all executed jobs (--variable HELLO=world)",
+            requiresArg: false,
+        })
+        .option("remote-variables", {
+            type: "string",
+            description: "Fetch variables file from remote location",
             requiresArg: false,
         })
         .option("file", {
@@ -100,6 +115,11 @@ sourceMapSupport.install();
             description: "Enable artifact isolation for shell-executor jobs",
             requiresArg: false,
         })
+        .option("mount-cache", {
+            type: "boolean",
+            description: "Enable docker mount based caching",
+            requiresArg: false,
+        })
         .option("privileged", {
             type: "boolean",
             description: "Set docker executor to privileged mode",
@@ -115,19 +135,16 @@ sourceMapSupport.install();
             description: "Add extra docker host entries",
             requiresArg: false,
         })
+        .option("fetch-includes", {
+            type: "boolean",
+            description: "Fetch all external includes one more time",
+            requiresArg: false,
+        })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
-                const cwd = yargsArgv.cwd || process.cwd();
-                const pipelineIid = await state.getPipelineIid(cwd);
-                const parser = await Parser.create({
-                    cwd,
-                    writeStreams: new ProcessWriteStreams(),
-                    pipelineIid,
-                    showInitMessage: false,
-                    fetchIncludes: false,
-                    file: yargsArgv.file,
-                    variables: {},
-                });
+                const argv = new Argv({...yargsArgv, autoCompleting: true});
+                const pipelineIid = await state.getPipelineIid(argv.cwd);
+                const parser = await Parser.create(argv, new MockWriteStreams(), pipelineIid);
                 return [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
             } catch (e) {
                 return ["Parser-Failed!"];

@@ -16,5 +16,4 @@ test("artifacts-exclude <consume-artifacts> --needs --exclude", async () => {
         shellIsolation: true,
     }, writeStreams);
 
-    expect(writeStreams.stderrLines).toEqual([]);
 });

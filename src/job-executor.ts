@@ -2,16 +2,17 @@ import chalk from "chalk";
 import {Job} from "./job";
 import {ExitError} from "./types/exit-error";
 import {assert} from "./asserts";
+import {Argv} from "./argv";
 
 export class JobExecutor {
 
-    static async runLoop(jobs: ReadonlyMap<string, Job>, stages: readonly string[], potentialStarters: Job[], manuals: string[], privileged: boolean) {
+    static async runLoop(argv: Argv, jobs: ReadonlyMap<string, Job>, stages: readonly string[], potentialStarters: Job[]) {
         let runningJobs = [];
         let startCandidates = [];
 
         do {
-            startCandidates = JobExecutor.getStartCandidates(jobs, stages, potentialStarters, manuals);
-            startCandidates.forEach(j => j.start(privileged).then());
+            startCandidates = JobExecutor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
+            startCandidates.forEach(j => j.start().then());
             runningJobs = JobExecutor.getRunning(jobs);
             await new Promise<void>((resolve) => { setTimeout(() => { resolve(); }, 5); });
         } while (runningJobs.length > 0);

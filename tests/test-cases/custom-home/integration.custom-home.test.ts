@@ -6,33 +6,49 @@ import {WhenStatics} from "../../mocks/when-statics";
 
 beforeAll(() => {
     const spyGitRemote = {
-        cmd: "git remote -v",
+        cmdArgs: ["git", "remote", "-v"],
         returnValue: {stdout: "origin\tgit@gitlab.com:gcl/custom-home.git (fetch)\norigin\tgit@gitlab.com:gcl/custom-home.git (push)\n"},
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 });
 
-test.concurrent("custom-home <test-job>", async () => {
+test("custom-home <test-staging>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",
-        job: ["test-job"],
+        job: ["test-staging"],
         home: "tests/test-cases/custom-home/.home",
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job                 } {greenBright >} group-global-var-override-value`,
-        chalk`{blueBright test-job                 } {greenBright >} project-group-var-override-value`,
-        chalk`{blueBright test-job                 } {greenBright >} project-var-value`,
-        chalk`{blueBright test-job                 } {greenBright >} ~/dir/`,
-        chalk`{blueBright test-job                 } {greenBright >} Im content of a file variable`,
-        chalk`{blueBright test-job                 } {greenBright >} "This is crazy"`,
-        chalk`{blueBright test-job                 } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
+        chalk`{blueBright test-staging             } {greenBright >} group-global-var-override-value`,
+        chalk`{blueBright test-staging             } {greenBright >} staging-project-group-var-override-value`,
+        chalk`{blueBright test-staging             } {greenBright >} project-var-value`,
+        chalk`{blueBright test-staging             } {greenBright >} warn: INVALID_DIR_VAR is pointing to invalid path`,
+        chalk`{blueBright test-staging             } {greenBright >} Im content of a file variable`,
+        chalk`{blueBright test-staging             } {greenBright >} "This is crazy"`,
+        chalk`{blueBright test-staging             } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("custom-home <test-image>", async () => {
+test("custom-home <test-production>", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/custom-home",
+        job: ["test-production"],
+        home: "tests/test-cases/custom-home/.home",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-production          } {greenBright >} production-project-group-var-override-value`,
+        chalk`{blueBright test-production          } {greenBright >} I'm the content of a file variable`,
+        chalk`{blueBright test-production          } {greenBright >} I'm the 2nd line of file variable`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test("custom-home <test-image>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",
@@ -48,7 +64,7 @@ test.concurrent("custom-home <test-image>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("custom-home <test-normalize-key>", async () => {
+test("custom-home <test-normalize-key>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",
@@ -63,7 +79,7 @@ test.concurrent("custom-home <test-normalize-key>", async () => {
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("custom-home <test-predefined-overwrite>", async () => {
+test("custom-home <test-predefined-overwrite>", async () => {
     const writeStreams = new MockWriteStreams();
     await handler({
         cwd: "tests/test-cases/custom-home",

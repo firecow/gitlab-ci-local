@@ -19,7 +19,7 @@ test("environment <deploy-dev-job>", async () => {
         chalk`{blueBright deploy-dev-job} environment: \{ name: {bold dev-domain} \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
+    
 });
 
 test("environment <deploy-stage-job>", async () => {
@@ -30,8 +30,11 @@ test("environment <deploy-stage-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright deploy-stage-job} environment: \{ name: {bold stage-domain}, url: {bold http://stage.domain.com} \}`,
+        chalk`{blueBright deploy-stage-job} {greenBright >} stage-domain`,
+        chalk`{blueBright deploy-stage-job} {greenBright >} Stage Domain`,
+        chalk`{blueBright deploy-stage-job} {greenBright >} http://stage.domain.com`,
+        chalk`{blueBright deploy-stage-job} environment: \{ name: {bold Stage Domain}, url: {bold http://stage.domain.com} \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    expect(writeStreams.stderrLines).toEqual([]);
+    
 });

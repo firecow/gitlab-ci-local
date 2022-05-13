@@ -26,13 +26,17 @@ Get rid of all those dev specific shell scripts and make files.
     * [docker-swarm-php](./examples/docker-swarm-php/README.md)
 * [Installation](#installation)
 * [Convenience](#convenience)
+    * [CLI options via shell](#cli-options-via-shell) 
     * [DotEnv file](#dotenv-file)
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
 * [Quirks](#quirks)
-    * [Tracked Files](#tracked-files) 
-    * [Home Variables](#home-variables)
+    * [Tracked Files](#tracked-files)
+    * [Home File Variables](#home-file-variables)
+    * [Remote File Variables](#remote-file-variables)
+    * [Project File Variables](#project-file-variables)
     * [Decorators](#decorators)
+    * [Includes](#includes)
     * [Artifacts](#artifacts)
 * [Development](#development)
     * [Scripts](#scripts)
@@ -46,7 +50,7 @@ Get rid of all those dev specific shell scripts and make files.
 npm install -g gitlab-ci-local
 ```
 
-### Linux
+### Linux based on Debian
 
 ```bash
 curl -s "https://firecow.github.io/gitlab-ci-local/ppa/pubkey.gpg" | sudo apt-key add -
@@ -55,8 +59,9 @@ sudo apt-get update
 sudo apt-get install gitlab-ci-local
 ```
 
-
 ### Macos
+
+*bash version must be above or equal 4.x.x*
 
 ```bash
 brew install gitlab-ci-local
@@ -73,6 +78,15 @@ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.
 ```
 
 ## Convenience
+
+### CLI options via shell
+
+```
+# Overrides .gitlab-ci.yml as the default git ci/cd file
+export GCL_NEEDS='true' >> ~/.bashrc
+export GCL_FILE='.gitlab-ci-local.yml' >> ~/.bashrc
+export GLC_VARIABLES="IMAGE=someimage SOMEOTHERIMAGE=someotherimage"
+```
 
 ### DotEnv file
 
@@ -108,9 +122,7 @@ Untracked and ignored files will not be synced inside isolated jobs, only tracke
 
 Remember `git add`
 
-
-
-### Home variables
+### Home file variables
 
 Put a file like this in `$HOME/.gitlab-ci-local/variables.yml`
 
@@ -131,11 +143,28 @@ group:
 global:
   # Will be type File, because value is a file path
   KNOWN_HOSTS: '~/.ssh/known_hosts'
+  DEPLOY_ENV_SPECIFIC:
+    type: variable # Optional and defaults to variable
+    values:
+      '*production*': 'Im production only value'
+      'staging': 'Im staging only value'
+  FILE_CONTENT_IN_VALLUES:
+    type: file
+    values:
+      '*': |
+        Im staging only value
+        I'm great for certs n' stuff
 ```
 
 Variables will now appear in your jobs, if project or group matches git remote, global's are always present
 
-### Project variables
+### Remote file variables
+
+```shell
+gitlab-ci-local --remote-variables git@gitlab.com:firecow/example.git=gitlab-variables.yml=master
+```
+
+### Project file variables
 
 Put a file like this in `$CWD/.gitlab-ci-local-variables.yml`
 
@@ -201,12 +230,17 @@ Prevent artifacts from being copied to source folder
 produce:
   stage: build
   script: mkdir -p path/ && touch path/file1
-  artifacts: {paths: [path/] }
+  artifacts: { paths: [path/] }
 ```
+
+### Includes
+
+Includes from external sources are only fetched once. Use `--fetch-includes` to invoke an external fetching rutine.
 
 ### Artifacts
 
-Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolation option to mimic correct artifact handling for shell jobs.
+Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolation option to mimic correct artifact
+handling for shell jobs.
 
 Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
 

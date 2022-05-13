@@ -1,41 +1,19 @@
 import chalk from "chalk";
-import * as childProcess from "child_process";
-import {ExitError} from "./types/exit-error";
 import {Job} from "./job";
 import {assert} from "./asserts";
 import * as fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
+import execa from "execa";
 
 export class Utils {
 
-    static spawn(command: string, cwd = process.cwd()): Promise<{ stdout: string; stderr: string; output: string; status: number }> {
-        return new Promise((resolve, reject) => {
-            const cp = childProcess.spawn(`${command}`, {shell: "bash", env: process.env, cwd});
+    static bash(shellScript: string, cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
+        return execa(shellScript, {shell: "bash", cwd, env, all: true});
+    }
 
-            let output = "";
-            let stdout = "";
-            let stderr = "";
-
-            cp.stderr.on("data", (buff) => {
-                stderr += buff.toString();
-                output += buff.toString();
-            });
-            cp.stdout.on("data", (buff) => {
-                stdout += buff.toString();
-                output += buff.toString();
-            });
-            cp.on("exit", (status) => {
-                if ((status ?? 0) === 0) {
-                    return setTimeout(() => resolve({stdout, stderr, output, status: status ?? 0}), 10);
-                }
-                return setTimeout(() => reject(new ExitError(`${output}`)), 10);
-            });
-            cp.on("error", (e) => {
-                return setTimeout(() => reject(new ExitError(`'${command}' had errors\n${e}`)), 10);
-            });
-
-        });
+    static spawn(cmdArgs: string[], cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
+        return execa(cmdArgs[0], cmdArgs.slice(1), {cwd, env, all: true});
     }
 
     static matrixVariablesList(jobData: any, jobName: string) {
@@ -123,8 +101,8 @@ export class Utils {
         const content = await fs.readFile(`${cwd}/.gitlab-ci-local/output/${jobName}.log`, "utf8");
         const regex = new RegExp(coverageRegex.replace(/^\//, "").replace(/\/$/, ""), "m");
         const match = content.match(regex);
-        if (match && match[1] != null) {
-            const firstNumber = match[1].match(/\d+(\.\d+)?/);
+        if (match && match[0] != null) {
+            const firstNumber = match[0].match(/\d+(\.\d+)?/);
             return firstNumber && firstNumber[0] ? firstNumber[0] : null;
         }
         return "0";
@@ -156,6 +134,13 @@ export class Utils {
         return expandedVariables;
     }
 
+    static textHasVariable(text?: any): boolean {
+        if (typeof text !== "string") {
+            return false;
+        }
+        return text.match(/[$][{]?\w*[}]?/g) != null;
+    }
+
     static getRulesResult(rules: { if?: string; when?: string; allow_failure?: boolean }[], variables: { [key: string]: string }): { when: string; allowFailure: boolean } {
         let when = "never";
         let allowFailure = false;
@@ -172,51 +157,34 @@ export class Utils {
     }
 
     static evaluateRuleIf(ruleIf: string, envs: { [key: string]: string }) {
-        const expandedRule = ruleIf.replace(/[$]\w*/g, (match) => {
+        let evalStr = ruleIf;
+
+        // Expand all variables
+        evalStr = evalStr.replace(/[$]\w+/g, (match) => {
             const sub = envs[match.replace(/^[$]/, "")];
             return sub != null ? `'${sub}'` : "null";
         });
 
-        const subRules = expandedRule.split(/&&|\|\|/g);
-        const subEvals = [];
-        for (const subRule of subRules) {
-            let subEval = subRule;
+        // Convert =~ to match function
+        evalStr = evalStr.replace(/\s*=~\s*(\/.*?\/[igmsuy]*)/g, ".match($1) != null");
+        evalStr = evalStr.replace(/\s*=~\s(.+?)(\)*?)(?:\s|$)/g, ".match(new RegExp($1)) != null$2"); // Without forward slashes
 
-            if (subRule.includes("!~")) {
-                subEval = subRule.replace(/\s*!~\s*(\/.*\/[igmsuy]*)/g, ".match($1) == null").trim();
-                subEval = subEval.match(/^null/) ? "false" : subEval;
-            } else if (subRule.includes("=~")) {
-                subEval = subRule.replace(/\s*=~\s*(\/.*\/[igmsuy]*)/g, ".match($1) != null").trim();
-                subEval = subEval.match(/^null/) ? "false" : subEval;
-            } else if (!subRule.match(/==|!=/)) {
-                if (subRule.match(/null/)) {
-                    subEval = subRule.replace(/(\s*)\S*(\s*)/, "$1false$2").trim();
-                } else if (subRule.match(/''/)) {
-                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, "$1false$2").trim();
-                } else {
-                    subEval = subRule.replace(/'(\s?)\S*(\s)?'/, "$1true$2").trim();
-                }
-            }
+        // Convert !~ to match function
+        evalStr = evalStr.replace(/\s*!~\s*(\/.*?\/[igmsuy]*)/g, ".match($1) == null");
+        evalStr = evalStr.replace(/\s*!~\s(.+?)(\)*?)(?:\s|$)/g, ".match(new RegExp($1)) == null$2"); // Without forward slashes
 
-            subEvals.push(subEval);
-        }
+        // Convert all null.match functions to false
+        evalStr = evalStr.replace(/null.match\(.+?\) != null/g, "false");
+        evalStr = evalStr.replace(/null.match\(.+?\) == null/g, "false");
 
-        const conditions = expandedRule.match(/&&|\|\|/g);
-
-        let evalStr = "";
-
-        subEvals.forEach((subEval, index) => {
-            evalStr += subEval;
-            evalStr += conditions && conditions[index] ? conditions[index] : "";
-        });
-
-        return eval(evalStr);
+        // noinspection BadExpressionStatementJS
+        return eval(`if (${evalStr}) { true } else { false }`);
     }
 
     static async rsyncTrackedFiles(cwd: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
         const time = process.hrtime();
-        await fs.ensureDir(`${cwd}/.gitlab-ci-local/builds/${target}`);
-        await Utils.spawn(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory) --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
+        await fs.mkdirp(`${cwd}/.gitlab-ci-local/builds/${target}`);
+        await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
 

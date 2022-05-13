@@ -4,23 +4,28 @@ import {Parser} from "./parser";
 import {Utils} from "./utils";
 import {WriteStreams} from "./types/write-streams";
 import {JobExecutor} from "./job-executor";
+import fs from "fs-extra";
+import {Argv} from "./argv";
 
 export class Commander {
 
-    static async runPipeline(parser: Parser, writeStreams: WriteStreams, manualOpts: string[], privileged: boolean) {
+    static async runPipeline(argv: Argv, parser: Parser, writeStreams: WriteStreams) {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
         let potentialStarters = [...jobs.values()];
         potentialStarters = potentialStarters.filter(j => j.when !== "never");
-        potentialStarters = potentialStarters.filter(j => j.when !== "manual" || manualOpts.includes(j.name));
-        await JobExecutor.runLoop(jobs, stages, potentialStarters, manualOpts, privileged);
-        await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad);
+        potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
+        await JobExecutor.runLoop(argv, jobs, stages, potentialStarters);
+        await Commander.printReport(argv.cwd, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static async runSingleJob(parser: Parser, writeStreams: WriteStreams, jobArgs: string[], needs: boolean, manualOpts: string[], privileged: boolean) {
+    static async runJobs(argv: Argv, parser: Parser, writeStreams: WriteStreams) {
+        const needs = argv.needs || argv.onlyNeeds;
+        const jobArgs = argv.job;
         const jobs = parser.jobs;
         const stages = parser.stages;
+
 
         let potentialStarters: Job[] = [];
         const jobPoolMap = needs ? new Map<string, Job>(jobs) : new Map<string, Job>();
@@ -28,16 +33,23 @@ export class Commander {
             const job = Utils.getJobByName(jobs, jobName);
             jobPoolMap.set(jobName, job);
             if (needs) {
-                potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, job, manualOpts));
+                potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, job, argv.manual));
             }
             potentialStarters.push(job);
         });
 
-        await JobExecutor.runLoop(jobPoolMap, stages, potentialStarters, manualOpts, privileged);
-        await Commander.printReport(writeStreams, jobs, stages, parser.jobNamePad);
+        if (argv.onlyNeeds) {
+            jobArgs.forEach((j) => {
+                potentialStarters = potentialStarters.filter(p => p.name !== j);
+            });
+        }
+
+        await JobExecutor.runLoop(argv, jobPoolMap, stages, potentialStarters);
+        await Commander.printReport(argv.cwd, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static printReport = async (writeStreams: WriteStreams, jobs: ReadonlyMap<string, Job>, stages: readonly string[], jobNamePad: number) => {
+    static printReport = async (cwd: string, writeStreams: WriteStreams, jobs: ReadonlyMap<string, Job>, stages: readonly string[], jobNamePad: number) => {
+
         writeStreams.stdout("\n");
 
         const preScripts: { successful: Job[]; failed: Job[]; warned: Job[] } = {
@@ -83,10 +95,15 @@ export class Commander {
 
         if (preScripts.warned.length !== 0) {
             preScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            preScripts.warned.forEach(({name}) => {
+            for (const {name} of preScripts.warned) {
                 const namePad = name.padEnd(jobNamePad);
+                const safeName = Utils.getSafeJobName(name);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  pre_script\n`);
-            });
+                const outputLog = await fs.readFile(`${cwd}/.gitlab-ci-local/output/${safeName}.log`, "utf8");
+                for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
+                    writeStreams.stdout(chalk`  {yellow >} ${line}\n`);
+                }
+            }
         }
 
         if (afterScripts.warned.length !== 0) {
@@ -99,10 +116,15 @@ export class Commander {
 
         if (preScripts.failed.length !== 0) {
             preScripts.failed.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            preScripts.failed.forEach(({name}) => {
+            for (const {name} of preScripts.failed) {
                 const namePad = name.padEnd(jobNamePad);
+                const safeName = Utils.getSafeJobName(name);
                 writeStreams.stdout(chalk`{black.bgRed  FAIL } {blueBright ${namePad}}\n`);
-            });
+                const outputLog = await fs.readFile(`${cwd}/.gitlab-ci-local/output/${safeName}.log`, "utf8");
+                for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
+                    writeStreams.stdout(chalk`  {red >} ${line}\n`);
+                }
+            }
         }
 
         for (const job of preScripts.successful) {
@@ -159,6 +181,24 @@ export class Commander {
         };
 
         jobs.forEach((job) => renderLine(job));
+    }
+
+    static runJson(parser: Parser, writeStreams: WriteStreams) {
+        const jobs = [...parser.jobs.values()];
+        const json: any[] = [];
+
+        jobs.forEach((job) => {
+            json.push({
+                name: job.name,
+                description: job.description,
+                stage: job.stage,
+                when: job.when,
+                allow_failure: job.allowFailure,
+                needs: job.needs,
+            });
+        });
+
+        writeStreams.stdout(`${JSON.stringify(json, null, 2)}\n`);
     }
 
 }

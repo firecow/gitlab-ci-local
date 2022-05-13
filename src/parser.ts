@@ -7,24 +7,29 @@ import {Job} from "./job";
 import * as jobExpanders from "./job-expanders";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
-import {ParserOptions} from "./types/parser-options";
 import {Validator} from "./validator";
 import {GitData} from "./git-data";
 import {ParserIncludes} from "./parser-includes";
 import {Producers} from "./producers";
 import {VariablesFromFiles} from "./variables-from-files";
+import {Argv} from "./argv";
+import {WriteStreams} from "./types/write-streams";
 
 export class Parser {
-
-    private readonly opt: ParserOptions;
 
     private _jobs: Map<string, Job> = new Map();
     private _stages: string[] = [];
     private _gitlabData: any;
     private _jobNamePad: number|null = null;
 
-    private constructor(opt: ParserOptions) {
-        this.opt = opt;
+    readonly argv: Argv;
+    readonly writeStreams: WriteStreams;
+    readonly pipelineIid: number;
+
+    private constructor(argv: Argv, writeStreams: WriteStreams, pipelineIid: number) {
+        this.argv = argv;
+        this.writeStreams = writeStreams;
+        this.pipelineIid = pipelineIid;
     }
 
     get jobs(): ReadonlyMap<string, Job> {
@@ -44,43 +49,34 @@ export class Parser {
         return this._jobNamePad;
     }
 
-    static async create(opt: ParserOptions) {
-        const writeStreams = opt.writeStreams;
-        const parser = new Parser(opt);
-
+    static async create(argv: Argv, writeStreams: WriteStreams, pipelineIid: number) {
+        const parser = new Parser(argv, writeStreams, pipelineIid);
         const time = process.hrtime();
         await parser.init();
         await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
 
-        if (opt.showInitMessage ?? true) {
-            writeStreams.stdout(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
-        }
+        writeStreams.stderr(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
 
         return parser;
     }
 
     async init() {
-        const cwd = this.opt.cwd;
-        const writeStreams = this.opt.writeStreams;
-        const home = this.opt.home;
-        const file = this.opt.file;
-        const fetchIncludes = this.opt.fetchIncludes ?? true;
-        const pipelineIid = this.opt.pipelineIid;
-        const extraHosts = this.opt.extraHosts || [];
-        const volumes = this.opt.volumes || [];
-        const cliVariables = this.opt.variables;
+        const argv = this.argv;
+        const cwd = argv.cwd;
+        const writeStreams = this.writeStreams;
+        const file = argv.file;
+        const pipelineIid = this.pipelineIid;
+        const fetchIncludes = argv.fetchIncludes;
         const gitData = await GitData.init(cwd, writeStreams);
-        const variablesFromFiles = await VariablesFromFiles.init(cwd, writeStreams, gitData, home ?? process.env.HOME ?? "");
+        const variablesFromFiles = await VariablesFromFiles.init(argv, writeStreams, gitData);
 
-        let ymlPath, yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
-        ymlPath = file ? `${cwd}/${file}` : `${cwd}/.gitlab-ci.yml`;
-        const gitlabCiData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, writeStreams, gitData, fetchIncludes, 0));
+        let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
+        const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`);
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, writeStreams, gitData, 0, fetchIncludes));
 
-        ymlPath = `${cwd}/.gitlab-ci-local.yml`;
-        const gitlabCiLocalData = await Parser.loadYaml(ymlPath);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, writeStreams, gitData, fetchIncludes, 0));
+        const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`);
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, writeStreams, gitData, 0, fetchIncludes));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
@@ -88,13 +84,12 @@ export class Parser {
         jobExpanders.reference(gitlabData, gitlabData);
         jobExpanders.jobExtends(gitlabData);
         jobExpanders.artifacts(gitlabData);
-        jobExpanders.cache(gitlabData);
         jobExpanders.image(gitlabData);
         jobExpanders.services(gitlabData);
         jobExpanders.beforeScripts(gitlabData);
         jobExpanders.afterScripts(gitlabData);
         jobExpanders.scripts(gitlabData);
-
+        jobExpanders.flattenLists(gitlabData);
 
         assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
         if (!gitlabData.stages.includes(".pre")) {

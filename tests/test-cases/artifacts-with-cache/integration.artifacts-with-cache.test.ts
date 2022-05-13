@@ -14,6 +14,7 @@ test("artifacts-with-cache <test-job> --needs", async () => {
         cwd: "tests/test-cases/artifacts-with-cache",
         job: ["test-job"],
         needs: true,
+        mountCache: true,
     }, writeStreams);
 
     const expected = [
@@ -21,5 +22,4 @@ test("artifacts-with-cache <test-job> --needs", async () => {
         chalk`{black.bgGreenBright  PASS } {blueBright test-job}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-
 });

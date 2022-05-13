@@ -1,16 +1,16 @@
 ---
-.ancient:
-  script:
-    - echo "Ancient"
-
-.base:
-  script:
-    - !reference [.ancient, script]
-    - echo "Base"
-
 .setup:
   variables:
     MYVAR: Yoyo
   script:
     - !reference [.base, script]
     - echo "Setting something general up"
+
+.base:
+  script:
+    - !reference [.ancient, script]
+    - echo "Base"
+
+.ancient:
+  script:
+    - echo "Ancient"
