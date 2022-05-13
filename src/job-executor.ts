@@ -1,8 +1,8 @@
 import chalk from "chalk";
 import {Job} from "./job";
-import {ExitError} from "./types/exit-error";
 import {assert} from "./asserts";
 import {Argv} from "./argv";
+import {ExitError} from "./types/exit-error";
 
 export class JobExecutor {
 
@@ -70,28 +70,44 @@ export class JobExecutor {
             const loopJob = waitForLoopArray.pop();
             assert(loopJob != null, "Job not found in getPastToWaitFor, should be impossible!");
             if (loopJob.needs) {
-                loopJob.needs.forEach(need => {
-                    for (const j of jobs.filter(j => j.baseName === need.job)) {
-                        if (j.when === "never") {
-                            throw new ExitError(chalk`{blueBright ${j.name}} is when:never, but its needed by {blueBright ${loopJob.name}}`);
-                        }
-                        if (j.when === "manual" && !manuals.includes(j.name)) {
-                            throw new ExitError(chalk`{blueBright ${j.name}} is when:manual, its needed by {blueBright ${loopJob.name}}, and not specified in --manual`);
-                        }
-                        waitForLoopArray.push(j);
-                    }
-                });
+                const neededToWaitFor = this.getNeededToWaitFor(jobs, manuals, loopJob);
+                waitForLoopArray.push(...neededToWaitFor);
             } else {
-                const stageIndex = stages.indexOf(loopJob.stage);
-                const pastStages = stages.slice(0, stageIndex);
-                pastStages.forEach((pastStage) => {
-                    waitForLoopArray = waitForLoopArray.concat([...jobs.values()].filter(j => j.stage === pastStage));
-                });
+                const previousToWaitFor = this.getPreviousToWaitFor(jobs, stages, loopJob);
+                waitForLoopArray = waitForLoopArray.concat(previousToWaitFor);
                 waitForLoopArray = waitForLoopArray.filter(j => j.when !== "never");
                 waitForLoopArray = waitForLoopArray.filter(j => j.when !== "manual" || manuals.includes(j.name));
             }
             waitForLoopArray.forEach(j => jobsToWaitForSet.add(j));
         }
         return [...jobsToWaitForSet];
+    }
+
+    static getNeededToWaitFor(jobs: ReadonlyArray<Job>, manuals: string[], job: Job) {
+        const toWaitFor = [];
+        assert(job.needs != null, chalk`${job.name}.needs cannot be null in getNeededToWaitFor`);
+        for (const need of job.needs) {
+            const baseJobs = jobs.filter(j => j.baseName === need.job);
+            for (const j of baseJobs) {
+                if (j.when === "never") {
+                    throw new ExitError(chalk`{blueBright ${j.name}} is when:never, but its needed by {blueBright ${job.name}}`);
+                }
+                if (j.when === "manual" && !manuals.includes(j.name)) {
+                    throw new ExitError(chalk`{blueBright ${j.name}} is when:manual, its needed by {blueBright ${job.name}}, and not specified in --manual`);
+                }
+                toWaitFor.push(j);
+            }
+        }
+        return toWaitFor;
+    }
+
+    static getPreviousToWaitFor(jobs: ReadonlyArray<Job>, stages: readonly string[], job: Job) {
+        const previousToWaitFor: Job[] = [];
+        const stageIndex = stages.indexOf(job.stage);
+        const pastStages = stages.slice(0, stageIndex);
+        pastStages.forEach((pastStage) => {
+            previousToWaitFor.push(...[...jobs.values()].filter(j => j.stage === pastStage));
+        });
+        return previousToWaitFor;
     }
 }
