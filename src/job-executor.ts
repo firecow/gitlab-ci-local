@@ -6,7 +6,7 @@ import {Argv} from "./argv";
 
 export class JobExecutor {
 
-    static async runLoop(argv: Argv, jobs: ReadonlyMap<string, Job>, stages: readonly string[], potentialStarters: Job[]) {
+    static async runLoop(argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]) {
         let runningJobs = [];
         let startCandidates = [];
 
@@ -18,7 +18,7 @@ export class JobExecutor {
         } while (runningJobs.length > 0);
     }
 
-    static getStartCandidates(jobs: ReadonlyMap<string, Job>, stages: readonly string[], potentialStarters: readonly Job[], manuals: string[]) {
+    static getStartCandidates(jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: readonly Job[], manuals: string[]) {
         const startCandidates = [];
         for (const job of [...new Set<Job>(potentialStarters)]) {
             if (job.started) continue;
@@ -54,15 +54,15 @@ export class JobExecutor {
         return notFinishedJobs.length > 0;
     }
 
-    static getRunning(jobs: ReadonlyMap<string, Job>) {
-        return [...jobs.values()].filter(j => j.running);
+    static getRunning(jobs: ReadonlyArray<Job>) {
+        return jobs.filter(j => j.running);
     }
 
-    static getFailed(jobs: ReadonlyMap<string, Job>) {
-        return [...jobs.values()].filter(j => j.finished && !j.allowFailure && (j.preScriptsExitCode ?? 0) > 0);
+    static getFailed(jobs: ReadonlyArray<Job>) {
+        return jobs.filter(j => j.finished && !j.allowFailure && (j.preScriptsExitCode ?? 0) > 0);
     }
 
-    static getPastToWaitFor(jobs: ReadonlyMap<string, Job>, stages: readonly string[], job: Job, manuals: string[]) {
+    static getPastToWaitFor(jobs: ReadonlyArray<Job>, stages: readonly string[], job: Job, manuals: string[]) {
         const jobsToWaitForSet = new Set<Job>();
         let waitForLoopArray: Job[] = [job];
 
@@ -71,15 +71,14 @@ export class JobExecutor {
             assert(loopJob != null, "Job not found in getPastToWaitFor, should be impossible!");
             if (loopJob.needs) {
                 loopJob.needs.forEach(need => {
-                    const found = jobs.get(need.job);
-                    if (found) {
-                        if (found.when === "never") {
-                            throw new ExitError(chalk`{blueBright ${found.name}} is when:never, but its needed by {blueBright ${loopJob.name}}`);
+                    for (const j of jobs.filter(j => j.baseName === need.job)) {
+                        if (j.when === "never") {
+                            throw new ExitError(chalk`{blueBright ${j.name}} is when:never, but its needed by {blueBright ${loopJob.name}}`);
                         }
-                        if (found.when === "manual" && !manuals.includes(found.name)) {
-                            throw new ExitError(chalk`{blueBright ${found.name}} is when:manual, its needed by {blueBright ${loopJob.name}}, and not specified in --manual`);
+                        if (j.when === "manual" && !manuals.includes(j.name)) {
+                            throw new ExitError(chalk`{blueBright ${j.name}} is when:manual, its needed by {blueBright ${loopJob.name}}, and not specified in --manual`);
                         }
-                        waitForLoopArray.push(found);
+                        waitForLoopArray.push(j);
                     }
                 });
             } else {

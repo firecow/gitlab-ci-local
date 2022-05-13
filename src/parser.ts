@@ -8,6 +8,7 @@ import * as jobExpanders from "./job-expanders";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
 import {Validator} from "./validator";
+import * as parallel from "./parallel";
 import {GitData} from "./git-data";
 import {ParserIncludes} from "./parser-includes";
 import {Producers} from "./producers";
@@ -17,7 +18,7 @@ import {WriteStreams} from "./types/write-streams";
 
 export class Parser {
 
-    private _jobs: Map<string, Job> = new Map();
+    private _jobs: Job[] = [];
     private _stages: string[] = [];
     private _gitlabData: any;
     private _jobNamePad: number|null = null;
@@ -32,7 +33,7 @@ export class Parser {
         this.pipelineIid = pipelineIid;
     }
 
-    get jobs(): ReadonlyMap<string, Job> {
+    get jobs(): ReadonlyArray<Job> {
         return this._jobs;
     }
 
@@ -117,37 +118,32 @@ export class Parser {
             assert(gitData != null, "gitData must be set");
             assert(variablesFromFiles != null, "homeVariables must be set");
 
-            const matrixVariablesList = Utils.matrixVariablesList(jobData, jobName);
-            if (matrixVariablesList === null) {
+            let nodeIndex = 1;
+            const parallelMatrixVariablesList = parallel.matrixVariablesList(jobData, jobName) ?? [null];
+            for (const parallelMatrixVariables of parallelMatrixVariablesList) {
+                let matrixJobName = jobName;
+                if (parallelMatrixVariables) {
+                    matrixJobName = `${jobName} [${Object.values(parallelMatrixVariables ?? []).join(",")}]`;
+                }
+
                 const job = new Job({
                     argv,
                     writeStreams,
                     data: jobData,
-                    name: jobName,
+                    name: matrixJobName,
+                    baseName: jobName,
                     globals: gitlabData,
                     pipelineIid: pipelineIid,
                     gitData,
                     variablesFromFiles,
+                    matrixVariables: parallelMatrixVariables,
+                    nodeIndex: parallelMatrixVariables !== null ? nodeIndex : null,
+                    nodesTotal: parallelMatrixVariablesList.length,
                 });
                 const foundStage = this.stages.includes(job.stage);
                 assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
-                this._jobs.set(jobName, job);
-            } else {
-                for (const matrixVariables of matrixVariablesList) {
-                    const job = new Job({
-                        argv,
-                        writeStreams,
-                        data: jobData,
-                        name: jobName,
-                        globals: gitlabData,
-                        pipelineIid: pipelineIid,
-                        gitData,
-                        variablesFromFiles,
-                    });
-                    const foundStage = this.stages.includes(job.stage);
-                    assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
-                    this._jobs.set(`${jobName}[${Object.values(matrixVariables).join(",")}]`, job);
-                }
+                this._jobs.push(job);
+                nodeIndex++;
             }
         });
 

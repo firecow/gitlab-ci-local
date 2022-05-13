@@ -25,6 +25,7 @@ export class Job {
 
     readonly argv: Argv;
     readonly name: string;
+    readonly baseName: string;
     readonly dependencies: string[] | null;
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
@@ -64,6 +65,7 @@ export class Job {
         this.writeStreams = opt.writeStreams;
         this.gitData = opt.gitData;
         this.name = opt.name;
+        this.baseName = opt.baseName;
         this.jobId = Math.floor(Math.random() * 1000000);
         this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
@@ -123,10 +125,13 @@ export class Job {
             CI_ENVIRONMENT_NAME: this.environment?.name ?? "",
             CI_ENVIRONMENT_SLUG: this.environment?.name?.replace(/\/|\s/g, "-").toLowerCase() ?? "",
             CI_ENVIRONMENT_URL: this.environment?.url ?? "",
+            CI_NODE_INDEX: opt.nodeIndex,
+            CI_NODE_TOTAL: opt.nodesTotal,
         };
 
         // Expand environment
-        this.expandedVariables = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...argvVariables};
+        const matrixVariables = opt.matrixVariables ?? {};
+        this.expandedVariables = {...globals.variables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables};
         if (this.environment) {
             this.environment.name = Utils.expandText(this.environment.name, this.expandedVariables);
             this.environment.url = Utils.expandText(this.environment.url, this.expandedVariables);
@@ -155,7 +160,7 @@ export class Job {
         }
 
         // Variable merging and expansion
-        this.expandedVariables = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...variablesFromCWDOrHome, ...argvVariables};
+        this.expandedVariables = {...globals.variables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...variablesFromCWDOrHome, ...argvVariables};
         let variableSyntaxFound, i = 0;
         do {
             assert(i < 100, "Recursive variable expansion reached 100 iterations");
@@ -276,8 +281,7 @@ export class Job {
     }
 
     get jobNamePad(): number {
-        assert(this._jobNamePad != null, "jobNamePad cannot be used before initialized");
-        return this._jobNamePad;
+        return this._jobNamePad ?? 0;
     }
 
     get producers(): { name: string; dotenv: string | null }[] | null {

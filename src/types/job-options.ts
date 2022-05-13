@@ -8,8 +8,12 @@ export interface JobOptions {
     writeStreams: WriteStreams;
     data: any;
     name: string;
+    baseName: string;
     globals: any;
     pipelineIid: number;
     gitData: GitData;
     variablesFromFiles: { [name: string]: CICDVariable };
+    matrixVariables: {[key: string]: string}|null;
+    nodeIndex: number|null;
+    nodesTotal: number;
 }

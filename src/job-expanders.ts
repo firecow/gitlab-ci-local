@@ -49,7 +49,6 @@ export function reference(gitlabData: any, recurseData: any) {
 const getSubDataByReference = (gitlabData: any, key: string, referenceData: string[]) => {
     let gitlabSubData = gitlabData;
     referenceData.forEach((referencePointer) => {
-        // console.log(gitlabData, key, referenceData, referencePointer);
         assert(gitlabSubData[referencePointer] != null, `!reference [${referenceData.join(", ")}] is undefined`);
         gitlabSubData = gitlabSubData[referencePointer];
     });
