@@ -7,10 +7,10 @@ import {WhenStatics} from "../../mocks/when-statics";
 test("include-invalid-project-file-ref", async () => {
     try {
 
-        const target = ".gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/master/";
+        const target = ".gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/HEAD/";
         const spyGitArchive = {
-            cmd: `git archive --remote=ssh://git@gitlab.com:22/firecow/gitlab-ci-local-includes.git master .gitlab-modue.yml | tar -f - -xC ${target}`,
-            rejection: "Project include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: master, file: .gitlab-modue.yml }",
+            cmd: `git archive --remote=ssh://git@gitlab.com:22/firecow/gitlab-ci-local-includes.git HEAD .gitlab-modue.yml | tar -f - -xC ${target}`,
+            rejection: "Project include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: HEAD, file: .gitlab-modue.yml }",
         };
         initBashSpyReject([spyGitArchive]);
         const spyGitRemote = {
@@ -26,6 +26,6 @@ test("include-invalid-project-file-ref", async () => {
         expect(true).toBe(false);
     } catch (e) {
         assert(e instanceof Error, "e is not instanceof Error");
-        expect(e.message).toBe("Project include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: master, file: .gitlab-modue.yml }");
+        expect(e.message).toBe("Project include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: HEAD, file: .gitlab-modue.yml }");
     }
 });
