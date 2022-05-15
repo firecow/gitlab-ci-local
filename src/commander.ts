@@ -54,7 +54,7 @@ export class Commander {
         await Commander.printReport(argv.cwd, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static printReport = async (cwd: string, writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) => {
+    static async printReport(cwd: string, writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) {
 
         writeStreams.stdout("\n");
 
@@ -146,8 +146,7 @@ export class Commander {
             }
             writeStreams.stdout(" }\n");
         }
-
-    };
+    }
 
     static runList(parser: Parser, writeStreams: WriteStreams, listAll: boolean) {
         const stages = parser.stages;
