@@ -28,7 +28,7 @@ export class ParserIncludes {
                 }
             } else if (value["file"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
-                    promises.push(this.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "master", fileValue, gitData, fetchIncludes));
+                    promises.push(this.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes));
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
@@ -48,7 +48,7 @@ export class ParserIncludes {
                 includeDatas = includeDatas.concat(await this.init(localDoc, cwd, writeStreams, gitData, depth, fetchIncludes));
             } else if (value["project"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
-                    const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "master"}/${fileValue}`);
+                    const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`);
 
                     // Expand local includes inside a "project"-like include
                     fileDoc["include"] = this.expandInclude(fileDoc["include"]);
@@ -106,7 +106,7 @@ export class ParserIncludes {
         return {
             domain: "gitlab.com",
             project: "gitlab-org/gitlab",
-            ref: "master",
+            ref: "HEAD",
             file: `lib/gitlab/ci/templates/${template}`,
         };
     }

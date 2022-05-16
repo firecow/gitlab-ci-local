@@ -12,15 +12,15 @@ test("include-project-file-ref <deploy-job>", async () => {
         cmdArgs: ["git", "remote", "-v"],
         returnValue: {stdout: "origin\tgit@gitlab.com:gcl/test-hest.git (fetch)\norigin\tgit@gitlab.com:gcl/test-hest.git (push)\n"},
     };
-    const target = ".gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/master/";
+    const target = ".gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/HEAD/";
     const spyGitArchive = {
-        cmd: `git archive --remote=ssh://git@gitlab.com:22/firecow/gitlab-ci-local-includes.git master .gitlab-module.yml | tar -f - -xC ${target}`,
+        cmd: `git archive --remote=ssh://git@gitlab.com:22/firecow/gitlab-ci-local-includes.git HEAD .gitlab-module.yml | tar -f - -xC ${target}`,
         returnValue: {output: ""},
     };
     initBashSpy([spyGitArchive]);
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
     const mock = "tests/test-cases/include-project-file-ref/mock-gitlab-module.yml";
-    const mockTarget = "tests/test-cases/include-project-file-ref/.gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/master/.gitlab-module.yml";
+    const mockTarget = "tests/test-cases/include-project-file-ref/.gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/HEAD/.gitlab-module.yml";
     await fs.ensureFile(mockTarget);
     await fs.copyFile(mock, mockTarget);
     await handler({
