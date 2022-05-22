@@ -26,12 +26,13 @@ Get rid of all those dev specific shell scripts and make files.
     * [docker-swarm-php](./examples/docker-swarm-php/README.md)
 * [Installation](#installation)
 * [Convenience](#convenience)
-    * [CLI options via shell](#cli-options-via-shell) 
+    * [CLI options via shell](#cli-options-via-shell)
     * [DotEnv file](#dotenv-file)
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
 * [Quirks](#quirks)
     * [Tracked Files](#tracked-files)
+    * [Local Only](#local-only)
     * [Home File Variables](#home-file-variables)
     * [Remote File Variables](#remote-file-variables)
     * [Project File Variables](#project-file-variables)
@@ -121,6 +122,21 @@ gitlab-ci-local --completion >> ~/.bashrc
 Untracked and ignored files will not be synced inside isolated jobs, only tracked files are synced.
 
 Remember `git add`
+
+### Local Only
+
+```yml
+local-only-job:
+  rules:
+    - { if: $GITLAB_CI == 'false' }
+```
+
+```yml
+local-only-subsection:
+  script:
+    - if [ $GITLAB_CI == 'false' ]; then eslint . --fix; fi
+    - eslint . 
+```
 
 ### Home file variables
 
