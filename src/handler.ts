@@ -13,8 +13,8 @@ import {ExitError} from "./types/exit-error";
 import {Argv} from "./argv";
 import {assert} from "./asserts";
 
-const generateGitIgnore = (cwd: string) => {
-    const gitIgnoreFilePath = `${cwd}/.gitlab-ci-local/.gitignore`;
+const generateGitIgnore = (cwd: string, stateDir: string) => {
+    const gitIgnoreFilePath = `${cwd}/${stateDir}/.gitignore`;
     const gitIgnoreContent = "*\n!.gitignore\n";
     if (!fs.existsSync(gitIgnoreFilePath)) {
         fs.outputFileSync(gitIgnoreFilePath, gitIgnoreContent);
@@ -35,6 +35,7 @@ const cleanupResources = async(parser: Parser|null) => {
 export async function handler(args: any, writeStreams: WriteStreams): Promise<ReadonlyMap<string, Job>> {
     const argv = new Argv(args);
     const cwd = argv.cwd;
+    const stateDir = argv.stateDir;
     const file = argv.file;
     let parser: Parser | null = null;
 
@@ -72,7 +73,7 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
     }
 
     if (argv.preview) {
-        const pipelineIid = await state.getPipelineIid(cwd);
+        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid);
         const gitlabData = parser.gitlabData;
         for (const jobName of Object.keys(gitlabData)) {
@@ -85,35 +86,35 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
         }
         writeStreams.stdout(`---\n${yaml.dump(gitlabData, {lineWidth: 160})}`);
     } else if (argv.list || argv.listAll) {
-        const pipelineIid = await state.getPipelineIid(cwd);
+        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid);
         Commander.runList(parser, writeStreams, argv.listAll);
     } else if (argv.listJson) {
-        const pipelineIid = await state.getPipelineIid(cwd);
+        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid);
         Commander.runJson(parser, writeStreams);
     } else if (argv.job.length > 0) {
-        generateGitIgnore(cwd);
+        generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
         if (argv.needs || argv.onlyNeeds) {
-            await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
-            await state.incrementPipelineIid(cwd);
+            await fs.remove(`${cwd}/${stateDir}/artifacts`);
+            await state.incrementPipelineIid(cwd, stateDir);
         }
-        const pipelineIid = await state.getPipelineIid(cwd);
+        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid);
-        await Utils.rsyncTrackedFiles(cwd, ".docker");
+        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
         await Commander.runJobs(argv, parser, writeStreams);
         if (argv.needs || argv.onlyNeeds) {
             writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
         }
     } else {
-        generateGitIgnore(cwd);
+        generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
-        await fs.remove(`${cwd}/.gitlab-ci-local/artifacts`);
-        await state.incrementPipelineIid(cwd);
-        const pipelineIid = await state.getPipelineIid(cwd);
+        await fs.remove(`${cwd}/${stateDir}/artifacts`);
+        await state.incrementPipelineIid(cwd, stateDir);
+        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid);
-        await Utils.rsyncTrackedFiles(cwd, ".docker");
+        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
         await Commander.runPipeline(argv, parser, writeStreams);
         writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }

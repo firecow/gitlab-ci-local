@@ -100,6 +100,11 @@ import {Argv} from "./argv";
             description: "Fetch variables file from remote location",
             requiresArg: false,
         })
+        .option("state-dir", {
+            type: "string",
+            description: "Specify custom location of the .gitlab-ci-local state dir. Relative to cwd, eg. (symfony/.gitlab-ci-local)",
+            requiresArg: false,
+        })
         .option("file", {
             type: "string",
             description: "Specify custom location of the .gitlab-ci.yml. Relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
@@ -107,7 +112,7 @@ import {Argv} from "./argv";
         })
         .option("home", {
             type: "string",
-            description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml)",
+            description: "Specify custom HOME location ($HOME/${stateDir}/variables.yml)",
             requiresArg: false,
         })
         .option("shell-isolation", {
@@ -143,7 +148,7 @@ import {Argv} from "./argv";
         .completion("completion", false, async (_, yargsArgv) => {
             try {
                 const argv = new Argv({...yargsArgv, autoCompleting: true});
-                const pipelineIid = await state.getPipelineIid(argv.cwd);
+                const pipelineIid = await state.getPipelineIid(argv.cwd, argv.stateDir);
                 const parser = await Parser.create(argv, new MockWriteStreams(), pipelineIid);
                 return [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
             } catch (e) {

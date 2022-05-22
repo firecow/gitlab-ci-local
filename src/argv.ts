@@ -36,6 +36,10 @@ export class Argv {
         return this.map.get("file") ?? ".gitlab-ci.yml";
     }
 
+    get stateDir(): string {
+        return (this.map.get("stateDir") ?? ".gitlab-ci-local").replace(/\/$/, "");
+    }
+
     get home(): string {
         return (this.map.get("home") ?? process.env.HOME ?? "").replace(/\/$/, "");
     }

@@ -1,2 +1,3 @@
 FILE=doctor-strange.yml
 VARIABLE="HELLO=world SOME_ACTION=doh"
+STATE_DIR="symfony/.gitlab-ci-local"

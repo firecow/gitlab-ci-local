@@ -58,6 +58,7 @@ export class Job {
         const variablesFromFiles = opt.variablesFromFiles;
         const argv = opt.argv;
         const cwd = argv.cwd;
+        const stateDir = argv.stateDir;
         const argvVariables = argv.variable;
 
         this.argv = argv;
@@ -79,7 +80,7 @@ export class Job {
         if (this.imageName) {
             CI_PROJECT_DIR = `/builds/${this.safeJobName}`;
         } else if (argv.shellIsolation) {
-            CI_PROJECT_DIR = `${cwd}/.gitlab-ci-local/builds/${this.safeJobName}`;
+            CI_PROJECT_DIR = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
         }
 
         const predefinedVariables = {
@@ -353,8 +354,8 @@ export class Job {
 
         this._running = true;
 
-        await fs.ensureFile(`${argv.cwd}/.gitlab-ci-local/output/${safeJobname}.log`);
-        await fs.truncate(`${argv.cwd}/.gitlab-ci-local/output/${safeJobname}.log`);
+        await fs.ensureFile(`${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`);
+        await fs.truncate(`${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`);
 
         if (!this.interactive) {
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
@@ -395,7 +396,7 @@ export class Job {
         writeStreams.stdout(`${this.getFinishedString(startTime)}\n`);
 
         if (this.jobData.coverage) {
-            this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, this.jobData.coverage, safeJobname);
+            this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData.coverage, safeJobname);
         }
 
         this._running = false;
@@ -482,8 +483,9 @@ export class Job {
 
     private async execScripts(scripts: string[]): Promise<number> {
         const cwd = this.argv.cwd;
+        const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
-        const outputFilesPath = `${cwd}/.gitlab-ci-local/output/${safeJobName}.log`;
+        const outputFilesPath = `${cwd}/${stateDir}/output/${safeJobName}.log`;
         const buildVolumeName = this.buildVolumeName;
         const tmpVolumeName = this.tmpVolumeName;
         const writeStreams = this.writeStreams;
@@ -497,7 +499,7 @@ export class Job {
 
         // Copy git tracked files to build folder if shell isolation enabled.
         if (!this.imageName && this.argv.shellIsolation) {
-            await Utils.rsyncTrackedFiles(cwd, `${safeJobName}`);
+            await Utils.rsyncTrackedFiles(cwd, stateDir, `${safeJobName}`);
         }
 
         if (this.interactive) {
@@ -592,7 +594,7 @@ export class Job {
 
             time = process.hrtime();
             // Copy source files into container.
-            await Utils.spawn(["docker", "cp", ".gitlab-ci-local/builds/.docker/." , `${this._containerId}:/builds/${safeJobName}`], cwd);
+            await Utils.spawn(["docker", "cp", `${stateDir}/builds/.docker/.` , `${this._containerId}:/builds/${safeJobName}`], cwd);
             this.refreshLongRunningSilentTimeout(writeStreams);
 
             // Copy file variables into container.
@@ -621,17 +623,17 @@ export class Job {
         cmd += "exec 0< /dev/null\n";
 
         if (!this.imageName && this.argv.shellIsolation) {
-            cmd += `cd .gitlab-ci-local/builds/${safeJobName}/\n`;
+            cmd += `cd ${stateDir}/builds/${safeJobName}/\n`;
         }
         cmd += this.generateScriptCommands(scripts);
 
         cmd += "exit 0\n";
 
-        await fs.outputFile(`${cwd}/.gitlab-ci-local/scripts/${safeJobName}`, cmd, "utf-8");
-        await fs.chmod(`${cwd}/.gitlab-ci-local/scripts/${safeJobName}`, "0755");
+        await fs.outputFile(`${cwd}/${stateDir}/scripts/${safeJobName}`, cmd, "utf-8");
+        await fs.chmod(`${cwd}/${stateDir}/scripts/${safeJobName}`, "0755");
 
         if (this.imageName) {
-            await Utils.spawn(["docker", "cp", ".gitlab-ci-local/scripts/.", `${this._containerId}:/gcl-scripts/`], cwd);
+            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/.`, `${this._containerId}:/gcl-scripts/`], cwd);
         }
 
 
@@ -668,7 +670,7 @@ export class Job {
             if (this.imageName) {
                 cp.stdin?.end(`/gcl-scripts/${safeJobName}`);
             } else {
-                cp.stdin?.end(`./.gitlab-ci-local/scripts/${safeJobName}`);
+                cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}`);
             }
         });
 
@@ -696,6 +698,7 @@ export class Job {
 
     private async initProducerReportsDotenvVariables(writeStreams: WriteStreams) {
         const cwd = this.argv.cwd;
+        const stateDir = this.argv.stateDir;
         const producers = this.producers;
         let producerReportsEnvs = {};
         for (const producer of producers ?? []) {
@@ -706,7 +709,7 @@ export class Job {
             if (!this.argv.shellIsolation && !this.imageName) {
                 dotenvFile = `${cwd}/${producer.dotenv}`;
             } else {
-                dotenvFile = `${cwd}/.gitlab-ci-local/artifacts/${safeProducerName}/.gitlab-ci-reports/dotenv/${producer.dotenv}`;
+                dotenvFile = `${cwd}/${stateDir}/artifacts/${safeProducerName}/.gitlab-ci-reports/dotenv/${producer.dotenv}`;
             }
             if (await fs.pathExists(dotenvFile)) {
                 const producerReportEnv = dotenv.parse(await fs.readFile(dotenvFile));
@@ -724,13 +727,14 @@ export class Job {
         if ((!this.imageName && !this.argv.shellIsolation) || this.cache.length === 0) return;
 
         const cwd = this.argv.cwd;
+        const stateDir = this.argv.stateDir;
 
         for (const c of this.cache) {
             if (!["pull", "pull-push"].includes(c.policy)) return;
 
             const time = process.hrtime();
             const cacheName = await c.getUniqueCacheName(cwd, this.expandedVariables);
-            const cacheFolder = `${cwd}/.gitlab-ci-local/cache/${cacheName}`;
+            const cacheFolder = `${cwd}/${stateDir}/cache/${cacheName}`;
             if (!await fs.pathExists(cacheFolder)) {
                 continue;
             }
@@ -747,11 +751,12 @@ export class Job {
         if ((!this.imageName && !this.argv.shellIsolation) || (this.producers ?? []).length === 0) return;
 
         const cwd = this.argv.cwd;
+        const stateDir = this.argv.stateDir;
         const time = process.hrtime();
         const promises = [];
         for (const producer of this.producers ?? []) {
             const producerSafeName = Utils.getSafeJobName(producer.name);
-            const artifactFolder = `${cwd}/.gitlab-ci-local/artifacts/${producerSafeName}`;
+            const artifactFolder = `${cwd}/${stateDir}/artifacts/${producerSafeName}`;
             if (!await fs.pathExists(artifactFolder)) {
                 await fs.mkdirp(artifactFolder);
             }
@@ -771,7 +776,7 @@ export class Job {
     copyIn(source: string) {
         const safeJobName = this.safeJobName;
         if (!this.imageName && this.argv.shellIsolation) {
-            return Utils.bash(`rsync -a ${source}/. ${this.argv.cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+            return Utils.bash(`rsync -a ${source}/. ${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`);
         }
         return Utils.bash(`docker cp ${source}/. ${this._containerId}:/builds/${safeJobName}`);
     }
@@ -781,6 +786,7 @@ export class Job {
         if ((!this.imageName && !this.argv.shellIsolation) || this.cache.length === 0) return;
 
         const cwd = this.argv.cwd;
+        const stateDir = this.argv.stateDir;
 
         let time, endTime;
         for (const c of this.cache) {
@@ -794,11 +800,11 @@ export class Job {
                 cmd += `rsync -Ra ${expandedPath} ../../cache/${cacheName}/. || true\n`;
 
                 await Mutex.exclusive(cacheName, async() => {
-                    await this.copyOut(cmd, "cache", []);
+                    await this.copyOut(cmd, stateDir, "cache", []);
                 });
                 endTime = process.hrtime(time);
 
-                const readdir = await fs.readdir(`${this.argv.cwd}/.gitlab-ci-local/cache/${cacheName}`);
+                const readdir = await fs.readdir(`${this.argv.cwd}/${stateDir}/cache/${cacheName}`);
                 if (readdir.length === 0) {
                     writeStreams.stdout(chalk`${this.chalkJobName} {yellow !! no cache was copied for ${path} !!}\n`);
                 } else {
@@ -811,6 +817,7 @@ export class Job {
     private async copyArtifactsOut(writeStreams: WriteStreams) {
         const safeJobName = this.safeJobName;
         const cwd = this.argv.cwd;
+        const stateDir = this.argv.stateDir;
 
         if (!this.argv.shellIsolation && !this.imageName || !this.artifacts) return;
 
@@ -835,10 +842,10 @@ export class Job {
 
         time = process.hrtime();
         const dockerCmdExtras = this.argv.mountCache ? [await this.mountCacheCmd(this.safeJobName, writeStreams)] : [];
-        await this.copyOut(cpCmd, "artifacts", dockerCmdExtras);
+        await this.copyOut(cpCmd, stateDir, "artifacts", dockerCmdExtras);
         endTime = process.hrtime(time);
 
-        const readdir = await fs.readdir(`${cwd}/.gitlab-ci-local/artifacts/${safeJobName}`);
+        const readdir = await fs.readdir(`${cwd}/${stateDir}/artifacts/${safeJobName}`);
         if (readdir.length === 0) {
             writeStreams.stdout(chalk`${this.chalkJobName} {yellow !! no artifacts was copied !!}\n`);
         } else {
@@ -847,29 +854,29 @@ export class Job {
 
         if (this.artifactsToSource) {
             time = process.hrtime();
-            await Utils.bash(`rsync --exclude=/.gitlab-ci-reports/ -a ${cwd}/.gitlab-ci-local/artifacts/${safeJobName}/. ${cwd}`);
+            await Utils.bash(`rsync --exclude=/.gitlab-ci-reports/ -a ${cwd}/${stateDir}/artifacts/${safeJobName}/. ${cwd}`);
             if (reportDotenv != null) {
-                await Utils.bash(`rsync -a ${cwd}/.gitlab-ci-local/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${cwd}`);
+                await Utils.bash(`rsync -a ${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${cwd}`);
             }
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
     }
 
-    private async copyOut(cmd: string, type: "artifacts" | "cache", dockerCmdExtras: string[]) {
+    private async copyOut(cmd: string, stateDir: string, type: "artifacts" | "cache", dockerCmdExtras: string[]) {
         const safeJobName = this.safeJobName;
         const buildVolumeName = this.buildVolumeName;
         const cwd = this.argv.cwd;
 
-        await fs.mkdirp(`${cwd}/.gitlab-ci-local/${type}`);
+        await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName) {
             const {stdout: containerId} = await Utils.bash(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/builds/${safeJobName}/ -w /builds/${safeJobName}/ firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.bash(`docker start ${containerId} --attach`);
-            await Utils.bash(`docker cp ${containerId}:/${type}/. .gitlab-ci-local/${type}/.`, cwd);
+            await Utils.bash(`docker cp ${containerId}:/${type}/. ${stateDir}/${type}/.`, cwd);
         } else if (this.argv.shellIsolation) {
-            await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}/.gitlab-ci-local/builds/${safeJobName}`);
+            await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}/${stateDir}/builds/${safeJobName}`);
         }
     }
 
