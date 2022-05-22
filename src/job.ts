@@ -638,8 +638,7 @@ export class Job {
         const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
             cwd,
             shell: "bash",
-            stdio: ["pipe", "pipe", "pipe"],
-            env: {...this.expandedVariables, ...reportsDotenvVariables, ...process.env},
+            env: {...this.expandedVariables, ...reportsDotenvVariables},
         });
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
