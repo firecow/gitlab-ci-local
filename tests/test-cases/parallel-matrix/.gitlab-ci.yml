@@ -1,0 +1,35 @@
+---
+pre-job:
+  stage: .pre
+  script:
+    - echo "Pre-job"
+
+build-job:
+  stage: build
+  script:
+    - echo "NAME:'${NAME}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
+    - echo "NAME:'${NAME}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
+    - mkdir -p files/
+    - filename=$(echo "${CI_JOB_NAME}" | sed -e 's/[^A-Za-z0-9._-]/_/g')
+    - echo "${CI_JOB_NAME}" > "files/${filename}.txt"
+  artifacts:
+    paths:
+      - files/
+  parallel:
+    matrix:
+      - NAME: [foo, bar]
+      - NAME: beb
+
+test-job:
+  stage: test
+  needs: [build-job, pre-job]
+  script:
+    - echo "NAME:'${NAME}' TIER:'${TIER}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
+    - test -f files/build-job__bar_.txt
+    - test -f files/build-job__bear_.txt
+    - test -f files/build-job__foo_.txt
+  parallel:
+    matrix:
+      - NAME: [foo, bar]
+        TIER: [dev, sta, pro]
+      - NAME: beb

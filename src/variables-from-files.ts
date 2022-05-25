@@ -60,11 +60,11 @@ export class VariablesFromFiles {
             const {type, values} = unpack(val);
             for (const [matcher, content] of Object.entries(values)) {
                 assert(typeof content == "string", `${key}.${matcher} content must be text or multiline text`);
-                if (type === "variable" && typeof content === "string" && !content.match(/^[/|~]/)) {
+                if (type === "variable" && !content.match(/^[/|~]/)) {
                     const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "variable", environments: []};
                     variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
-                } else if (type === "variable" && typeof content === "string" && content.match(/^[/|~]/)) {
+                } else if (type === "variable" && content.match(/^[/|~]/)) {
                     const fileSource = content.replace(/^~\/(.*)/, `${homeDir}/$1`);
                     const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};

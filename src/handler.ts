@@ -32,7 +32,7 @@ const cleanupResources = async(parser: Parser|null) => {
     await Promise.all(promises);
 };
 
-export async function handler(args: any, writeStreams: WriteStreams): Promise<ReadonlyMap<string, Job>> {
+export async function handler(args: any, writeStreams: WriteStreams): Promise<ReadonlyArray<Job>> {
     const argv = new Argv(args);
     const cwd = argv.cwd;
     const file = argv.file;
@@ -61,14 +61,14 @@ export async function handler(args: any, writeStreams: WriteStreams): Promise<Re
 
     if (argv.completion) {
         yargs.showCompletionScript();
-        return new Map<string, Job>();
+        return [];
     }
 
     assert(fs.existsSync(`${cwd}/${file}`), `${cwd}/${file} could not be found`);
 
     if (argv.fetchIncludes) {
         parser = await Parser.create(argv, writeStreams, 0);
-        return new Map<string, Job>();
+        return [];
     }
 
     if (argv.preview) {
