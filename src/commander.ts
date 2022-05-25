@@ -6,6 +6,7 @@ import {WriteStreams} from "./types/write-streams";
 import {JobExecutor} from "./job-executor";
 import fs from "fs-extra";
 import {Argv} from "./argv";
+import {ExitError} from "./types/exit-error";
 
 export class Commander {
 
@@ -28,15 +29,20 @@ export class Commander {
 
 
         let potentialStarters: Job[] = [];
-        const jobPoolMap = needs ? new Map<string, Job>(jobs) : new Map<string, Job>();
+        const jobSet = needs ? new Set(jobs) : new Set<Job>();
         jobArgs.forEach(jobName => {
-            const job = Utils.getJobByName(jobs, jobName);
-            jobPoolMap.set(jobName, job);
-            if (needs) {
-                potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, job, argv.manual));
+            const baseJobs = jobs.filter(j => j.baseName == jobName);
+            for (const b of baseJobs) {
+                jobSet.add(b);
+                if (needs) {
+                    potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, b, argv.manual));
+                }
+                potentialStarters.push(b);
             }
-            potentialStarters.push(job);
         });
+        if (potentialStarters.length === 0) {
+            throw new ExitError(chalk`{blueBright ${jobArgs.join(",")}} could not be found`);
+        }
 
         if (argv.onlyNeeds) {
             jobArgs.forEach((j) => {
@@ -44,11 +50,11 @@ export class Commander {
             });
         }
 
-        await JobExecutor.runLoop(argv, jobPoolMap, stages, potentialStarters);
+        await JobExecutor.runLoop(argv, Array.from(jobSet), stages, potentialStarters);
         await Commander.printReport(argv.cwd, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static printReport = async (cwd: string, writeStreams: WriteStreams, jobs: ReadonlyMap<string, Job>, stages: readonly string[], jobNamePad: number) => {
+    static async printReport(cwd: string, writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) {
 
         writeStreams.stdout("\n");
 
@@ -140,8 +146,7 @@ export class Commander {
             }
             writeStreams.stdout(" }\n");
         }
-
-    };
+    }
 
     static runList(parser: Parser, writeStreams: WriteStreams, listAll: boolean) {
         const stages = parser.stages;

@@ -3,12 +3,14 @@ import {Job} from "./job";
 
 export class Producers {
 
-    static init(jobs: ReadonlyMap<string, Job>, stages: readonly string[], job: Job) {
+    static init(jobs: ReadonlyArray<Job>, stages: readonly string[], job: Job) {
         const producerSet: Set<string> = new Set();
 
         if (job.needs && job.needs.length === 0) return [];
         if (!job.needs && !job.dependencies) {
-            Utils.getJobNamesFromPreviousStages(jobs, stages, job).forEach(jobName => producerSet.add(jobName));
+            for (const jobName of Utils.getJobNamesFromPreviousStages(jobs, stages, job)) {
+                producerSet.add(jobName);
+            }
         }
         (job.dependencies ?? []).forEach(dependency => {
             const foundInNeeds = (job.needs ?? []).find(n => n.job === dependency);
@@ -20,15 +22,16 @@ export class Producers {
             producerSet.add(need.job);
         });
 
-        let producers: string[] = Array.from(producerSet);
-        producers = producers.filter((producerName) => {
-            const producerJob = jobs.get(producerName);
-            return producerJob && producerJob.artifacts && producerJob.when != "never";
-        });
+        const producers: Job[] = [];
 
-        return producers.map(producerName => {
-            const producerJob = jobs.get(producerName);
-            return {name: producerName, dotenv: producerJob?.artifacts?.reports?.dotenv ?? null};
+        for (const potential of jobs) {
+            if (potential.artifacts == null) continue;
+            if (potential.when == "never") continue;
+            if (!producerSet.has(potential.baseName)) continue;
+            producers.push(potential);
+        }
+        return producers.map(producer => {
+            return {name: producer.name, dotenv: producer?.artifacts?.reports?.dotenv ?? null};
         });
     }
 

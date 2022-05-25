@@ -1,32 +1,29 @@
 import {Job} from "./job";
 import {assert} from "./asserts";
 import chalk from "chalk";
-import {Utils} from "./utils";
 
 export class Validator {
 
-    private static needs(jobs: ReadonlyMap<string, Job>, stages: readonly string[]) {
-        const jobNames = [...jobs.values()].map((j) => j.name);
-        for (const [jobName, job] of jobs) {
+    private static needs(jobs: ReadonlyArray<Job>, stages: readonly string[]) {
+        for (const job of jobs) {
             if (job.needs === null || job.needs.length === 0) continue;
 
-            const undefNeed = job.needs.filter((v) => !jobNames.some(n => n === v.job));
-            const assertMsg = chalk`[ {blueBright ${undefNeed.map(n => n.job).join(",")}} ] jobs are needed by {blueBright ${jobName}}, but they cannot be found`;
-            assert(undefNeed.length !== job.needs.length, assertMsg);
+            const undefNeed = job.needs.filter((v) => !jobs.some(n => n.baseName === v.job));
+            assert(undefNeed.length !== job.needs.length, chalk`[ {blueBright ${undefNeed.map(n => n.job).join(",")}} ] jobs are needed by {blueBright ${job.name}}, but they cannot be found`);
 
             for (const need of job.needs) {
-                const needJob = Utils.getJobByName(jobs, need.job);
+                const needJob = jobs.find(j => j.baseName === need.job);
+                assert(needJob != null, chalk`{blueBright need'ed ${need.job}} in ${job.baseName} could not be found`);
                 const needJobStageIndex = stages.indexOf(needJob.stage);
                 const jobStageIndex = stages.indexOf(job.stage);
-                const assertMsg = chalk`{blueBright ${needJob.name}} is needed by {blueBright ${job.name}}, but it is in a future stage`;
-                assert(needJobStageIndex <= jobStageIndex, assertMsg);
+                assert(needJobStageIndex <= jobStageIndex, chalk`{blueBright ${needJob.name}} is needed by {blueBright ${job.name}}, but it is in a future stage`);
             }
 
         }
     }
 
-    private static dependenciesContainment(jobs: ReadonlyMap<string, Job>) {
-        for (const job of jobs.values()) {
+    private static dependenciesContainment(jobs: ReadonlyArray<Job>) {
+        for (const job of jobs) {
             const needs = job.needs;
             const dependencies = job.dependencies;
             if (needs && needs.length === 0) continue;
@@ -41,22 +38,22 @@ export class Validator {
         }
     }
 
-    private static scriptBlank(jobs: ReadonlyMap<string, Job>) {
-        for (const [jobName, job] of jobs) {
+    private static scriptBlank(jobs: ReadonlyArray<Job>) {
+        for (const job of jobs) {
             if (job.trigger) continue; // Jobs with trigger are allowed to have empty script
-            assert(job.scripts.length > 0, chalk`{blue ${jobName}} has empty script`);
+            assert(job.scripts.length > 0, chalk`{blue ${job.name}} has empty script`);
         }
     }
 
-    private static cache(jobs: ReadonlyMap<string, Job>) {
-        for (const [jobName, job] of jobs) {
+    private static cache(jobs: ReadonlyArray<Job>) {
+        for (const job of jobs) {
             job.cache.forEach((c, i) => {
-                assert(Array.isArray(c.paths), chalk`{blue ${jobName}} cache[${i}].paths must be array`);
+                assert(Array.isArray(c.paths), chalk`{blue ${job.name}} cache[${i}].paths must be array`);
             });
         }
     }
 
-    static async run(jobs: ReadonlyMap<string, Job>, stages: readonly string[]) {
+    static async run(jobs: ReadonlyArray<Job>, stages: readonly string[]) {
         this.scriptBlank(jobs);
         this.needs(jobs, stages);
         this.cache(jobs);
