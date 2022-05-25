@@ -25,7 +25,7 @@ export class Job {
 
     readonly argv: Argv;
     readonly name: string;
-    readonly jobNamePad: number;
+    readonly baseName: string;
     readonly dependencies: string[] | null;
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
@@ -45,6 +45,7 @@ export class Job {
     private _containerVolumeNames: string[] = [];
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
     private _producers: { name: string; dotenv: string | null }[] | null = null;
+    private _jobNamePad: number|null = null;
 
     private _containersToClean: string[] = [];
 
@@ -63,9 +64,9 @@ export class Job {
 
         this.argv = argv;
         this.writeStreams = opt.writeStreams;
-        this.jobNamePad = opt.namePad;
         this.gitData = opt.gitData;
         this.name = opt.name;
+        this.baseName = opt.baseName;
         this.jobId = Math.floor(Math.random() * 1000000);
         this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
@@ -101,7 +102,7 @@ export class Job {
             CI_COMMIT_REF_PROTECTED: "false",
             CI_COMMIT_BRANCH: gitData.commit.REF_NAME, // Not available in merge request or tag pipelines
             CI_COMMIT_REF_NAME: gitData.commit.REF_NAME, // Tag or branch name
-            CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replace(/[^a-z0-9]+/ig, "-").replace(/^-/, "").replace(/-$/, "").slice(0, 63).toLowerCase(),
+            CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").replace(/-$/, "").slice(0, 63).toLowerCase(),
             CI_COMMIT_TITLE: "Commit Title", // First line of commit message.
             CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
             CI_COMMIT_DESCRIPTION: "More commit text",
@@ -123,12 +124,15 @@ export class Job {
             CI_REGISTRY_IMAGE: gitData.CI_REGISTRY_IMAGE,
             GITLAB_CI: "false",
             CI_ENVIRONMENT_NAME: this.environment?.name ?? "",
-            CI_ENVIRONMENT_SLUG: this.environment?.name?.replace(/(?:\/|\s)/g, "-").toLowerCase() ?? "",
+            CI_ENVIRONMENT_SLUG: this.environment?.name?.replace(/\/|\s/g, "-").toLowerCase() ?? "",
             CI_ENVIRONMENT_URL: this.environment?.url ?? "",
+            CI_NODE_INDEX: opt.nodeIndex,
+            CI_NODE_TOTAL: opt.nodesTotal,
         };
 
         // Expand environment
-        this.expandedVariables = {...globalVariables || {}, ...jobData.variables || {}, ...predefinedVariables, ...argvVariables};
+        const matrixVariables = opt.matrixVariables ?? {};
+        this.expandedVariables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables};
         if (this.environment) {
             this.environment.name = Utils.expandText(this.environment.name, this.expandedVariables);
             this.environment.url = Utils.expandText(this.environment.url, this.expandedVariables);
@@ -157,7 +161,7 @@ export class Job {
         }
 
         // Variable merging and expansion
-        this.expandedVariables = {...globalVariables || {}, ...jobData.variables || {}, ...predefinedVariables, ...variablesFromCWDOrHome, ...argvVariables};
+        this.expandedVariables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...variablesFromCWDOrHome, ...argvVariables};
         let variableSyntaxFound, i = 0;
         do {
             assert(i < 100, "Recursive variable expansion reached 100 iterations");
@@ -271,6 +275,15 @@ export class Job {
 
     get services(): Service[] {
         return this.jobData["services"];
+    }
+
+    set jobNamePad(jobNamePad: number) {
+        assert(this._jobNamePad == null, "this._jobNamePad can only be set once");
+        this._jobNamePad = jobNamePad;
+    }
+
+    get jobNamePad(): number {
+        return this._jobNamePad ?? 0;
     }
 
     get producers(): { name: string; dotenv: string | null }[] | null {
@@ -456,7 +469,7 @@ export class Job {
             // Print command echo'ed in color
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
-            const text = split[0]?.replace(/[\\]/g, "\\\\").replace(/["]/g, "\\\"").replace(/[$]/g, "\\$");
+            const text = split[0]?.replace(/\\/g, "\\\\").replace(/"/g, "\\\"").replace(/[$]/g, "\\$");
             cmd += chalk`echo "{green $ ${text}${multilineText}}"\n`;
 
             // Execute actual script
@@ -532,8 +545,8 @@ export class Job {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
                 for (const service of this.services) {
                     await this.pullImage(writeStreams, service.getName(this.expandedVariables));
-                    const containerId = await this.startService(writeStreams, service);
-                    await this.serviceHealthCheck(writeStreams, service, containerId);
+                    const serviceContainerId = await this.startService(writeStreams, service);
+                    await this.serviceHealthCheck(writeStreams, service, serviceContainerId);
                 }
             }
 
@@ -994,8 +1007,8 @@ export class Job {
 
                 dockerCmd += ` willwill/wait-for-it "${aliases[0]}:${portNum}" -t 30`;
                 const time = process.hrtime();
-                const {exitCode, stdout: containerId} = await Utils.bash(dockerCmd, cwd);
-                this._containersToClean.push(containerId);
+                const {exitCode, stdout: serviceContainerId} = await Utils.bash(dockerCmd, cwd);
+                this._containersToClean.push(serviceContainerId);
                 const endTime = process.hrtime(time);
                 if(exitCode == 0){
                     writeStreams.stdout(chalk`${this.chalkJobName} {greenBright service image: ${serviceName} healthcheck passed: ${aliases[0]}:${portNum}} in {green ${prettyHrtime(endTime)}}\n`);

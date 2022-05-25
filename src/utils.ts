@@ -1,6 +1,5 @@
 import chalk from "chalk";
 import {Job} from "./job";
-import {assert} from "./asserts";
 import * as fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
@@ -20,12 +19,6 @@ export class Utils {
         return url.replace(/^https:\/\//g, "").replace(/^http:\/\//g, "");
     }
 
-    static getJobByName(jobs: ReadonlyMap<string, Job>, name: string): Job {
-        const job = jobs.get(name);
-        assert(job != null, chalk`{blueBright ${name}} could not be found`);
-        return job;
-    }
-
     static getSafeJobName(jobName: string) {
         return jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
@@ -41,7 +34,7 @@ export class Utils {
         }
     }
 
-    static getJobNamesFromPreviousStages(jobs: ReadonlyMap<string, Job>, stages: readonly string[], currentJob: Job) {
+    static getJobNamesFromPreviousStages(jobs: ReadonlyArray<Job>, stages: readonly string[], currentJob: Job) {
         const jobNames: string[] = [];
         const currentStageIndex = stages.indexOf(currentJob.stage);
         jobs.forEach(job => {
