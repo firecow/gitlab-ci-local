@@ -112,7 +112,7 @@ import {Argv} from "./argv";
         })
         .option("home", {
             type: "string",
-            description: "Specify custom HOME location ($HOME/${stateDir}/variables.yml)",
+            description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml)",
             requiresArg: false,
         })
         .option("shell-isolation", {
