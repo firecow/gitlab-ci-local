@@ -9,9 +9,9 @@ export interface JobOptions {
     data: any;
     name: string;
     baseName: string;
-    globals: any;
     pipelineIid: number;
     gitData: GitData;
+    globalVariables: { [name: string]: any };
     variablesFromFiles: { [name: string]: CICDVariable };
     matrixVariables: {[key: string]: string}|null;
     nodeIndex: number|null;

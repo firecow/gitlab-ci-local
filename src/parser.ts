@@ -132,7 +132,7 @@ export class Parser {
                     data: jobData,
                     name: matrixJobName,
                     baseName: jobName,
-                    globals: gitlabData,
+                    globalVariables: gitlabData.variables,
                     pipelineIid: pipelineIid,
                     gitData,
                     variablesFromFiles,
