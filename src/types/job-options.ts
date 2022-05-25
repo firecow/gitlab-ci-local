@@ -9,8 +9,8 @@ export interface JobOptions {
     data: any;
     name: string;
     namePad: number;
-    globals: any;
     pipelineIid: number;
     gitData: GitData;
+    globalVariables: { [name: string]: any };
     variablesFromFiles: { [name: string]: CICDVariable };
 }

@@ -129,7 +129,7 @@ export class Parser {
                 name: jobName,
                 namePad: this.jobNamePad,
                 variablesFromFiles,
-                globals: gitlabData,
+                globalVariables: gitlabData.variables,
                 pipelineIid,
                 gitData,
             });

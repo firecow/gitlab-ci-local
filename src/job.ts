@@ -54,7 +54,7 @@ export class Job {
     constructor(opt: JobOptions) {
         const jobData = opt.data;
         const gitData = opt.gitData;
-        const globals = opt.globals;
+        const globalVariables = opt.globalVariables;
         const variablesFromFiles = opt.variablesFromFiles;
         const argv = opt.argv;
         const cwd = argv.cwd;
@@ -128,7 +128,7 @@ export class Job {
         };
 
         // Expand environment
-        this.expandedVariables = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...argvVariables};
+        this.expandedVariables = {...globalVariables || {}, ...jobData.variables || {}, ...predefinedVariables, ...argvVariables};
         if (this.environment) {
             this.environment.name = Utils.expandText(this.environment.name, this.expandedVariables);
             this.environment.url = Utils.expandText(this.environment.url, this.expandedVariables);
@@ -157,7 +157,7 @@ export class Job {
         }
 
         // Variable merging and expansion
-        this.expandedVariables = {...globals.variables || {}, ...jobData.variables || {}, ...predefinedVariables, ...variablesFromCWDOrHome, ...argvVariables};
+        this.expandedVariables = {...globalVariables || {}, ...jobData.variables || {}, ...predefinedVariables, ...variablesFromCWDOrHome, ...argvVariables};
         let variableSyntaxFound, i = 0;
         do {
             assert(i < 100, "Recursive variable expansion reached 100 iterations");
@@ -640,8 +640,7 @@ export class Job {
         const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
             cwd,
             shell: "bash",
-            stdio: ["pipe", "pipe", "pipe"],
-            env: {...this.expandedVariables, ...reportsDotenvVariables, ...process.env},
+            env: {...this.expandedVariables, ...reportsDotenvVariables},
         });
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
