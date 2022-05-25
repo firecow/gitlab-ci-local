@@ -46,8 +46,8 @@ export class Utils {
         return jobNames;
     }
 
-    static async getCoveragePercent(cwd: string, coverageRegex: string, jobName: string) {
-        const content = await fs.readFile(`${cwd}/.gitlab-ci-local/output/${jobName}.log`, "utf8");
+    static async getCoveragePercent(cwd: string, stateDir: string, coverageRegex: string, jobName: string) {
+        const content = await fs.readFile(`${cwd}/${stateDir}/output/${jobName}.log`, "utf8");
         const regex = new RegExp(coverageRegex.replace(/^\//, "").replace(/\/$/, ""), "m");
         const match = content.match(regex);
         if (match && match[0] != null) {
@@ -130,10 +130,10 @@ export class Utils {
         return eval(`if (${evalStr}) { true } else { false }`);
     }
 
-    static async rsyncTrackedFiles(cwd: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
+    static async rsyncTrackedFiles(cwd: string, stateDir: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
         const time = process.hrtime();
-        await fs.mkdirp(`${cwd}/.gitlab-ci-local/builds/${target}`);
-        await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') --exclude .gitlab-ci-local/ ./ .gitlab-ci-local/builds/${target}/`, cwd);
+        await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
+        await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') --exclude ${stateDir}/ ./ ${stateDir}/builds/${target}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
 

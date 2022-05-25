@@ -18,7 +18,7 @@ export class Commander {
         potentialStarters = potentialStarters.filter(j => j.when !== "never");
         potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
         await JobExecutor.runLoop(argv, jobs, stages, potentialStarters);
-        await Commander.printReport(argv.cwd, writeStreams, jobs, stages, parser.jobNamePad);
+        await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
     static async runJobs(argv: Argv, parser: Parser, writeStreams: WriteStreams) {
@@ -51,10 +51,10 @@ export class Commander {
         }
 
         await JobExecutor.runLoop(argv, Array.from(jobSet), stages, potentialStarters);
-        await Commander.printReport(argv.cwd, writeStreams, jobs, stages, parser.jobNamePad);
+        await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static async printReport(cwd: string, writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) {
+    static async printReport(cwd: string, stateDir: string, writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) {
 
         writeStreams.stdout("\n");
 
@@ -105,7 +105,7 @@ export class Commander {
                 const namePad = name.padEnd(jobNamePad);
                 const safeName = Utils.getSafeJobName(name);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  pre_script\n`);
-                const outputLog = await fs.readFile(`${cwd}/.gitlab-ci-local/output/${safeName}.log`, "utf8");
+                const outputLog = await fs.readFile(`${cwd}/${stateDir}/output/${safeName}.log`, "utf8");
                 for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
                     writeStreams.stdout(chalk`  {yellow >} ${line}\n`);
                 }
@@ -126,7 +126,7 @@ export class Commander {
                 const namePad = name.padEnd(jobNamePad);
                 const safeName = Utils.getSafeJobName(name);
                 writeStreams.stdout(chalk`{black.bgRed  FAIL } {blueBright ${namePad}}\n`);
-                const outputLog = await fs.readFile(`${cwd}/.gitlab-ci-local/output/${safeName}.log`, "utf8");
+                const outputLog = await fs.readFile(`${cwd}/${stateDir}/output/${safeName}.log`, "utf8");
                 for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
                     writeStreams.stdout(chalk`  {red >} ${line}\n`);
                 }

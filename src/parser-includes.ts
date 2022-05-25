@@ -10,7 +10,7 @@ import axios from "axios";
 
 export class ParserIncludes {
 
-    static async init(gitlabData: any, cwd: string, writeStreams: WriteStreams, gitData: GitData, depth: number, fetchIncludes: boolean): Promise<any[]> {
+    static async init(gitlabData: any, cwd: string, stateDir: string, writeStreams: WriteStreams, gitData: GitData, depth: number, fetchIncludes: boolean): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
 
@@ -28,14 +28,14 @@ export class ParserIncludes {
                 }
             } else if (value["file"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
-                    promises.push(this.downloadIncludeProjectFile(cwd, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes));
+                    promises.push(this.downloadIncludeProjectFile(cwd, stateDir, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes));
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const url = `https://${domain}/${project}/-/raw/${ref}/${file}`;
-                promises.push(this.downloadIncludeRemote(cwd, url, fetchIncludes));
+                promises.push(this.downloadIncludeRemote(cwd, stateDir, url, fetchIncludes));
             } else if (value["remote"]) {
-                promises.push(this.downloadIncludeRemote(cwd, value["remote"], fetchIncludes));
+                promises.push(this.downloadIncludeRemote(cwd, stateDir, value["remote"], fetchIncludes));
             }
 
         }
@@ -45,10 +45,10 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["local"]) {
                 const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
-                includeDatas = includeDatas.concat(await this.init(localDoc, cwd, writeStreams, gitData, depth, fetchIncludes));
+                includeDatas = includeDatas.concat(await this.init(localDoc, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes));
             } else if (value["project"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
-                    const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`);
+                    const fileDoc = await Parser.loadYaml(`${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`);
 
                     // Expand local includes inside a "project"-like include
                     fileDoc["include"] = this.expandInclude(fileDoc["include"]);
@@ -61,17 +61,17 @@ export class ParserIncludes {
                         };
                     });
 
-                    includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, depth, fetchIncludes));
+                    includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes));
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
-                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
-                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, depth, fetchIncludes));
+                const fileDoc = await Parser.loadYaml(`${cwd}/${stateDir}/includes/${fsUrl}`);
+                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
-                const fileDoc = await Parser.loadYaml(`${cwd}/.gitlab-ci-local/includes/${fsUrl}`);
-                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, writeStreams, gitData, depth, fetchIncludes));
+                const fileDoc = await Parser.loadYaml(`${cwd}/${stateDir}/includes/${fsUrl}`);
+                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }
@@ -111,10 +111,10 @@ export class ParserIncludes {
         };
     }
 
-    static async downloadIncludeRemote(cwd: string, url: string, fetchIncludes: boolean): Promise<void> {
+    static async downloadIncludeRemote(cwd: string, stateDir: string, url: string, fetchIncludes: boolean): Promise<void> {
         const fsUrl = Utils.fsUrl(url);
         try {
-            const target = `${cwd}/.gitlab-ci-local/includes/${fsUrl}`;
+            const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
             if (await fs.pathExists(target) && !fetchIncludes) return;
             const res = await axios.get(url);
             await fs.outputFile(target, res.data);
@@ -123,11 +123,11 @@ export class ParserIncludes {
         }
     }
 
-    static async downloadIncludeProjectFile(cwd: string, project: string, ref: string, file: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
+    static async downloadIncludeProjectFile(cwd: string, stateDir: string, project: string, ref: string, file: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
         const remote = gitData.remote;
         const normalizedFile = file.replace(/^\/+/, "");
         try {
-            const target = `.gitlab-ci-local/includes/${remote.host}/${project}/${ref}/`;
+            const target = `${stateDir}/includes/${remote.host}/${project}/${ref}/`;
             if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
             await fs.mkdirp(`${cwd}/${target}`);
             await Utils.bash(`git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}`, cwd);
