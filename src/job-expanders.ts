@@ -22,6 +22,7 @@ const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents:
 export function jobExtends(gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
+        if (typeof jobData != "object") continue;
         jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
     }
 
@@ -32,6 +33,7 @@ export function jobExtends(gitlabData: any) {
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
+        if (typeof jobData != "object") continue;
         delete jobData.extends;
     }
 }
