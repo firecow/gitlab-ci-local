@@ -1,0 +1,5 @@
+#!/bin/bash
+
+type_list=$(node src/index.js --get-yargs-completions "$@")
+
+compgen -W "${type_list}"
