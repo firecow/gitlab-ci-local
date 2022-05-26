@@ -109,17 +109,17 @@ export class Utils {
         let evalStr = ruleIf;
 
         // Expand all variables
-        evalStr = evalStr.replace(/[$]\w+/g, (match) => {
+        evalStr = evalStr.replace(/[$][A-Z\d_]+/g, (match) => {
             const sub = envs[match.replace(/^[$]/, "")];
             return sub != null ? `'${sub}'` : "null";
         });
 
         // Convert =~ to match function
-        evalStr = evalStr.replace(/\s*=~\s*(\/.*?\/[igmsuy]*)/g, ".match($1) != null");
+        evalStr = evalStr.replace(/\s*=~\s*(\/.*?\/[igmsuy]*)(?:\s|$)/g, ".match($1) != null");
         evalStr = evalStr.replace(/\s*=~\s(.+?)(\)*?)(?:\s|$)/g, ".match(new RegExp($1)) != null$2"); // Without forward slashes
 
         // Convert !~ to match function
-        evalStr = evalStr.replace(/\s*!~\s*(\/.*?\/[igmsuy]*)/g, ".match($1) == null");
+        evalStr = evalStr.replace(/\s*!~\s*(\/.*?\/[igmsuy]*)(?:\s|$)/g, ".match($1) == null");
         evalStr = evalStr.replace(/\s*!~\s(.+?)(\)*?)(?:\s|$)/g, ".match(new RegExp($1)) == null$2"); // Without forward slashes
 
         // Convert all null.match functions to false
