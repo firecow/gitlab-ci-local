@@ -145,12 +145,19 @@ import {Argv} from "./argv";
             description: "Fetch all external includes one more time",
             requiresArg: false,
         })
-        .completion("completion", false, async (_, yargsArgv) => {
+        .completion("completion", false, (current, yargsArgv, completionFilter, _) => {
             try {
-                const argv = new Argv({...yargsArgv, autoCompleting: true});
-                const pipelineIid = await state.getPipelineIid(argv.cwd, argv.stateDir);
-                const parser = await Parser.create(argv, new MockWriteStreams(), pipelineIid);
-                return [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
+                if (current.startsWith("-")) {
+                    completionFilter();
+                } else {
+                    const argv = new Argv({...yargsArgv, autoCompleting: true});
+                    state.getPipelineIid(argv.cwd, argv.stateDir).then((pipelineIid) => {
+                        Parser.create(argv, new MockWriteStreams(), pipelineIid).then((parser) => {
+                            const jobNames = [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
+                            jobNames.forEach((j) => console.log(j));
+                        });
+                    });
+                }
             } catch (e) {
                 return ["Parser-Failed!"];
             }
