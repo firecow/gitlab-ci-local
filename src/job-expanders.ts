@@ -41,14 +41,14 @@ export function jobExtends(gitlabData: any) {
 export function reference(gitlabData: any, recurseData: any) {
     for (const [key, value] of Object.entries<any>(recurseData || {})) {
         if (value && value.referenceData) {
-            recurseData[key] = getSubDataByReference(gitlabData, key, value.referenceData);
+            recurseData[key] = getSubDataByReference(gitlabData, value.referenceData);
         } else if (typeof value === "object") {
             reference(gitlabData, value);
         }
     }
 }
 
-const getSubDataByReference = (gitlabData: any, key: string, referenceData: string[]) => {
+const getSubDataByReference = (gitlabData: any, referenceData: string[]) => {
     let gitlabSubData = gitlabData;
     referenceData.forEach((referencePointer) => {
         assert(gitlabSubData[referencePointer] != null, `!reference [${referenceData.join(", ")}] is undefined`);
