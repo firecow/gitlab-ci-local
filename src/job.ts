@@ -926,6 +926,7 @@ export class Job {
 
     private async startService(writeStreams: WriteStreams, service: Service) {
         const cwd = this.argv.cwd;
+        const stateDir = this.argv.stateDir;
         let dockerCmd = `docker create -u 0:0 -i --network gitlab-ci-local-${this.jobId} `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
@@ -951,10 +952,15 @@ export class Job {
             dockerCmd += `-e ${key} `;
         }
 
-        (service.getEntrypoint() ?? []).forEach((e) => {
-            dockerCmd += `--entrypoint "${e}" `;
-        });
-
+        const serviceEntrypoint = service.getEntrypoint();
+        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services/${serviceNameWithoutVersion}_entry`;
+        if (serviceEntrypoint) {
+            await fs.outputFile(serviceEntrypointFile, "#!/bin/sh\n");
+            await fs.appendFile(serviceEntrypointFile, `${serviceEntrypoint.join(" ")}`);
+            await fs.appendFile(serviceEntrypointFile, " \"$@\"\n");
+            await fs.chmod(serviceEntrypointFile, "0755");
+            dockerCmd += "--entrypoint '/gcl-entry' ";
+        }
         dockerCmd += `${serviceName} `;
 
         (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
@@ -962,6 +968,11 @@ export class Job {
         const time = process.hrtime();
         const {stdout: containerId} = await Utils.bash(dockerCmd, cwd, this.expandedVariables);
         this._containersToClean.push(containerId);
+
+        // Copy docker entrypoint if specified for service
+        if (serviceEntrypoint) {
+            await Utils.spawn(["docker", "cp", serviceEntrypointFile, `${containerId}:/gcl-entry`]);
+        }
 
         // Copy file variables into service container.
         const fileVariablesDir = this.fileVariablesDir;
