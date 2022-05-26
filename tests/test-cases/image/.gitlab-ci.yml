@@ -39,3 +39,10 @@ test-from-scratch:
     - stat -c "%a %n" .gitlab-ci.yml
     - stat -c "%a %n" folder/
     - stat -c "%a %n" executable.sh
+
+issue-206:
+  image:
+    name: klakegg/hugo:0.83.1-busybox
+    entrypoint: ["/bin/sh", "-c"]
+  script:
+    - hugo -D --source hugo
