@@ -927,6 +927,7 @@ export class Job {
     private async startService(writeStreams: WriteStreams, service: Service) {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
+        const safeJobName = this.safeJobName;
         let dockerCmd = `docker create -u 0:0 -i --network gitlab-ci-local-${this.jobId} `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
@@ -953,7 +954,7 @@ export class Job {
         }
 
         const serviceEntrypoint = service.getEntrypoint();
-        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services/${serviceNameWithoutVersion}_entry`;
+        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${service.index}`;
         if (serviceEntrypoint) {
             await fs.outputFile(serviceEntrypointFile, "#!/bin/sh\n");
             await fs.appendFile(serviceEntrypointFile, `${serviceEntrypoint.join(" ")}`);
