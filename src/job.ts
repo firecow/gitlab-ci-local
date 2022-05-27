@@ -701,16 +701,18 @@ export class Job {
 
     private async pullImage(writeStreams: WriteStreams, imageToPull: string) {
         const time = process.hrtime();
-        let pullCmd = "";
-        pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${imageToPull}$'\n`;
-        pullCmd += "if [ \"$?\" -ne 0 ]; then\n";
-        pullCmd += `\techo "Pulling ${imageToPull}"\n`;
-        pullCmd += `\tdocker pull ${imageToPull}\n`;
-        pullCmd += "fi\n";
-        await Utils.bash(pullCmd, this.argv.cwd);
-        this.refreshLongRunningSilentTimeout(writeStreams);
-        const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+        try {
+            await Utils.spawn(["docker", "image", "inspect", imageToPull]);
+        } catch (e: any) {
+            if (e.stderr?.includes(`No such image: ${imageToPull}`)) {
+                await Utils.spawn(["docker", "pull", imageToPull]);
+                const endTime = process.hrtime(time);
+                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+            } else {
+                throw e;
+            }
+            this.refreshLongRunningSilentTimeout(writeStreams);
+        }
     }
 
     private async initProducerReportsDotenvVariables(writeStreams: WriteStreams) {
