@@ -250,3 +250,11 @@ test("https://github.com/firecow/gitlab-ci-local/issues/300", () => {
     rulesResult = Utils.getRulesResult(rules, {VAR1: "val", VAR2: "ci-skip-stage-", VAR3: "ci-skip-stage-"});
     expect(rulesResult).toEqual({when: "manual", allowFailure: false});
 });
+
+test("https://github.com/firecow/gitlab-ci-local/issues/424", () => {
+    const rules = [
+        {if: "$CI_COMMIT_REF_NAME =~ /^(develop$|release\\/.*|master$)/", when: "manual"},
+    ];
+    const rulesResult = Utils.getRulesResult(rules, {CI_COMMIT_REF_NAME: "develop"});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false});
+});
