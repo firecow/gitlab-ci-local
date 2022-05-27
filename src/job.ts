@@ -975,9 +975,7 @@ export class Job {
     }
 
     private async serviceHealthCheck(writeStreams: WriteStreams, service: Service, containerId: string) {
-        const cwd = this.argv.cwd;
-        const dockerInspectCmd = `docker image inspect ${service.getName(this.expandedVariables)}`;
-        const {stdout} = await Utils.bash(dockerInspectCmd, cwd);
+        const {stdout} = await Utils.spawn(["docker", "image", "inspect", service.getName(this.expandedVariables)]);
         const imageInspect = JSON.parse(stdout);
 
         // Copied from the startService block. Important thing is that the aliases match
@@ -995,26 +993,23 @@ export class Job {
             if (all) {
                 all.split(/\r?\n/g).forEach(line => writeStreams.stderr(chalk`${this.chalkJobName} {cyan >} ${line}\n`));
             }
-            return ;
+            return;
         }
 
         // Iterate over each port defined in the image, and try to connect to the alias
-        for(const port of Object.keys(imageInspect[0].ContainerConfig.ExposedPorts)) {
-            if(port.endsWith("/tcp")) {
-                const portNum = parseInt(port.replace("/tcp", ""));
+        for (const port of Object.keys(imageInspect[0].ContainerConfig.ExposedPorts)) {
+            if (!port.endsWith("/tcp")) continue;
+            const portNum = parseInt(port.replace("/tcp", ""));
 
-                let dockerCmd = `docker run -d --network gitlab-ci-local-${this.jobId} `;
-
-                dockerCmd += ` willwill/wait-for-it "${aliases[0]}:${portNum}" -t 30`;
-                const time = process.hrtime();
-                const {exitCode, stdout: serviceContainerId} = await Utils.bash(dockerCmd, cwd);
-                this._containersToClean.push(serviceContainerId);
+            const time = process.hrtime();
+            try {
+                const spawnCmd = ["docker", "run", "--rm", "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${aliases[0]}:${portNum}`, "-t", "30"];
+                await Utils.spawn(spawnCmd);
                 const endTime = process.hrtime(time);
-                if(exitCode == 0){
-                    writeStreams.stdout(chalk`${this.chalkJobName} {greenBright service image: ${serviceName} healthcheck passed: ${aliases[0]}:${portNum}} in {green ${prettyHrtime(endTime)}}\n`);
-                }else{
-                    writeStreams.stdout(chalk`${this.chalkJobName} {redBright service image: ${serviceName} healthcheck failed: ${aliases[0]}:${portNum}} in {red ${prettyHrtime(endTime)}}\n`);
-                }
+                writeStreams.stdout(chalk`${this.chalkJobName} {greenBright service image: ${serviceName} healthcheck passed: ${aliases[0]}:${portNum}} in {green ${prettyHrtime(endTime)}}\n`);
+            } catch (e) {
+                const endTime = process.hrtime(time);
+                writeStreams.stdout(chalk`${this.chalkJobName} {redBright service image: ${serviceName} healthcheck failed: ${aliases[0]}:${portNum}} in {red ${prettyHrtime(endTime)}}\n`);
             }
         }
     }
