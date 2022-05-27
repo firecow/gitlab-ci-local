@@ -569,11 +569,12 @@ export class Job {
                 dockerCmd += `--add-host=${extraHost} `;
             }
 
+            const entrypointFile = `${cwd}/${stateDir}/scripts/image_entry/${safeJobName}`;
             if (this.imageEntrypoint) {
-                await fs.outputFile(`${cwd}/${stateDir}/scripts/${safeJobName}_entry`, "#!/bin/sh\n");
-                await fs.appendFile(`${cwd}/${stateDir}/scripts/${safeJobName}_entry`, `${this.imageEntrypoint.join(" ")}`);
-                await fs.appendFile(`${cwd}/${stateDir}/scripts/${safeJobName}_entry`, " \"$@\"\n");
-                await fs.chmod(`${cwd}/${stateDir}/scripts/${safeJobName}_entry`, "0755");
+                await fs.outputFile(entrypointFile, "#!/bin/sh\n");
+                await fs.appendFile(entrypointFile, `${this.imageEntrypoint.join(" ")}`);
+                await fs.appendFile(entrypointFile, " \"$@\"\n");
+                await fs.chmod(entrypointFile, "0755");
                 dockerCmd += "--entrypoint '/gcl-entry' ";
             }
 
@@ -648,10 +649,10 @@ export class Job {
         await fs.chmod(`${cwd}/${stateDir}/scripts/${safeJobName}`, "0755");
 
         if (this.imageName) {
-            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/.`, `${this._containerId}:/gcl-scripts/`], cwd);
+            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/${safeJobName}`, `${this._containerId}:/gcl-cmd`], cwd);
         }
         if (this.imageEntrypoint) {
-            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/${safeJobName}_entry`, `${this._containerId}:/gcl-entry`], cwd);
+            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/image_entry/${safeJobName}`, `${this._containerId}:/gcl-entry`], cwd);
         }
 
         const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
@@ -684,7 +685,7 @@ export class Job {
             cp.on("error", (err) => reject(err));
 
             if (this.imageName) {
-                cp.stdin?.end(`/gcl-scripts/${safeJobName}`);
+                cp.stdin?.end(`/gcl-cmd`);
             } else {
                 cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}`);
             }
