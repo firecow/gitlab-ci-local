@@ -685,7 +685,7 @@ export class Job {
             cp.on("error", (err) => reject(err));
 
             if (this.imageName) {
-                cp.stdin?.end(`/gcl-cmd`);
+                cp.stdin?.end("/gcl-cmd");
             } else {
                 cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}`);
             }
