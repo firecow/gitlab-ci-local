@@ -1,4 +1,10 @@
 ---
+variables:
+  V: production
+  ENV: $V
+
 test-job:
   script:
-    - echo ${SOMEVARIABLE}
+    - echo "$KEY"
+  environment:
+    name: $ENV

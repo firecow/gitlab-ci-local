@@ -16,7 +16,7 @@ test.concurrent("project-variables-file <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job} {greenBright >} very-special-value`,
+        chalk`{blueBright test-job} {greenBright >} Y`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

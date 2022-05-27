@@ -1,2 +1,4 @@
 ---
-SOMEVARIABLE: very-special-value
+KEY:
+  values:
+    "production": Y

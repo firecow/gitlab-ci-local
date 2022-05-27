@@ -130,49 +130,21 @@ export class Job {
             CI_NODE_TOTAL: opt.nodesTotal,
         };
 
-        // Expand environment
         const matrixVariables = opt.matrixVariables ?? {};
-        this.expandedVariables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables};
+        // Merge and expand variables recursive
+        this.expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables});
+
+        // Expand environment
         if (this.environment) {
             this.environment.name = Utils.expandText(this.environment.name, this.expandedVariables);
             this.environment.url = Utils.expandText(this.environment.url, this.expandedVariables);
         }
 
-        // Create expanded variables
-        const variablesFromCWDOrHome: { [key: string]: string} = {};
-        const fileVariablesDir = this.fileVariablesDir;
-        for (const [k, v] of Object.entries(variablesFromFiles)) {
-            for (const entry of v.environments) {
-                if (this.environment?.name.match(entry.regexp) || entry.regexp.source === ".*") {
-                    if (v.type === "file" && !entry.fileSource) {
-                        variablesFromCWDOrHome[k] = `${fileVariablesDir}/${k}`;
-                        fs.mkdirpSync(`${fileVariablesDir}`);
-                        fs.writeFileSync(`${fileVariablesDir}/${k}`, entry.content);
-                    } else if (v.type === "file" && entry.fileSource) {
-                        variablesFromCWDOrHome[k] = `${fileVariablesDir}/${k}`;
-                        fs.mkdirpSync(`${fileVariablesDir}`);
-                        fs.copyFileSync(entry.fileSource, `${fileVariablesDir}/${k}`);
-                    } else {
-                        variablesFromCWDOrHome[k] = entry.content;
-                    }
-                    break;
-                }
-            }
-        }
+        // Find environment matched variables
+        const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
-        // Variable merging and expansion
-        this.expandedVariables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...variablesFromCWDOrHome, ...argvVariables};
-        let variableSyntaxFound, i = 0;
-        do {
-            assert(i < 100, "Recursive variable expansion reached 100 iterations");
-            for (const [k, v] of Object.entries(this.expandedVariables)) {
-                const envsWithoutSelf = {...this.expandedVariables};
-                delete envsWithoutSelf[k];
-                this.expandedVariables[k] = Utils.expandText(v, envsWithoutSelf);
-            }
-            variableSyntaxFound = Object.values(this.expandedVariables).find((v) => Utils.textHasVariable(v));
-            i++;
-        } while (variableSyntaxFound);
+        // Merge and expand after finding env matched variables
+        this.expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables});
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
