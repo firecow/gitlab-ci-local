@@ -1,0 +1,8 @@
+---
+cache:
+  paths: [$CACHEDIR/**.txt]
+
+test-job:
+  variables:
+    CACHEDIR: cache
+  script: mkdir -p cache && touch cache/file1.txt

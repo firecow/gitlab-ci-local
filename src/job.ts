@@ -198,25 +198,6 @@ export class Job {
         return list;
     }
 
-    get cache(): CacheEntry[] {
-        let cacheData = this.jobData["cache"];
-        const cacheList: CacheEntry[] = [];
-        if (!cacheData) return [];
-
-        cacheData = Array.isArray(cacheData) ? cacheData : [cacheData];
-        cacheData.forEach((c: any) => {
-            const key = c["key"];
-            const policy = c["policy"] ?? "pull-push";
-            if (!["pull", "push", "pull-push"].includes(policy)) {
-                throw new ExitError("cache policy is not 'pull', 'push' or 'pull-push'");
-            }
-            const paths = c["paths"] ?? [];
-            const expandedKey = Utils.expandText(key);
-            cacheList.push(new CacheEntry(expandedKey, paths, policy));
-        });
-        return cacheList;
-    }
-
     get buildVolumeName(): string {
         return `gcl-${this.safeJobName}-${this.jobId}-build`;
     }
@@ -285,6 +266,10 @@ export class Job {
 
     get artifacts(): { paths?: string[]; exclude?: string[]; reports?: { dotenv?: string } }|null {
         return this.jobData["artifacts"];
+    }
+
+    get cache(): CacheEntry[] {
+        return this.jobData["cache"] || [];
     }
 
     get beforeScripts(): string[] {
