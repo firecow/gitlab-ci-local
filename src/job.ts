@@ -541,10 +541,13 @@ export class Job {
                 dockerCmd += `--add-host=${extraHost} `;
             }
 
+            const entrypointFile = `${cwd}/${stateDir}/scripts/image_entry/${safeJobName}`;
             if (this.imageEntrypoint) {
-                this.imageEntrypoint.forEach((e) => {
-                    dockerCmd += `--entrypoint "${e}" `;
-                });
+                await fs.outputFile(entrypointFile, "#!/bin/sh\n");
+                await fs.appendFile(entrypointFile, `${this.imageEntrypoint.join(" ")}`);
+                await fs.appendFile(entrypointFile, " \"$@\"\n");
+                await fs.chmod(entrypointFile, "0755");
+                dockerCmd += "--entrypoint '/gcl-entry' ";
             }
 
             for (const key of Object.keys({...this.expandedVariables, ...reportsDotenvVariables})) {
@@ -618,9 +621,11 @@ export class Job {
         await fs.chmod(`${cwd}/${stateDir}/scripts/${safeJobName}`, "0755");
 
         if (this.imageName) {
-            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/.`, `${this._containerId}:/gcl-scripts/`], cwd);
+            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/${safeJobName}`, `${this._containerId}:/gcl-cmd`], cwd);
         }
-
+        if (this.imageEntrypoint) {
+            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/image_entry/${safeJobName}`, `${this._containerId}:/gcl-entry`], cwd);
+        }
 
         const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
             cwd,
@@ -652,7 +657,7 @@ export class Job {
             cp.on("error", (err) => reject(err));
 
             if (this.imageName) {
-                cp.stdin?.end(`/gcl-scripts/${safeJobName}`);
+                cp.stdin?.end("/gcl-cmd");
             } else {
                 cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}`);
             }
@@ -668,16 +673,18 @@ export class Job {
 
     private async pullImage(writeStreams: WriteStreams, imageToPull: string) {
         const time = process.hrtime();
-        let pullCmd = "";
-        pullCmd += `docker image ls --format '{{.Repository}}:{{.Tag}}' | grep -E '^${imageToPull}$'\n`;
-        pullCmd += "if [ \"$?\" -ne 0 ]; then\n";
-        pullCmd += `\techo "Pulling ${imageToPull}"\n`;
-        pullCmd += `\tdocker pull ${imageToPull}\n`;
-        pullCmd += "fi\n";
-        await Utils.bash(pullCmd, this.argv.cwd);
-        this.refreshLongRunningSilentTimeout(writeStreams);
-        const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+        try {
+            await Utils.spawn(["docker", "image", "inspect", imageToPull]);
+        } catch (e: any) {
+            if (e.stderr?.includes(`No such image: ${imageToPull}`)) {
+                await Utils.spawn(["docker", "pull", imageToPull]);
+                const endTime = process.hrtime(time);
+                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+            } else {
+                throw e;
+            }
+            this.refreshLongRunningSilentTimeout(writeStreams);
+        }
     }
 
     private async initProducerReportsDotenvVariables(writeStreams: WriteStreams) {
@@ -894,6 +901,8 @@ export class Job {
 
     private async startService(writeStreams: WriteStreams, service: Service) {
         const cwd = this.argv.cwd;
+        const stateDir = this.argv.stateDir;
+        const safeJobName = this.safeJobName;
         let dockerCmd = `docker create -u 0:0 -i --network gitlab-ci-local-${this.jobId} `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
@@ -919,10 +928,15 @@ export class Job {
             dockerCmd += `-e ${key} `;
         }
 
-        (service.getEntrypoint() ?? []).forEach((e) => {
-            dockerCmd += `--entrypoint "${e}" `;
-        });
-
+        const serviceEntrypoint = service.getEntrypoint();
+        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${service.index}`;
+        if (serviceEntrypoint) {
+            await fs.outputFile(serviceEntrypointFile, "#!/bin/sh\n");
+            await fs.appendFile(serviceEntrypointFile, `${serviceEntrypoint.join(" ")}`);
+            await fs.appendFile(serviceEntrypointFile, " \"$@\"\n");
+            await fs.chmod(serviceEntrypointFile, "0755");
+            dockerCmd += "--entrypoint '/gcl-entry' ";
+        }
         dockerCmd += `${serviceName} `;
 
         (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
@@ -930,6 +944,11 @@ export class Job {
         const time = process.hrtime();
         const {stdout: containerId} = await Utils.bash(dockerCmd, cwd, this.expandedVariables);
         this._containersToClean.push(containerId);
+
+        // Copy docker entrypoint if specified for service
+        if (serviceEntrypoint) {
+            await Utils.spawn(["docker", "cp", serviceEntrypointFile, `${containerId}:/gcl-entry`]);
+        }
 
         // Copy file variables into service container.
         const fileVariablesDir = this.fileVariablesDir;

@@ -77,8 +77,7 @@ export function services(gitlabData: any) {
                     entrypoint: expandedService.entrypoint,
                     command: expandedService.command,
                     alias: expandedService.alias,
-
-                });
+                }, Number(index));
             }
         }
     });

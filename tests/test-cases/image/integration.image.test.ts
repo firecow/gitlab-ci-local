@@ -88,3 +88,17 @@ test("image <test-ignore-regression>", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test("image <issue-206>", async () => {
+    const writeStreams = new MockWriteStreams();
+
+    await handler({
+        cwd: "tests/test-cases/image",
+        job: ["issue-206"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright issue-206               } {redBright >} Error: open /builds/issue-206/hugo: no such file or directory`,
+    ];
+    expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
+});

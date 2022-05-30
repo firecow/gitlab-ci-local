@@ -37,6 +37,11 @@ test.concurrent("services <test-job>", async () => {
         chalk`{black.bgRed  FAIL } {blueBright test-job  }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+
+    const expectedStdErr = [
+        chalk`{blueBright test-job  } {yellow Could not find exposed tcp ports alpine:latest}`,
+    ];
+    expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStdErr));
 });
 
 test.concurrent("services <build-job>", async () => {
@@ -76,4 +81,18 @@ test.concurrent("services <alias-job>", async () => {
         chalk`{black.bgGreenBright  PASS } {blueBright alias-job }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test.concurrent("services <multie-job>", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["multie-job"],
+    }, writeStreams);
+
+    const expectedStderr = [
+        chalk`{blueBright multie-job} {cyan >} Service 1`,
+        chalk`{blueBright multie-job} {cyan >} Service 2`,
+    ];
+    expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStderr));
 });
