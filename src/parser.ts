@@ -86,6 +86,7 @@ export class Parser {
         jobExpanders.reference(gitlabData, gitlabData);
         jobExpanders.jobExtends(gitlabData);
         jobExpanders.artifacts(gitlabData);
+        jobExpanders.cache(gitlabData);
         jobExpanders.image(gitlabData);
         jobExpanders.services(gitlabData);
         jobExpanders.beforeScripts(gitlabData);
