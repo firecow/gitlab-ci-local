@@ -17,6 +17,7 @@ test.concurrent("project-variables-file <test-job>", async () => {
 
     const expected = [
         chalk`{blueBright test-job} {greenBright >} Y`,
+        chalk`{blueBright test-job} {greenBright >} Recursive CI/CD`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

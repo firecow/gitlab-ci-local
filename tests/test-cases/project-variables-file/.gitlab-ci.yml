@@ -6,5 +6,6 @@ variables:
 test-job:
   script:
     - echo "$KEY"
+    - echo "$FUNNY3"
   environment:
     name: $ENV

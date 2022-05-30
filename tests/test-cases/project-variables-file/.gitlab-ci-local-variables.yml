@@ -2,3 +2,15 @@
 KEY:
   values:
     "production": Y
+
+FUNNY1:
+  values:
+    "*": $FUNNY2
+
+FUNNY2:
+  values:
+    "*": $FUNNY3
+
+FUNNY3:
+  values:
+    "*": Recursive CI/CD
