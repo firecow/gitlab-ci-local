@@ -82,3 +82,17 @@ test.concurrent("services <alias-job>", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test.concurrent("services <multie-job>", async () => {
+    const writeStreams = new MockWriteStreams();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["multie-job"],
+    }, writeStreams);
+
+    const expectedStderr = [
+        chalk`{blueBright multie-job} {cyan >} Service 1`,
+        chalk`{blueBright multie-job} {cyan >} Service 2`,
+    ];
+    expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStderr));
+});
