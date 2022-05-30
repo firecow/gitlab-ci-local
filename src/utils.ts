@@ -4,6 +4,8 @@ import * as fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
 import execa from "execa";
+import {assert} from "./asserts";
+import {CICDVariable} from "./variables-from-files";
 
 export class Utils {
 
@@ -81,6 +83,44 @@ export class Utils {
             expandedVariables[key] = Utils.expandText(value, envs);
         }
         return expandedVariables;
+    }
+
+    static expandRecursive(variables: { [key: string]: string }) {
+        let variableSyntaxFound, i = 0;
+        do {
+            assert(i < 100, "Recursive variable expansion reached 100 iterations");
+            for (const [k, v] of Object.entries(variables)) {
+                const envsWithoutSelf = {...variables};
+                delete envsWithoutSelf[k];
+                variables[k] = Utils.expandText(v, envsWithoutSelf);
+            }
+            variableSyntaxFound = Object.values(variables).find((v) => Utils.textHasVariable(v));
+            i++;
+        } while (variableSyntaxFound);
+        return variables;
+    }
+
+    static findEnvMatchedVariables(variables: { [name: string]: CICDVariable }, fileVariablesDir: string, environment?: {name: string}) {
+        const envMatchedVariables: { [key: string]: string} = {};
+        for (const [k, v] of Object.entries(variables)) {
+            for (const entry of v.environments) {
+                if (environment?.name.match(entry.regexp) || entry.regexp.source === ".*") {
+                    if (v.type === "file" && !entry.fileSource) {
+                        envMatchedVariables[k] = `${fileVariablesDir}/${k}`;
+                        fs.mkdirpSync(`${fileVariablesDir}`);
+                        fs.writeFileSync(`${fileVariablesDir}/${k}`, entry.content);
+                    } else if (v.type === "file" && entry.fileSource) {
+                        envMatchedVariables[k] = `${fileVariablesDir}/${k}`;
+                        fs.mkdirpSync(`${fileVariablesDir}`);
+                        fs.copyFileSync(entry.fileSource, `${fileVariablesDir}/${k}`);
+                    } else {
+                        envMatchedVariables[k] = entry.content;
+                    }
+                    break;
+                }
+            }
+        }
+        return envMatchedVariables;
     }
 
     static textHasVariable(text?: any): boolean {
