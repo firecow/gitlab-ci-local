@@ -828,7 +828,12 @@ export class Job {
         const reportDotenv = this.artifacts.reports?.dotenv ?? null;
         if (reportDotenv != null) {
             cpCmd += `mkdir -p ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
-            cpCmd += `rsync -Ra ${reportDotenv} ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
+            cpCmd += `if [ -f ${reportDotenv} ]; then\n`;
+            cpCmd += `  rsync -Ra ${reportDotenv} ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
+            cpCmd += "fi\n";
+            if (!await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) {
+                writeStreams.stderr(chalk`${this.chalkJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
+            }
         }
 
         time = process.hrtime();
