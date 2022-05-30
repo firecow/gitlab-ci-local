@@ -13,7 +13,10 @@ pre-job:
     - cat /foo.txt
 
 test-job:
-  services: []
+  services:
+    - name: alpine
+      entrypoint: ["/bin/sh", "-c"]
+      command: ["sh"]
   image: tutum/dnsutils
   script: host nginx
 
@@ -39,3 +42,15 @@ alias-job:
   script:
     - host redis
     - host redis-alias
+
+multie-job:
+  services:
+    - name: alpine
+      entrypoint: ["/bin/sh", "-c", "'echo Service 1'"]
+      command: ["sh"]
+    - name: alpine
+      entrypoint: ["/bin/sh", "-c", "'echo Service 2'"]
+      command: ["sh"]
+  image: tutum/dnsutils
+  script:
+    - echo "Hello"
