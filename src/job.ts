@@ -269,7 +269,7 @@ export class Job {
     }
 
     get cache(): CacheEntry[] {
-        return this.jobData["cache"];
+        return this.jobData["cache"] || [];
     }
 
     get beforeScripts(): string[] {
