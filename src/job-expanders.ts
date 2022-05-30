@@ -5,6 +5,8 @@ import {assert} from "./asserts";
 import {Job} from "./job";
 import {Service} from "./service";
 import {traverse} from "object-traversal";
+import {CacheEntry} from "./cache-entry";
+import {ExitError} from "./types/exit-error";
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
@@ -62,6 +64,26 @@ export function artifacts(gitlabData: any) {
         const expandedArtifacts = jobData.artifacts || (gitlabData.default || {}).artifacts || gitlabData.artifacts;
         if (expandedArtifacts) {
             jobData.artifacts = expandedArtifacts;
+        }
+    });
+}
+
+export function cache(gitlabData: any) {
+    Utils.forEachRealJob(gitlabData, (_, jobData) => {
+        const mergedCache = jobData.cache || (gitlabData.default || {}).cache || gitlabData.cache;
+        if (mergedCache) {
+            const cacheList: CacheEntry[] = [];
+            (Array.isArray(mergedCache) ? mergedCache : [mergedCache]).forEach((c: any) => {
+                const key = c["key"];
+                const policy = c["policy"] ?? "pull-push";
+                if (!["pull", "push", "pull-push"].includes(policy)) {
+                    throw new ExitError("cache policy is not 'pull', 'push' or 'pull-push'");
+                }
+                const paths = c["paths"] ?? [];
+                const expandedKey = Utils.expandText(key);
+                cacheList.push(new CacheEntry(expandedKey, paths, policy));
+            });
+            jobData.cache = cacheList;
         }
     });
 }
