@@ -45,15 +45,14 @@ export class VariablesFromFiles {
             homeFileData = yaml.load(await fs.readFile(homeVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA});
         }
 
-        const unpack  = (v: any): { values: any; type: "file"|"variable"} => {
+        const unpack = (v: any): { values: any; type: "file"|"variable"|null} => {
             if (typeof v === "string") {
-                const catchAll: { values: any; type: "file"|"variable"} = { values: {}, type: "variable"};
+                const catchAll: { values: any; type: "file"|"variable"|null} = { values: {}, type: null };
                 catchAll.values = {};
                 catchAll.values["*"] = v;
                 return catchAll;
-            }
-            if (v.type == null) {
-                v.type = "variable";
+            } else {
+                v.type = v.type ?? "variable";
             }
             return v;
         };
@@ -61,11 +60,11 @@ export class VariablesFromFiles {
             const {type, values} = unpack(val);
             for (const [matcher, content] of Object.entries(values)) {
                 assert(typeof content == "string", `${key}.${matcher} content must be text or multiline text`);
-                if (type === "variable" && !content.match(/^[/|~]/)) {
+                if (type === "variable" || (type === null && !content.match(/^[/|~]/))) {
                     const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "variable", environments: []};
                     variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
-                } else if (type === "variable" && content.match(/^[/|~]/)) {
+                } else if (type === null && content.match(/^[/|~]/)) {
                     const fileSource = content.replace(/^~\/(.*)/, `${homeDir}/$1`);
                     const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};
