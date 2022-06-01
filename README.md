@@ -262,7 +262,7 @@ Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
 
 ## Development
 
-You need nodejs 16+
+You need nodejs 18+
 
 ### Scripts
 
