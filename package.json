@@ -51,7 +51,7 @@
     "@typescript-eslint/parser": "5.27.0",
     "axios-mock-adapter": "1.21.1",
     "depcheck": "1.4.3",
-    "eslint": "8.16.0",
+    "eslint": "8.17.0",
     "jest": "28.1.0",
     "jest-when": "3.5.1",
     "pkg": "5.7.0",
