@@ -19,7 +19,7 @@ export class Job {
 
     static readonly illegalJobNames = [
         "include", "local_configuration", "image", "services",
-        "stages", "pages", "types", "before_script", "default",
+        "stages", "types", "before_script", "default",
         "after_script", "variables", "cache", "workflow",
     ];
 
