@@ -528,11 +528,15 @@ export class Job {
 
             const entrypointFile = `${cwd}/${stateDir}/scripts/image_entry/${safeJobName}`;
             if (this.imageEntrypoint) {
-                await fs.outputFile(entrypointFile, "#!/bin/sh\n");
-                await fs.appendFile(entrypointFile, `${this.imageEntrypoint.join(" ")}`);
-                await fs.appendFile(entrypointFile, " \"$@\"\n");
-                await fs.chmod(entrypointFile, "0755");
-                dockerCmd += "--entrypoint '/gcl-entry' ";
+                if (this.imageEntrypoint[0] == "") {
+                    dockerCmd += "--entrypoint '' ";
+                } else {
+                    await fs.outputFile(entrypointFile, "#!/bin/sh\n");
+                    await fs.appendFile(entrypointFile, `${this.imageEntrypoint.join(" ")}`);
+                    await fs.chmod(entrypointFile, "0755");
+                    dockerCmd += "--entrypoint '/gcl-entry' ";
+                    await fs.appendFile(entrypointFile, " \"$@\"\n");
+                }
             }
 
             for (const key of Object.keys({...this.expandedVariables, ...reportsDotenvVariables})) {
@@ -608,7 +612,7 @@ export class Job {
         if (this.imageName) {
             await Utils.spawn(["docker", "cp", `${stateDir}/scripts/${safeJobName}`, `${this._containerId}:/gcl-cmd`], cwd);
         }
-        if (this.imageEntrypoint) {
+        if (this.imageEntrypoint && this.imageEntrypoint[0] != "") {
             await Utils.spawn(["docker", "cp", `${stateDir}/scripts/image_entry/${safeJobName}`, `${this._containerId}:/gcl-entry`], cwd);
         }
 
@@ -921,11 +925,15 @@ export class Job {
         const serviceEntrypoint = service.getEntrypoint();
         const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${service.index}`;
         if (serviceEntrypoint) {
-            await fs.outputFile(serviceEntrypointFile, "#!/bin/sh\n");
-            await fs.appendFile(serviceEntrypointFile, `${serviceEntrypoint.join(" ")}`);
-            await fs.appendFile(serviceEntrypointFile, " \"$@\"\n");
-            await fs.chmod(serviceEntrypointFile, "0755");
-            dockerCmd += "--entrypoint '/gcl-entry' ";
+            if (serviceEntrypoint[0] == "") {
+                dockerCmd += "--entrypoint '' ";
+            } else {
+                await fs.outputFile(serviceEntrypointFile, "#!/bin/sh\n");
+                await fs.appendFile(serviceEntrypointFile, `${serviceEntrypoint.join(" ")}`);
+                await fs.appendFile(serviceEntrypointFile, " \"$@\"\n");
+                await fs.chmod(serviceEntrypointFile, "0755");
+                dockerCmd += "--entrypoint '/gcl-entry' ";
+            }
         }
         dockerCmd += `${serviceName} `;
 
@@ -936,7 +944,7 @@ export class Job {
         this._containersToClean.push(containerId);
 
         // Copy docker entrypoint if specified for service
-        if (serviceEntrypoint) {
+        if (serviceEntrypoint && serviceEntrypoint[0] != "") {
             await Utils.spawn(["docker", "cp", serviceEntrypointFile, `${containerId}:/gcl-entry`]);
         }
 
