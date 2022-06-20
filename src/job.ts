@@ -944,7 +944,7 @@ export class Job {
         this._containersToClean.push(containerId);
 
         // Copy docker entrypoint if specified for service
-        if (serviceEntrypoint) {
+        if (serviceEntrypoint && serviceEntrypoint[0] != "") {
             await Utils.spawn(["docker", "cp", serviceEntrypointFile, `${containerId}:/gcl-entry`]);
         }
 
