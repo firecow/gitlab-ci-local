@@ -1,9 +1,12 @@
 ---
+variables:
+  VALUE: maven
+
 produce-cache:
   stage: build
   image: alpine
   cache:
-    key: maven
+    key: $VALUE
     paths: [.cache]
   script: mkdir -p .cache && touch .cache/file1
 
