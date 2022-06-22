@@ -516,7 +516,7 @@ export class Job {
             this._containerVolumeNames.push(tmpVolumeName);
             await Promise.all(volumePromises);
 
-            dockerCmd += `--workdir /gcl-builds `;
+            dockerCmd += "--workdir /gcl-builds ";
 
             for (const volume of this.argv.volume) {
                 dockerCmd += `--volume ${volume} `;
