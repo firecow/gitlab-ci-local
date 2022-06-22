@@ -30,7 +30,7 @@ test("image <test-entrypoint>", async () => {
     const expected = [
         chalk`{blueBright test-entrypoint         } {greenBright >} Hello from 'firecow/gitlab-ci-local-test-image' image entrypoint`,
         chalk`{blueBright test-entrypoint         } {greenBright >} I am epic multiline value`,
-        chalk`{blueBright test-entrypoint         } {greenBright >} /builds/test-entrypoint`,
+        chalk`{blueBright test-entrypoint         } {greenBright >} /gcl-builds`,
         chalk`{blueBright test-entrypoint         } {greenBright >} Test Entrypoint`,
         chalk`{blueBright test-entrypoint         } {greenBright >} I'm a test file`,
     ];
@@ -98,7 +98,7 @@ test("image <issue-206>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright issue-206               } {redBright >} Error: open /builds/issue-206/hugo: no such file or directory`,
+        chalk`{blueBright issue-206               } {redBright >} Error: open /gcl-builds/hugo: no such file or directory`,
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 });
