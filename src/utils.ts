@@ -67,7 +67,7 @@ export class Utils {
         }
     }
 
-    static expandText(text?: any, envs: { [key: string]: string | undefined } = process.env) {
+    static expandText(text: any, envs: { [key: string]: string }) {
         if (typeof text !== "string") {
             return text;
         }

@@ -80,8 +80,7 @@ export function cache(gitlabData: any) {
                     throw new ExitError("cache policy is not 'pull', 'push' or 'pull-push'");
                 }
                 const paths = c["paths"] ?? [];
-                const expandedKey = Utils.expandText(key);
-                cacheList.push(new CacheEntry(expandedKey, paths, policy));
+                cacheList.push(new CacheEntry(key, paths, policy));
             });
             jobData.cache = cacheList;
         }

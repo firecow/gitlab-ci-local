@@ -30,7 +30,7 @@ export class Job {
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
     readonly rules?: { if: string; when: string; allow_failure: boolean }[];
-    readonly expandedVariables: { [key: string]: string };
+    readonly expandedVariables: { [key: string]: string } = {};
     readonly allowFailure: boolean;
     readonly when: string;
     readonly pipelineIid: number;

@@ -16,5 +16,5 @@ test.concurrent("cache-docker <consume-cache> --needs", async () => {
         job: ["consume-cache"],
         needs: true,
     }, writeStreams);
-
+    expect(writeStreams.stdoutLines.join("\n")).toEqual(expect.stringMatching(/exported cache .cache 'maven'/));
 });
