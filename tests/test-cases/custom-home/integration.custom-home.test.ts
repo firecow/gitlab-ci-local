@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -13,7 +13,7 @@ beforeAll(() => {
 });
 
 test("custom-home <test-staging>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-staging"],
@@ -33,7 +33,7 @@ test("custom-home <test-staging>", async () => {
 });
 
 test("custom-home <test-production>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-production"],
@@ -49,7 +49,7 @@ test("custom-home <test-production>", async () => {
 });
 
 test("custom-home <test-image>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-image"],
@@ -65,7 +65,7 @@ test("custom-home <test-image>", async () => {
 });
 
 test("custom-home <test-normalize-key>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-normalize-key"],
@@ -80,7 +80,7 @@ test("custom-home <test-normalize-key>", async () => {
 });
 
 test("custom-home <test-predefined-overwrite>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-predefined-overwrite"],

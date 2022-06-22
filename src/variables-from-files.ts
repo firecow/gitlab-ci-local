@@ -1,4 +1,4 @@
-import {WriteStreams} from "./types/write-streams";
+import {WriteStreams} from "./write-streams";
 import {GitData} from "./git-data";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";

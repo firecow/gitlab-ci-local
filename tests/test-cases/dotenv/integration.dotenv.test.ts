@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -11,7 +11,7 @@ beforeAll(() => {
 
 test("dotenv <test-job>", async () => {
     await fs.rm("tests/test-cases/dotenv/.gitlab-ci-local", {force: true, recursive: true});
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/dotenv",
         job: ["test-job"],

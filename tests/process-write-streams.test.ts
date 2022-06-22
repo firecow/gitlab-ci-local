@@ -1,4 +1,4 @@
-import {ProcessWriteStreams} from "../src/process-write-streams";
+import {WriteStreamsProcess} from "../src/write-streams-process";
 
 const spyStdout = jest.spyOn(process.stdout, "write").mockImplementation();
 const spyStderr = jest.spyOn(process.stderr, "write").mockImplementation();
@@ -14,7 +14,7 @@ afterAll(() => {
 });
 
 test("Check ProcessWriteStreams ", () => {
-    const writeStreams = new ProcessWriteStreams();
+    const writeStreams = new WriteStreamsProcess();
     writeStreams.stdout("Stdout message");
     writeStreams.stderr("Stderr message");
     expect(spyStdout).toHaveBeenLastCalledWith("Stdout message");

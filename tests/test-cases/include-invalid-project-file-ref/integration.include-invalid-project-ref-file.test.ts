@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import {assert} from "../../../src/asserts";
 import {initBashSpyReject, initSpawnSpy} from "../../mocks/utils.mock";
@@ -19,7 +19,7 @@ test("include-invalid-project-file-ref", async () => {
         };
 
         initSpawnSpy([...WhenStatics.all, spyGitRemote]);
-        const writeStreams = new MockWriteStreams();
+        const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/include-invalid-project-file-ref",
         }, writeStreams);

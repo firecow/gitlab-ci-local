@@ -6,11 +6,11 @@ import * as path from "path";
 import yargs from "yargs";
 import {Parser} from "./parser";
 import * as state from "./state";
-import {ExitError} from "./types/exit-error";
-import {ProcessWriteStreams} from "./process-write-streams";
+import {ExitError} from "./exit-error";
+import {WriteStreamsProcess} from "./write-streams-process";
 import {handler} from "./handler";
-import {JobExecutor} from "./job-executor";
-import {MockWriteStreams} from "./mock-write-streams";
+import {Executor} from "./executor";
+import {WriteStreamsMock} from "./write-streams-mock";
 import {Argv} from "./argv";
 
 (() => {
@@ -22,8 +22,8 @@ import {Argv} from "./argv";
         .command({
             handler: async (argv) => {
                 try {
-                    const jobs = await handler(argv, new ProcessWriteStreams());
-                    const failedJobs = JobExecutor.getFailed(jobs);
+                    const jobs = await handler(argv, new WriteStreamsProcess());
+                    const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
                 } catch (e) {
                     if (e instanceof ExitError) {
@@ -149,7 +149,7 @@ import {Argv} from "./argv";
             try {
                 const argv = new Argv({...yargsArgv, autoCompleting: true});
                 const pipelineIid = await state.getPipelineIid(argv.cwd, argv.stateDir);
-                const parser = await Parser.create(argv, new MockWriteStreams(), pipelineIid);
+                const parser = await Parser.create(argv, new WriteStreamsMock(), pipelineIid);
                 return [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
             } catch (e) {
                 return ["Parser-Failed!"];

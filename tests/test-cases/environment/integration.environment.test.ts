@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -9,7 +9,7 @@ beforeAll(() => {
 });
 
 test("environment <deploy-dev-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/environment",
         job: ["deploy-dev-job"],
@@ -19,11 +19,11 @@ test("environment <deploy-dev-job>", async () => {
         chalk`{blueBright deploy-dev-job} environment: \{ name: {bold dev-domain} \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    
+
 });
 
 test("environment <deploy-stage-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/environment",
         job: ["deploy-stage-job"],
@@ -36,5 +36,5 @@ test("environment <deploy-stage-job>", async () => {
         chalk`{blueBright deploy-stage-job} environment: \{ name: {bold Stage Domain}, url: {bold http://stage.domain.com} \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-    
+
 });

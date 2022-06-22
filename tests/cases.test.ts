@@ -1,11 +1,11 @@
-import {MockWriteStreams} from "../src/mock-write-streams";
+import {WriteStreamsMock} from "../src/write-streams-mock";
 import chalk from "chalk";
 import {handler} from "../src/handler";
 import {assert} from "../src/asserts";
 
 test("--completion", async () => {
     const spy = jest.spyOn(console, "log").mockImplementation();
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         completion: true,
     }, writeStreams);
@@ -15,7 +15,7 @@ test("--completion", async () => {
 
 test("something/unknown-directory (non-existing dir)", async () => {
     try {
-        const writeStreams = new MockWriteStreams();
+        const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "something/unknown-directory",
         }, writeStreams);
@@ -28,7 +28,7 @@ test("something/unknown-directory (non-existing dir)", async () => {
 
 test("docs (no .gitlab-ci.yml)", async () => {
     try {
-        const writeStreams = new MockWriteStreams();
+        const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "docs",
         }, writeStreams);

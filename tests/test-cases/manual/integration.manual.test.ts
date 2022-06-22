@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {assert} from "../../../src/asserts";
@@ -10,7 +10,7 @@ beforeAll(() => {
 });
 
 test("manual --manual <build-job> --manual <pre-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         manual: ["build-job", "pre-job"],
@@ -24,7 +24,7 @@ test("manual --manual <build-job> --manual <pre-job>", async () => {
 });
 
 test("manual --manual <build-job> --manual <build-job> --manual <pre-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         manual: ["build-job", "build-job", "pre-job"],
@@ -37,7 +37,7 @@ test("manual --manual <build-job> --manual <build-job> --manual <pre-job>", asyn
 });
 
 test("manual <deploy-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         job: ["deploy-job"],
@@ -60,7 +60,7 @@ test("manual <deploy-job>", async () => {
 });
 
 test("manual <deploy-job> --needs", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         job: ["deploy-job"],
@@ -89,7 +89,7 @@ test("manual <deploy-job> --needs", async () => {
 });
 
 test("manual <build-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         job: ["build-job"],
@@ -102,7 +102,7 @@ test("manual <build-job>", async () => {
 });
 
 test("manual <test-job> --needs --manual <pre-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         job: ["test-job"],
@@ -118,7 +118,7 @@ test("manual <test-job> --needs --manual <pre-job>", async () => {
 });
 
 test("manual --manual <pre-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         manual: "pre-job",
@@ -134,7 +134,7 @@ test("manual --manual <pre-job>", async () => {
 
 test("manual", async () => {
     try {
-        const writeStreams = new MockWriteStreams();
+        const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/manual/",
         }, writeStreams);

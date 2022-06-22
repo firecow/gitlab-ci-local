@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import fs from "fs-extra";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -12,7 +12,7 @@ test("needs-artifacts <test-job> --needs --shell-isolation", async () => {
     // Test if one.txt is actually remove from consumer (test-job) before script execution
     await fs.outputFile("tests/test-cases/needs-artifacts/.gitlab-ci-local/builds/test-job/one.txt", "");
 
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-artifacts",
         job: ["test-job"],

@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -9,7 +9,7 @@ beforeAll(() => {
 });
 
 test("script-failures <test-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["test-job"],
@@ -25,7 +25,7 @@ test("script-failures <test-job>", async () => {
 });
 
 test("script-failures <test-job-after-script>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["test-job-after-script"],
@@ -39,7 +39,7 @@ test("script-failures <test-job-after-script>", async () => {
 });
 
 test("script-failures <allow-failure-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["allow-failure-job"],
@@ -53,7 +53,7 @@ test("script-failures <allow-failure-job>", async () => {
 });
 
 test("script-failures <allow-failure-after-script>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["allow-failure-after-script"],
@@ -67,7 +67,7 @@ test("script-failures <allow-failure-after-script>", async () => {
 });
 
 test("script-failures <deploy-job> --needs", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["deploy-job"],

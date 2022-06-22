@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -9,7 +9,7 @@ beforeAll(() => {
 });
 
 test("never", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/never/",
     }, writeStreams);
@@ -21,7 +21,7 @@ test("never", async () => {
 });
 
 test("never <test-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/never/",
         job: ["test-job"],
@@ -39,7 +39,7 @@ test("never <test-job>", async () => {
 });
 
 test("never <test-job> --needs", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/never/",
         job: ["test-job"],

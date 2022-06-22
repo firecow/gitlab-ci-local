@@ -1,6 +1,6 @@
-import {WriteStreams} from "./types/write-streams";
+import {WriteStreams} from "./write-streams";
 
-export class ProcessWriteStreams implements WriteStreams {
+export class WriteStreamsProcess implements WriteStreams {
     stderr(txt: string): void {
         process.stderr.write(txt);
     }

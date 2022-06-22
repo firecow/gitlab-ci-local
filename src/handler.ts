@@ -6,10 +6,10 @@ import {Commander} from "./commander";
 import {Parser} from "./parser";
 import * as state from "./state";
 import prettyHrtime from "pretty-hrtime";
-import {WriteStreams} from "./types/write-streams";
+import {WriteStreams} from "./write-streams";
 import {Job} from "./job";
 import {Utils} from "./utils";
-import {ExitError} from "./types/exit-error";
+import {ExitError} from "./exit-error";
 import {Argv} from "./argv";
 import {assert} from "./asserts";
 

@@ -1,7 +1,7 @@
 import {Utils} from "./utils";
-import {ExitError} from "./types/exit-error";
+import {ExitError} from "./exit-error";
 import * as fs from "fs-extra";
-import {WriteStreams} from "./types/write-streams";
+import {WriteStreams} from "./write-streams";
 import {GitData} from "./git-data";
 import {assert} from "./asserts";
 import chalk from "chalk";

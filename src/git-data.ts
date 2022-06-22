@@ -1,8 +1,8 @@
 import {Utils} from "./utils";
 import {assert} from "./asserts";
-import {WriteStreams} from "./types/write-streams";
+import {WriteStreams} from "./write-streams";
 import chalk from "chalk";
-import {ExitError} from "./types/exit-error";
+import {ExitError} from "./exit-error";
 
 export class GitData {
 

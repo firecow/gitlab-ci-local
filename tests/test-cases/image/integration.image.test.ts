@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import fs from "fs-extra";
 import chalk from "chalk";
@@ -10,7 +10,7 @@ beforeAll(() => {
 });
 
 test("image <test job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test job"],
@@ -20,7 +20,7 @@ test("image <test job>", async () => {
 });
 
 test("image <test-entrypoint>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test-entrypoint"],
@@ -38,7 +38,7 @@ test("image <test-entrypoint>", async () => {
 });
 
 test("image <test-entrypoint-override>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test-entrypoint-override"],
@@ -51,7 +51,7 @@ test("image <test-entrypoint-override>", async () => {
 });
 
 test("image <test-from-scratch>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test-from-scratch"],
@@ -71,7 +71,7 @@ test("image <test-from-scratch>", async () => {
 // which it should not. Expected output will differ if ./folder/test-file.txt
 // is also ignored.
 test("image <test-ignore-regression>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
 
     try {
         await fs.writeFile("tests/test-cases/image/test-file.txt", "I'm ignored\n");
@@ -90,7 +90,7 @@ test("image <test-ignore-regression>", async () => {
 });
 
 test("image <issue-206>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
 
     await handler({
         cwd: "tests/test-cases/image",

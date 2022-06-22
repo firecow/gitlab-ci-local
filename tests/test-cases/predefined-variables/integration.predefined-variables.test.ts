@@ -1,11 +1,11 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 
 test("predefined-variables <test-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     const spyGitRemote = {
         cmdArgs: ["git", "remote", "-v"],
         returnValue: {stdout: "origin\tgit@gitlab.com:gcl/predefined-variables.git (fetch)\norigin\tgit@gitlab.com:gcl/predefined-variables.git (push)\n"},
@@ -26,7 +26,7 @@ test("predefined-variables <test-job>", async () => {
 });
 
 test("predefined-variables <test-job> --shell-isolation", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/predefined-variables",
         job: ["test-job"],

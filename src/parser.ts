@@ -4,7 +4,7 @@ import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import prettyHrtime from "pretty-hrtime";
 import {Job} from "./job";
-import * as jobExpanders from "./job-expanders";
+import * as DataExpander from "./data-expander";
 import {Utils} from "./utils";
 import {assert} from "./asserts";
 import {Validator} from "./validator";
@@ -14,7 +14,7 @@ import {ParserIncludes} from "./parser-includes";
 import {Producers} from "./producers";
 import {VariablesFromFiles} from "./variables-from-files";
 import {Argv} from "./argv";
-import {WriteStreams} from "./types/write-streams";
+import {WriteStreams} from "./write-streams";
 
 export class Parser {
 
@@ -83,16 +83,16 @@ export class Parser {
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
         // Expand various fields in gitlabData
-        jobExpanders.reference(gitlabData, gitlabData);
-        jobExpanders.jobExtends(gitlabData);
-        jobExpanders.artifacts(gitlabData);
-        jobExpanders.cache(gitlabData);
-        jobExpanders.image(gitlabData);
-        jobExpanders.services(gitlabData);
-        jobExpanders.beforeScripts(gitlabData);
-        jobExpanders.afterScripts(gitlabData);
-        jobExpanders.scripts(gitlabData);
-        jobExpanders.flattenLists(gitlabData);
+        DataExpander.reference(gitlabData, gitlabData);
+        DataExpander.jobExtends(gitlabData);
+        DataExpander.artifacts(gitlabData);
+        DataExpander.cache(gitlabData);
+        DataExpander.image(gitlabData);
+        DataExpander.services(gitlabData);
+        DataExpander.beforeScripts(gitlabData);
+        DataExpander.afterScripts(gitlabData);
+        DataExpander.scripts(gitlabData);
+        DataExpander.flattenLists(gitlabData);
 
         assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
         if (!gitlabData.stages.includes(".pre")) {

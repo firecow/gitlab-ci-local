@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -19,7 +19,7 @@ test("include-remote <test-job|build-job>", async () => {
     body = await fs.readFile("tests/test-cases/include-remote/remote-mock1.yml", "utf8");
     mock.onGet("https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.gitlab-http1.yml").reply(200, body);
 
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-remote",
         job: ["test-job", "build-job"],

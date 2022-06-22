@@ -2,11 +2,11 @@ import chalk from "chalk";
 import {Job} from "./job";
 import {Parser} from "./parser";
 import {Utils} from "./utils";
-import {WriteStreams} from "./types/write-streams";
-import {JobExecutor} from "./job-executor";
+import {WriteStreams} from "./write-streams";
+import {Executor} from "./executor";
 import fs from "fs-extra";
 import {Argv} from "./argv";
-import {ExitError} from "./types/exit-error";
+import {ExitError} from "./exit-error";
 
 export class Commander {
 
@@ -17,7 +17,7 @@ export class Commander {
         let potentialStarters = [...jobs.values()];
         potentialStarters = potentialStarters.filter(j => j.when !== "never");
         potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
-        await JobExecutor.runLoop(argv, jobs, stages, potentialStarters);
+        await Executor.runLoop(argv, jobs, stages, potentialStarters);
         await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
@@ -35,7 +35,7 @@ export class Commander {
             for (const b of baseJobs) {
                 jobSet.add(b);
                 if (needs) {
-                    potentialStarters = potentialStarters.concat(JobExecutor.getPastToWaitFor(jobs, stages, b, argv.manual));
+                    potentialStarters = potentialStarters.concat(Executor.getPastToWaitFor(jobs, stages, b, argv.manual));
                 }
                 potentialStarters.push(b);
             }
@@ -50,7 +50,7 @@ export class Commander {
             });
         }
 
-        await JobExecutor.runLoop(argv, Array.from(jobSet), stages, potentialStarters);
+        await Executor.runLoop(argv, Array.from(jobSet), stages, potentialStarters);
         await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
     }
 

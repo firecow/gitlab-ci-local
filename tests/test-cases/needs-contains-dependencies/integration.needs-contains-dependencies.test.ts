@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {assert} from "../../../src/asserts";
@@ -10,7 +10,7 @@ beforeAll(() => {
 });
 
 test("needs-contains-dependencies <test-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     try {
         await handler({
             cwd: "tests/test-cases/needs-contains-dependencies",

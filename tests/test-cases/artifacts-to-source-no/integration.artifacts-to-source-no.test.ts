@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import fs from "fs-extra";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -9,7 +9,7 @@ beforeAll(() => {
 });
 
 test.concurrent("artifacts-to-source-no <produce> --needs --shell-isolation", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-to-source-no",
         job: ["produce"],
