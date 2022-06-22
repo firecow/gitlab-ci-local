@@ -435,7 +435,7 @@ export class Job {
         return cmd;
     }
 
-    private async mountCacheCmd(safeJobName: string, writeStreams: WriteStreams) {
+    private async mountCacheCmd(writeStreams: WriteStreams) {
         if (this.imageName && !this.argv.mountCache) return "";
 
         let cmd = "";
@@ -543,7 +543,7 @@ export class Job {
                 dockerCmd += `-e ${key} `;
             }
 
-            dockerCmd += await this.mountCacheCmd(safeJobName, writeStreams);
+            dockerCmd += await this.mountCacheCmd(writeStreams);
 
             dockerCmd += `${this.imageName} sh -c "\n`;
             dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
@@ -826,7 +826,7 @@ export class Job {
         }
 
         time = process.hrtime();
-        const dockerCmdExtras = this.argv.mountCache ? [await this.mountCacheCmd(this.safeJobName, writeStreams)] : [];
+        const dockerCmdExtras = this.argv.mountCache ? [await this.mountCacheCmd(writeStreams)] : [];
         await this.copyOut(cpCmd, stateDir, "artifacts", dockerCmdExtras);
         endTime = process.hrtime(time);
 
