@@ -13,7 +13,7 @@ export class CacheEntry {
 
     async getUniqueCacheName(cwd: string, env: { [key: string]: string }) {
         if (typeof this.key === "string" || this.key == null) {
-            return Utils.expandText(this.key ?? "default");
+            return Utils.expandText(this.key ?? "default", env);
         }
         return "md-" + await Utils.checksumFiles(this.key.files.map(f => {
             return `${cwd}/${Utils.expandText(f, env)}`;
