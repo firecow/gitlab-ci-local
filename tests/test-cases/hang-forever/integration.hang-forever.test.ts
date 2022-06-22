@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -9,7 +9,7 @@ beforeAll(() => {
 });
 
 test("hang-forever <test-debian>", async() => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/hang-forever",
         job: ["test-debian"],
@@ -23,7 +23,7 @@ test("hang-forever <test-debian>", async() => {
 });
 
 test("hang-forever <test-alpine>", async() => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/hang-forever",
         job: ["test-alpine"],
@@ -37,7 +37,7 @@ test("hang-forever <test-alpine>", async() => {
 });
 
 test("hang-forever <test-shell>", async() => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/hang-forever",
         job: ["test-shell"],

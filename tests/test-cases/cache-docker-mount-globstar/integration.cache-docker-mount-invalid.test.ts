@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
@@ -16,7 +16,7 @@ beforeAll(() => {
 
 test("cache-docker-mount-globstar <consume-cache> --needs", async () => {
     try {
-        const writeStreams = new MockWriteStreams();
+        const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/cache-docker-mount-globstar",
             job: ["consume-cache"],

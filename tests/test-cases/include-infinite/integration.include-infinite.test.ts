@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import {assert} from "../../../src/asserts";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -10,7 +10,7 @@ beforeAll(() => {
 
 test("include-infinite", async () => {
     try {
-        const writeStreams = new MockWriteStreams();
+        const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/include-infinite",
         }, writeStreams);

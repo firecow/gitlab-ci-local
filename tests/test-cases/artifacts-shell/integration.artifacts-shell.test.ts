@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import fs from "fs-extra";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -9,7 +9,7 @@ beforeAll(() => {
 });
 
 test.concurrent("artifacts-shell <consume> --needs --shell-isolation", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-shell",
         job: ["consume"],
@@ -27,12 +27,12 @@ test.concurrent("artifacts-shell <consume> --needs --shell-isolation", async () 
 });
 
 test.concurrent("artifacts-shell --file .gitlab-ci-when-never.yml --shell-isolation", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-shell",
         file: ".gitlab-ci-when-never.yml",
         shellIsolation: true,
     }, writeStreams);
 
-     
+
 });

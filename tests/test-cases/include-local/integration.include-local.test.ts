@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -9,7 +9,7 @@ beforeAll(() => {
 });
 
 test("include-local <build-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-local",
         file: ".gitlab-ci.yml",
@@ -24,7 +24,7 @@ test("include-local <build-job>", async () => {
 });
 
 test("include-local <test-job> (short-list)", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-local",
         file: ".gitlab-ci-short-list.yml",
@@ -38,7 +38,7 @@ test("include-local <test-job> (short-list)", async () => {
 });
 
 test("include-local <deploy-job> (short-single)", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-local",
         file: ".gitlab-ci-short-single.yml",

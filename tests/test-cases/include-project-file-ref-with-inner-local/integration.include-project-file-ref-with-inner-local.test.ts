@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initBashSpy, initSpawnSpy} from "../../mocks/utils.mock";
@@ -8,7 +8,7 @@ import fs from "fs-extra";
 test("include-project-file-ref-with-inner-local", async () => {
     const cwd = "tests/test-cases/include-project-file-ref-with-inner-local";
     await fs.rm(`${cwd}/.gitlab-ci-local/`, {recursive: true, force: true});
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     const spyGitRemote = {
         cmdArgs: ["git", "remote", "-v"],
         returnValue: {stdout: "origin\tgit@gitlab.com:gcl/test-hest.git (fetch)\norigin\tgit@gitlab.com:gcl/test-hest.git (push)\n"},

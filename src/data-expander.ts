@@ -6,7 +6,7 @@ import {Job} from "./job";
 import {Service} from "./service";
 import {traverse} from "object-traversal";
 import {CacheEntry} from "./cache-entry";
-import {ExitError} from "./types/exit-error";
+import {ExitError} from "./exit-error";
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {

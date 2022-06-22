@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy, initBashSpy} from "../../mocks/utils.mock";
@@ -14,7 +14,7 @@ beforeAll(() => {
 });
 
 test.concurrent("remote-variables-file <test-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/remote-variables-file",
         job: ["test-job"],

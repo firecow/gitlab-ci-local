@@ -1,6 +1,6 @@
-import {WriteStreams} from "./types/write-streams";
+import {WriteStreams} from "./write-streams";
 
-export class MockWriteStreams implements WriteStreams {
+export class WriteStreamsMock implements WriteStreams {
 
     private currentStderr = "";
     private currentStdout = "";

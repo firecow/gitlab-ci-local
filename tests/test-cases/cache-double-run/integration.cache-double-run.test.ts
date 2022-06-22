@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import fs from "fs-extra";
 import chalk from "chalk";
@@ -12,7 +12,7 @@ beforeAll(() => {
 test.concurrent("cache-double-run <test-job> --shell-isolation", async () => {
     await fs.rm("tests/test-cases/cache-double-run/.gitlab-ci-local", {recursive: true, force:true});
 
-    let writeStreams = new MockWriteStreams();
+    let writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/cache-double-run",
         job: ["test-job"],
@@ -21,7 +21,7 @@ test.concurrent("cache-double-run <test-job> --shell-isolation", async () => {
     const expectedStderr = [chalk`{blueBright test-job} {redBright >} Cache not warm`];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStderr));
 
-    writeStreams = new MockWriteStreams();
+    writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/cache-double-run",
         job: ["test-job"],

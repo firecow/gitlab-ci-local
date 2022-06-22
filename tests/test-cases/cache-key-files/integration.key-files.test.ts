@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import fs from "fs-extra";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -10,7 +10,7 @@ beforeAll(() => {
 
 test.concurrent("cache-key-files <consume-cache> --shell-isolation --needs", async () => {
     await fs.rm("tests/test-cases/cache-key-files/.gitlab-ci-local/cache/", {recursive: true, force:true});
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/cache-key-files",
         job: ["consume-cache"],

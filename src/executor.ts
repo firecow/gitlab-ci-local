@@ -2,18 +2,18 @@ import chalk from "chalk";
 import {Job} from "./job";
 import {assert} from "./asserts";
 import {Argv} from "./argv";
-import {ExitError} from "./types/exit-error";
+import {ExitError} from "./exit-error";
 
-export class JobExecutor {
+export class Executor {
 
     static async runLoop(argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]) {
         let runningJobs = [];
         let startCandidates = [];
 
         do {
-            startCandidates = JobExecutor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
+            startCandidates = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
             startCandidates.forEach(j => j.start().then());
-            runningJobs = JobExecutor.getRunning(jobs);
+            runningJobs = Executor.getRunning(jobs);
             await new Promise<void>((resolve) => { setTimeout(() => { resolve(); }, 5); });
         } while (runningJobs.length > 0);
     }
@@ -23,14 +23,14 @@ export class JobExecutor {
         for (const job of [...new Set<Job>(potentialStarters)]) {
             if (job.started) continue;
 
-            const jobsToWaitFor = JobExecutor.getPastToWaitFor(jobs, stages, job, manuals);
-            if (JobExecutor.isNotFinished(jobsToWaitFor)) {
+            const jobsToWaitFor = Executor.getPastToWaitFor(jobs, stages, job, manuals);
+            if (Executor.isNotFinished(jobsToWaitFor)) {
                 continue;
             }
-            if (job.when === "on_success" && JobExecutor.isPastFailed(jobsToWaitFor)) {
+            if (job.when === "on_success" && Executor.isPastFailed(jobsToWaitFor)) {
                 continue;
             }
-            if (job.when === "on_failure" && !JobExecutor.isPastFailed(jobsToWaitFor)) {
+            if (job.when === "on_failure" && !Executor.isPastFailed(jobsToWaitFor)) {
                 continue;
             }
 

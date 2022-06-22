@@ -3,10 +3,9 @@ import * as dotenv from "dotenv";
 import * as fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
 import camelCase from "camelcase";
-import {ExitError} from "./types/exit-error";
+import {ExitError} from "./exit-error";
 import {Utils} from "./utils";
-import {JobOptions} from "./types/job-options";
-import {WriteStreams} from "./types/write-streams";
+import {WriteStreams} from "./write-streams";
 import {Service} from "./service";
 import {GitData} from "./git-data";
 import {assert} from "./asserts";
@@ -14,6 +13,22 @@ import {CacheEntry} from "./cache-entry";
 import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
+import {CICDVariable} from "./variables-from-files";
+
+interface JobOptions {
+    argv: Argv;
+    writeStreams: WriteStreams;
+    data: any;
+    name: string;
+    baseName: string;
+    pipelineIid: number;
+    gitData: GitData;
+    globalVariables: { [name: string]: any };
+    variablesFromFiles: { [name: string]: CICDVariable };
+    matrixVariables: {[key: string]: string}|null;
+    nodeIndex: number|null;
+    nodesTotal: number;
+}
 
 export class Job {
 

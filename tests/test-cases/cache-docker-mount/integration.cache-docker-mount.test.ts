@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import fs from "fs-extra";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -17,7 +17,7 @@ beforeAll(() => {
 
 test("cache-docker-mount <consume-cache> --mount-cache --needs", async () => {
     await Utils.spawn(["docker", "volume", "rm", "-f", "glc-cache-docker-mount-maven"]);
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/cache-docker-mount",
         job: ["consume-cache"],

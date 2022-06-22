@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import fs from "fs-extra";
@@ -11,7 +11,7 @@ beforeAll(() => {
 });
 
 test("plain", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/plain",
     }, writeStreams);
@@ -24,7 +24,7 @@ test("plain", async () => {
 });
 
 test("plain <test-job> <test-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/plain",
         job: ["test-job", "test-job"],
@@ -37,7 +37,7 @@ test("plain <test-job> <test-job>", async () => {
 });
 
 test("plain <notfound>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     try {
         await handler({
             cwd: "tests/test-cases/plain",

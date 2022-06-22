@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {assert} from "../../../src/asserts";
@@ -11,7 +11,7 @@ beforeAll(() => {
 
 test("no-script <test-job>", async () => {
     try {
-        const writeStreams = new MockWriteStreams();
+        const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/no-script",
             job: ["test-job"],

@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import * as jobExpanders from "../src/job-expanders";
+import * as DataExpander from "../src/data-expander";
 import {Utils} from "../src/utils";
 import {assert} from "../src/asserts";
 
@@ -42,7 +42,7 @@ test("Expand null", () => {
 
 test("extends invalid job", () => {
     try {
-        jobExpanders.jobExtends({
+        DataExpander.jobExtends({
             "test-job": {extends: ["build-job"]},
         });
         expect(true).toBe(false);
@@ -54,7 +54,7 @@ test("extends invalid job", () => {
 
 test("extends infinite loop", () => {
     try {
-        jobExpanders.jobExtends({
+        DataExpander.jobExtends({
             "build-job": {extends: ["test-job"]},
             "test-job": {extends: ["build-job"]},
         });
@@ -75,7 +75,7 @@ test("extends simple", () => {
         },
     };
 
-    jobExpanders.jobExtends(gitlabData);
+    DataExpander.jobExtends(gitlabData);
 
     const expected = {
         "test-job": {

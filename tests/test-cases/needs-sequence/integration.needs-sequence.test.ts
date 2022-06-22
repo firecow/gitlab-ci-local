@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -9,7 +9,7 @@ beforeAll(() => {
 });
 
 test("needs-sequence <deploy-job>", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-sequence",
         job: ["deploy-job"],
@@ -27,7 +27,7 @@ test("needs-sequence <deploy-job>", async () => {
 });
 
 test("needs-sequence <deploy-job> --needs", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-sequence",
         job: ["deploy-job"],
@@ -49,7 +49,7 @@ test("needs-sequence <deploy-job> --needs", async () => {
 });
 
 test("needs-sequence <no-needs-job> --needs", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-sequence",
         job: ["no-needs-job"],
@@ -75,7 +75,7 @@ test("needs-sequence <no-needs-job> --needs", async () => {
 });
 
 test("needs-sequence", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-sequence",
     }, writeStreams);

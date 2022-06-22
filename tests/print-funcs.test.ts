@@ -1,15 +1,15 @@
 import {Utils} from "../src/utils";
-import {MockWriteStreams} from "../src/mock-write-streams";
+import {WriteStreamsMock} from "../src/write-streams-mock";
 
 test("Print job on first index", () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     Utils.printJobNames((txt) => writeStreams.stdout(txt), {name: "Hello"}, 0, [{name: "Hello"}, {name: "Hello"}, {name: "Hello"}]);
     writeStreams.flush();
     expect(writeStreams.stdoutLines).toEqual(["[94mHello[39m, "]);
 });
 
 test("Print job on last index", () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     Utils.printJobNames((txt) => writeStreams.stdout(txt), {name: "Hello"}, 2, [{name: "Hello"}, {name: "Hello"}, {name: "Hello"}]);
     writeStreams.flush();
     expect(writeStreams.stdoutLines).toEqual(["[94mHello[39m"]);

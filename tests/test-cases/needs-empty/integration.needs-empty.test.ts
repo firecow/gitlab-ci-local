@@ -1,4 +1,4 @@
-import {MockWriteStreams} from "../../../src/mock-write-streams";
+import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
@@ -8,12 +8,12 @@ beforeAll(() => {
 });
 
 test("needs-empty <deploy-job> --shell-isolation", async () => {
-    const writeStreams = new MockWriteStreams();
+    const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-empty",
         job: ["deploy-job"],
         shellIsolation: true,
     }, writeStreams);
 
-    
+
 });
