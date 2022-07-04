@@ -130,16 +130,16 @@ export class Utils {
         return text.match(/[$][{]?\w*[}]?/g) != null;
     }
 
-    static getRulesResult(rules: { if?: string; when?: string; allow_failure?: boolean; variables?: { [name: string]: string }}[], variables: { [key: string]: string }): { when: string; allowFailure: boolean; variables: { [name: string]: string }} {
+    static getRulesResult(rules: { if?: string; when?: string; allow_failure?: boolean; variables?: { [name: string]: string } }[], variables: { [key: string]: string }): { when: string; allowFailure: boolean; variables: { [name: string]: string } | undefined } {
         let when = "never";
         let allowFailure = false;
-        let ruleVariable = {};
+        let ruleVariable: { [name: string]: string } | undefined = undefined;
 
         for (const rule of rules) {
             if (Utils.evaluateRuleIf(rule.if || "true", variables)) {
                 when = rule.when ? rule.when : "on_success";
                 allowFailure = rule.allow_failure ?? false;
-                ruleVariable = rule.variables || {};
+                ruleVariable = rule.variables;
                 break;
             }
         }
