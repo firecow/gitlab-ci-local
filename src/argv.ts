@@ -12,8 +12,8 @@ export class Argv {
             this.map.set(key, value);
         }
 
-        this.injectDotenv(`${this.cwd}/.gitlab-ci-local-env`, argv);
         this.injectDotenv(`${this.home}/.gitlab-ci-local/.env`, argv);
+        this.injectDotenv(`${this.cwd}/.gitlab-ci-local-env`, argv);
     }
 
     private injectDotenv(potentialDotenvFilepath: string, argv: any) {

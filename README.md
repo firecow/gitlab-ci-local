@@ -91,7 +91,7 @@ export GLC_VARIABLES="IMAGE=someimage SOMEOTHERIMAGE=someotherimage"
 
 ### DotEnv file
 
-Add a `.gitlab-ci-local-env` file to the current working directory
+Add a `.gitlab-ci-local-env` file to the current working directory or a `.env` file in `$HOME/.gitlab-ci-local`
 
 ```
 # Overrides .gitlab-ci.yml as the default git ci/cd file
