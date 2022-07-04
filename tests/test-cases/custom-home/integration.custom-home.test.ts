@@ -93,3 +93,19 @@ test("custom-home <test-predefined-overwrite>", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test("custom-home <build-job>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/custom-home",
+        job: ["build-job"],
+        home: "tests/test-cases/custom-home/.home",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-predefined-overwrite} {greenBright >} schedule`,
+        chalk`{blueBright test-predefined-overwrite} {greenBright >} 12345678`,
+        chalk`{blueBright build-job                } {greenBright >} Build job`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});

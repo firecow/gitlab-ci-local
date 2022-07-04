@@ -37,3 +37,8 @@ test-predefined-overwrite:
   script:
     - echo ${CI_PIPELINE_SOURCE}
     - echo ${CI_PROJECT_ID}
+
+build-job:
+  needs: [test-predefined-overwrite]
+  script:
+    - echo "Build job"

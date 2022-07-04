@@ -12,9 +12,13 @@ export class Argv {
             this.map.set(key, value);
         }
 
-        const cwd = this.cwd;
-        if (fs.existsSync(`${cwd}/.gitlab-ci-local-env`)) {
-            const config = dotenv.parse(fs.readFileSync(`${cwd}/.gitlab-ci-local-env`));
+        this.injectDotenv(`${this.cwd}/.gitlab-ci-local-env`, argv);
+        this.injectDotenv(`${this.home}/.gitlab-ci-local/.env`, argv);
+    }
+
+    private injectDotenv(potentialDotenvFilepath: string, argv: any) {
+        if (fs.existsSync(potentialDotenvFilepath)) {
+            const config = dotenv.parse(fs.readFileSync(potentialDotenvFilepath));
             for (const [key, value] of Object.entries(config)) {
                 const argKey = camelCase(key);
                 if (argv[argKey] == null) {
