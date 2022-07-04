@@ -166,7 +166,7 @@ export class Job {
             const ruleResult = Utils.getRulesResult(this.rules, this.expandedVariables);
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
-            this.expandedVariables = {...ruleResult.variables, ...this.expandedVariables};
+            this.expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables});
         }
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
