@@ -3,7 +3,10 @@ pre-job:
   stage: .pre
   rules:
     - when: manual
+      variables:
+        VAL: 'im a rules variable'
   script:
+    - echo ${VAL}
     - echo "Hello, pre job manual!"
 
 build-job:

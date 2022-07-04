@@ -23,7 +23,7 @@ interface JobOptions {
     baseName: string;
     pipelineIid: number;
     gitData: GitData;
-    globalVariables: { [name: string]: any };
+    globalVariables: { [name: string]: string };
     variablesFromFiles: { [name: string]: CICDVariable };
     matrixVariables: {[key: string]: string}|null;
     nodeIndex: number|null;
@@ -44,7 +44,7 @@ export class Job {
     readonly dependencies: string[] | null;
     readonly environment?: { name: string; url: string | null };
     readonly jobId: number;
-    readonly rules?: { if: string; when: string; allow_failure: boolean }[];
+    readonly rules?: { if: string; when: string; allow_failure: boolean; variables: { [key: string]: string }}[];
     readonly expandedVariables: { [key: string]: string } = {};
     readonly allowFailure: boolean;
     readonly when: string;
@@ -166,6 +166,7 @@ export class Job {
             const ruleResult = Utils.getRulesResult(this.rules, this.expandedVariables);
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
+            this.expandedVariables = {...ruleResult.variables, ...this.expandedVariables};
         }
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
