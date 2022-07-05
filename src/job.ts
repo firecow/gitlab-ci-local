@@ -827,7 +827,7 @@ export class Job {
                 const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
                 noShellCmd += `ls -1d '${stateDir}/artifacts/${safeJobName}/${expandedPath}' | xargs -n1 rm -rf || true\n`;
             }
-            await Utils.bash(`bash -eo pipefail -c "${noShellCmd}"`, `${cwd}`);
+            return Utils.bash(`bash -eo pipefail -c "${noShellCmd}"`, `${cwd}`);
         }
 
         let time, endTime;
