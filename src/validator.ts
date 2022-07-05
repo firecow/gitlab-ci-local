@@ -9,16 +9,33 @@ export class Validator {
             if (job.needs === null || job.needs.length === 0) continue;
 
             const undefNeed = job.needs.filter((v) => !jobs.some(n => n.baseName === v.job));
-            assert(undefNeed.length !== job.needs.length, chalk`[ {blueBright ${undefNeed.map(n => n.job).join(",")}} ] jobs are needed by {blueBright ${job.name}}, but they cannot be found`);
+            assert(undefNeed.length !== job.needs.length, chalk`needs: [{blueBright ${undefNeed.map(n => n.job).join(",")}}] for {blueBright ${job.name}} cannot be found`);
 
             for (const need of job.needs) {
                 const needJob = jobs.find(j => j.baseName === need.job);
-                assert(needJob != null, chalk`{blueBright need'ed ${need.job}} in ${job.baseName} could not be found`);
+                assert(needJob != null, chalk`needs: [{blueBright ${need.job}}] for {blueBright ${job.baseName}} could not be found`);
                 const needJobStageIndex = stages.indexOf(needJob.stage);
                 const jobStageIndex = stages.indexOf(job.stage);
-                assert(needJobStageIndex <= jobStageIndex, chalk`{blueBright ${needJob.name}} is needed by {blueBright ${job.name}}, but it is in a future stage`);
+                assert(needJobStageIndex <= jobStageIndex, chalk`needs: [{blueBright ${needJob.name}}] for {blueBright ${job.name}} is in a future stage`);
             }
 
+        }
+    }
+
+    private static dependencies(jobs: ReadonlyArray<Job>, stages: readonly string[]) {
+        for (const job of jobs) {
+            if (job.dependencies === null || job.dependencies.length === 0) continue;
+
+            const undefDeps = job.dependencies.filter((j) => !jobs.some(n => n.baseName === j));
+            assert(undefDeps.length !== job.dependencies.length, chalk`dependencies: [{blueBright ${undefDeps.join(",")}}] for {blueBright ${job.name}} cannot be found`);
+
+            for (const dep of job.dependencies) {
+                const depJob = jobs.find(j => j.baseName === dep);
+                assert(depJob != null, chalk`dependencies: [{blueBright ${dep}}] for {blueBright ${job.baseName}} could not be found`);
+                const depJobStageIndex = stages.indexOf(depJob.stage);
+                const jobStageIndex = stages.indexOf(job.stage);
+                assert(depJobStageIndex <= jobStageIndex, chalk`dependencies: [{blueBright ${depJob.name}}] for {blueBright ${job.name}} is in a future stage`);
+            }
         }
     }
 
@@ -56,6 +73,7 @@ export class Validator {
     static async run(jobs: ReadonlyArray<Job>, stages: readonly string[]) {
         this.scriptBlank(jobs);
         this.needs(jobs, stages);
+        this.dependencies(jobs, stages);
         this.cache(jobs);
         this.dependenciesContainment(jobs);
     }
