@@ -1,0 +1,7 @@
+---
+test-job:
+  stage: test
+  script:
+    - echo "Heya"
+  dependencies:
+    - invalid
