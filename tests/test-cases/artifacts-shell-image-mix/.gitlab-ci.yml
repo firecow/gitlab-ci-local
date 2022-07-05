@@ -1,0 +1,18 @@
+---
+produce:
+  stage: build
+  script:
+    - mkdir -p path/
+    - touch path/file1
+    - touch path/file2
+  artifacts:
+    paths: [path/]
+    exclude: [path/file2]
+
+consume:
+  stage: test
+  image: debian:stable-slim
+  dependencies: [produce]
+  script:
+    - test -f path/file1
+    - (! test -f path/file2)

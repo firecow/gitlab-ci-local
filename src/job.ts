@@ -816,7 +816,20 @@ export class Job {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
 
-        if (!this.argv.shellIsolation && !this.imageName || !this.artifacts) return;
+        if (!this.artifacts) return;
+        if (!this.argv.shellIsolation && !this.imageName) {
+            let noShellCmd = "shopt -s globstar nullglob dotglob\n";
+            noShellCmd += `mkdir -p ${stateDir}/artifacts/${safeJobName}\n`;
+            for (const artifactPath of this.artifacts?.paths ?? []) {
+                const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
+                noShellCmd += `rsync -Ra ${expandedPath} ${stateDir}/artifacts/${safeJobName}/. || true\n`;
+            }
+            for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
+                const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
+                noShellCmd += `ls -1d '${stateDir}/artifacts/${safeJobName}/${expandedPath}' | xargs -n1 rm -rf || true\n`;
+            }
+            await Utils.bash(`bash -eo pipefail -c "${noShellCmd}"`, `${cwd}`);
+        }
 
         let time, endTime;
         let cpCmd = "shopt -s globstar nullglob dotglob\n";
