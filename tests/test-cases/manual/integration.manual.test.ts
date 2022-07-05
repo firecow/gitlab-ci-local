@@ -17,6 +17,7 @@ test("manual --manual <build-job> --manual <pre-job>", async () => {
     }, writeStreams);
 
     const expected = [
+        chalk`{blueBright pre-job   } {greenBright >} im a rules variable`,
         chalk`{blueBright pre-job   } {greenBright >} Hello, pre job manual!`,
         chalk`{blueBright build-job } {greenBright >} Hello, build job manual!`,
     ];
