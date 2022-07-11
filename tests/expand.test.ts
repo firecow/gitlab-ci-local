@@ -35,6 +35,11 @@ test("VAR w. brackets negative", () => {
     expect(expanded).toBe("");
 });
 
+test("VAR w/ escapes", () => {
+    const expanded = Utils.expandText("$$VAR $$$VAR $$$$VAR", {VAR: "success"});
+    expect(expanded).toBe("$VAR $success $$VAR");
+});
+
 test("Expand null", () => {
     const expanded = Utils.expandText(null, {});
     expect(expanded).toBe(null);
