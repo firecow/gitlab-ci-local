@@ -46,7 +46,7 @@
     "@types/js-yaml": "4.0.5",
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.4",
-    "@types/yargs": "17.0.10",
+    "@types/yargs": "17.0.11",
     "@typescript-eslint/eslint-plugin": "5.32.0",
     "@typescript-eslint/parser": "5.32.0",
     "axios-mock-adapter": "1.21.1",
