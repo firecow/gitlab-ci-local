@@ -131,4 +131,8 @@ export class Argv {
     get mountCache(): boolean {
         return this.map.get("mountCache") ?? false;
     }
+
+    get artifactsToSource(): boolean {
+        return this.map.get("artifactsToSource") ?? true;
+    }
 }
