@@ -190,7 +190,8 @@ export class Job {
     }
 
     get artifactsToSource() {
-        return this.jobData["artifactsToSource"] == null ? true : this.jobData["artifactsToSource"];
+        if (this.jobData["artifactsToSource"] != null) return this.jobData["artifactsToSource"];
+        return this.argv.artifactsToSource
     }
 
     get chalkJobName() {

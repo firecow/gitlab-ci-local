@@ -2,6 +2,12 @@
 # @NoArtifactsToSource
 produce:
   stage: build
-  script: mkdir -p path/ && touch path/file1
+  script: mkdir -p path/ && touch path/file-descriptor
+  artifacts:
+    paths: [path/]
+
+produce-global:
+  stage: build
+  script: mkdir -p path/ && touch path/file-global
   artifacts:
     paths: [path/]
