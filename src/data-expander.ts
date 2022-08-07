@@ -21,6 +21,14 @@ const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents:
     return parents;
 };
 
+export function globalVariables(gitlabData: any) {
+    for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
+         if (typeof value == "object") {
+             gitlabData.variables[key] = value["value"];
+         }
+    }
+}
+
 export function jobExtends(gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
