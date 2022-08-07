@@ -1,7 +1,6 @@
 ---
 name: build
 on:
-  pull_request:
   push:
     tags-ignore:
       - '**'
