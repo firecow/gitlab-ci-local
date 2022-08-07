@@ -251,7 +251,7 @@ produce:
 
 A global configuration is possible when setting the following flag
 ```shell
-gitlab-ci-local --artifactsToSource false
+gitlab-ci-local --no-artifacts-to-Source
 ```
 
 ### Includes

@@ -145,6 +145,11 @@ import {Argv} from "./argv";
             description: "Fetch all external includes one more time",
             requiresArg: false,
         })
+        .option("artifacts-to-source", {
+            type: "boolean",
+            description: "Do not copy the generated artifacts into cwd.",
+            requiresArg: false,
+        })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
                 const argv = new Argv({...yargsArgv, autoCompleting: true});
