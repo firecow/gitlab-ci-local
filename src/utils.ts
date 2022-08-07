@@ -160,7 +160,7 @@ export class Utils {
 
     static getRulesResult(
         rules: { if?: string; when?: string; exists ?: string[]; allow_failure?: boolean; variables?: { [name: string]: string } }[], variables: { [key: string]: string }
-    ): { when: string; allowFailure: boolean; exists ?: string[]; variables: { [name: string]: string } | undefined; } {
+    ): { when: string; allowFailure: boolean; exists ?: string[]; variables: { [name: string]: string } | undefined } {
         let when = "never";
         let allowFailure = false;
         let ruleVariable: { [name: string]: string } | undefined = undefined;

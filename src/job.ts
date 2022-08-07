@@ -49,7 +49,7 @@ export class Job {
         when: string;
         exists: string[];
         allow_failure: boolean;
-        variables: { [key: string]: string }
+        variables: { [key: string]: string };
     }[];
     readonly expandedVariables: { [key: string]: string } = {};
     readonly allowFailure: boolean;
@@ -343,32 +343,32 @@ export class Job {
     }
 
     shouldExecuteBasedOnRuleExisting(): boolean {
-        if ( this.exists == undefined || this.exists.length == 0 ) return true
+        if ( this.exists == undefined || this.exists.length == 0 ) return true;
 
         function searchFiles(dirPath: string, arrayOfFiles: string[]): string[] {
-            const filesTmp = fs.readdirSync(dirPath)
+            const filesTmp = fs.readdirSync(dirPath);
     
             filesTmp.forEach(function(fileTmp: string) {
-                const filePath = dirPath + "/" + fileTmp
+                const filePath = dirPath + "/" + fileTmp;
                 if (fs.statSync(filePath).isDirectory()) {
-                    arrayOfFiles = searchFiles(filePath, arrayOfFiles)
+                    arrayOfFiles = searchFiles(filePath, arrayOfFiles);
                 } else {
-                    arrayOfFiles.push(filePath)
+                    arrayOfFiles.push(filePath);
                 }
             })
     
-            return arrayOfFiles
+            return arrayOfFiles;
         }
 
 
-        let files = searchFiles(this.argv.cwd, [])
+        let files = searchFiles(this.argv.cwd, []);
         
-        const strippedFiles: string[] = []
+        const strippedFiles: string[] = [];
         for (const file of files ) {
-            strippedFiles.push(file.replace(this.argv.cwd + "/", ""))
+            strippedFiles.push(file.replace(this.argv.cwd + "/", ""));
         }
 
-        var minimatch = require("minimatch")
+        var minimatch = require("minimatch");
         for (const pattern of this.exists) {
             for (const strippedFile of strippedFiles) {
                 if(minimatch(strippedFile,pattern, {dot: true})) {
