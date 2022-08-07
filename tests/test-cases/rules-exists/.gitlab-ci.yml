@@ -1,0 +1,32 @@
+---
+executed-job-file:
+  stage: build
+  script:
+    - echo "File Executed!"
+  rules:
+    - exists:
+       - exists.file
+
+executed-job-dir:
+  stage: build
+  script:
+    - echo "Directory Executed!"
+  rules:
+    - exists:
+       - existsDir/*
+
+skipped-job-file:
+  when: always
+  script:
+    - echo "File Skipped!"
+  rules:
+    - exists:
+       - not-exists.file
+
+skipped-job-dir:
+  when: always
+  script:
+    - echo "Directory Skipped!"
+  rules:
+    - exists:
+       - notExistsDir/*
