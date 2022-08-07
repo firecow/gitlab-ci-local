@@ -13,6 +13,7 @@ import {CacheEntry} from "./cache-entry";
 import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
+import minimatch from "minimatch";
 import {CICDVariable} from "./variables-from-files";
 
 interface JobOptions {
@@ -355,20 +356,18 @@ export class Job {
                 } else {
                     arrayOfFiles.push(filePath);
                 }
-            })
+            });
     
             return arrayOfFiles;
         }
 
-
-        let files = searchFiles(this.argv.cwd, []);
+        const files = searchFiles(this.argv.cwd, []);
         
         const strippedFiles: string[] = [];
         for (const file of files ) {
             strippedFiles.push(file.replace(this.argv.cwd + "/", ""));
         }
 
-        var minimatch = require("minimatch");
         for (const pattern of this.exists) {
             for (const strippedFile of strippedFiles) {
                 if(minimatch(strippedFile,pattern, {dot: true})) {
