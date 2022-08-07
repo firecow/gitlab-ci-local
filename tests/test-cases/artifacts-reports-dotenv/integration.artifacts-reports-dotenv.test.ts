@@ -34,6 +34,7 @@ test("artifacts-reports-dotenv <deploy-shell-noiso> --needs", async () => {
         cwd: "tests/test-cases/artifacts-reports-dotenv",
         job: ["deploy-shell-noiso"],
         needs: true,
+        shellIsolation: false,
     }, writeStreams);
 
 });
