@@ -6,6 +6,7 @@ import base64url from "base64url";
 import execa from "execa";
 import {assert} from "./asserts";
 import {CICDVariable} from "./variables-from-files";
+import { exists } from "fs-extra";
 
 type ExpandWith = {
     unescape: string;
@@ -158,21 +159,25 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult(rules: { if?: string; when?: string; allow_failure?: boolean; variables?: { [name: string]: string } }[], variables: { [key: string]: string }): { when: string; allowFailure: boolean; variables: { [name: string]: string } | undefined } {
+    static getRulesResult(
+        rules: { if?: string; when?: string; exists ?: string[]; allow_failure?: boolean; variables?: { [name: string]: string } }[], variables: { [key: string]: string }
+    ): { when: string; allowFailure: boolean; exists ?: string[]; variables: { [name: string]: string } | undefined; } {
         let when = "never";
         let allowFailure = false;
         let ruleVariable: { [name: string]: string } | undefined = undefined;
+        let ruleExists : string[] | undefined = [];
 
         for (const rule of rules) {
             if (Utils.evaluateRuleIf(rule.if || "true", variables)) {
                 when = rule.when ? rule.when : "on_success";
                 allowFailure = rule.allow_failure ?? false;
                 ruleVariable = rule.variables;
+                ruleExists = rule.exists;
                 break;
             }
         }
 
-        return {when, allowFailure, variables: ruleVariable};
+        return {when, allowFailure, exists: ruleExists, variables: ruleVariable};
     }
 
     static evaluateRuleIf(ruleIf: string, envs: { [key: string]: string }) {

@@ -1,9 +1,7 @@
 ---
 
 variables:
-  PIPELINE_VARIABLE:
-    value: pipeline-value
-    description: "Random description"
+  PIPELINE_VARIABLE: pipeline-value
   OVERRIDDEN_BY_JOB: pipeline-value
   CI_PIPELINE_ID: pipeline-value
 
