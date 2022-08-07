@@ -6,7 +6,6 @@ import base64url from "base64url";
 import execa from "execa";
 import {assert} from "./asserts";
 import {CICDVariable} from "./variables-from-files";
-import { exists } from "fs-extra";
 
 type ExpandWith = {
     unescape: string;
