@@ -249,6 +249,11 @@ produce:
   artifacts: { paths: [path/] }
 ```
 
+A global configuration is possible when setting the following flag
+```shell
+gitlab-ci-local --no-artifacts-to-source
+```
+
 ### Includes
 
 Includes from external sources are only fetched once. Use `--fetch-includes` to invoke an external fetching rutine.
