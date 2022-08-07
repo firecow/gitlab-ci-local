@@ -815,40 +815,27 @@ export class Job {
         const safeJobName = this.safeJobName;
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
+        const artifactsPath = !this.argv.shellIsolation && !this.imageName ? `${stateDir}/artifacts` : "../../artifacts";
 
         if (!this.artifacts) return;
-        if (!this.argv.shellIsolation && !this.imageName) {
-            let noShellCmd = "shopt -s globstar nullglob dotglob\n";
-            noShellCmd += `mkdir -p ${stateDir}/artifacts/${safeJobName}\n`;
-            for (const artifactPath of this.artifacts?.paths ?? []) {
-                const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
-                noShellCmd += `rsync -Ra ${expandedPath} ${stateDir}/artifacts/${safeJobName}/. || true\n`;
-            }
-            for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
-                const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
-                noShellCmd += `ls -1d '${stateDir}/artifacts/${safeJobName}/${expandedPath}' | xargs -n1 rm -rf || true\n`;
-            }
-            return Utils.bash(`bash -eo pipefail -c "${noShellCmd}"`, `${cwd}`);
-        }
 
         let time, endTime;
         let cpCmd = "shopt -s globstar nullglob dotglob\n";
-        cpCmd += `mkdir -p ../../artifacts/${safeJobName}\n`;
+        cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}\n`;
         for (const artifactPath of this.artifacts?.paths ?? []) {
             const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
-            cpCmd += `rsync -Ra ${expandedPath} ../../artifacts/${safeJobName}/. || true\n`;
+            cpCmd += `rsync -Ra ${expandedPath} ${artifactsPath}/${safeJobName}/. || true\n`;
         }
-
         for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
             const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
-            cpCmd += `ls -1d '../../artifacts/${safeJobName}/${expandedPath}' | xargs -n1 rm -rf || true\n`;
+            cpCmd += `ls -1d '${artifactsPath}/${safeJobName}/${expandedPath}' | xargs -n1 rm -rf || true\n`;
         }
 
         const reportDotenv = this.artifacts.reports?.dotenv ?? null;
         if (reportDotenv != null) {
-            cpCmd += `mkdir -p ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
+            cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
             cpCmd += `if [ -f ${reportDotenv} ]; then\n`;
-            cpCmd += `  rsync -Ra ${reportDotenv} ../../artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
+            cpCmd += `  rsync -Ra ${reportDotenv} ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
             cpCmd += "fi\n";
             if (!await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) {
                 writeStreams.stderr(chalk`${this.chalkJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
@@ -867,7 +854,7 @@ export class Job {
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright exported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
-        if (this.artifactsToSource) {
+        if (this.artifactsToSource && (this.argv.shellIsolation || this.imageName)) {
             time = process.hrtime();
             await Utils.bash(`rsync --exclude=/.gitlab-ci-reports/ -a ${cwd}/${stateDir}/artifacts/${safeJobName}/. ${cwd}`);
             if (reportDotenv != null) {
@@ -892,6 +879,8 @@ export class Job {
             await Utils.bash(`docker cp ${containerId}:/${type}/. ${stateDir}/${type}/.`, cwd);
         } else if (this.argv.shellIsolation) {
             await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}/${stateDir}/builds/${safeJobName}`);
+        } else if (!this.argv.shellIsolation) {
+            await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}`);
         }
     }
 

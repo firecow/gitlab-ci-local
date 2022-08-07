@@ -33,6 +33,4 @@ test.concurrent("artifacts-shell --file .gitlab-ci-when-never.yml --shell-isolat
         file: ".gitlab-ci-when-never.yml",
         shellIsolation: true,
     }, writeStreams);
-
-
 });
