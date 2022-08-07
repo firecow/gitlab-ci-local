@@ -27,7 +27,6 @@ export class Commander {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
-
         let potentialStarters: Job[] = [];
         const jobSet = needs ? new Set(jobs) : new Set<Job>();
         jobArgs.forEach(jobName => {

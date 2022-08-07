@@ -92,7 +92,6 @@ export class Parser {
         DataExpander.beforeScripts(gitlabData);
         DataExpander.afterScripts(gitlabData);
         DataExpander.scripts(gitlabData);
-        DataExpander.globalVariables(gitlabData);
         DataExpander.flattenLists(gitlabData);
 
         assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
