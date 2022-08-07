@@ -1,12 +1,12 @@
 ---
 name: build
 on:
-  pull_request:
   push:
-    branches:
-      - master
     tags-ignore:
       - '**'
+    branches:
+      - master
+  pull_request:
 
 jobs:
 
