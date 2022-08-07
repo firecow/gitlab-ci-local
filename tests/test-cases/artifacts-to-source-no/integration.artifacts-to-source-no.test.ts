@@ -17,5 +17,18 @@ test.concurrent("artifacts-to-source-no <produce> --needs --shell-isolation", as
         shellIsolation: true,
     }, writeStreams);
 
-    expect(await fs.pathExists("tests/test-cases/artifacts-to-source-no/path/file1")).toEqual(false);
+    expect(await fs.pathExists("tests/test-cases/artifacts-to-source-no/path/file-descriptor")).toEqual(false);
+});
+
+test.concurrent("artifacts-to-source-no <produce-global> --needs --shell-isolation", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/artifacts-to-source-no",
+        job: ["produce-global"],
+        needs: true,
+        shellIsolation: true,
+        artifactsToSource: false,
+    }, writeStreams);
+
+    expect(await fs.pathExists("tests/test-cases/artifacts-to-source-no/path/file-global")).toEqual(false);
 });

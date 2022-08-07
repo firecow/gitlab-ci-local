@@ -7,8 +7,12 @@ import execa from "execa";
 import {assert} from "./asserts";
 import {CICDVariable} from "./variables-from-files";
 
-export class Utils {
+type ExpandWith = {
+    unescape: string;
+    variable: (name: string) => string;
+};
 
+export class Utils {
     static bash(shellScript: string, cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
         return execa(shellScript, {shell: "bash", cwd, env, all: true});
     }
@@ -67,13 +71,29 @@ export class Utils {
         }
     }
 
-    static expandText(text: any, envs: { [key: string]: string }) {
+    private static expandTextWith(text: any, expandWith: ExpandWith) {
         if (typeof text !== "string") {
             return text;
         }
-        return text.replace(/[$][{]?\w*[}]?/g, (match) => {
-            const sub = envs[match.replace(/^[$][{]?/, "").replace(/[}]?$/, "")];
-            return sub || "";
+
+        return text.replace(
+            /(\$\$)|\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}?|\$([a-zA-Z_][a-zA-Z0-9_]*)/g,
+            (_match, escape, var1, var2) => {
+                if (typeof escape !== "undefined") {
+                    return expandWith.unescape;
+                } else {
+                    const name = var1 || var2;
+                    assert(name, "unexpected unset capture group");
+                    return expandWith.variable(name);
+                }
+            }
+        );
+    }
+
+    static expandText(text: any, envs: { [key: string]: string }) {
+        return this.expandTextWith(text, {
+            unescape: "$",
+            variable: (name) => envs[name] ?? "",
         });
     }
 
@@ -86,17 +106,32 @@ export class Utils {
     }
 
     static expandRecursive(variables: { [key: string]: string }) {
-        let variableSyntaxFound, i = 0;
+        let expandedAnyVariables, i = 0;
         do {
             assert(i < 100, "Recursive variable expansion reached 100 iterations");
+            expandedAnyVariables = false;
             for (const [k, v] of Object.entries(variables)) {
                 const envsWithoutSelf = {...variables};
                 delete envsWithoutSelf[k];
-                variables[k] = Utils.expandText(v, envsWithoutSelf);
+                // If the $$'s are converted to single $'s now, then the next
+                // iteration, they might be interpreted as variables, even
+                // though they were *explicitly* escaped. To work around this,
+                // leave the '$$'s as the same value, then only unescape them at
+                // the very end.
+                variables[k] = Utils.expandTextWith(v, {
+                    unescape: "$$",
+                    variable: (name) => envsWithoutSelf[name] ?? "",
+                });
+                expandedAnyVariables ||= variables[k] !== v;
             }
-            variableSyntaxFound = Object.values(variables).find((v) => Utils.textHasVariable(v));
             i++;
-        } while (variableSyntaxFound);
+        } while (expandedAnyVariables);
+
+        // Now that recursive expansion has taken place, unescape $$'s.
+        for (const [k, v] of Object.entries(variables)) {
+            variables[k] = Utils.expandText(v, {});
+        }
+
         return variables;
     }
 
@@ -123,13 +158,6 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static textHasVariable(text?: any): boolean {
-        if (typeof text !== "string") {
-            return false;
-        }
-        return text.match(/[$][{]?\w*[}]?/g) != null;
-    }
-
     static getRulesResult(rules: { if?: string; when?: string; allow_failure?: boolean; variables?: { [name: string]: string } }[], variables: { [key: string]: string }): { when: string; allowFailure: boolean; variables: { [name: string]: string } | undefined } {
         let when = "never";
         let allowFailure = false;
@@ -151,9 +179,9 @@ export class Utils {
         let evalStr = ruleIf;
 
         // Expand all variables
-        evalStr = evalStr.replace(/[$][A-Z\d_]+/g, (match) => {
-            const sub = envs[match.replace(/^[$]/, "")];
-            return sub != null ? `'${sub}'` : "null";
+        evalStr = this.expandTextWith(evalStr, {
+            unescape: JSON.stringify("$"),
+            variable: (name) => JSON.stringify(envs[name] ?? null),
         });
 
         // Convert =~ to match function
