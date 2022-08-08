@@ -55,7 +55,7 @@ export class Job {
     readonly expandedVariables: { [key: string]: string } = {};
     readonly allowFailure: boolean;
     readonly when: string;
-    readonly exists?: string[];
+    readonly exists: string[];
     readonly pipelineIid: number;
     readonly gitData: GitData;
 

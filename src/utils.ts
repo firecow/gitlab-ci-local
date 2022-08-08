@@ -159,19 +159,19 @@ export class Utils {
     }
 
     static getRulesResult(
-        rules: { if?: string; when?: string; exists ?: string[]; allow_failure?: boolean; variables?: { [name: string]: string } }[], variables: { [key: string]: string }
-    ): { when: string; allowFailure: boolean; exists ?: string[]; variables: { [name: string]: string } | undefined } {
+        rules: { if?: string; when?: string; exists ?: string[] | undefined; allow_failure?: boolean; variables?: { [name: string]: string } }[], variables: { [key: string]: string }
+    ): { when: string; allowFailure: boolean; exists : string[]; variables: { [name: string]: string } | undefined } {
         let when = "never";
         let allowFailure = false;
         let ruleVariable: { [name: string]: string } | undefined = undefined;
-        let ruleExists : string[] | undefined = [];
+        let ruleExists : string[] = [];
 
         for (const rule of rules) {
             if (Utils.evaluateRuleIf(rule.if || "true", variables)) {
                 when = rule.when ? rule.when : "on_success";
                 allowFailure = rule.allow_failure ?? false;
                 ruleVariable = rule.variables;
-                ruleExists = rule.exists;
+                ruleExists = rule.exists ?? [];
                 break;
             }
         }
