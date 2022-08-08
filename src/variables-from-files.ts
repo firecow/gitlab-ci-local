@@ -58,7 +58,6 @@ export class VariablesFromFiles {
         };
         const addToVariables = async (key: string, val: any, scopePriority: number) => {
             const {type, values} = unpack(val);
-            console.log(key, type, values)
             for (const [matcher, content] of Object.entries(values)) {
                 assert(typeof content == "string", `${key}.${matcher} content must be text or multiline text`);
                 if (type === "variable" || (type === null && !content.match(/^[/|~]/))) {
