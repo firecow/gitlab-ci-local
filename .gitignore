@@ -13,3 +13,5 @@
 /coverage
 
 !/docker-npm
+
+/.gitlab-ci-local/
