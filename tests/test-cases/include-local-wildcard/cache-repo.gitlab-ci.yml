@@ -1,0 +1,4 @@
+cache-repo:
+  stage: build
+  script:
+    - echo "cache-repo executed!"

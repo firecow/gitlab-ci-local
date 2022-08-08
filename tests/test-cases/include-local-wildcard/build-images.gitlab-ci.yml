@@ -1,0 +1,4 @@
+build-images:
+  stage: build
+  script:
+    - echo "build-images executed!"
