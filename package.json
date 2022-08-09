@@ -15,7 +15,7 @@
     "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
     "audit": "npm audit --parseable",
     "lint": "npx eslint .",
-    "test": "jest --testTimeout 30000",
+    "test": "npm run build && jest --testTimeout 30000",
     "coverage": "jest --coverage --testTimeout 30000",
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
@@ -30,6 +30,7 @@
     "execa": "5.1.1",
     "fs-extra": "10.1.0",
     "js-yaml": "4.1.0",
+    "minimatch": "^5.1.0",
     "object-traversal": "1.0.1",
     "pretty-hrtime": "1.0.3",
     "source-map-support": "0.5.21",
