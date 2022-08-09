@@ -173,7 +173,6 @@ export class Parser {
         }
 
         const fileContent = await fs.readFile(`${filePath}`, "utf8");
-        console.log(fileContent)
         const fileSplit = fileContent.split(/\r?\n/g);
         const fileSplitClone = fileSplit.slice();
 
