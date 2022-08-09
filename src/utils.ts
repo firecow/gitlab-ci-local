@@ -224,4 +224,30 @@ export class Utils {
         const result = await Promise.all(promises);
         return checksum(result.join(""));
     }
+
+    static searchFiles(dirPath: string, arrayOfFiles: string[]): string[] {
+        const filesTmp = fs.readdirSync(dirPath);
+
+        filesTmp.forEach(function(fileTmp: string) {
+            const filePath = dirPath + "/" + fileTmp;
+            if (fs.statSync(filePath).isDirectory()) {
+                arrayOfFiles = Utils.searchFiles(filePath, arrayOfFiles);
+            } else {
+                arrayOfFiles.push(filePath);
+            }
+        });
+
+        return arrayOfFiles;
+    }
+
+    static searchFilesStripped(dirPath: string): string[]{
+        const files = Utils.searchFiles(dirPath, []);
+
+        const strippedFiles: string[] = [];
+        for (const file of files ) {
+            strippedFiles.push(file.replace(dirPath + "/", ""));
+        }
+
+        return strippedFiles
+    }
 }
