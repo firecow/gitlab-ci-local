@@ -7,6 +7,7 @@ import {assert} from "./asserts";
 import chalk from "chalk";
 import {Parser} from "./parser";
 import axios from "axios";
+import minimatch from "minimatch";
 
 export class ParserIncludes {
 
@@ -22,8 +23,9 @@ export class ParserIncludes {
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
             if (value["local"]) {
-                const fileExists = fs.existsSync(`${cwd}/${value["local"]}`);
-                if (!fileExists) {
+                let filesStripped = Utils.searchFilesStripped(cwd);
+                const files = minimatch.match(filesStripped, `${value["local"]}`)
+                if (files.length == 0) {
                     throw new ExitError(`Local include file cannot be found ${value["local"]}`);
                 }
             } else if (value["file"]) {
@@ -44,8 +46,12 @@ export class ParserIncludes {
 
         for (const value of include) {
             if (value["local"]) {
-                const localDoc = await Parser.loadYaml(`${cwd}/${value.local}`);
-                includeDatas = includeDatas.concat(await this.init(localDoc, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes));
+                let filesStripped = Utils.searchFilesStripped(cwd);
+                const files = minimatch.match(filesStripped, `${value["local"]}`)
+                for (const localFile of files) {
+                    const content = await Parser.loadYaml(`${cwd}/${localFile}`);
+                    includeDatas = includeDatas.concat(await this.init(content, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes));
+                }
             } else if (value["project"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
                     const fileDoc = await Parser.loadYaml(`${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`);
