@@ -23,8 +23,8 @@ export class ParserIncludes {
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
             if (value["local"]) {
-                let filesStripped = Utils.searchFilesStripped(cwd);
-                const files = minimatch.match(filesStripped, `${value["local"]}`)
+                const filesStripped = Utils.searchFilesStripped(cwd);
+                const files = minimatch.match(filesStripped, `${value["local"]}`);
                 if (files.length == 0) {
                     throw new ExitError(`Local include file cannot be found ${value["local"]}`);
                 }
@@ -46,8 +46,8 @@ export class ParserIncludes {
 
         for (const value of include) {
             if (value["local"]) {
-                let filesStripped = Utils.searchFilesStripped(cwd);
-                const files = minimatch.match(filesStripped, `${value["local"]}`)
+                const filesStripped = Utils.searchFilesStripped(cwd);
+                const files = minimatch.match(filesStripped, `${value["local"]}`);
                 for (const localFile of files) {
                     const content = await Parser.loadYaml(`${cwd}/${localFile}`);
                     includeDatas = includeDatas.concat(await this.init(content, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes));
