@@ -248,6 +248,6 @@ export class Utils {
             strippedFiles.push(file.replace(dirPath + "/", ""));
         }
 
-        return strippedFiles
+        return strippedFiles;
     }
 }
