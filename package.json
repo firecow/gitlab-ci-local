@@ -51,7 +51,7 @@
     "@types/yargs": "17.0.11",
     "@typescript-eslint/eslint-plugin": "5.33.0",
     "@typescript-eslint/parser": "5.33.0",
-    "axios-mock-adapter": "1.21.1",
+    "axios-mock-adapter": "1.21.2",
     "depcheck": "1.4.3",
     "eslint": "8.21.0",
     "jest": "28.1.3",
