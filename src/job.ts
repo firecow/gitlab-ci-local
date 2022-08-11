@@ -52,13 +52,14 @@ export class Job {
         allow_failure: boolean;
         variables: { [key: string]: string };
     }[];
-    readonly expandedVariables: { [key: string]: string } = {};
+
     readonly allowFailure: boolean;
     readonly when: string;
     readonly exists: string[];
     readonly pipelineIid: number;
     readonly gitData: GitData;
 
+    private _expandedVariables: {[key: string]: string} = {};
     private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
     private _coveragePercent: string | null = null;
@@ -156,7 +157,7 @@ export class Job {
 
         const matrixVariables = opt.matrixVariables ?? {};
         // Merge and expand variables recursive
-        this.expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables});
+        this._expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables});
 
         // Expand environment
         if (this.environment) {
@@ -168,7 +169,7 @@ export class Job {
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
         // Merge and expand after finding env matched variables
-        this.expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables});
+        this._expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables});
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
@@ -176,7 +177,7 @@ export class Job {
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
             this.exists = ruleResult.exists;
-            this.expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables});
+            this._expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables});
         }
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
@@ -197,6 +198,10 @@ export class Job {
                 });
             }
         }
+    }
+
+    get expandedVariables() {
+        return this._expandedVariables;
     }
 
     get artifactsToSource() {
@@ -266,11 +271,11 @@ export class Job {
         return this._jobNamePad ?? 0;
     }
 
-    get producers(): { name: string; dotenv: string | null }[] | null {
+    get producers(): {name: string; dotenv: string | null}[] | null {
         return this._producers;
     }
 
-    set producers(producers: { name: string; dotenv: string | null }[] | null) {
+    set producers(producers: {name: string; dotenv: string | null}[] | null) {
         assert(this._producers == null, "this._producers can only be set once");
         this._producers = producers;
     }
@@ -348,7 +353,7 @@ export class Job {
 
         function searchFiles(dirPath: string, arrayOfFiles: string[]): string[] {
             const filesTmp = fs.readdirSync(dirPath);
-    
+
             filesTmp.forEach(function(fileTmp: string) {
                 const filePath = dirPath + "/" + fileTmp;
                 if (fs.statSync(filePath).isDirectory()) {
@@ -357,12 +362,12 @@ export class Job {
                     arrayOfFiles.push(filePath);
                 }
             });
-    
+
             return arrayOfFiles;
         }
 
         const files = searchFiles(this.argv.cwd, []);
-        
+
         const strippedFiles: string[] = [];
         for (const file of files ) {
             strippedFiles.push(file.replace(this.argv.cwd + "/", ""));
@@ -380,12 +385,14 @@ export class Job {
     }
 
     async start(): Promise<void> {
+        this._running = true;
+
         const argv = this.argv;
         const startTime = process.hrtime();
         const writeStreams = this.writeStreams;
+        const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams);
         const safeJobname = this.safeJobName;
-
-        this._running = true;
+        this._expandedVariables = {...this.expandedVariables, ...reportsDotenvVariables};
 
         await fs.ensureFile(`${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`);
         await fs.truncate(`${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`);
@@ -522,7 +529,6 @@ export class Job {
         const buildVolumeName = this.buildVolumeName;
         const tmpVolumeName = this.tmpVolumeName;
         const writeStreams = this.writeStreams;
-        const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams);
         let time;
         let endTime;
 
@@ -602,7 +608,7 @@ export class Job {
                 }
             }
 
-            for (const key of Object.keys({...this.expandedVariables, ...reportsDotenvVariables})) {
+            for (const key of Object.keys(this.expandedVariables)) {
                 dockerCmd += `-e ${key} `;
             }
 
@@ -628,7 +634,7 @@ export class Job {
             dockerCmd += "\texit 1\n";
             dockerCmd += "fi\n\"";
 
-            const {stdout: containerId} = await Utils.bash(dockerCmd, cwd, {...this.expandedVariables, ...reportsDotenvVariables});
+            const {stdout: containerId} = await Utils.bash(dockerCmd, cwd, this.expandedVariables);
             this._containerId = containerId;
             this._containersToClean.push(this._containerId);
 
@@ -682,7 +688,7 @@ export class Job {
         const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
             cwd,
             shell: "bash",
-            env: {...this.expandedVariables, ...reportsDotenvVariables},
+            env: this.expandedVariables,
         });
 
         const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
@@ -745,20 +751,20 @@ export class Job {
         const producers = this.producers;
         let producerReportsEnvs = {};
         for (const producer of producers ?? []) {
-            if (producer.dotenv === null) continue;
+            const producerDotenv = Utils.expandText(producer.dotenv, this.expandedVariables);
+            if (producerDotenv === null) continue;
 
             const safeProducerName = Utils.getSafeJobName(producer.name);
-            let dotenvFile;
-            if (!this.argv.shellIsolation && !this.imageName) {
-                dotenvFile = `${cwd}/${producer.dotenv}`;
+            const dotenvFolder = `${cwd}/${stateDir}/artifacts/${safeProducerName}/.gitlab-ci-reports/dotenv/`;
+            if (await fs.pathExists(dotenvFolder)) {
+                const dotenvFiles = (await Utils.spawn(["find", ".", "-type", "f"], dotenvFolder)).stdout.split("\n");
+                for (const dotenvFile of dotenvFiles) {
+                    if (dotenvFile == "") continue;
+                    const producerReportEnv = dotenv.parse(await fs.readFile(`${dotenvFolder}/${dotenvFile}`));
+                    producerReportsEnvs = {...producerReportsEnvs, ...producerReportEnv};
+                }
             } else {
-                dotenvFile = `${cwd}/${stateDir}/artifacts/${safeProducerName}/.gitlab-ci-reports/dotenv/${producer.dotenv}`;
-            }
-            if (await fs.pathExists(dotenvFile)) {
-                const producerReportEnv = dotenv.parse(await fs.readFile(dotenvFile));
-                producerReportsEnvs = {...producerReportsEnvs, ...producerReportEnv};
-            } else {
-                writeStreams.stderr(chalk`${this.chalkJobName} {yellow '${producer.dotenv}' produced by '${producer.name}' could not be found}\n`);
+                writeStreams.stderr(chalk`${this.chalkJobName} {yellow reports.dotenv produced by '${producer.name}' could not be found}\n`);
             }
 
         }
@@ -877,21 +883,22 @@ export class Job {
             cpCmd += `ls -1d '${artifactsPath}/${safeJobName}/${expandedPath}' | xargs -n1 rm -rf || true\n`;
         }
 
-        const reportDotenv = this.artifacts.reports?.dotenv ?? null;
+        const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, this.expandedVariables);
         if (reportDotenv != null) {
             cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
             cpCmd += `if [ -f ${reportDotenv} ]; then\n`;
             cpCmd += `  rsync -Ra ${reportDotenv} ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
             cpCmd += "fi\n";
-            if (!await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) {
-                writeStreams.stderr(chalk`${this.chalkJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
-            }
         }
 
         time = process.hrtime();
         const dockerCmdExtras = this.argv.mountCache ? [await this.mountCacheCmd(writeStreams)] : [];
         await this.copyOut(cpCmd, stateDir, "artifacts", dockerCmdExtras);
         endTime = process.hrtime(time);
+
+        if (reportDotenv != null && !await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) {
+            writeStreams.stderr(chalk`${this.chalkJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
+        }
 
         const readdir = await fs.readdir(`${cwd}/${stateDir}/artifacts/${safeJobName}`);
         if (readdir.length === 0) {
