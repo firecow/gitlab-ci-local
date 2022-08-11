@@ -8,7 +8,7 @@ export class WriteStreamsMock implements WriteStreams {
     readonly stderrLines: string[] = [];
     readonly stdoutLines: string[] = [];
 
-    stderr(txt: string): void {
+    stderr (txt: string): void {
         this.currentStderr += txt;
         if (txt.endsWith("\n")) {
             this.stderrLines.push(this.currentStderr.slice(0, -1));
@@ -16,7 +16,7 @@ export class WriteStreamsMock implements WriteStreams {
         }
     }
 
-    stdout(txt: string): void {
+    stdout (txt: string): void {
         this.currentStdout += txt;
         if (txt.endsWith("\n")) {
             this.stdoutLines.push(this.currentStdout.slice(0, -1));
@@ -24,7 +24,7 @@ export class WriteStreamsMock implements WriteStreams {
         }
     }
 
-    flush(): void {
+    flush (): void {
         if (this.currentStdout.length != 0) {
             this.stdout("\n");
         }
