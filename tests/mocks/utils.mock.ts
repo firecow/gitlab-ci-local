@@ -1,7 +1,7 @@
 import {when} from "jest-when";
 import {Utils} from "../../src/utils";
 
-export function initBashSpyReject(spyMocks: {cmd: string; rejection: string}[]) {
+export function initBashSpyReject (spyMocks: {cmd: string; rejection: string}[]) {
     const spyOn = jest.spyOn(Utils, "bash");
 
     for (const spyMock of spyMocks) {
@@ -9,7 +9,7 @@ export function initBashSpyReject(spyMocks: {cmd: string; rejection: string}[]) 
     }
 }
 
-export function initBashSpy(spyMocks: {cmd: string; returnValue: any}[]) {
+export function initBashSpy (spyMocks: {cmd: string; returnValue: any}[]) {
     const spyOn = jest.spyOn(Utils, "bash");
 
     for (const spyMock of spyMocks) {
@@ -17,7 +17,7 @@ export function initBashSpy(spyMocks: {cmd: string; returnValue: any}[]) {
     }
 }
 
-export function initSpawnSpy(spyMocks: {cmdArgs: string[]; returnValue: any}[]) {
+export function initSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[]) {
     const spyOn = jest.spyOn(Utils, "spawn");
 
     for (const spyMock of spyMocks) {

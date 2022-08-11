@@ -21,15 +21,15 @@ const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents:
     return parents;
 };
 
-export function globalVariables(gitlabData: any) {
+export function globalVariables (gitlabData: any) {
     for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
-         if (typeof value == "object") {
-             gitlabData.variables[key] = value["value"];
-         }
+        if (typeof value == "object") {
+            gitlabData.variables[key] = value["value"];
+        }
     }
 }
 
-export function jobExtends(gitlabData: any) {
+export function jobExtends (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
         if (typeof jobData != "object") continue;
@@ -48,7 +48,7 @@ export function jobExtends(gitlabData: any) {
     }
 }
 
-export function reference(gitlabData: any, recurseData: any) {
+export function reference (gitlabData: any, recurseData: any) {
     for (const [key, value] of Object.entries<any>(recurseData || {})) {
         if (value && value.referenceData) {
             recurseData[key] = getSubDataByReference(gitlabData, value.referenceData);
@@ -67,7 +67,7 @@ const getSubDataByReference = (gitlabData: any, referenceData: string[]) => {
     return gitlabSubData;
 };
 
-export function artifacts(gitlabData: any) {
+export function artifacts (gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedArtifacts = jobData.artifacts || (gitlabData.default || {}).artifacts || gitlabData.artifacts;
         if (expandedArtifacts) {
@@ -76,7 +76,7 @@ export function artifacts(gitlabData: any) {
     });
 }
 
-export function cache(gitlabData: any) {
+export function cache (gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const mergedCache = jobData.cache || (gitlabData.default || {}).cache || gitlabData.cache;
         if (mergedCache) {
@@ -95,7 +95,7 @@ export function cache(gitlabData: any) {
     });
 }
 
-export function services(gitlabData: any) {
+export function services (gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedServices = jobData.services || (gitlabData.default || {}).services || gitlabData.services;
         if (expandedServices) {
@@ -112,7 +112,7 @@ export function services(gitlabData: any) {
     });
 }
 
-export function image(gitlabData: any) {
+export function image (gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
         if (expandedImage) {
@@ -124,7 +124,7 @@ export function image(gitlabData: any) {
     });
 }
 
-export function beforeScripts(gitlabData: any) {
+export function beforeScripts (gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedBeforeScripts = [].concat(jobData.before_script || (gitlabData.default || {}).before_script || gitlabData.before_script || []);
         if (expandedBeforeScripts.length > 0) {
@@ -133,7 +133,7 @@ export function beforeScripts(gitlabData: any) {
     });
 }
 
-export function afterScripts(gitlabData: any) {
+export function afterScripts (gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
         const expandedAfterScripts = [].concat(jobData.after_script || (gitlabData.default || {}).after_script || gitlabData.after_script || []);
         if (expandedAfterScripts.length > 0) {
@@ -142,15 +142,15 @@ export function afterScripts(gitlabData: any) {
     });
 }
 
-export function scripts(gitlabData: any) {
+export function scripts (gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
         assert(jobData.script || jobData.trigger, chalk`{blueBright ${jobName}} must have script specified`);
         jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
     });
 }
 
-export function flattenLists(gitlabData: any) {
-    traverse(gitlabData, ({ parent, key, value }) => {
+export function flattenLists (gitlabData: any) {
+    traverse(gitlabData, ({parent, key, value}) => {
         if (!Array.isArray(value) || parent == null || typeof key != "string") return;
         parent[key] = value.flat(5);
     });

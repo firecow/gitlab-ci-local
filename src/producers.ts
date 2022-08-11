@@ -3,7 +3,7 @@ import {Job} from "./job";
 
 export class Producers {
 
-    static init(jobs: ReadonlyArray<Job>, stages: readonly string[], job: Job) {
+    static init (jobs: ReadonlyArray<Job>, stages: readonly string[], job: Job) {
         const producerSet: Set<string> = new Set();
 
         if (job.needs && job.needs.length === 0) return [];

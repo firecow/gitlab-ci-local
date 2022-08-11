@@ -1,7 +1,7 @@
 import {assert} from "./asserts";
 import deepExtend from "deep-extend";
 
-export function matrixVariablesList(jobData: any, jobName: string) {
+export function matrixVariablesList (jobData: any, jobName: string) {
     if (jobData?.parallel?.matrix == null) {
         return null;
     }
@@ -33,7 +33,7 @@ export function matrixVariablesList(jobData: any, jobName: string) {
 
             for (const clone of innerClone) {
                 for (const v of values) {
-                    const matrixVariable: { [key: string]: string } = {...clone};
+                    const matrixVariable: {[key: string]: string} = {...clone};
                     matrixVariable[key] = v;
                     inner.push(matrixVariable);
                 }
