@@ -21,7 +21,7 @@ const generateGitIgnore = (cwd: string, stateDir: string) => {
     }
 };
 
-const cleanupResources = async(parser: Parser|null) => {
+const cleanupResources = async (parser: Parser | null) => {
     if (!parser) {
         return;
     }
@@ -32,7 +32,7 @@ const cleanupResources = async(parser: Parser|null) => {
     await Promise.all(promises);
 };
 
-export async function handler(args: any, writeStreams: WriteStreams): Promise<ReadonlyArray<Job>> {
+export async function handler (args: any, writeStreams: WriteStreams): Promise<ReadonlyArray<Job>> {
     const argv = new Argv(args);
     const cwd = argv.cwd;
     const stateDir = argv.stateDir;

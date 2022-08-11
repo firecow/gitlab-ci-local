@@ -26,23 +26,23 @@ export class GitData {
         SHORT_SHA: "00000000",
     };
 
-    get CI_PROJECT_PATH() {
+    get CI_PROJECT_PATH () {
         return `${this.remote.group}/${this.remote.project}`;
     }
 
-    get CI_REGISTRY() {
+    get CI_REGISTRY () {
         return `local-registry.${this.remote.host}`;
     }
 
-    get CI_REGISTRY_IMAGE() {
+    get CI_REGISTRY_IMAGE () {
         return `${this.CI_REGISTRY}/${this.CI_PROJECT_PATH}`;
     }
 
-    get CI_PROJECT_PATH_SLUG() {
+    get CI_PROJECT_PATH_SLUG () {
         return `${this.remote.group.replace(/\//g, "-")}-${this.remote.project}`;
     }
 
-    static async init(cwd: string, writeStreams: WriteStreams): Promise<GitData> {
+    static async init (cwd: string, writeStreams: WriteStreams): Promise<GitData> {
         const gitData = new GitData();
         const promises = [];
         promises.push(gitData.initCommitData(cwd, writeStreams));
@@ -52,7 +52,7 @@ export class GitData {
         return gitData;
     }
 
-    private async initCommitData(cwd: string, writeStreams: WriteStreams): Promise<void> {
+    private async initCommitData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         const promises = [];
 
         const refNamePromise = Utils.spawn(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd);
@@ -83,9 +83,9 @@ export class GitData {
         }
     }
 
-    private async initRemoteData(cwd: string, writeStreams: WriteStreams): Promise<void> {
+    private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
-            const { stdout: gitRemote } = await Utils.spawn(["git", "remote", "-v"], cwd);
+            const {stdout: gitRemote} = await Utils.spawn(["git", "remote", "-v"], cwd);
             const gitRemoteMatch = gitRemote.match(/.*(?:\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>.*?)(?:\r?\n|\.git)/);
 
             assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
@@ -103,7 +103,7 @@ export class GitData {
         }
     }
 
-    async initUserData(cwd: string, writeStreams: WriteStreams): Promise<void> {
+    async initUserData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         const promises = [];
 
         const gitUsernamePromise = Utils.spawn(["git", "config", "user.name"], cwd).then(({stdout}) => {

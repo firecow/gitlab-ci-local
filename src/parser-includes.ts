@@ -11,7 +11,7 @@ import minimatch from "minimatch";
 
 export class ParserIncludes {
 
-    static async init(gitlabData: any, cwd: string, stateDir: string, writeStreams: WriteStreams, gitData: GitData, depth: number, fetchIncludes: boolean): Promise<any[]> {
+    static async init (gitlabData: any, cwd: string, stateDir: string, writeStreams: WriteStreams, gitData: GitData, depth: number, fetchIncludes: boolean): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
 
@@ -87,7 +87,7 @@ export class ParserIncludes {
         return includeDatas;
     }
 
-    static expandInclude(i: any): any[] {
+    static expandInclude (i: any): any[] {
         let include = i || [];
         if (include && include.length == null) {
             include = [ i ];
@@ -99,7 +99,7 @@ export class ParserIncludes {
             if (typeof entry === "string" && (entry.startsWith("https:") || entry.startsWith("http:"))) {
                 include[index] = {"remote": entry};
             } else if (typeof entry === "string") {
-                include[index] = {"local": entry };
+                include[index] = {"local": entry};
             } else {
                 include[index] = entry;
             }
@@ -108,7 +108,7 @@ export class ParserIncludes {
         return include;
     }
 
-    static covertTemplateToProjectFile(template: string): { project: string; ref: string; file: string; domain: string } {
+    static covertTemplateToProjectFile (template: string): {project: string; ref: string; file: string; domain: string} {
         return {
             domain: "gitlab.com",
             project: "gitlab-org/gitlab",
@@ -117,7 +117,7 @@ export class ParserIncludes {
         };
     }
 
-    static async downloadIncludeRemote(cwd: string, stateDir: string, url: string, fetchIncludes: boolean): Promise<void> {
+    static async downloadIncludeRemote (cwd: string, stateDir: string, url: string, fetchIncludes: boolean): Promise<void> {
         const fsUrl = Utils.fsUrl(url);
         try {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
@@ -129,7 +129,7 @@ export class ParserIncludes {
         }
     }
 
-    static async downloadIncludeProjectFile(cwd: string, stateDir: string, project: string, ref: string, file: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
+    static async downloadIncludeProjectFile (cwd: string, stateDir: string, project: string, ref: string, file: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
         const remote = gitData.remote;
         const normalizedFile = file.replace(/^\/+/, "");
         try {

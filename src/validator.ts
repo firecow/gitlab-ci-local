@@ -4,7 +4,7 @@ import chalk from "chalk";
 
 export class Validator {
 
-    private static needs(jobs: ReadonlyArray<Job>, stages: readonly string[]) {
+    private static needs (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
         for (const job of jobs) {
             if (job.needs === null || job.needs.length === 0) continue;
 
@@ -22,7 +22,7 @@ export class Validator {
         }
     }
 
-    private static dependencies(jobs: ReadonlyArray<Job>, stages: readonly string[]) {
+    private static dependencies (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
         for (const job of jobs) {
             if (job.dependencies === null || job.dependencies.length === 0) continue;
 
@@ -39,7 +39,7 @@ export class Validator {
         }
     }
 
-    private static dependenciesContainment(jobs: ReadonlyArray<Job>) {
+    private static dependenciesContainment (jobs: ReadonlyArray<Job>) {
         for (const job of jobs) {
             const needs = job.needs;
             const dependencies = job.dependencies;
@@ -55,14 +55,14 @@ export class Validator {
         }
     }
 
-    private static scriptBlank(jobs: ReadonlyArray<Job>) {
+    private static scriptBlank (jobs: ReadonlyArray<Job>) {
         for (const job of jobs) {
             if (job.trigger) continue; // Jobs with trigger are allowed to have empty script
             assert(job.scripts.length > 0, chalk`{blue ${job.name}} has empty script`);
         }
     }
 
-    private static cache(jobs: ReadonlyArray<Job>) {
+    private static cache (jobs: ReadonlyArray<Job>) {
         for (const job of jobs) {
             job.cache.forEach((c, i) => {
                 assert(Array.isArray(c.paths), chalk`{blue ${job.name}} cache[${i}].paths must be array`);
@@ -70,7 +70,7 @@ export class Validator {
         }
     }
 
-    static async run(jobs: ReadonlyArray<Job>, stages: readonly string[]) {
+    static async run (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
         this.scriptBlank(jobs);
         this.needs(jobs, stages);
         this.dependencies(jobs, stages);

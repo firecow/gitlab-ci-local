@@ -8,7 +8,7 @@ import {assert} from "./asserts";
 import {Utils} from "./utils";
 
 export interface CICDVariable {
-    type: "file"|"variable";
+    type: "file" | "variable";
     environments: {
         content: string;
         regexp: RegExp;
@@ -20,14 +20,14 @@ export interface CICDVariable {
 
 export class VariablesFromFiles {
 
-    static async init(argv: Argv, writeStreams: WriteStreams, gitData: GitData): Promise<{ [name: string]: CICDVariable }> {
+    static async init (argv: Argv, writeStreams: WriteStreams, gitData: GitData): Promise<{[name: string]: CICDVariable}> {
         const cwd = argv.cwd;
         const stateDir = argv.stateDir;
         const homeDir = argv.home;
         const remoteVariables = argv.remoteVariables;
         const autoCompleting = argv.autoCompleting;
         const homeVariablesFile = `${homeDir}/${stateDir}/variables.yml`;
-        const variables: { [name: string]: CICDVariable } = {};
+        const variables: {[name: string]: CICDVariable} = {};
         let remoteFileData: any = {};
         let homeFileData: any = {};
 
@@ -45,9 +45,9 @@ export class VariablesFromFiles {
             homeFileData = yaml.load(await fs.readFile(homeVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA});
         }
 
-        const unpack = (v: any): { values: any; type: "file"|"variable"|null} => {
+        const unpack = (v: any): {values: any; type: "file" | "variable" | null} => {
             if (typeof v === "string") {
-                const catchAll: { values: any; type: "file"|"variable"|null} = { values: {}, type: null };
+                const catchAll: {values: any; type: "file" | "variable" | null} = {values: {}, type: null};
                 catchAll.values = {};
                 catchAll.values["*"] = v;
                 return catchAll;
@@ -76,14 +76,14 @@ export class VariablesFromFiles {
                 } else if (type === "file") {
                     const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};
-                    variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority });
+                    variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
                 } else {
                     assert(false, `${key} was not handled properly`);
                 }
             }
         };
 
-        const addVariableFileToVariables = async(fileData: any, filePriority: number) => {
+        const addVariableFileToVariables = async (fileData: any, filePriority: number) => {
             for (const [globalKey, globalEntry] of Object.entries(fileData?.global ?? {})) {
                 await addToVariables(globalKey, globalEntry, 1 + filePriority);
             }
@@ -130,7 +130,7 @@ export class VariablesFromFiles {
         return variables;
     }
 
-    static normalizeProjectKey(key: string, writeStreams: WriteStreams): string {
+    static normalizeProjectKey (key: string, writeStreams: WriteStreams): string {
         if (!key.includes(":")) return key;
         writeStreams.stderr(chalk`{yellow WARNING: Interpreting '${key}' as '${key.replace(":", "/")}'}\n`);
         return key.replace(":", "/");

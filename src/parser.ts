@@ -21,36 +21,36 @@ export class Parser {
     private _jobs: Job[] = [];
     private _stages: string[] = [];
     private _gitlabData: any;
-    private _jobNamePad: number|null = null;
+    private _jobNamePad: number | null = null;
 
     readonly argv: Argv;
     readonly writeStreams: WriteStreams;
     readonly pipelineIid: number;
 
-    private constructor(argv: Argv, writeStreams: WriteStreams, pipelineIid: number) {
+    private constructor (argv: Argv, writeStreams: WriteStreams, pipelineIid: number) {
         this.argv = argv;
         this.writeStreams = writeStreams;
         this.pipelineIid = pipelineIid;
     }
 
-    get jobs(): ReadonlyArray<Job> {
+    get jobs (): ReadonlyArray<Job> {
         return this._jobs;
     }
 
-    get stages(): readonly string[] {
+    get stages (): readonly string[] {
         return this._stages;
     }
 
-    get gitlabData() {
+    get gitlabData () {
         return this._gitlabData;
     }
 
-    get jobNamePad(): number {
+    get jobNamePad (): number {
         assert(this._jobNamePad != null, "jobNamePad is uninitialized");
         return this._jobNamePad;
     }
 
-    static async create(argv: Argv, writeStreams: WriteStreams, pipelineIid: number) {
+    static async create (argv: Argv, writeStreams: WriteStreams, pipelineIid: number) {
         const parser = new Parser(argv, writeStreams, pipelineIid);
         const time = process.hrtime();
         await parser.init();
@@ -62,7 +62,7 @@ export class Parser {
         return parser;
     }
 
-    async init() {
+    async init () {
         const argv = this.argv;
         const cwd = argv.cwd;
         const stateDir = argv.stateDir;
@@ -166,7 +166,7 @@ export class Parser {
         });
     }
 
-    static async loadYaml(filePath: string): Promise<any> {
+    static async loadYaml (filePath: string): Promise<any> {
         const ymlPath = `${filePath}`;
         if (!fs.existsSync(ymlPath)) {
             return {};
