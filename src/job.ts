@@ -13,7 +13,7 @@ import {CacheEntry} from "./cache-entry";
 import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
-import minimatch from "minimatch";
+import micromatch from "micromatch";
 import {CICDVariable} from "./variables-from-files";
 
 interface JobOptions {
@@ -348,7 +348,7 @@ export class Job {
 
         function searchFiles (dirPath: string, arrayOfFiles: string[]): string[] {
             const filesTmp = fs.readdirSync(dirPath);
-    
+
             filesTmp.forEach(function (fileTmp: string) {
                 const filePath = dirPath + "/" + fileTmp;
                 if (fs.statSync(filePath).isDirectory()) {
@@ -357,12 +357,12 @@ export class Job {
                     arrayOfFiles.push(filePath);
                 }
             });
-    
+
             return arrayOfFiles;
         }
 
         const files = searchFiles(this.argv.cwd, []);
-        
+
         const strippedFiles: string[] = [];
         for (const file of files ) {
             strippedFiles.push(file.replace(this.argv.cwd + "/", ""));
@@ -370,7 +370,7 @@ export class Job {
 
         for (const pattern of this.exists) {
             for (const strippedFile of strippedFiles) {
-                if(minimatch(strippedFile,pattern, {dot: true})) {
+                if(micromatch.isMatch(strippedFile, pattern, {dot: true})) {
                     return true;
                 }
             }
