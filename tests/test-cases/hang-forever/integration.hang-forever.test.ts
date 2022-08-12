@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("hang-forever <test-debian>", async() => {
+test("hang-forever <test-debian>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/hang-forever",
@@ -22,7 +22,7 @@ test("hang-forever <test-debian>", async() => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("hang-forever <test-alpine>", async() => {
+test("hang-forever <test-alpine>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/hang-forever",
@@ -36,7 +36,7 @@ test("hang-forever <test-alpine>", async() => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("hang-forever <test-shell>", async() => {
+test("hang-forever <test-shell>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/hang-forever",

@@ -7,7 +7,7 @@ export class Argv {
 
     private map: Map<string, any> = new Map<string, any>();
 
-    constructor(argv: any) {
+    constructor (argv: any) {
         for (const [key, value] of Object.entries(argv)) {
             this.map.set(key, value);
         }
@@ -16,7 +16,7 @@ export class Argv {
         this.injectDotenv(`${this.cwd}/.gitlab-ci-local-env`, argv);
     }
 
-    private injectDotenv(potentialDotenvFilepath: string, argv: any) {
+    private injectDotenv (potentialDotenvFilepath: string, argv: any) {
         if (fs.existsSync(potentialDotenvFilepath)) {
             const config = dotenv.parse(fs.readFileSync(potentialDotenvFilepath));
             for (const [key, value] of Object.entries(config)) {
@@ -28,7 +28,7 @@ export class Argv {
         }
     }
 
-    get cwd(): string {
+    get cwd (): string {
         let cwd = this.map.get("cwd") ?? process.cwd();
         assert(typeof cwd != "object", "--cwd option cannot be an array");
         cwd = cwd.replace(/\/$/, "");
@@ -36,35 +36,35 @@ export class Argv {
         return cwd;
     }
 
-    get file(): string {
+    get file (): string {
         return this.map.get("file") ?? ".gitlab-ci.yml";
     }
 
-    get stateDir(): string {
+    get stateDir (): string {
         return (this.map.get("stateDir") ?? ".gitlab-ci-local").replace(/\/$/, "");
     }
 
-    get home(): string {
+    get home (): string {
         return (this.map.get("home") ?? process.env.HOME ?? "").replace(/\/$/, "");
     }
 
-    get volume(): string[] {
+    get volume (): string[] {
         const val = this.map.get("volume") ?? [];
         return typeof val == "string" ? val.split(" ") : val;
     }
 
-    get extraHost(): string[] {
+    get extraHost (): string[] {
         const val = this.map.get("extraHost") ?? [];
         return typeof val == "string" ? val.split(" ") : val;
     }
 
-    get remoteVariables(): string {
+    get remoteVariables (): string {
         return this.map.get("remoteVariables");
     }
 
-    get variable(): { [key: string]: string } {
+    get variable (): {[key: string]: string} {
         const val = this.map.get("variable");
-        const variables: { [key: string]: string } = {};
+        const variables: {[key: string]: string} = {};
         const pairs = typeof val == "string" ? val.split(" ") : val;
         (pairs ?? []).forEach((variablePair: string) => {
             const exec = /(?<key>\w*?)(=)(?<value>\w.*)/.exec(variablePair);
@@ -75,64 +75,64 @@ export class Argv {
         return variables;
     }
 
-    get manual(): string[] {
+    get manual (): string[] {
         const val = this.map.get("manual") ?? [];
         return typeof val == "string" ? val.split(" ") : val;
     }
 
-    get job(): string[] {
+    get job (): string[] {
         return this.map.get("job") ?? [];
     }
 
-    get autoCompleting(): boolean {
+    get autoCompleting (): boolean {
         return this.map.get("autoCompleting") ?? false;
     }
 
-    get privileged(): boolean {
+    get privileged (): boolean {
         return this.map.get("privileged") ?? false;
     }
 
-    get needs(): boolean {
+    get needs (): boolean {
         return this.map.get("needs") ?? false;
     }
 
-    get onlyNeeds(): boolean {
+    get onlyNeeds (): boolean {
         return this.map.get("onlyNeeds") ?? false;
     }
 
-    get completion(): boolean {
+    get completion (): boolean {
         return this.map.get("completion") ?? false;
     }
 
-    get list(): boolean {
+    get list (): boolean {
         return this.map.get("list") ?? false;
     }
 
-    get listAll(): boolean {
+    get listAll (): boolean {
         return this.map.get("listAll") ?? false;
     }
 
-    get listJson(): boolean {
+    get listJson (): boolean {
         return this.map.get("listJson") ?? false;
     }
 
-    get preview(): boolean {
+    get preview (): boolean {
         return this.map.get("preview") ?? false;
     }
 
-    get shellIsolation(): boolean {
+    get shellIsolation (): boolean {
         return this.map.get("shellIsolation") ?? false;
     }
 
-    get fetchIncludes(): boolean {
+    get fetchIncludes (): boolean {
         return this.map.get("fetchIncludes") ?? false;
     }
 
-    get mountCache(): boolean {
+    get mountCache (): boolean {
         return this.map.get("mountCache") ?? false;
     }
 
-    get artifactsToSource(): boolean {
+    get artifactsToSource (): boolean {
         return this.map.get("artifactsToSource") ?? true;
     }
 }

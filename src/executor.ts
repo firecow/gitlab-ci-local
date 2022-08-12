@@ -6,7 +6,7 @@ import {ExitError} from "./exit-error";
 
 export class Executor {
 
-    static async runLoop(argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]) {
+    static async runLoop (argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]) {
         let runningJobs = [];
         let startCandidates = [];
 
@@ -18,7 +18,7 @@ export class Executor {
         } while (runningJobs.length > 0);
     }
 
-    static getStartCandidates(jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: readonly Job[], manuals: string[]) {
+    static getStartCandidates (jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: readonly Job[], manuals: string[]) {
         const startCandidates = [];
 
         potentialStarters = potentialStarters.filter(job => job.shouldExecuteBasedOnRuleExisting());
@@ -42,7 +42,7 @@ export class Executor {
         return startCandidates;
     }
 
-    static isPastFailed(jobsToWaitFor: ReadonlyArray<Job>) {
+    static isPastFailed (jobsToWaitFor: ReadonlyArray<Job>) {
         const failJobs = jobsToWaitFor.filter(j => {
             if (j.allowFailure) {
                 return false;
@@ -52,20 +52,20 @@ export class Executor {
         return failJobs.length > 0;
     }
 
-    static isNotFinished(jobsToWaitFor: ReadonlyArray<Job>) {
+    static isNotFinished (jobsToWaitFor: ReadonlyArray<Job>) {
         const notFinishedJobs = jobsToWaitFor.filter(j => !j.finished);
         return notFinishedJobs.length > 0;
     }
 
-    static getRunning(jobs: ReadonlyArray<Job>) {
+    static getRunning (jobs: ReadonlyArray<Job>) {
         return jobs.filter(j => j.running);
     }
 
-    static getFailed(jobs: ReadonlyArray<Job>) {
+    static getFailed (jobs: ReadonlyArray<Job>) {
         return jobs.filter(j => j.finished && !j.allowFailure && (j.preScriptsExitCode ?? 0) > 0);
     }
 
-    static getPastToWaitFor(jobs: ReadonlyArray<Job>, stages: readonly string[], job: Job, manuals: string[]) {
+    static getPastToWaitFor (jobs: ReadonlyArray<Job>, stages: readonly string[], job: Job, manuals: string[]) {
         const jobsToWaitForSet = new Set<Job>();
         let waitForLoopArray: Job[] = [job];
 
@@ -86,7 +86,7 @@ export class Executor {
         return [...jobsToWaitForSet];
     }
 
-    static getNeededToWaitFor(jobs: ReadonlyArray<Job>, manuals: string[], job: Job) {
+    static getNeededToWaitFor (jobs: ReadonlyArray<Job>, manuals: string[], job: Job) {
         const toWaitFor = [];
         assert(job.needs != null, chalk`${job.name}.needs cannot be null in getNeededToWaitFor`);
         for (const need of job.needs) {
@@ -104,7 +104,7 @@ export class Executor {
         return toWaitFor;
     }
 
-    static getPreviousToWaitFor(jobs: ReadonlyArray<Job>, stages: readonly string[], job: Job) {
+    static getPreviousToWaitFor (jobs: ReadonlyArray<Job>, stages: readonly string[], job: Job) {
         const previousToWaitFor: Job[] = [];
         const stageIndex = stages.indexOf(job.stage);
         const pastStages = stages.slice(0, stageIndex);

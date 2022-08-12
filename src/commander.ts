@@ -10,7 +10,7 @@ import {ExitError} from "./exit-error";
 
 export class Commander {
 
-    static async runPipeline(argv: Argv, parser: Parser, writeStreams: WriteStreams) {
+    static async runPipeline (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
@@ -21,7 +21,7 @@ export class Commander {
         await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static async runJobs(argv: Argv, parser: Parser, writeStreams: WriteStreams) {
+    static async runJobs (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
         const needs = argv.needs || argv.onlyNeeds;
         const jobArgs = argv.job;
         const jobs = parser.jobs;
@@ -53,16 +53,16 @@ export class Commander {
         await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
-    static async printReport(cwd: string, stateDir: string, writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) {
+    static async printReport (cwd: string, stateDir: string, writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) {
 
         writeStreams.stdout("\n");
 
-        const preScripts: { successful: Job[]; failed: Job[]; warned: Job[] } = {
+        const preScripts: {successful: Job[]; failed: Job[]; warned: Job[]} = {
             successful: [],
             failed: [],
             warned: [],
         };
-        const afterScripts: { warned: Job[] } = {
+        const afterScripts: {warned: Job[]} = {
             warned: [],
         };
 
@@ -147,7 +147,7 @@ export class Commander {
         }
     }
 
-    static runList(parser: Parser, writeStreams: WriteStreams, listAll: boolean) {
+    static runList (parser: Parser, writeStreams: WriteStreams, listAll: boolean) {
         const stages = parser.stages;
         let jobs = [...parser.jobs.values()];
         jobs.sort((a, b) => {
@@ -187,7 +187,7 @@ export class Commander {
         jobs.forEach((job) => renderLine(job));
     }
 
-    static runJson(parser: Parser, writeStreams: WriteStreams) {
+    static runJson (parser: Parser, writeStreams: WriteStreams) {
         const jobs = [...parser.jobs.values()];
         const json: any[] = [];
 

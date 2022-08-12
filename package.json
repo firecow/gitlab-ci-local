@@ -51,7 +51,7 @@
     "@types/yargs": "17.0.11",
     "@typescript-eslint/eslint-plugin": "5.33.0",
     "@typescript-eslint/parser": "5.33.0",
-    "axios-mock-adapter": "1.21.1",
+    "axios-mock-adapter": "1.21.2",
     "depcheck": "1.4.3",
     "eslint": "8.21.0",
     "jest": "28.1.3",
@@ -65,61 +65,33 @@
     "node": ">=16.10.0"
   },
   "pkg": {
-    "assets": [
-      "package.json"
-    ],
-    "scripts": [
-      "src/**/*.js"
-    ]
+    "assets": ["package.json"],
+    "scripts": ["src/**/*.js"]
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint"
-    ],
-    "ignorePatterns": [
-      "*.js"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended"
-    ],
+    "plugins": ["@typescript-eslint"],
+    "ignorePatterns": ["*.js"],
+    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
     "rules": {
-      "@typescript-eslint/no-explicit-any": [
-        "off"
-      ],
-      "@typescript-eslint/explicit-module-boundary-types": [
-        "off"
-      ],
-      "@typescript-eslint/semi": [
-        "error"
-      ],
-      "@typescript-eslint/quotes": [
-        "error"
-      ],
-      "@typescript-eslint/comma-dangle": [
-        "error",
-        "always-multiline"
-      ],
-      "@typescript-eslint/member-delimiter-style": [
-        "error"
-      ]
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/explicit-module-boundary-types": "off",
+      "@typescript-eslint/semi": "error",
+      "@typescript-eslint/quotes": "error",
+      "@typescript-eslint/comma-dangle": ["error", "always-multiline"],
+      "@typescript-eslint/object-curly-spacing": "error",
+      "@typescript-eslint/space-before-function-paren": "error",
+      "@typescript-eslint/space-before-blocks": "error",
+      "@typescript-eslint/space-infix-ops": "error",
+      "@typescript-eslint/member-delimiter-style": "error",
+      "@typescript-eslint/indent": ["error", 4]
     }
   },
   "jest": {
     "preset": "ts-jest",
-    "testMatch": [
-      "**/*.test.ts"
-    ],
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/.gitlab-ci-local/"
-    ],
-    "coverageReporters": [
-      "lcov",
-      "json-summary",
-      "text-summary"
-    ]
+    "testMatch": ["**/*.test.ts"],
+    "testPathIgnorePatterns": ["/node_modules/", "/.gitlab-ci-local/"],
+    "coverageReporters": ["lcov", "json-summary", "text-summary"]
   },
   "repository": {
     "type": "git",

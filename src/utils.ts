@@ -13,25 +13,25 @@ type ExpandWith = {
 };
 
 export class Utils {
-    static bash(shellScript: string, cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
+    static bash (shellScript: string, cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
         return execa(shellScript, {shell: "bash", cwd, env, all: true});
     }
 
-    static spawn(cmdArgs: string[], cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
+    static spawn (cmdArgs: string[], cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
         return execa(cmdArgs[0], cmdArgs.slice(1), {cwd, env, all: true});
     }
 
-    static fsUrl(url: string): string {
+    static fsUrl (url: string): string {
         return url.replace(/^https:\/\//g, "").replace(/^http:\/\//g, "");
     }
 
-    static getSafeJobName(jobName: string) {
+    static getSafeJobName (jobName: string) {
         return jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
         });
     }
 
-    static forEachRealJob(gitlabData: any, callback: (jobName: string, jobData: any) => void) {
+    static forEachRealJob (gitlabData: any, callback: (jobName: string, jobData: any) => void) {
         for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
             if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
                 continue;
@@ -40,7 +40,7 @@ export class Utils {
         }
     }
 
-    static getJobNamesFromPreviousStages(jobs: ReadonlyArray<Job>, stages: readonly string[], currentJob: Job) {
+    static getJobNamesFromPreviousStages (jobs: ReadonlyArray<Job>, stages: readonly string[], currentJob: Job) {
         const jobNames: string[] = [];
         const currentStageIndex = stages.indexOf(currentJob.stage);
         jobs.forEach(job => {
@@ -52,7 +52,7 @@ export class Utils {
         return jobNames;
     }
 
-    static async getCoveragePercent(cwd: string, stateDir: string, coverageRegex: string, jobName: string) {
+    static async getCoveragePercent (cwd: string, stateDir: string, coverageRegex: string, jobName: string) {
         const content = await fs.readFile(`${cwd}/${stateDir}/output/${jobName}.log`, "utf8");
         const regex = new RegExp(coverageRegex.replace(/^\//, "").replace(/\/$/, ""), "m");
         const match = content.match(regex);
@@ -63,7 +63,7 @@ export class Utils {
         return "0";
     }
 
-    static printJobNames(stream: (txt: string) => void, job: { name: string }, i: number, arr: { name: string }[]) {
+    static printJobNames (stream: (txt: string) => void, job: {name: string}, i: number, arr: {name: string}[]) {
         if (i === arr.length - 1) {
             stream(chalk`{blueBright ${job.name}}`);
         } else {
@@ -71,7 +71,7 @@ export class Utils {
         }
     }
 
-    private static expandTextWith(text: any, expandWith: ExpandWith) {
+    private static expandTextWith (text: any, expandWith: ExpandWith) {
         if (typeof text !== "string") {
             return text;
         }
@@ -90,22 +90,22 @@ export class Utils {
         );
     }
 
-    static expandText(text: any, envs: { [key: string]: string }) {
+    static expandText (text: any, envs: {[key: string]: string}) {
         return this.expandTextWith(text, {
             unescape: "$",
             variable: (name) => envs[name] ?? "",
         });
     }
 
-    static expandVariables(variables: { [key: string]: string }, envs: { [key: string]: string }): { [key: string]: string } {
-        const expandedVariables: { [key: string]: string } = {};
+    static expandVariables (variables: {[key: string]: string}, envs: {[key: string]: string}): {[key: string]: string} {
+        const expandedVariables: {[key: string]: string} = {};
         for (const [key, value] of Object.entries(variables)) {
             expandedVariables[key] = Utils.expandText(value, envs);
         }
         return expandedVariables;
     }
 
-    static expandRecursive(variables: { [key: string]: string }) {
+    static expandRecursive (variables: {[key: string]: string}) {
         let expandedAnyVariables, i = 0;
         do {
             assert(i < 100, "Recursive variable expansion reached 100 iterations");
@@ -135,8 +135,8 @@ export class Utils {
         return variables;
     }
 
-    static findEnvMatchedVariables(variables: { [name: string]: CICDVariable }, fileVariablesDir: string, environment?: {name: string}) {
-        const envMatchedVariables: { [key: string]: string} = {};
+    static findEnvMatchedVariables (variables: {[name: string]: CICDVariable}, fileVariablesDir: string, environment?: {name: string}) {
+        const envMatchedVariables: {[key: string]: string} = {};
         for (const [k, v] of Object.entries(variables)) {
             for (const entry of v.environments) {
                 if (environment?.name.match(entry.regexp) || entry.regexp.source === ".*") {
@@ -158,12 +158,12 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult(
-        rules: { if?: string; when?: string; exists ?: string[] | undefined; allow_failure?: boolean; variables?: { [name: string]: string } }[], variables: { [key: string]: string }
-    ): { when: string; allowFailure: boolean; exists : string[]; variables: { [name: string]: string } | undefined } {
+    static getRulesResult (
+        rules: {if?: string; when?: string; exists ?: string[] | undefined; allow_failure?: boolean; variables?: {[name: string]: string}}[], variables: {[key: string]: string}
+    ): {when: string; allowFailure: boolean; exists : string[]; variables: {[name: string]: string} | undefined} {
         let when = "never";
         let allowFailure = false;
-        let ruleVariable: { [name: string]: string } | undefined = undefined;
+        let ruleVariable: {[name: string]: string} | undefined = undefined;
         let ruleExists : string[] = [];
 
         for (const rule of rules) {
@@ -179,7 +179,7 @@ export class Utils {
         return {when, allowFailure, exists: ruleExists, variables: ruleVariable};
     }
 
-    static evaluateRuleIf(ruleIf: string, envs: { [key: string]: string }) {
+    static evaluateRuleIf (ruleIf: string, envs: {[key: string]: string}) {
         let evalStr = ruleIf;
 
         // Expand all variables
@@ -204,14 +204,14 @@ export class Utils {
         return eval(`if (${evalStr}) { true } else { false }`);
     }
 
-    static async rsyncTrackedFiles(cwd: string, stateDir: string, target: string): Promise<{ hrdeltatime: [number, number] }> {
+    static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
         await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
         await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') --exclude ${stateDir}/ ./ ${stateDir}/builds/${target}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
 
-    static async checksumFiles(files: string[]): Promise<string> {
+    static async checksumFiles (files: string[]): Promise<string> {
         const promises: Promise<string>[] = [];
 
         files.forEach((file) => {
@@ -229,10 +229,10 @@ export class Utils {
         return checksum(result.join(""));
     }
 
-    static searchFiles(dirPath: string, arrayOfFiles: string[]): string[] {
+    static searchFiles (dirPath: string, arrayOfFiles: string[]): string[] {
         const filesTmp = fs.readdirSync(dirPath);
 
-        filesTmp.forEach(function(fileTmp: string) {
+        filesTmp.forEach(function (fileTmp: string) {
             const filePath = dirPath + "/" + fileTmp;
             if (fs.statSync(filePath).isDirectory()) {
                 arrayOfFiles = Utils.searchFiles(filePath, arrayOfFiles);
@@ -244,7 +244,7 @@ export class Utils {
         return arrayOfFiles;
     }
 
-    static searchFilesStripped(dirPath: string): string[]{
+    static searchFilesStripped (dirPath: string): string[] {
         const files = Utils.searchFiles(dirPath, []);
 
         const strippedFiles: string[] = [];
