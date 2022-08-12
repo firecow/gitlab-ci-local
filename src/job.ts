@@ -24,10 +24,10 @@ interface JobOptions {
     baseName: string;
     pipelineIid: number;
     gitData: GitData;
-    globalVariables: { [name: string]: string };
-    variablesFromFiles: { [name: string]: CICDVariable };
-    matrixVariables: {[key: string]: string}|null;
-    nodeIndex: number|null;
+    globalVariables: {[name: string]: string};
+    variablesFromFiles: {[name: string]: CICDVariable};
+    matrixVariables: {[key: string]: string} | null;
+    nodeIndex: number | null;
     nodesTotal: number;
 }
 
@@ -43,14 +43,14 @@ export class Job {
     readonly name: string;
     readonly baseName: string;
     readonly dependencies: string[] | null;
-    readonly environment?: { name: string; url: string | null };
+    readonly environment?: {name: string; url: string | null};
     readonly jobId: number;
     readonly rules?: {
         if: string;
         when: string;
         exists: string[];
         allow_failure: boolean;
-        variables: { [key: string]: string };
+        variables: {[key: string]: string};
     }[];
 
     readonly allowFailure: boolean;
@@ -68,15 +68,15 @@ export class Job {
     private _serviceNetworkId: string | null = null;
     private _containerVolumeNames: string[] = [];
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
-    private _producers: { name: string; dotenv: string | null }[] | null = null;
-    private _jobNamePad: number|null = null;
+    private _producers: {name: string; dotenv: string | null}[] | null = null;
+    private _jobNamePad: number | null = null;
 
     private _containersToClean: string[] = [];
 
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
 
-    constructor(opt: JobOptions) {
+    constructor (opt: JobOptions) {
         const jobData = opt.data;
         const gitData = opt.gitData;
         const globalVariables = opt.globalVariables;
@@ -200,24 +200,24 @@ export class Job {
         }
     }
 
-    get expandedVariables() {
+    get expandedVariables () {
         return this._expandedVariables;
     }
 
-    get artifactsToSource() {
+    get artifactsToSource () {
         if (this.jobData["artifactsToSource"] != null) return this.jobData["artifactsToSource"];
         return this.argv.artifactsToSource;
     }
 
-    get chalkJobName() {
+    get chalkJobName () {
         return chalk`{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
     }
 
-    get safeJobName() {
+    get safeJobName () {
         return Utils.getSafeJobName(this.name);
     }
 
-    get needs(): {job: string; artifacts: boolean}[] | null {
+    get needs (): {job: string; artifacts: boolean}[] | null {
         const needs = this.jobData["needs"];
         if (!needs) return null;
         const list: {job: string; artifacts: boolean}[] = [];
@@ -230,15 +230,15 @@ export class Job {
         return list;
     }
 
-    get buildVolumeName(): string {
+    get buildVolumeName (): string {
         return `gcl-${this.safeJobName}-${this.jobId}-build`;
     }
 
-    get tmpVolumeName(): string {
+    get tmpVolumeName (): string {
         return `gcl-${this.safeJobName}-${this.jobId}-tmp`;
     }
 
-    get imageName(): string | null {
+    get imageName (): string | null {
         const image = this.jobData["image"];
         if (!image) {
             return null;
@@ -248,7 +248,7 @@ export class Job {
         return imageName.includes(":") ? imageName : `${imageName}:latest`;
     }
 
-    get imageEntrypoint(): string[] | null {
+    get imageEntrypoint (): string[] | null {
         const image = this.jobData["image"];
 
         if (!image || !image.entrypoint) {
@@ -258,103 +258,103 @@ export class Job {
         return image.entrypoint;
     }
 
-    get services(): Service[] {
+    get services (): Service[] {
         return this.jobData["services"];
     }
 
-    set jobNamePad(jobNamePad: number) {
+    set jobNamePad (jobNamePad: number) {
         assert(this._jobNamePad == null, "this._jobNamePad can only be set once");
         this._jobNamePad = jobNamePad;
     }
 
-    get jobNamePad(): number {
+    get jobNamePad (): number {
         return this._jobNamePad ?? 0;
     }
 
-    get producers(): {name: string; dotenv: string | null}[] | null {
+    get producers (): {name: string; dotenv: string | null}[] | null {
         return this._producers;
     }
 
-    set producers(producers: {name: string; dotenv: string | null}[] | null) {
+    set producers (producers: {name: string; dotenv: string | null}[] | null) {
         assert(this._producers == null, "this._producers can only be set once");
         this._producers = producers;
     }
 
-    get stage(): string {
+    get stage (): string {
         return this.jobData["stage"] || "test";
     }
 
-    get interactive(): boolean {
+    get interactive (): boolean {
         return this.jobData["interactive"] || false;
     }
 
-    get injectSSHAgent(): boolean {
+    get injectSSHAgent (): boolean {
         return this.jobData["injectSSHAgent"] || false;
     }
 
-    get description(): string {
+    get description (): string {
         return this.jobData["description"] ?? "";
     }
 
-    get artifacts(): { paths?: string[]; exclude?: string[]; reports?: { dotenv?: string } }|null {
+    get artifacts (): {paths?: string[]; exclude?: string[]; reports?: {dotenv?: string}} | null {
         return this.jobData["artifacts"];
     }
 
-    get cache(): CacheEntry[] {
+    get cache (): CacheEntry[] {
         return this.jobData["cache"] || [];
     }
 
-    get beforeScripts(): string[] {
+    get beforeScripts (): string[] {
         return this.jobData["before_script"] || [];
     }
 
-    get afterScripts(): string[] {
+    get afterScripts (): string[] {
         return this.jobData["after_script"] || [];
     }
 
-    get scripts(): string[] {
+    get scripts (): string[] {
         return this.jobData["script"];
     }
 
-    get trigger(): any {
+    get trigger (): any {
         return this.jobData["trigger"];
     }
 
-    get preScriptsExitCode() {
+    get preScriptsExitCode () {
         return this._prescriptsExitCode;
     }
 
-    get afterScriptsExitCode() {
+    get afterScriptsExitCode () {
         return this._afterScriptsExitCode;
     }
 
-    get running() {
+    get running () {
         return this._running;
     }
 
-    get started() {
+    get started () {
         return this._running || this._prescriptsExitCode !== null;
     }
 
-    get finished() {
+    get finished () {
         return !this._running && this._prescriptsExitCode !== null;
     }
 
-    get coveragePercent(): string | null {
+    get coveragePercent (): string | null {
         return this._coveragePercent;
     }
 
-    get fileVariablesDir() {
+    get fileVariablesDir () {
         return `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}-${this.jobId}`;
     }
 
-    shouldExecuteBasedOnRuleExisting(): boolean {
+    shouldExecuteBasedOnRuleExisting (): boolean {
         if ( this.exists == undefined || this.exists.length == 0 ) return true;
 
-        function searchFiles(dirPath: string, arrayOfFiles: string[]): string[] {
+        function searchFiles (dirPath: string, arrayOfFiles: string[]): string[] {
             const filesTmp = fs.readdirSync(dirPath);
 
-            filesTmp.forEach(function(fileTmp: string) {
+            filesTmp.forEach(function (fileTmp: string) {
                 const filePath = dirPath + "/" + fileTmp;
                 if (fs.statSync(filePath).isDirectory()) {
                     arrayOfFiles = searchFiles(filePath, arrayOfFiles);
@@ -384,7 +384,7 @@ export class Job {
         return false;
     }
 
-    async start(): Promise<void> {
+    async start (): Promise<void> {
         this._running = true;
 
         const argv = this.argv;
@@ -443,7 +443,7 @@ export class Job {
         await this.cleanupResources();
     }
 
-    async cleanupResources() {
+    async cleanupResources () {
         clearTimeout(this._longRunningSilentTimeout);
 
         for (const id of this._containersToClean) {
@@ -474,13 +474,13 @@ export class Job {
 
         const fileVariablesDir = this.fileVariablesDir;
         try {
-            await fs.rm(fileVariablesDir, { recursive: true, force: true });
+            await fs.rm(fileVariablesDir, {recursive: true, force: true});
         } catch (e) {
             assert(e instanceof Error, "e is not instanceof Error");
         }
     }
 
-    private generateInjectSSHAgentOptions() {
+    private generateInjectSSHAgentOptions () {
         if (!this.injectSSHAgent) {
             return "";
         }
@@ -490,7 +490,7 @@ export class Job {
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
     }
 
-    private generateScriptCommands(scripts: string[]) {
+    private generateScriptCommands (scripts: string[]) {
         let cmd = "";
         scripts.forEach((script) => {
             // Print command echo'ed in color
@@ -505,7 +505,7 @@ export class Job {
         return cmd;
     }
 
-    private async mountCacheCmd(writeStreams: WriteStreams) {
+    private async mountCacheCmd (writeStreams: WriteStreams) {
         if (this.imageName && !this.argv.mountCache) return "";
 
         let cmd = "";
@@ -521,7 +521,7 @@ export class Job {
         return cmd;
     }
 
-    private async execScripts(scripts: string[]): Promise<number> {
+    private async execScripts (scripts: string[]): Promise<number> {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
@@ -729,7 +729,7 @@ export class Job {
         return exitCode;
     }
 
-    private async pullImage(writeStreams: WriteStreams, imageToPull: string) {
+    private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
         const time = process.hrtime();
         try {
             await Utils.spawn(["docker", "image", "inspect", imageToPull]);
@@ -745,7 +745,7 @@ export class Job {
         }
     }
 
-    private async initProducerReportsDotenvVariables(writeStreams: WriteStreams) {
+    private async initProducerReportsDotenvVariables (writeStreams: WriteStreams) {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const producers = this.producers;
@@ -771,7 +771,7 @@ export class Job {
         return producerReportsEnvs;
     }
 
-    private async copyCacheIn(writeStreams: WriteStreams) {
+    private async copyCacheIn (writeStreams: WriteStreams) {
         if (this.argv.mountCache && this.imageName) return;
         if ((!this.imageName && !this.argv.shellIsolation) || this.cache.length === 0) return;
 
@@ -788,7 +788,7 @@ export class Job {
                 continue;
             }
 
-            await Mutex.exclusive(cacheName, async() => {
+            await Mutex.exclusive(cacheName, async () => {
                 await this.copyIn(cacheFolder);
             });
             const endTime = process.hrtime(time);
@@ -796,7 +796,7 @@ export class Job {
         }
     }
 
-    private async copyArtifactsIn(writeStreams: WriteStreams) {
+    private async copyArtifactsIn (writeStreams: WriteStreams) {
         if ((!this.imageName && !this.argv.shellIsolation) || (this.producers ?? []).length === 0) return;
 
         const cwd = this.argv.cwd;
@@ -822,7 +822,7 @@ export class Job {
         writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright imported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
-    copyIn(source: string) {
+    copyIn (source: string) {
         const safeJobName = this.safeJobName;
         if (!this.imageName && this.argv.shellIsolation) {
             return Utils.bash(`rsync -a ${source}/. ${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`);
@@ -830,7 +830,7 @@ export class Job {
         return Utils.bash(`docker cp ${source}/. ${this._containerId}:/gcl-builds`);
     }
 
-    private async copyCacheOut(writeStreams: WriteStreams) {
+    private async copyCacheOut (writeStreams: WriteStreams) {
         if (this.argv.mountCache && this.imageName) return;
         if ((!this.imageName && !this.argv.shellIsolation) || this.cache.length === 0) return;
 
@@ -848,7 +848,7 @@ export class Job {
                 cmd += `mkdir -p ../../cache/${cacheName}\n`;
                 cmd += `rsync -Ra ${expandedPath} ../../cache/${cacheName}/. || true\n`;
 
-                await Mutex.exclusive(cacheName, async() => {
+                await Mutex.exclusive(cacheName, async () => {
                     await this.copyOut(cmd, stateDir, "cache", []);
                 });
                 endTime = process.hrtime(time);
@@ -863,7 +863,7 @@ export class Job {
         }
     }
 
-    private async copyArtifactsOut(writeStreams: WriteStreams) {
+    private async copyArtifactsOut (writeStreams: WriteStreams) {
         const safeJobName = this.safeJobName;
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
@@ -918,7 +918,7 @@ export class Job {
         }
     }
 
-    private async copyOut(cmd: string, stateDir: string, type: "artifacts" | "cache", dockerCmdExtras: string[]) {
+    private async copyOut (cmd: string, stateDir: string, type: "artifacts" | "cache", dockerCmdExtras: string[]) {
         const safeJobName = this.safeJobName;
         const buildVolumeName = this.buildVolumeName;
         const cwd = this.argv.cwd;
@@ -937,7 +937,7 @@ export class Job {
         }
     }
 
-    private refreshLongRunningSilentTimeout(writeStreams: WriteStreams) {
+    private refreshLongRunningSilentTimeout (writeStreams: WriteStreams) {
         clearTimeout(this._longRunningSilentTimeout);
         this._longRunningSilentTimeout = setTimeout(() => {
             writeStreams.stdout(chalk`${this.chalkJobName} {grey > still running...}\n`);
@@ -945,7 +945,7 @@ export class Job {
         }, 10000);
     }
 
-    private getExitedString(startTime: [number, number], code: number, warning = false, prependString = "") {
+    private getExitedString (startTime: [number, number], code: number, warning = false, prependString = "") {
         const finishedStr = this.getFinishedString(startTime);
         if (warning) {
             return chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }${prependString}`;
@@ -954,18 +954,18 @@ export class Job {
         return chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} } ${prependString}`;
     }
 
-    private getFinishedString(startTime: [number, number]) {
+    private getFinishedString (startTime: [number, number]) {
         const endTime = process.hrtime(startTime);
         const timeStr = prettyHrtime(endTime);
         return chalk`${this.chalkJobName} {magentaBright finished} in {magenta ${timeStr}}`;
     }
 
-    private async createDockerNetwork(networkName: string) {
+    private async createDockerNetwork (networkName: string) {
         const {stdout: networkId} = await Utils.spawn(["docker", "network", "create", `${networkName}`]);
         this._serviceNetworkId = networkId;
     }
 
-    private async startService(writeStreams: WriteStreams, service: Service) {
+    private async startService (writeStreams: WriteStreams, service: Service) {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
@@ -1035,7 +1035,7 @@ export class Job {
         return containerId;
     }
 
-    private async serviceHealthCheck(writeStreams: WriteStreams, service: Service, containerId: string) {
+    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, containerId: string) {
         const {stdout} = await Utils.spawn(["docker", "image", "inspect", service.getName(this.expandedVariables)]);
         const imageInspect = JSON.parse(stdout);
 
