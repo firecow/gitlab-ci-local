@@ -4,24 +4,27 @@ test("GITLAB_CI on_success", () => {
     const rules = [
         {if: "$GITLAB_CI == 'false'"},
     ];
-    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, exists: [], variables: undefined});
+    const variables = {GITLAB_CI: "false"};
+    const rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
 });
 
 test("Regex on undef var", () => {
     const rules = [
         {if: "$CI_COMMIT_TAG =~ /^v\\d+.\\d+.\\d+/"},
     ];
-    const rulesResult = Utils.getRulesResult(rules, {});
-    expect(rulesResult).toEqual({when: "never", allowFailure: false, exists: [], variables: undefined});
+    const variables = {};
+    const rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined});
 });
 
 test("Negated regex on undef var", () => {
     const rules = [
         {if: "$CI_COMMIT_TAG !~ /^v\\d+.\\d+.\\d+/"},
     ];
-    const rulesResult = Utils.getRulesResult(rules, {});
-    expect(rulesResult).toEqual({when: "never", allowFailure: false, exists: [], variables: undefined});
+    const variables = {};
+    const rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined});
 });
 
 test("GITLAB_CI fail and fallback", () => {
@@ -29,24 +32,27 @@ test("GITLAB_CI fail and fallback", () => {
         {if: "$GITLAB_CI == 'true'"},
         {when: "manual"},
     ];
-    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, exists: [], variables: undefined});
+    const variables = {GITLAB_CI: "false"};
+    const rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
 });
 
 test("Undefined if", () => {
     const rules = [
         {when: "on_success"},
     ];
-    const rulesResult = Utils.getRulesResult(rules, {});
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, exists: [], variables: undefined});
+    const variables = {};
+    const rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
 });
 
 test("Undefined when", () => {
     const rules = [
         {if: "$GITLAB_CI", allow_failure: false},
     ];
-    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, exists: [], variables: undefined});
+    const variables = {GITLAB_CI: "false"};
+    const rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
 });
 
 test("Early return", () => {
@@ -54,8 +60,9 @@ test("Early return", () => {
         {if: "$GITLAB_CI", when: "never"},
         {when: "on_success"},
     ];
-    const rulesResult = Utils.getRulesResult(rules, {GITLAB_CI: "false"});
-    expect(rulesResult).toEqual({when: "never", allowFailure: false, exists: [], variables: undefined});
+    const variables = {GITLAB_CI: "false"};
+    const rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined});
 });
 
 test("VAR exists positive", () => {
@@ -221,40 +228,44 @@ test("Complex parentheses junctions regex fail - case insensitive", () => {
 });
 
 test("https://github.com/firecow/gitlab-ci-local/issues/350", () => {
-    let rules, rulesResult;
-
+    let rules, rulesResult, variables;
     rules = [
         {if: "$CI_COMMIT_BRANCH =~ /master$/", when: "manual"},
     ];
-    rulesResult = Utils.getRulesResult(rules, {CI_COMMIT_BRANCH: "master"});
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, exists: [], variables: undefined});
+    variables = {CI_COMMIT_BRANCH: "master"};
+    rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
 
     rules = [
         {if: "$CI_COMMIT_BRANCH =~ /$BRANCHNAME/", when: "manual"},
     ];
-    rulesResult = Utils.getRulesResult(rules, {CI_COMMIT_BRANCH: "master", BRANCHNAME: "master"});
-    expect(rulesResult).toEqual({when: "never", allowFailure: false, exists: [], variables: undefined});
+    variables = {CI_COMMIT_BRANCH: "master", BRANCHNAME: "master"};
+    rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined});
 });
 
 test("https://github.com/firecow/gitlab-ci-local/issues/300", () => {
-    let rules, rulesResult;
+    let rules, rulesResult, variables;
     rules = [
         {if: "$VAR1 && (($VAR3 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR3 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))", when: "manual"},
     ];
-    rulesResult = Utils.getRulesResult(rules, {VAR1: "val", VAR2: "ci-skip-job-", VAR3: "ci-skip-job-"});
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, exists: [], variables: undefined});
+    variables = {VAR1: "val", VAR2: "ci-skip-job-", VAR3: "ci-skip-job-"};
+    rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
 
     rules = [
         {if: "$VAR1 && (($VAR3 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR3 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))", when: "manual"},
     ];
-    rulesResult = Utils.getRulesResult(rules, {VAR1: "val", VAR2: "ci-skip-stage-", VAR3: "ci-skip-stage-"});
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, exists: [], variables: undefined});
+    variables = {VAR1: "val", VAR2: "ci-skip-stage-", VAR3: "ci-skip-stage-"};
+    rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
 });
 
 test("https://github.com/firecow/gitlab-ci-local/issues/424", () => {
     const rules = [
         {if: "$CI_COMMIT_REF_NAME =~ /^(develop$|release\\/.*|master$)/", when: "manual"},
     ];
-    const rulesResult = Utils.getRulesResult(rules, {CI_COMMIT_REF_NAME: "develop"});
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, exists: [], variables: undefined});
+    const variables = {CI_COMMIT_REF_NAME: "develop"};
+    const rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
 });

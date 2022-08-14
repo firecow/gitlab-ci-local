@@ -13,7 +13,6 @@ import {CacheEntry} from "./cache-entry";
 import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
-import micromatch from "micromatch";
 import {CICDVariable} from "./variables-from-files";
 
 interface JobOptions {
@@ -172,10 +171,9 @@ export class Job {
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
-            const ruleResult = Utils.getRulesResult(this.rules, this.expandedVariables);
+            const ruleResult = Utils.getRulesResult({cwd, rules: this.rules, variables: this.expandedVariables});
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
-            this.exists = ruleResult.exists;
             this.expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables});
         }
 
@@ -341,42 +339,6 @@ export class Job {
 
     get fileVariablesDir () {
         return `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}-${this.jobId}`;
-    }
-
-    shouldExecuteBasedOnRuleExisting (): boolean {
-        if ( this.exists == undefined || this.exists.length == 0 ) return true;
-
-        function searchFiles (dirPath: string, arrayOfFiles: string[]): string[] {
-            const filesTmp = fs.readdirSync(dirPath);
-
-            filesTmp.forEach(function (fileTmp: string) {
-                const filePath = dirPath + "/" + fileTmp;
-                if (fs.statSync(filePath).isDirectory()) {
-                    arrayOfFiles = searchFiles(filePath, arrayOfFiles);
-                } else {
-                    arrayOfFiles.push(filePath);
-                }
-            });
-
-            return arrayOfFiles;
-        }
-
-        const files = searchFiles(this.argv.cwd, []);
-
-        const strippedFiles: string[] = [];
-        for (const file of files ) {
-            strippedFiles.push(file.replace(this.argv.cwd + "/", ""));
-        }
-
-        for (const pattern of this.exists) {
-            for (const strippedFile of strippedFiles) {
-                if(micromatch.isMatch(strippedFile, pattern, {dot: true})) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     async start (): Promise<void> {

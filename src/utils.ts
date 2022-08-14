@@ -6,6 +6,19 @@ import base64url from "base64url";
 import execa from "execa";
 import {assert} from "./asserts";
 import {CICDVariable} from "./variables-from-files";
+import micromatch from "micromatch";
+
+type RuleResultOpt = {
+    cwd: string;
+    rules: {
+        if?: string;
+        when?: string;
+        exists?: string[];
+        allow_failure?: boolean;
+        variables?: {[name: string]: string};
+    }[];
+    variables: {[key: string]: string};
+};
 
 type ExpandWith = {
     unescape: string;
@@ -77,7 +90,7 @@ export class Utils {
         }
 
         return text.replace(
-            /(\$\$)|\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}?|\$([a-zA-Z_][a-zA-Z0-9_]*)/g,
+            /(\$\$)|\$\{([a-zA-Z_]\w*)}?|\$([a-zA-Z_]\w*)/g,
             (_match, escape, var1, var2) => {
                 if (typeof escape !== "undefined") {
                     return expandWith.unescape;
@@ -158,25 +171,28 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult (
-        rules: {if?: string; when?: string; exists ?: string[] | undefined; allow_failure?: boolean; variables?: {[name: string]: string}}[], variables: {[key: string]: string}
-    ): {when: string; allowFailure: boolean; exists : string[]; variables: {[name: string]: string} | undefined} {
+    static getRulesResult (opt: RuleResultOpt): {when: string; allowFailure: boolean; variables?: {[name: string]: string}} {
         let when = "never";
         let allowFailure = false;
-        let ruleVariable: {[name: string]: string} | undefined = undefined;
-        let ruleExists : string[] = [];
+        let ruleVariable: {[name: string]: string} | undefined;
+        let ruleExists;
 
-        for (const rule of rules) {
-            if (Utils.evaluateRuleIf(rule.if || "true", variables)) {
+        for (const rule of opt.rules) {
+            if (Utils.evaluateRuleIf(rule.if || "true", opt.variables)) {
                 when = rule.when ? rule.when : "on_success";
                 allowFailure = rule.allow_failure ?? false;
                 ruleVariable = rule.variables;
-                ruleExists = rule.exists ?? [];
+                ruleExists = rule.exists;
+
+                if (ruleExists && !Utils.evaludateRuleExist(opt.cwd, ruleExists)) {
+                    when = "never";
+                }
+
                 break;
             }
         }
 
-        return {when, allowFailure, exists: ruleExists, variables: ruleVariable};
+        return {when, allowFailure, variables: ruleVariable};
     }
 
     static evaluateRuleIf (ruleIf: string, envs: {[key: string]: string}) {
@@ -202,6 +218,40 @@ export class Utils {
 
         // noinspection BadExpressionStatementJS
         return eval(`if (${evalStr}) { true } else { false }`);
+    }
+
+    static evaludateRuleExist (cwd: string, ruleExists: string[]): boolean {
+        function searchFiles (dirPath: string, arrayOfFiles: string[]): string[] {
+            const filesTmp = fs.readdirSync(dirPath);
+
+            filesTmp.forEach(function (fileTmp: string) {
+                const filePath = dirPath + "/" + fileTmp;
+                if (fs.statSync(filePath).isDirectory()) {
+                    arrayOfFiles = searchFiles(filePath, arrayOfFiles);
+                } else {
+                    arrayOfFiles.push(filePath);
+                }
+            });
+
+            return arrayOfFiles;
+        }
+
+        const files = searchFiles(cwd, []);
+
+        const strippedFiles: string[] = [];
+        for (const file of files ) {
+            strippedFiles.push(file.replace(cwd + "/", ""));
+        }
+
+        for (const pattern of ruleExists) {
+            for (const strippedFile of strippedFiles) {
+                if(micromatch.isMatch(strippedFile, pattern, {dot: true})) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
