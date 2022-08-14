@@ -239,7 +239,7 @@ export class Utils {
         const files = searchFiles(cwd, []);
 
         const strippedFiles: string[] = [];
-        for (const file of files ) {
+        for (const file of files) {
             strippedFiles.push(file.replace(cwd + "/", ""));
         }
 
@@ -298,7 +298,7 @@ export class Utils {
         const files = Utils.searchFiles(dirPath, []);
 
         const strippedFiles: string[] = [];
-        for (const file of files ) {
+        for (const file of files) {
             strippedFiles.push(file.replace(dirPath + "/", ""));
         }
 
