@@ -6,7 +6,7 @@ import base64url from "base64url";
 import execa from "execa";
 import {assert} from "./asserts";
 import {CICDVariable} from "./variables-from-files";
-import glob from "glob-promise";
+import globby from "globby";
 
 type RuleResultOpt = {
     cwd: string;
@@ -222,7 +222,7 @@ export class Utils {
 
     static evaludateRuleExist (cwd: string, ruleExists: string[]): boolean {
         for (const pattern of ruleExists) {
-            if (glob.sync(pattern, {dot: true, cwd}).length > 0) {
+            if (globby.sync(pattern, {dot: true, cwd}).length > 0) {
                 return true;
             }
         }
