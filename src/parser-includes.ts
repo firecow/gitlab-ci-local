@@ -9,11 +9,21 @@ import {Parser} from "./parser";
 import axios from "axios";
 import globby from "globby";
 
+type ParserIncludesInitOptions = {
+    cwd: string;
+    stateDir: string;
+    writeStreams: WriteStreams;
+    gitData: GitData;
+    fetchIncludes: boolean;
+    localNotGlobs: string[];
+};
+
 export class ParserIncludes {
 
-    static async init (gitlabData: any, cwd: string, stateDir: string, writeStreams: WriteStreams, gitData: GitData, depth: number, fetchIncludes: boolean, localNotGlobs: string[]): Promise<any[]> {
+    static async init (gitlabData: any, depth: number, opts: ParserIncludesInitOptions): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
+        const {stateDir, cwd, fetchIncludes, gitData, localNotGlobs} = opts;
 
         assert(depth < 100, chalk`circular dependency detected in \`include\``);
         depth++;
@@ -49,7 +59,7 @@ export class ParserIncludes {
                 for (const localFile of files) {
                     const content = await Parser.loadYaml(`${cwd}/${localFile}`);
                     localNotGlobs.push(`!${localFile}`);
-                    includeDatas = includeDatas.concat(await this.init(content, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes, localNotGlobs));
+                    includeDatas = includeDatas.concat(await this.init(content, depth, opts));
                 }
             } else if (value["project"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
@@ -66,17 +76,17 @@ export class ParserIncludes {
                         };
                     });
 
-                    includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes, localNotGlobs));
+                    includeDatas = includeDatas.concat(await this.init(fileDoc, depth, opts));
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
                 const fileDoc = await Parser.loadYaml(`${cwd}/${stateDir}/includes/${fsUrl}`);
-                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes, localNotGlobs));
+                includeDatas = includeDatas.concat(await this.init(fileDoc, depth, opts));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
                 const fileDoc = await Parser.loadYaml(`${cwd}/${stateDir}/includes/${fsUrl}`);
-                includeDatas = includeDatas.concat(await this.init(fileDoc, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes, localNotGlobs));
+                includeDatas = includeDatas.concat(await this.init(fileDoc, depth, opts));
             } else {
                 throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
             }
