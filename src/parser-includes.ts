@@ -7,7 +7,7 @@ import {assert} from "./asserts";
 import chalk from "chalk";
 import {Parser} from "./parser";
 import axios from "axios";
-import micromatch from "micromatch";
+import glob from "glob-promise";
 
 export class ParserIncludes {
 
@@ -22,13 +22,7 @@ export class ParserIncludes {
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
-            if (value["local"]) {
-                const filesStripped = Utils.searchFilesStripped(cwd);
-                const files = micromatch.match(filesStripped, `${value["local"]}`);
-                if (files.length == 0) {
-                    throw new ExitError(`Local include file cannot be found ${value["local"]}`);
-                }
-            } else if (value["file"]) {
+            if (value["file"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
                     promises.push(this.downloadIncludeProjectFile(cwd, stateDir, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes));
                 }
@@ -46,8 +40,7 @@ export class ParserIncludes {
 
         for (const value of include) {
             if (value["local"]) {
-                const filesStripped = Utils.searchFilesStripped(cwd);
-                const files = micromatch.match(filesStripped, `${value["local"]}`);
+                const files = await glob(value["local"], {dot: true, cwd});
                 for (const localFile of files) {
                     const content = await Parser.loadYaml(`${cwd}/${localFile}`);
                     includeDatas = includeDatas.concat(await this.init(content, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes));
