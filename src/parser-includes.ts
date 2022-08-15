@@ -7,7 +7,7 @@ import {assert} from "./asserts";
 import chalk from "chalk";
 import {Parser} from "./parser";
 import axios from "axios";
-import minimatch from "minimatch";
+import micromatch from "micromatch";
 
 export class ParserIncludes {
 
@@ -24,7 +24,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["local"]) {
                 const filesStripped = Utils.searchFilesStripped(cwd);
-                const files = minimatch.match(filesStripped, `${value["local"]}`);
+                const files = micromatch.match(filesStripped, `${value["local"]}`);
                 if (files.length == 0) {
                     throw new ExitError(`Local include file cannot be found ${value["local"]}`);
                 }
@@ -47,7 +47,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["local"]) {
                 const filesStripped = Utils.searchFilesStripped(cwd);
-                const files = minimatch.match(filesStripped, `${value["local"]}`);
+                const files = micromatch.match(filesStripped, `${value["local"]}`);
                 for (const localFile of files) {
                     const content = await Parser.loadYaml(`${cwd}/${localFile}`);
                     includeDatas = includeDatas.concat(await this.init(content, cwd, stateDir, writeStreams, gitData, depth, fetchIncludes));

@@ -21,8 +21,6 @@ export class Executor {
     static getStartCandidates (jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: readonly Job[], manuals: string[]) {
         const startCandidates = [];
 
-        potentialStarters = potentialStarters.filter(job => job.shouldExecuteBasedOnRuleExisting());
-
         for (const job of [...new Set<Job>(potentialStarters)]) {
             if (job.started) continue;
 
