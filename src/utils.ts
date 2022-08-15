@@ -222,7 +222,7 @@ export class Utils {
 
     static evaludateRuleExist (cwd: string, ruleExists: string[]): boolean {
         for (const pattern of ruleExists) {
-            if (glob.sync(pattern, {dot: true, cwd})) {
+            if (glob.sync(pattern, {dot: true, cwd}).length > 0) {
                 return true;
             }
         }
