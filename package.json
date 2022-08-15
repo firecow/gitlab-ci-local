@@ -46,7 +46,6 @@
     "@types/jest": "28.1.6",
     "@types/jest-when": "3.5.2",
     "@types/js-yaml": "4.0.5",
-    "@types/micromatch": "^4.0.2",
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.4",
     "@types/yargs": "17.0.11",
