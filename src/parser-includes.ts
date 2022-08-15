@@ -22,7 +22,12 @@ export class ParserIncludes {
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
-            if (value["file"]) {
+            if (value["local"]) {
+                const files = await glob(value["local"], {dot: true, cwd});
+                if (files.length == 0) {
+                    throw new ExitError(`Local include file cannot be found ${value["local"]}`);
+                }
+            } else if (value["file"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
                     promises.push(this.downloadIncludeProjectFile(cwd, stateDir, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes));
                 }
