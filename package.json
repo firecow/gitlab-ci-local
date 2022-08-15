@@ -31,7 +31,7 @@
     "execa": "5.1.1",
     "fs-extra": "10.1.0",
     "js-yaml": "4.1.0",
-    "minimatch": "5.1.0",
+    "micromatch": "^4.0.5",
     "object-traversal": "1.0.1",
     "pretty-hrtime": "1.0.3",
     "source-map-support": "0.5.21",
@@ -46,6 +46,7 @@
     "@types/jest": "28.1.6",
     "@types/jest-when": "3.5.2",
     "@types/js-yaml": "4.0.5",
+    "@types/micromatch": "^4.0.2",
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.4",
     "@types/yargs": "17.0.11",
@@ -65,33 +66,60 @@
     "node": ">=16.10.0"
   },
   "pkg": {
-    "assets": ["package.json"],
-    "scripts": ["src/**/*.js"]
+    "assets": [
+      "package.json"
+    ],
+    "scripts": [
+      "src/**/*.js"
+    ]
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
-    "plugins": ["@typescript-eslint"],
-    "ignorePatterns": ["*.js"],
-    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "ignorePatterns": [
+      "*.js"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
     "rules": {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/semi": "error",
       "@typescript-eslint/quotes": "error",
-      "@typescript-eslint/comma-dangle": ["error", "always-multiline"],
+      "@typescript-eslint/comma-dangle": [
+        "error",
+        "always-multiline"
+      ],
       "@typescript-eslint/object-curly-spacing": "error",
       "@typescript-eslint/space-before-function-paren": "error",
       "@typescript-eslint/space-before-blocks": "error",
       "@typescript-eslint/space-infix-ops": "error",
       "@typescript-eslint/member-delimiter-style": "error",
-      "@typescript-eslint/indent": ["error", 4]
+      "@typescript-eslint/indent": [
+        "error",
+        4
+      ],
+      "space-in-parens": "error"
     }
   },
   "jest": {
     "preset": "ts-jest",
-    "testMatch": ["**/*.test.ts"],
-    "testPathIgnorePatterns": ["/node_modules/", "/.gitlab-ci-local/"],
-    "coverageReporters": ["lcov", "json-summary", "text-summary"]
+    "testMatch": [
+      "**/*.test.ts"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/.gitlab-ci-local/"
+    ],
+    "coverageReporters": [
+      "lcov",
+      "json-summary",
+      "text-summary"
+    ]
   },
   "repository": {
     "type": "git",

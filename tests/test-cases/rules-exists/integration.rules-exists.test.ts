@@ -7,11 +7,10 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("rules-exists <all-jobs> --needs", async () => {
+test("rules-exists", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/rules-exists",
-        needs: true,
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join();
