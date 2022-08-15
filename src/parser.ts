@@ -75,10 +75,10 @@ export class Parser {
 
         let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, stateDir, writeStreams, gitData, 0, fetchIncludes));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, cwd, stateDir, writeStreams, gitData, 0, fetchIncludes, []));
 
         const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, stateDir, writeStreams, gitData, 0, fetchIncludes));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, cwd, stateDir, writeStreams, gitData, 0, fetchIncludes, []));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
