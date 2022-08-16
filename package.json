@@ -3,7 +3,7 @@
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.33.0",
+  "version": "4.33.1",
   "scripts": {
     "prepublishOnly": "npm run check-all && chmod +x src/index.js",
     "pkg-linux": "pkg src/index.js --public -t node18-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
