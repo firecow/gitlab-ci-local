@@ -15,7 +15,7 @@ type ParserIncludesInitOptions = {
     writeStreams: WriteStreams;
     gitData: GitData;
     fetchIncludes: boolean;
-    localNotGlobs: string[];
+    excludedGlobs: string[];
 };
 
 export class ParserIncludes {
@@ -23,7 +23,7 @@ export class ParserIncludes {
     static async init (gitlabData: any, depth: number, opts: ParserIncludesInitOptions): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
-        const {stateDir, cwd, fetchIncludes, gitData, localNotGlobs} = opts;
+        const {stateDir, cwd, fetchIncludes, gitData, excludedGlobs} = opts;
 
         assert(depth < 100, chalk`circular dependency detected in \`include\``);
         depth++;
@@ -55,10 +55,10 @@ export class ParserIncludes {
 
         for (const value of include) {
             if (value["local"]) {
-                const files = await globby([value["local"], ...localNotGlobs], {dot: true, cwd});
+                const files = await globby([value["local"], ...excludedGlobs], {dot: true, cwd});
                 for (const localFile of files) {
                     const content = await Parser.loadYaml(`${cwd}/${localFile}`);
-                    localNotGlobs.push(`!${localFile}`);
+                    excludedGlobs.push(`!${localFile}`);
                     includeDatas = includeDatas.concat(await this.init(content, depth, opts));
                 }
             } else if (value["project"]) {
