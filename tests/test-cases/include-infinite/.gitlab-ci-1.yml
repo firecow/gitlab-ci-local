@@ -1,3 +1,0 @@
----
-include:
-  - { local: .gitlab-ci-2.yml }

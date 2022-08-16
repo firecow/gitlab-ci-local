@@ -6,7 +6,7 @@ import base64url from "base64url";
 import execa from "execa";
 import {assert} from "./asserts";
 import {CICDVariable} from "./variables-from-files";
-import micromatch from "micromatch";
+import globby from "globby";
 
 type RuleResultOpt = {
     cwd: string;
@@ -221,36 +221,11 @@ export class Utils {
     }
 
     static evaludateRuleExist (cwd: string, ruleExists: string[]): boolean {
-        function searchFiles (dirPath: string, arrayOfFiles: string[]): string[] {
-            const filesTmp = fs.readdirSync(dirPath);
-
-            filesTmp.forEach(function (fileTmp: string) {
-                const filePath = dirPath + "/" + fileTmp;
-                if (fs.statSync(filePath).isDirectory()) {
-                    arrayOfFiles = searchFiles(filePath, arrayOfFiles);
-                } else {
-                    arrayOfFiles.push(filePath);
-                }
-            });
-
-            return arrayOfFiles;
-        }
-
-        const files = searchFiles(cwd, []);
-
-        const strippedFiles: string[] = [];
-        for (const file of files) {
-            strippedFiles.push(file.replace(cwd + "/", ""));
-        }
-
         for (const pattern of ruleExists) {
-            for (const strippedFile of strippedFiles) {
-                if(micromatch.isMatch(strippedFile, pattern, {dot: true})) {
-                    return true;
-                }
+            if (globby.sync(pattern, {dot: true, cwd}).length > 0) {
+                return true;
             }
         }
-
         return false;
     }
 
@@ -279,29 +254,4 @@ export class Utils {
         return checksum(result.join(""));
     }
 
-    static searchFiles (dirPath: string, arrayOfFiles: string[]): string[] {
-        const filesTmp = fs.readdirSync(dirPath);
-
-        filesTmp.forEach(function (fileTmp: string) {
-            const filePath = dirPath + "/" + fileTmp;
-            if (fs.statSync(filePath).isDirectory()) {
-                arrayOfFiles = Utils.searchFiles(filePath, arrayOfFiles);
-            } else {
-                arrayOfFiles.push(filePath);
-            }
-        });
-
-        return arrayOfFiles;
-    }
-
-    static searchFilesStripped (dirPath: string): string[] {
-        const files = Utils.searchFiles(dirPath, []);
-
-        const strippedFiles: string[] = [];
-        for (const file of files) {
-            strippedFiles.push(file.replace(dirPath + "/", ""));
-        }
-
-        return strippedFiles;
-    }
 }
