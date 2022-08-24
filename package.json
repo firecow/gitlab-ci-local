@@ -47,7 +47,7 @@
     "@types/jest-when": "3.5.2",
     "@types/js-yaml": "4.0.5",
     "@types/pretty-hrtime": "1.0.1",
-    "@types/source-map-support": "0.5.4",
+    "@types/source-map-support": "0.5.6",
     "@types/yargs": "17.0.11",
     "@typescript-eslint/eslint-plugin": "5.34.0",
     "@typescript-eslint/parser": "5.34.0",
