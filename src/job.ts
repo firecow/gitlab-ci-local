@@ -397,8 +397,8 @@ export class Job {
 
         writeStreams.stdout(`${this.getFinishedString(startTime)}\n`);
 
-        if (this.jobData.coverage) {
-            this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData.coverage, safeJobname);
+        if (this.jobData["coverage"]) {
+            this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobname);
         }
 
         this._running = false;
