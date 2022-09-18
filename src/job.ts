@@ -364,6 +364,7 @@ export class Job {
         }
 
         const prescripts = this.beforeScripts.concat(this.scripts);
+        this._expandedVariables["CI_JOB_STATUS"] = "running";
         this._prescriptsExitCode = await this.execScripts(prescripts);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
@@ -388,6 +389,7 @@ export class Job {
         }
 
         if (this.afterScripts.length > 0) {
+            this._expandedVariables["CI_JOB_STATUS"] = this._prescriptsExitCode === 0 ? "success" : "failed";
             this._afterScriptsExitCode = await this.execScripts(this.afterScripts);
         }
 
