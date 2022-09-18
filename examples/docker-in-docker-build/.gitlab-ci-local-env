@@ -1,0 +1,3 @@
+PRIVILEGED=true
+VOLUME=certs:/certs/client
+VARIABLE="DOCKER_TLS_CERTDIR=/certs"

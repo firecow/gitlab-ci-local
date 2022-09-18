@@ -940,6 +940,10 @@ export class Job {
             dockerCmd += "--privileged ";
         }
 
+        for (const volume of this.argv.volume) {
+            dockerCmd += `--volume ${volume} `;
+        }
+
         const serviceAlias = service.getAlias(this.expandedVariables);
         const serviceName = service.getName(this.expandedVariables);
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
@@ -1022,20 +1026,18 @@ export class Job {
         }
 
         // Iterate over each port defined in the image, and try to connect to the alias
+        const time = process.hrtime();
+        const hcPromises = [];
         for (const port of Object.keys(imageInspect[0].ContainerConfig.ExposedPorts)) {
             if (!port.endsWith("/tcp")) continue;
             const portNum = parseInt(port.replace("/tcp", ""));
-
-            const time = process.hrtime();
-            try {
-                const spawnCmd = ["docker", "run", "--rm", "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${aliases[0]}:${portNum}`, "-t", "30"];
-                await Utils.spawn(spawnCmd);
-                const endTime = process.hrtime(time);
-                writeStreams.stdout(chalk`${this.chalkJobName} {greenBright service image: ${serviceName} healthcheck passed: ${aliases[0]}:${portNum}} in {green ${prettyHrtime(endTime)}}\n`);
-            } catch (e) {
-                const endTime = process.hrtime(time);
-                writeStreams.stdout(chalk`${this.chalkJobName} {redBright service image: ${serviceName} healthcheck failed: ${aliases[0]}:${portNum}} in {red ${prettyHrtime(endTime)}}\n`);
-            }
+            const spawnCmd = ["docker", "run", "--rm", "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${aliases[0]}:${portNum}`, "-t", "30"];
+            hcPromises.push(Utils.spawn(spawnCmd).catch(() => {
+                writeStreams.stdout(chalk`${this.chalkJobName} {redBright service image: ${serviceName} healthcheck failed: ${aliases[0]}:${portNum}}\n`);
+            }));
         }
+        await Promise.any(hcPromises);
+        const endTime = process.hrtime(time);
+        writeStreams.stdout(chalk`${this.chalkJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${prettyHrtime(endTime)}}}\n`);
     }
 }
