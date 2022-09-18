@@ -16,7 +16,7 @@ test("after-script <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job } {greenBright >} Cleanup after test`,
+        chalk`{blueBright test-job  } {greenBright >} Cleanup after test`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -29,7 +29,34 @@ test("after-script <build-job> (default)", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright build-job} {greenBright >} Cleanup after test`,
+        chalk`{blueBright build-job } {greenBright >} Cleanup after test`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test("after-script <deploy-job>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/after-script",
+        job: ["deploy-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright deploy-job} {greenBright >} running`,
+        chalk`{blueBright deploy-job} {greenBright >} success`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test("after-script <deploy-job>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/after-script",
+        job: ["post-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright post-job} {greenBright >} failed`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
