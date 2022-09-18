@@ -212,7 +212,7 @@ export class Job {
     }
 
     get safeJobName () {
-        return Utils.getSafeJobName(this.name);
+        return Utils.safeDockerString(this.name);
     }
 
     get needs (): {job: string; artifacts: boolean}[] | null {
@@ -476,7 +476,7 @@ export class Job {
             c.paths.forEach((p) => {
                 const path = Utils.expandText(p, this.expandedVariables);
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
-                const cacheMount = `gcl-${this.expandedVariables.CI_PROJECT_PATH_SLUG}-${uniqueCacheName}`;
+                const cacheMount = Utils.safeDockerString(`gcl-${this.expandedVariables.CI_PROJECT_PATH_SLUG}-${uniqueCacheName}`);
                 cmd += `-v ${cacheMount}:/gcl-builds/${path} `;
             });
         }
@@ -716,7 +716,7 @@ export class Job {
             const producerDotenv = Utils.expandText(producer.dotenv, this.expandedVariables);
             if (producerDotenv === null) continue;
 
-            const safeProducerName = Utils.getSafeJobName(producer.name);
+            const safeProducerName = Utils.safeDockerString(producer.name);
             const dotenvFolder = `${cwd}/${stateDir}/artifacts/${safeProducerName}/.gitlab-ci-reports/dotenv/`;
             if (await fs.pathExists(dotenvFolder)) {
                 const dotenvFiles = (await Utils.spawn(["find", ".", "-type", "f"], dotenvFolder)).stdout.split("\n");
@@ -766,7 +766,7 @@ export class Job {
         const time = process.hrtime();
         const promises = [];
         for (const producer of this.producers ?? []) {
-            const producerSafeName = Utils.getSafeJobName(producer.name);
+            const producerSafeName = Utils.safeDockerString(producer.name);
             const artifactFolder = `${cwd}/${stateDir}/artifacts/${producerSafeName}`;
             if (!await fs.pathExists(artifactFolder)) {
                 await fs.mkdirp(artifactFolder);

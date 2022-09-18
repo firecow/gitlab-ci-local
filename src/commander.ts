@@ -102,7 +102,7 @@ export class Commander {
             preScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
             for (const {name} of preScripts.warned) {
                 const namePad = name.padEnd(jobNamePad);
-                const safeName = Utils.getSafeJobName(name);
+                const safeName = Utils.safeDockerString(name);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  pre_script\n`);
                 const outputLog = await fs.readFile(`${cwd}/${stateDir}/output/${safeName}.log`, "utf8");
                 for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
@@ -123,7 +123,7 @@ export class Commander {
             preScripts.failed.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
             for (const {name} of preScripts.failed) {
                 const namePad = name.padEnd(jobNamePad);
-                const safeName = Utils.getSafeJobName(name);
+                const safeName = Utils.safeDockerString(name);
                 writeStreams.stdout(chalk`{black.bgRed  FAIL } {blueBright ${namePad}}\n`);
                 const outputLog = await fs.readFile(`${cwd}/${stateDir}/output/${safeName}.log`, "utf8");
                 for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
