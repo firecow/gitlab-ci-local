@@ -102,7 +102,9 @@
         "error",
         4
       ],
-      "space-in-parens": "error"
+      "space-in-parens": "error",
+      "no-trailing-spaces": "error",
+      "no-multi-spaces": "error"
     }
   },
   "jest": {
