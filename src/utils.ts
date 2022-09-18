@@ -38,7 +38,7 @@ export class Utils {
         return url.replace(/^https:\/\//g, "").replace(/^http:\/\//g, "");
     }
 
-    static getSafeJobName (jobName: string) {
+    static safeDockerString (jobName: string) {
         return jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
         });
