@@ -48,7 +48,7 @@ test("after-script <deploy-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("after-script <deploy-job>", async () => {
+test("after-script <post-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/after-script",
@@ -56,7 +56,7 @@ test("after-script <deploy-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright post-job} {greenBright >} failed`,
+        chalk`{blueBright post-job  } {greenBright >} failed`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
