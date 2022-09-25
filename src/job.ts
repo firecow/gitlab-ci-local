@@ -363,6 +363,15 @@ export class Job {
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
         }
 
+        if (this.services?.length) {
+            await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
+            for (const service of this.services) {
+                await this.pullImage(writeStreams, service.getName(this.expandedVariables));
+                const serviceContainerId = await this.startService(writeStreams, service);
+                await this.serviceHealthCheck(writeStreams, service, serviceContainerId);
+            }
+        }
+
         const prescripts = this.beforeScripts.concat(this.scripts);
         this._expandedVariables["CI_JOB_STATUS"] = "running";
         this._prescriptsExitCode = await this.execScripts(prescripts);
@@ -531,13 +540,7 @@ export class Job {
                 dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
             }
             if (this.services?.length) {
-                await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
-                for (const service of this.services) {
-                    await this.pullImage(writeStreams, service.getName(this.expandedVariables));
-                    const serviceContainerId = await this.startService(writeStreams, service);
-                    await this.serviceHealthCheck(writeStreams, service, serviceContainerId);
-                }
             }
 
             const volumePromises = [];
