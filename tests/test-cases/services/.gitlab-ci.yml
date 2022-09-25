@@ -32,6 +32,8 @@ deploy-job:
   script:
     - host nginx && exit 1
     - host redis
+  after_script:
+    - echo "Deploy something in after_script"
 
 alias-job:
   services:
