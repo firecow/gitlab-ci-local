@@ -57,7 +57,7 @@ multie-job:
   script:
     - echo "Hello"
 
-no-tmp-folder:
+no-tmp:
   image: alpine
   needs: []
   services:
