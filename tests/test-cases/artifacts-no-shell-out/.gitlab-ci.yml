@@ -6,5 +6,5 @@ produce:
     - touch path/file1
     - touch path/file2
   artifacts:
-    paths: [path/]
+    paths: [path/, "**/file1"]
     exclude: [path/file2]

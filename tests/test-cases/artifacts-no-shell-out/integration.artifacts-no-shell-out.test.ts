@@ -9,6 +9,8 @@ beforeAll(() => {
 });
 
 test("artifacts-no-shell-out <produce> --no-shell-isolation", async () => {
+    await fs.promises.rm("tests/test-cases/artifacts-no-shell-out/.gitlab-ci-local/artifacts/produce/.gitlab-ci-local/artifacts/produce/path/file1", {force: true});
+
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-no-shell-out",
@@ -18,4 +20,5 @@ test("artifacts-no-shell-out <produce> --no-shell-isolation", async () => {
 
     expect(await fs.pathExists("tests/test-cases/artifacts-no-shell-out/.gitlab-ci-local/artifacts/produce/path/file1")).toEqual(true);
     expect(await fs.pathExists("tests/test-cases/artifacts-no-shell-out/.gitlab-ci-local/artifacts/produce/path/file2")).toEqual(false);
+    expect(await fs.pathExists("tests/test-cases/artifacts-no-shell-out/.gitlab-ci-local/artifacts/produce/.gitlab-ci-local/artifacts/produce/path/file1")).toEqual(false);
 });
