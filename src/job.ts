@@ -357,8 +357,9 @@ export class Job {
         const safeJobname = this.safeJobName;
         this._expandedVariables = {...this.expandedVariables, ...reportsDotenvVariables};
 
-        await fs.ensureFile(`${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`);
-        await fs.truncate(`${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`);
+        const outputLogFilePath = `${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`;
+        await fs.ensureFile(outputLogFilePath);
+        await fs.truncate(outputLogFilePath);
 
         if (!this.interactive) {
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
@@ -369,7 +370,11 @@ export class Job {
             for (const service of this.services) {
                 await this.pullImage(writeStreams, service.getName(this.expandedVariables));
                 const serviceContainerId = await this.startService(writeStreams, service);
-                await this.serviceHealthCheck(writeStreams, service, serviceContainerId);
+                const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${service.getName(this._expandedVariables)}-${service.index}.log`;
+                await this.serviceHealthCheck(writeStreams, service, serviceContanerLogFile);
+                const {all} = await Utils.spawn(["docker", "logs", serviceContainerId]);
+                await fs.ensureFile(serviceContanerLogFile);
+                await fs.promises.writeFile(serviceContanerLogFile, all ?? "Service container had no output");
             }
         }
 
@@ -1008,7 +1013,7 @@ export class Job {
         return containerId;
     }
 
-    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, containerId: string) {
+    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceContanerLogFile: string) {
         const {stdout} = await Utils.spawn(["docker", "image", "inspect", service.getName(this.expandedVariables)]);
         const imageInspect = JSON.parse(stdout);
 
@@ -1022,12 +1027,7 @@ export class Job {
         }
 
         if ((imageInspect[0]?.ContainerConfig?.ExposedPorts ?? null) === null) {
-            writeStreams.stderr(chalk`${this.chalkJobName} {yellow Could not find exposed tcp ports ${service.getName(this.expandedVariables)}}\n`);
-            const {all} = await Utils.spawn(["docker", "logs", containerId]);
-            if (all) {
-                all.split(/\r?\n/g).forEach(line => writeStreams.stderr(chalk`${this.chalkJobName} {cyan >} ${line}\n`));
-            }
-            return;
+            return writeStreams.stderr(chalk`${this.chalkJobName} {yellow Could not find exposed tcp ports ${service.getName(this.expandedVariables)}}\n`);
         }
 
         // Iterate over each port defined in the image, and try to connect to the alias
@@ -1039,6 +1039,7 @@ export class Job {
             const spawnCmd = ["docker", "run", "--rm", "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${aliases[0]}:${portNum}`, "-t", "30"];
             hcPromises.push(Utils.spawn(spawnCmd).catch(() => {
                 writeStreams.stdout(chalk`${this.chalkJobName} {redBright service image: ${serviceName} healthcheck failed: ${aliases[0]}:${portNum}}\n`);
+                writeStreams.stdout(chalk`${this.chalkJobName} {redBright see (${serviceContanerLogFile})}\n`);
             }));
         }
         await Promise.any(hcPromises);
