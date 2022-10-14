@@ -56,3 +56,11 @@ multie-job:
   image: tutum/dnsutils
   script:
     - echo "Hello"
+
+no-tmp-folder:
+  image: alpine
+  needs: []
+  services:
+    - name: greenmaid/basic_listen
+  script:
+    - echo "I should run normaly"

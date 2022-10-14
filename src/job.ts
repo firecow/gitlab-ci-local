@@ -365,6 +365,17 @@ export class Job {
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
         }
 
+        if (this.imageName) {
+            const buildVolumeName = this.buildVolumeName;
+            const tmpVolumeName = this.tmpVolumeName;
+            const volumePromises = [];
+            volumePromises.push(Utils.spawn(["docker", "volume", "create", `${buildVolumeName}`], argv.cwd));
+            volumePromises.push(Utils.spawn(["docker", "volume", "create", `${tmpVolumeName}`], argv.cwd));
+            this._containerVolumeNames.push(buildVolumeName);
+            this._containerVolumeNames.push(tmpVolumeName);
+            await Promise.all(volumePromises);
+        }
+
         if (this.services?.length) {
             await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
             for (const service of this.services) {
@@ -549,15 +560,8 @@ export class Job {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
             }
 
-            const volumePromises = [];
-            volumePromises.push(Utils.spawn(["docker", "volume", "create", `${buildVolumeName}`], cwd));
-            volumePromises.push(Utils.spawn(["docker", "volume", "create", `${tmpVolumeName}`], cwd));
             dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;
             dockerCmd += `--volume ${tmpVolumeName}:/tmp/ `;
-            this._containerVolumeNames.push(buildVolumeName);
-            this._containerVolumeNames.push(tmpVolumeName);
-            await Promise.all(volumePromises);
-
             dockerCmd += "--workdir /gcl-builds ";
 
             for (const volume of this.argv.volume) {
@@ -986,6 +990,7 @@ export class Job {
                 dockerCmd += "--entrypoint '/gcl-entry' ";
             }
         }
+        dockerCmd += `--volume ${this.tmpVolumeName}:/tmp/ `;
         dockerCmd += `${serviceName} `;
 
         (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
