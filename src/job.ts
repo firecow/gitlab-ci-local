@@ -841,7 +841,7 @@ export class Job {
         let time, endTime;
         let cpCmd = "shopt -s globstar nullglob dotglob\n";
         cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}\n`;
-        cpCmd += "rsync --exclude '.gitlab-ci-local/**' -Ra "
+        cpCmd += "rsync --exclude '.gitlab-ci-local/**' -Ra ";
         for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
             const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
             cpCmd += `--exclude '${expandedPath}' `;
@@ -850,7 +850,7 @@ export class Job {
             const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
             cpCmd += `${expandedPath} `;
         }
-        cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`
+        cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
         const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, this.expandedVariables);
         if (reportDotenv != null) {
             cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
