@@ -3,6 +3,7 @@ import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
+import fs from "fs-extra";
 
 jest.setTimeout(30000);
 
@@ -19,8 +20,6 @@ test.concurrent("services <pre-job>", async () => {
 
     const expectedStdErr = [
         chalk`{blueBright pre-job   } {yellow Could not find exposed tcp ports alpine:latest}`,
-        chalk`{blueBright pre-job   } {cyan >} foo`,
-        chalk`{blueBright pre-job   } {cyan >} hey`,
         chalk`{blueBright pre-job   } {redBright >} cat: can't open '/foo.txt': No such file or directory`,
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStdErr));
@@ -84,15 +83,16 @@ test.concurrent("services <alias-job>", async () => {
 });
 
 test.concurrent("services <multie-job>", async () => {
+    await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-0.log", {force:true});
+    await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-1.log", {force:true});
+
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
         job: ["multie-job"],
     }, writeStreams);
 
-    const expectedStderr = [
-        chalk`{blueBright multie-job} {cyan >} Service 1`,
-        chalk`{blueBright multie-job} {cyan >} Service 2`,
-    ];
-    expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStderr));
+    expect(writeStreams.stderrLines.length).toEqual(3);
+    expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-0.log")).toEqual(true);
+    expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-1.log")).toEqual(true);
 });
