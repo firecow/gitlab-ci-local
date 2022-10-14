@@ -1,0 +1,6 @@
+---
+SOMEFILE:
+  type: file
+  values:
+    '*': |
+      Im file value
