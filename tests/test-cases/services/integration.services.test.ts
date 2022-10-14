@@ -97,11 +97,15 @@ test.concurrent("services <multie-job>", async () => {
     expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-1.log")).toEqual(true);
 });
 
-test.concurrent("services <no-tmp-folder>", async () => {
+test.concurrent("services <no-tmp>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
-        job: ["no-tmp-folder"],
+        job: ["no-tmp"],
     }, writeStreams);
 
+    const expected = [
+        chalk`{black.bgGreenBright  PASS } {blueBright no-tmp    }`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
