@@ -96,3 +96,12 @@ test.concurrent("services <multie-job>", async () => {
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStderr));
 });
+
+test.concurrent("services <no-tmp-folder>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["no-tmp-folder"],
+    }, writeStreams);
+
+});
