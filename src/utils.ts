@@ -98,7 +98,7 @@ export class Utils {
                     const name = var1 || var2;
                     assert(name, "unexpected unset capture group");
                     let value = expandWith.variable(name);
-                    if (value.startsWith(`"/`) && value.endsWith(`/"`)) {
+                    if (value.startsWith("\"/") && value.endsWith("/\"")) {
                         value = value.substring(1).slice(0, -1);
                     }
                     return value;
