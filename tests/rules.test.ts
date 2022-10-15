@@ -274,7 +274,7 @@ test("https://github.com/firecow/gitlab-ci-local/issues/609", () => {
     const rules = [
         {if: "$CI_COMMIT_REF_NAME =~ $PROD_REF", when: "manual"},
     ];
-    const variables = {CI_COMMIT_REF_NAME: "main", PROD_REF: '/^(master|main)$/'};
+    const variables = {CI_COMMIT_REF_NAME: "main", PROD_REF: "/^(master|main)$/"};
     const rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
     expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
-})
+});
