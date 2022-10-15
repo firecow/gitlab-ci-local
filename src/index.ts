@@ -150,6 +150,11 @@ import {Argv} from "./argv";
             description: "Do not copy the generated artifacts into cwd.",
             requiresArg: false,
         })
+        .option("cleanup", {
+            type: "boolean",
+            description: "Do not remove docker resources after they've been used",
+            requiresArg: false,
+        })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
                 const argv = new Argv({...yargsArgv, autoCompleting: true});
