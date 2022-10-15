@@ -88,6 +88,10 @@ export class Argv {
         return this.map.get("autoCompleting") ?? false;
     }
 
+    get cleanup (): boolean {
+        return this.map.get("cleanup") ?? true;
+    }
+
     get privileged (): boolean {
         return this.map.get("privileged") ?? false;
     }

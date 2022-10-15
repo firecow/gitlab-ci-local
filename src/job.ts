@@ -419,6 +419,8 @@ export class Job {
     async cleanupResources () {
         clearTimeout(this._longRunningSilentTimeout);
 
+        if (!this.argv.cleanup) return;
+
         for (const id of this._containersToClean) {
             try {
                 await Utils.spawn(["docker", "rm", "-f", `${id}`]);
