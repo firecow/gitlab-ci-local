@@ -8,6 +8,7 @@ import chalk from "chalk";
 import {Parser} from "./parser";
 import axios from "axios";
 import globby from "globby";
+import camelCase from "camelcase";
 
 type ParserIncludesInitOptions = {
     cwd: string;
@@ -30,8 +31,49 @@ export class ParserIncludes {
 
         const include = this.expandInclude(gitlabData["include"]);
 
+        const predefinedVariables = {
+            GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
+            GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
+            GITLAB_USER_NAME: gitData.user["GITLAB_USER_NAME"],
+            GITLAB_USER_ID: gitData.user["GITLAB_USER_ID"],
+            CI_COMMIT_SHORT_SHA: gitData.commit.SHORT_SHA, // Changes
+            CI_COMMIT_SHA: gitData.commit.SHA,
+            CI_PROJECT_NAME: gitData.remote.project,
+            CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
+            CI_PROJECT_PATH: gitData.CI_PROJECT_PATH,
+            CI_PROJECT_PATH_SLUG: gitData.CI_PROJECT_PATH_SLUG,
+            CI_PROJECT_NAMESPACE: `${gitData.remote.group}`,
+            CI_PROJECT_VISIBILITY: "internal",
+            CI_PROJECT_ID: "1217",
+            CI_COMMIT_REF_PROTECTED: "false",
+            CI_COMMIT_BRANCH: gitData.commit.REF_NAME, // Not available in merge request or tag pipelines
+            CI_COMMIT_REF_NAME: gitData.commit.REF_NAME, // Tag or branch name
+            CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").replace(/-$/, "").slice(0, 63).toLowerCase(),
+            CI_COMMIT_TITLE: "Commit Title", // First line of commit message.
+            CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
+            CI_COMMIT_DESCRIPTION: "More commit text",
+            CI_PIPELINE_SOURCE: "push",
+            CI_SERVER_HOST: `${gitData.remote.host}`,
+            CI_SERVER_PORT: `${gitData.remote.port}`,
+            CI_SERVER_URL: `https://${gitData.remote.host}:443`,
+            CI_SERVER_PROTOCOL: "https",
+            CI_API_V4_URL: `https://${gitData.remote.host}/api/v4`,
+            CI_PROJECT_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}`,
+            CI_JOB_NAME: `${this.name}`,
+            CI_REGISTRY: gitData.CI_REGISTRY,
+            CI_REGISTRY_IMAGE: gitData.CI_REGISTRY_IMAGE,
+            GITLAB_CI: "false",
+        };
+
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
+            if (value["rules"]) {
+                const include_rules = value["rules"];
+                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: predefinedVariables});
+                if (rulesResult.when === "never") {
+                    continue;
+                }
+            }
             if (value["local"]) {
                 const files = await globby(value["local"], {dot: true, cwd});
                 if (files.length == 0) {
@@ -54,6 +96,13 @@ export class ParserIncludes {
         await Promise.all(promises);
 
         for (const value of include) {
+            if (value["rules"]) {
+                const include_rules = value["rules"];
+                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: predefinedVariables});
+                if (rulesResult.when === "never") {
+                    continue;
+                }
+            }
             if (value["local"]) {
                 const files = await globby([value["local"], ...excludedGlobs], {dot: true, cwd});
                 for (const localFile of files) {
