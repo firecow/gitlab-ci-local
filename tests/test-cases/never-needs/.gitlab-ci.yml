@@ -10,3 +10,10 @@ test-job:
   needs: [never-job]
   script:
     echo "Test something"
+
+test-job-optional:
+  needs:
+    - job: never-job
+      optional: true
+  script:
+    echo "Test something"
