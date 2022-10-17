@@ -19,6 +19,6 @@ test("needs-unspecified-job <build-job> --needs", async () => {
         expect(true).toBe(false);
     } catch (e) {
         assert(e instanceof Error, "e is not instanceof Error");
-        expect(e.message).toBe(chalk`needs: [{blueBright invalid}] for {blueBright test-job} cannot be found`);
+        expect(e.message).toBe(chalk`needs: [{blueBright invalid}] for {blueBright test-job} could not be found`);
     }
 });

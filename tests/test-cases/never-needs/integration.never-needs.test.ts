@@ -23,3 +23,12 @@ test("never-needs <test-job> --needs", async () => {
         expect(e.message).toBe(chalk`{blueBright never-job} is when:never, but its needed by {blueBright test-job}`);
     }
 });
+
+test("never-needs <test-job-optional> --needs", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/never-needs/",
+        job: ["test-job-optional"],
+        needs: true,
+    }, writeStreams);
+});
