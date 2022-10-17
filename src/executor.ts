@@ -90,7 +90,7 @@ export class Executor {
         for (const need of job.needs) {
             const baseJobs = jobs.filter(j => j.baseName === need.job);
             for (const j of baseJobs) {
-                if (j.when === "never") {
+                if (j.when === "never" && !need.optional) {
                     throw new ExitError(chalk`{blueBright ${j.name}} is when:never, but its needed by {blueBright ${job.name}}`);
                 }
                 if (j.when === "manual" && !manuals.includes(j.name)) {
