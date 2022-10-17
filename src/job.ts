@@ -356,6 +356,9 @@ export class Job {
         const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams);
         const safeJobname = this.safeJobName;
         this._expandedVariables = {...this.expandedVariables, ...reportsDotenvVariables};
+        
+        await Utils.rsyncRootProjectNoSubmodules(argv.cwd, argv.stateDir, ".docker", this._expandedVariables);
+        await Utils.rsyncSubmodules(argv.cwd, argv.stateDir, ".docker", this._expandedVariables);
 
         const outputLogFilePath = `${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`;
         await fs.ensureFile(outputLogFilePath);

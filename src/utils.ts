@@ -258,4 +258,66 @@ export class Utils {
         return checksum(result.join(""));
     }
 
+    static async rsyncRootProjectNoSubmodules (cwd: string, stateDir: string, target: string, envs: {[key: string]: string}): Promise<{hrdeltatime: [number, number]}> {
+        const time = process.hrtime();
+        if (envs["GIT_STRATEGY"] === "none") return {hrdeltatime: process.hrtime(time)};
+
+        // read ./gitmodules and get all submodules
+        const submodules: string[] = [];
+        if (fs.existsSync(`${cwd}/.gitmodules`)) {
+            const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
+            const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
+            for (const match of matches) {
+                submodules.push(match[1] + "/");
+            }
+        }
+
+        const submodulesExcludeExpresion: String = submodules.length > 0 ? `--exclude ${submodules.join(" --exclude ")}` : "";
+
+        await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
+        await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} --exclude ${stateDir}/ ./ ${stateDir}/builds/${target}/`, cwd);
+        return {hrdeltatime: process.hrtime(time)};
+    }
+
+    static async rsyncSubmodules (cwd: string, stateDir: string, target: string, envs: {[key: string]: string}): Promise<{hrdeltatime: [number, number]}> {
+        const time = process.hrtime();
+        if (!fs.existsSync(`${cwd}/.gitmodules`) || !(envs["GIT_SUBMODULE_STRATEGY"] === "normal" || envs["GIT_SUBMODULE_STRATEGY"] === "recursive")) return {hrdeltatime: process.hrtime(time)};
+
+        const submodulesToRsync: string[] = [];
+        if (envs["GIT_SUBMODULE_PATHS"] !== undefined) {
+            const includedSubmodules = envs["GIT_SUBMODULE_PATHS"].split(" ").map((path)=> path.trim()).filter((path) => !path.startsWith("(exclude)"));
+            submodulesToRsync.push(...includedSubmodules);
+        }
+
+        if (submodulesToRsync.length === 0) {
+            const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
+            const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
+            for (const match of matches) {
+                submodulesToRsync.push(match[1]);
+            }
+            if (envs["GIT_SUBMODULE_PATHS"] !== undefined) {
+                const excludedSubmodules = envs["GIT_SUBMODULE_PATHS"].split(" ").map((path)=> path.trim()).filter((path) => path.startsWith("(exclude)")).map((path) => path.replace("(exclude)", ""));
+                // remove excluded submodules
+                submodulesToRsync.filter((path) => !excludedSubmodules.includes(path));
+            }
+        }
+
+        for (const submodule of submodulesToRsync) {
+            await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}/${submodule}`);
+            var submodulesExcludeExpresion: String = "";
+            if (envs["GIT_SUBMODULE_STRATEGY"] === "normal" && fs.existsSync(`${cwd}/${submodule}/.gitmodules`)) {
+                const recurseSubmodules: string[] = [];
+                const recurseGitmodules = fs.readFileSync(`${cwd}/${submodule}/.gitmodules`, "utf8");
+                const matches = recurseGitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
+                for (const match of matches) {
+                    recurseSubmodules.push(match[1] + "/");
+                }
+                if (recurseSubmodules.length > 0) {
+                    submodulesExcludeExpresion = `--exclude ${recurseSubmodules.join(" --exclude ")}`;
+                }
+            }
+            await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} --exclude ${stateDir}/ ${submodule}/ ${stateDir}/builds/${target}/${submodule}/`, cwd);
+        }
+        return {hrdeltatime: process.hrtime(time)};
+    }
 }
