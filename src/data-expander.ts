@@ -71,12 +71,12 @@ const getSubDataByReference = (gitlabData: any, referenceData: string[]) => {
     return gitlabSubData;
 };
 
-function hasCircularChain(data: any) {
+function hasCircularChain (data: any) {
     try {
         JSON.stringify(data);
     } catch (e) {
-        if (e instanceof TypeError && e.message.startsWith(`Converting circular structure to JSON`)) {
-            return true
+        if (e instanceof TypeError && e.message.startsWith("Converting circular structure to JSON")) {
+            return true;
         }
     }
     return false;
