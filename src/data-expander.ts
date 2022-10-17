@@ -55,6 +55,10 @@ export function reference (gitlabData: any, recurseData: any) {
         } else if (typeof value === "object") {
             reference(gitlabData, value);
         }
+
+        if (hasCircularChain(recurseData)) {
+            throw new ExitError(`!reference circular chain detected [${value.referenceData}]`);
+        }
     }
 }
 
@@ -66,6 +70,17 @@ const getSubDataByReference = (gitlabData: any, referenceData: string[]) => {
     });
     return gitlabSubData;
 };
+
+function hasCircularChain(data: any) {
+    try {
+        JSON.stringify(data);
+    } catch (e) {
+        if (e instanceof TypeError && e.message.startsWith(`Converting circular structure to JSON`)) {
+            return true
+        }
+    }
+    return false;
+}
 
 export function artifacts (gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
