@@ -1,0 +1,4 @@
+---
+test-job:
+  script:
+    - !reference [test-job, script]
