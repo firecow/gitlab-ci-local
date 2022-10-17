@@ -837,6 +837,7 @@ export class Job {
         const artifactsPath = !this.argv.shellIsolation && !this.imageName ? `${stateDir}/artifacts` : "../../artifacts";
 
         if (!this.artifacts) return;
+        if ((this.artifacts.paths?.length ?? 0) === 0 && this.artifacts.reports?.dotenv == null) return;
 
         let time, endTime;
         let cpCmd = "shopt -s globstar nullglob dotglob\n";
