@@ -258,4 +258,24 @@ export class Utils {
         return checksum(result.join(""));
     }
 
+    static async rsyncRootTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
+        const time = process.hrtime();
+        await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
+        const excludedPaths: string[] = [];
+        try {
+            const gitdir_statement = await fs.readFile(`${cwd}/.git`, "utf8");
+            const gitdir = await gitdir_statement.split(":")[1].trim();
+            await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}/.git`);
+            await Utils.bash(`rsync -a --delete-excluded --delete ./${gitdir}/ ${stateDir}/builds/${target}/.git`, cwd);
+            // remove worktree line from .git/config
+            const config = await fs.readFile(`${cwd}/${stateDir}/builds/${target}/.git/config`, "utf8");
+            const config_lines = config.split("\n");
+            const new_config_lines = config_lines.filter((line) => !line.startsWith("\tworktree = "));
+            await fs.writeFile(`${cwd}/${stateDir}/builds/${target}/.git/config`, new_config_lines.join("\n"));
+            excludedPaths.push('.git');
+        } finally {}
+        const excludeExpresion: String = excludedPaths.length > 0 ? `--exclude ${excludedPaths.join(" --exclude ")}` : "";
+        await Utils.bash(`rsync -a --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${excludeExpresion} --exclude ${stateDir}/ ./ ${stateDir}/builds/${target}/`, cwd);
+        return {hrdeltatime: process.hrtime(time)};
+    }
 }
