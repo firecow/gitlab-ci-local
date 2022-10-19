@@ -152,7 +152,7 @@ import {Argv} from "./argv";
         })
         .option("cleanup", {
             type: "boolean",
-            description: "Do not remove docker resources after they've been used",
+            description: "Remove docker resources after they've been used",
             requiresArg: false,
         })
         .completion("completion", false, async (_, yargsArgv) => {
