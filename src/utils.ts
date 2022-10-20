@@ -260,30 +260,45 @@ export class Utils {
 
     static async rsyncRootTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
-        await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
-        const excludedPaths: string[] = [];
+        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        const dotGitPath = `${cwd}/${stateDir}/builds/${target}/.git`
         try {
-            const gitdir_statement = await fs.readFile(`${cwd}/.git`, "utf8");
-            const gitdir = await gitdir_statement.split(":")[1].trim();
-            await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}/.git`);
-            await Utils.bash(`rsync -a --delete-excluded --delete ./${gitdir}/ ${stateDir}/builds/${target}/.git`, cwd);
-            const config = await fs.readFile(`${cwd}/${stateDir}/builds/${target}/.git/config`, "utf8");
-            const config_lines = config.split("\n");
-            const new_config_lines = config_lines.filter((line) => !line.startsWith("\tworktree = "));
-            await fs.writeFile(`${cwd}/${stateDir}/builds/${target}/.git/config`, new_config_lines.join("\n"));
-            // extract /(\.\./)*/ from gitdir and store in gitdir_relative
-            const gitdir_relative_match = gitdir.match(/^(\.\.\/)+/);
-            const gitdir_relative_match2 = "../../../../sdfsdfsdf".match(/^(\.\.\/)+/);
-            const gitdir_relative_match3 = "fsdfsdf".match(/^(\.\.\/)+/);
-            // if gitdir_relative_match?.length than 0
+            const gitDirToRemove = fs.readFileSync(`${cwd}/.git`, "utf8").split(":")[1].trim() + '/';
+            const submoduleRootGitConfig = fs.readFileSync(`${cwd}/${gitDirToRemove}/config`, "utf8");
+            const submoduleRootGitConfigLines = submoduleRootGitConfig.split("\n");
+            const submoduleRootWorktreeLineIndex = submoduleRootGitConfigLines.findIndex((line) => line.startsWith("\tworktree = "));
+            const workTreeToRemove = submoduleRootGitConfigLines[submoduleRootWorktreeLineIndex].replace("\tworktree = ", "") + '/';
 
+            fs.removeSync(dotGitPath);
+            await fs.mkdirp(dotGitPath);
+            await Utils.bash(`rsync -a --delete ./${gitDirToRemove}/ ${dotGitPath}`, cwd);
+            const configRelativePathQueue: string[] = [];
+            configRelativePathQueue.push('');
+            while (configRelativePathQueue.length > 0) {
+                const configRelativePath = configRelativePathQueue.shift()!.toString();
+                const configPath = dotGitPath + '/' + (configRelativePath ===''?'':`modules/${configRelativePath}/`) + 'config';
+                if (!fs.existsSync(configPath)) continue;
+                const config = await fs.readFile(configPath, "utf8");                
+                const configLines = config.split("\n");
+                const submodules = configLines.filter((line) => line.startsWith("[submodule"))
+                                              .map((line) => line.replace("[submodule \"", "").replace("\"]", ""));
+                configRelativePathQueue.push(...submodules);
 
-            const gitdir_relative = gitdir_relative_match?.length === 0 ? gitdir_relative_match?.[0] : "";
-
-            excludedPaths.push('.git');
+                const worktreeLineIndex = configLines.findIndex((line) => line.startsWith("\tworktree = "));
+                if (configRelativePath === "") {
+                    configLines.splice(worktreeLineIndex, 1);
+                } else {
+                    // remove workTreeToRemove string from worktree string only once
+                    const worktree = configLines[worktreeLineIndex].replace("\tworktree = ", "../").replace(workTreeToRemove, "");
+                    configLines[worktreeLineIndex] = "worktree = " + worktree;
+                    const dotGitFilePath = dotGitPath + '/' + (configRelativePath ===''?'':`modules/${configRelativePath}/`) +  worktree + "/" + '.git';
+                    const gitDirStatement = await fs.readFile(dotGitFilePath, "utf8");
+                    const newGitWorkingDir = gitDirStatement.split(":")[1].trim().replace(gitDirToRemove, ".git/");
+                    await fs.writeFile(dotGitFilePath, `gitdir: ${newGitWorkingDir}`);
+                }
+                await fs.writeFile(configPath, configLines.join("\n"));
+            }
         } finally {}
-        const excludeExpresion: String = excludedPaths.length > 0 ? `--exclude ${excludedPaths.join(" --exclude ")}` : "";
-        await Utils.bash(`rsync -a --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${excludeExpresion} --exclude ${stateDir}/ ./ ${stateDir}/builds/${target}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
 }
