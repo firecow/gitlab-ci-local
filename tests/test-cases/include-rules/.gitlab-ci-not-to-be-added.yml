@@ -1,0 +1,5 @@
+---
+build-job:
+  stage: build
+  script:
+    - echo "This should not appear"

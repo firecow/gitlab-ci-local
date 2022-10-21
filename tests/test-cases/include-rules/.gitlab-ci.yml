@@ -1,0 +1,8 @@
+---
+include:
+  - local: .gitlab-ci-to-be-added.yml
+    rules:
+      - if: '$GITLAB_CI == "false"'
+  - local: .gitlab-ci-not-to-be-added.yml
+    rules:
+      - if: '$GITLAB_CI == "true"'
