@@ -261,22 +261,22 @@ export class Utils {
     static async rsyncRootTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
         await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
-        const dotGitPath = `${cwd}/${stateDir}/builds/${target}/.git`
+        const dotGitPath = `${stateDir}/builds/${target}/.git`
         try {
             const gitDirToRemove = fs.readFileSync(`${cwd}/.git`, "utf8").split(":")[1].trim() + '/';
-            const submoduleRootGitConfig = fs.readFileSync(`${cwd}/${gitDirToRemove}/config`, "utf8");
+            const submoduleRootGitConfig = fs.readFileSync(`${cwd}/${gitDirToRemove}config`, "utf8");
             const submoduleRootGitConfigLines = submoduleRootGitConfig.split("\n");
             const submoduleRootWorktreeLineIndex = submoduleRootGitConfigLines.findIndex((line) => line.startsWith("\tworktree = "));
             const workTreeToRemove = submoduleRootGitConfigLines[submoduleRootWorktreeLineIndex].replace("\tworktree = ", "") + '/';
 
-            fs.removeSync(dotGitPath);
-            await fs.mkdirp(dotGitPath);
-            await Utils.bash(`rsync -a --delete ./${gitDirToRemove}/ ${dotGitPath}`, cwd);
+            fs.removeSync(`${cwd}/${dotGitPath}`);
+            await fs.mkdirp(`${cwd}/${dotGitPath}`);
+            await Utils.bash(`rsync -a --delete ${gitDirToRemove} ${dotGitPath}`, cwd);
             const configRelativePathQueue: string[] = [];
             configRelativePathQueue.push('');
             while (configRelativePathQueue.length > 0) {
                 const configRelativePath = configRelativePathQueue.shift()!.toString();
-                const configPath = dotGitPath + '/' + (configRelativePath ===''?'':`modules/${configRelativePath}/`) + 'config';
+                const configPath = cwd + '/' + dotGitPath + '/' + (configRelativePath ===''?'':`modules/${configRelativePath}/`) + 'config';
                 if (!fs.existsSync(configPath)) continue;
                 const config = await fs.readFile(configPath, "utf8");                
                 const configLines = config.split("\n");
@@ -291,14 +291,16 @@ export class Utils {
                     // remove workTreeToRemove string from worktree string only once
                     const worktree = configLines[worktreeLineIndex].replace("\tworktree = ", "../").replace(workTreeToRemove, "");
                     configLines[worktreeLineIndex] = "worktree = " + worktree;
-                    const dotGitFilePath = dotGitPath + '/' + (configRelativePath ===''?'':`modules/${configRelativePath}/`) +  worktree + "/" + '.git';
+                    const dotGitFilePath = cwd + '/' + dotGitPath + '/' + (configRelativePath ===''?'':`modules/${configRelativePath}/`) +  worktree + "/" + '.git';
                     const gitDirStatement = await fs.readFile(dotGitFilePath, "utf8");
                     const newGitWorkingDir = gitDirStatement.split(":")[1].trim().replace(gitDirToRemove, ".git/");
                     await fs.writeFile(dotGitFilePath, `gitdir: ${newGitWorkingDir}`);
                 }
                 await fs.writeFile(configPath, configLines.join("\n"));
             }
-        } finally {}
+        }
+        catch (e) {} 
+        finally {}
         return {hrdeltatime: process.hrtime(time)};
     }
 }

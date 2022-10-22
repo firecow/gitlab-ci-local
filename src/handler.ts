@@ -102,7 +102,7 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
         }
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid);
-        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        await Utils.rsyncRootTrackedFiles(cwd, stateDir, ".docker");
         await Commander.runJobs(argv, parser, writeStreams);
         if (argv.needs || argv.onlyNeeds) {
             writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
