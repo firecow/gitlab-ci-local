@@ -3,12 +3,12 @@ stages:
  - test
 
 build-job:
-  stage: test
-  script:
-    - cd .gitlab-ci-local/builds/.docker
-    - export SUBMODULE_FOLDER=submodule_moved
-    - export SUBMODULE_FOLDER_INSIDE_GIT=$(cat ${SUBMODULE_FOLDER}/.git | cut -b 9- )
-    - test $SUBMODULE_FOLDER/$SUBMODULE_INSIDE_GIT/config || exit 1
-    - export SUBMODULE_WORKTREE=$( grep -e "worktree" $SUBMODULE_FOLDER/$SUBMODULE_FOLDER_INSIDE_GIT/config | cut -d '=' -f 2 | cut -b 2- )
-    - test $SUBMODULE_FOLDER/$SUBMODULE_FOLDER_INSIDE_GIT/$SUBMODULE_WORKTREE/.git || exit 1
-    - echo gitdir and worktree are ok
+ stage: test
+ script:
+  - cd .gitlab-ci-local/builds/.docker
+  - export SUBMODULE_FOLDER=submodule_moved
+  - export SUBMODULE_FOLDER_INSIDE_GIT=$(cat ${SUBMODULE_FOLDER}/.git | cut -b 9- )
+  - test $SUBMODULE_FOLDER/$SUBMODULE_INSIDE_GIT/config || exit 1
+  - export SUBMODULE_WORKTREE=$( grep -e "worktree" $SUBMODULE_FOLDER/$SUBMODULE_FOLDER_INSIDE_GIT/config | cut -d '=' -f 2 | cut -b 2- )
+  - test $SUBMODULE_FOLDER/$SUBMODULE_FOLDER_INSIDE_GIT/$SUBMODULE_WORKTREE/.git || exit 1
+  - echo gitdir and worktree are ok
