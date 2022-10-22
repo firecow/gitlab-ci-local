@@ -1,0 +1,11 @@
+---
+stages:
+ - test
+
+build-job:
+  stage: test
+  script:
+    - cd .gitlab-ci-local/builds/.docker
+    - test -f .git/config || exit 1
+    - grep -e "worktree" .git/config && exit 1
+    - echo gitdir and worktree are ok

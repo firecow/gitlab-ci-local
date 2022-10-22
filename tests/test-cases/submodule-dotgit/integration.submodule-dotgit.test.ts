@@ -43,3 +43,48 @@ test("submodule-dotgit <build-job> at submodule leaf", async () => {
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test("submodule-dotgit <build-job> at submodule leaf 2", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: `tests/test-cases/submodule-dotgit/submodule_moved/submodule`,
+        file: ".gitlab-ci.yml",
+        job: ["build-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright build-job} {greenBright >} gitdir and worktree are ok`,
+    ];
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test("submodule-dotgit <build-job> at submodule level 1", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: `tests/test-cases/submodule-dotgit/submodule_moved`,
+        file: ".gitlab-ci.yml",
+        job: ["build-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright build-job} {greenBright >} gitdir and worktree are ok`,
+    ];
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test("submodule-dotgit <build-job> at submodule level 2", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: `tests/test-cases/submodule-dotgit/submodule_moved/mid_folder/submodule`,
+        file: ".gitlab-ci.yml",
+        job: ["build-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright build-job} {greenBright >} gitdir and worktree are ok`,
+    ];
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
