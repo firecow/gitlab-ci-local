@@ -102,7 +102,8 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
         }
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid);
-        await Utils.rsyncRootTrackedFiles(cwd, stateDir, ".docker");
+        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        await Utils.moveDotGitInSubmodules(cwd, stateDir, ".docker");
         await Commander.runJobs(argv, parser, writeStreams);
         if (argv.needs || argv.onlyNeeds) {
             writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
@@ -114,7 +115,8 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
         await state.incrementPipelineIid(cwd, stateDir);
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid);
-        await Utils.rsyncRootTrackedFiles(cwd, stateDir, ".docker");
+        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        await Utils.moveDotGitInSubmodules(cwd, stateDir, ".docker");
         await Commander.runPipeline(argv, parser, writeStreams);
         writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }

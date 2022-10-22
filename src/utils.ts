@@ -258,9 +258,8 @@ export class Utils {
         return checksum(result.join(""));
     }
 
-    static async rsyncRootTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
+    static async moveDotGitInSubmodules (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
-        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
         const dotGitPath = `${stateDir}/builds/${target}/.git`
         try {
             const gitDirToRemove = fs.readFileSync(`${cwd}/.git`, "utf8").split(":")[1].trim() + '/';
