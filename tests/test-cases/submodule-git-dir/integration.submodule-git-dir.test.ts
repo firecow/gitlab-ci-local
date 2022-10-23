@@ -7,17 +7,15 @@ import {Utils} from "../../../src/utils";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
-    // copy tests/test-cases/submodule-dotgit/dotgit to tests/test-cases/submodule-dotgit/.git if it doesn't exist
-    const cwd = "tests/test-cases/submodule-dotgit";
-    Utils.bash("rsync -a --delete dotgit/ .git", cwd);
-    Utils.bash("find . -name dotgit -type f | xargs dirname | xargs -I{} cp {}/dotgit {}/.git", cwd);
-
+    const cwd = "tests/test-cases/submodule-git-dir";
+    Utils.bash("rsync -a --delete git-dir/ .git", cwd);
+    Utils.bash("find . -name git-dir -type f | xargs dirname | xargs -I{} cp {}/git-dir {}/.git", cwd);
 });
 
-test("submodule-dotgit <build-job>", async () => {
+test("submodule-git-dir <build-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
-        cwd: "tests/test-cases/submodule-dotgit",
+        cwd: "tests/test-cases/submodule-git-dir",
         file: ".gitlab-ci.yml",
         job: ["build-job"],
     }, writeStreams);
@@ -29,10 +27,10 @@ test("submodule-dotgit <build-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("submodule-dotgit <build-job> at submodule leaf", async () => {
+test("submodule-git-dir <build-job> at submodule leaf", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
-        cwd: "tests/test-cases/submodule-dotgit/submodule_moved/mid_folder/submodule/submodule/submodule",
+        cwd: "tests/test-cases/submodule-git-dir/submodule_moved/mid_folder/submodule/submodule/submodule",
         file: ".gitlab-ci.yml",
         job: ["build-job"],
     }, writeStreams);
@@ -44,10 +42,10 @@ test("submodule-dotgit <build-job> at submodule leaf", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("submodule-dotgit <build-job> at submodule leaf 2", async () => {
+test("submodule-git-dir <build-job> at submodule leaf 2", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
-        cwd: "tests/test-cases/submodule-dotgit/submodule_moved/submodule",
+        cwd: "tests/test-cases/submodule-git-dir/submodule_moved/submodule",
         file: ".gitlab-ci.yml",
         job: ["build-job"],
     }, writeStreams);
@@ -59,10 +57,10 @@ test("submodule-dotgit <build-job> at submodule leaf 2", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("submodule-dotgit <build-job> at submodule level 1", async () => {
+test("submodule-git-dir <build-job> at submodule level 1", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
-        cwd: "tests/test-cases/submodule-dotgit/submodule_moved",
+        cwd: "tests/test-cases/submodule-git-dir/submodule_moved",
         file: ".gitlab-ci.yml",
         job: ["build-job"],
     }, writeStreams);
@@ -74,10 +72,10 @@ test("submodule-dotgit <build-job> at submodule level 1", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("submodule-dotgit <build-job> at submodule level 2", async () => {
+test("submodule-git-dir <build-job> at submodule level 2", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
-        cwd: "tests/test-cases/submodule-dotgit/submodule_moved/mid_folder/submodule",
+        cwd: "tests/test-cases/submodule-git-dir/submodule_moved/mid_folder/submodule",
         file: ".gitlab-ci.yml",
         job: ["build-job"],
     }, writeStreams);
