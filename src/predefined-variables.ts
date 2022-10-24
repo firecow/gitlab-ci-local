@@ -1,0 +1,40 @@
+import camelCase from "camelcase";
+import {GitData} from "./git-data";
+
+type PredefinedVariablesOpts = {
+    gitData: GitData;
+};
+
+export function init ({gitData}: PredefinedVariablesOpts): {[name: string]: string} {
+
+    return {
+        GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
+        GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
+        GITLAB_USER_NAME: gitData.user["GITLAB_USER_NAME"],
+        GITLAB_USER_ID: gitData.user["GITLAB_USER_ID"],
+        CI_COMMIT_SHORT_SHA: gitData.commit.SHORT_SHA, // Changes
+        CI_COMMIT_SHA: gitData.commit.SHA,
+        CI_PROJECT_NAME: gitData.remote.project,
+        CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
+        CI_PROJECT_PATH: gitData.CI_PROJECT_PATH,
+        CI_PROJECT_PATH_SLUG: gitData.CI_PROJECT_PATH_SLUG,
+        CI_PROJECT_NAMESPACE: `${gitData.remote.group}`,
+        CI_PROJECT_VISIBILITY: "internal",
+        CI_PROJECT_ID: "1217",
+        CI_COMMIT_REF_PROTECTED: "false",
+        CI_COMMIT_BRANCH: gitData.commit.REF_NAME, // Not available in merge request or tag pipelines
+        CI_COMMIT_REF_NAME: gitData.commit.REF_NAME, // Tag or branch name
+        CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").replace(/-$/, "").slice(0, 63).toLowerCase(),
+        CI_COMMIT_TITLE: "Commit Title", // First line of commit message.
+        CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
+        CI_COMMIT_DESCRIPTION: "More commit text",
+        CI_PIPELINE_SOURCE: "push",
+        CI_SERVER_HOST: `${gitData.remote.host}`,
+        CI_SERVER_PORT: `${gitData.remote.port}`,
+        CI_SERVER_URL: `https://${gitData.remote.host}:443`,
+        CI_SERVER_PROTOCOL: "https",
+        CI_API_V4_URL: `https://${gitData.remote.host}/api/v4`,
+        CI_PROJECT_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}`,
+        GITLAB_CI: "false",
+    };
+}
