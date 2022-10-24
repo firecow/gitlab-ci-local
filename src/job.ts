@@ -317,7 +317,7 @@ export class Job {
     }
 
     get fileVariablesDir () {
-        return `/tmp/gitlab-ci-local-file-variables-${this.gitData.CI_PROJECT_PATH_SLUG}-${this.jobId}`;
+        return `/tmp/gitlab-ci-local-file-variables-${this._expandedVariables["CI_PROJECT_PATH_SLUG"]}-${this.jobId}`;
     }
 
     async start (): Promise<void> {
