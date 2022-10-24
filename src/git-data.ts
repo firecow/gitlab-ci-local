@@ -30,14 +30,6 @@ export class GitData {
         return `${this.remote.group}/${this.remote.project}`;
     }
 
-    get CI_REGISTRY () {
-        return `local-registry.${this.remote.host}`;
-    }
-
-    get CI_REGISTRY_IMAGE () {
-        return `${this.CI_REGISTRY}/${this.CI_PROJECT_PATH}`;
-    }
-
     get CI_PROJECT_PATH_SLUG () {
         return `${this.remote.group.replace(/\//g, "-")}-${this.remote.project}`;
     }

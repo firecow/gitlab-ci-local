@@ -2,7 +2,6 @@ import chalk from "chalk";
 import * as dotenv from "dotenv";
 import * as fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
-import camelCase from "camelcase";
 import {ExitError} from "./exit-error";
 import {Utils} from "./utils";
 import {WriteStreams} from "./write-streams";
@@ -25,6 +24,7 @@ interface JobOptions {
     gitData: GitData;
     globalVariables: {[name: string]: string};
     variablesFromFiles: {[name: string]: CICDVariable};
+    predefinedVariables: {[name: string]: any};
     matrixVariables: {[key: string]: string} | null;
     nodeIndex: number | null;
     nodesTotal: number;
@@ -84,6 +84,7 @@ export class Job {
         const cwd = argv.cwd;
         const stateDir = argv.stateDir;
         const argvVariables = argv.variable;
+        const predefinedVariables = opt.predefinedVariables;
 
         this.argv = argv;
         this.writeStreams = opt.writeStreams;
@@ -101,59 +102,6 @@ export class Job {
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
 
-        let CI_PROJECT_DIR = `${cwd}`;
-        if (this.imageName) {
-            CI_PROJECT_DIR = "/gcl-builds";
-        } else if (argv.shellIsolation) {
-            CI_PROJECT_DIR = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
-        }
-
-        const predefinedVariables = {
-            GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
-            GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
-            GITLAB_USER_NAME: gitData.user["GITLAB_USER_NAME"],
-            GITLAB_USER_ID: gitData.user["GITLAB_USER_ID"],
-            CI_COMMIT_SHORT_SHA: gitData.commit.SHORT_SHA, // Changes
-            CI_COMMIT_SHA: gitData.commit.SHA,
-            CI_PROJECT_DIR,
-            CI_PROJECT_NAME: gitData.remote.project,
-            CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
-            CI_PROJECT_PATH: gitData.CI_PROJECT_PATH,
-            CI_PROJECT_PATH_SLUG: gitData.CI_PROJECT_PATH_SLUG,
-            CI_PROJECT_NAMESPACE: `${gitData.remote.group}`,
-            CI_PROJECT_VISIBILITY: "internal",
-            CI_PROJECT_ID: "1217",
-            CI_COMMIT_REF_PROTECTED: "false",
-            CI_COMMIT_BRANCH: gitData.commit.REF_NAME, // Not available in merge request or tag pipelines
-            CI_COMMIT_REF_NAME: gitData.commit.REF_NAME, // Tag or branch name
-            CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").replace(/-$/, "").slice(0, 63).toLowerCase(),
-            CI_COMMIT_TITLE: "Commit Title", // First line of commit message.
-            CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
-            CI_COMMIT_DESCRIPTION: "More commit text",
-            CI_PIPELINE_SOURCE: "push",
-            CI_JOB_ID: `${this.jobId}`,
-            CI_PIPELINE_ID: `${this.pipelineIid + 1000}`,
-            CI_PIPELINE_IID: `${this.pipelineIid}`,
-            CI_SERVER_HOST: `${gitData.remote.host}`,
-            CI_SERVER_PORT: `${gitData.remote.port}`,
-            CI_SERVER_URL: `https://${gitData.remote.host}:443`,
-            CI_SERVER_PROTOCOL: "https",
-            CI_API_V4_URL: `https://${gitData.remote.host}/api/v4`,
-            CI_PROJECT_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}`,
-            CI_JOB_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`, // Changes on rerun.
-            CI_PIPELINE_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`,
-            CI_JOB_NAME: `${this.name}`,
-            CI_JOB_STAGE: `${this.stage}`,
-            CI_REGISTRY: gitData.CI_REGISTRY,
-            CI_REGISTRY_IMAGE: gitData.CI_REGISTRY_IMAGE,
-            GITLAB_CI: "false",
-            CI_ENVIRONMENT_NAME: this.environment?.name ?? "",
-            CI_ENVIRONMENT_SLUG: this.environment?.name?.replace(/\/|\s/g, "-").toLowerCase() ?? "",
-            CI_ENVIRONMENT_URL: this.environment?.url ?? "",
-            CI_NODE_INDEX: opt.nodeIndex,
-            CI_NODE_TOTAL: opt.nodesTotal,
-        };
-
         const matrixVariables = opt.matrixVariables ?? {};
         // Merge and expand variables recursive
         this._expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables});
@@ -163,6 +111,27 @@ export class Job {
             this.environment.name = Utils.expandText(this.environment.name, this.expandedVariables);
             this.environment.url = Utils.expandText(this.environment.url, this.expandedVariables);
         }
+
+        // Set job specific predefined variables
+        let ciProjectDir = `${cwd}`;
+        if (this.imageName) {
+            ciProjectDir = "/gcl-builds";
+        } else if (argv.shellIsolation) {
+            ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
+        }
+        predefinedVariables["CI_JOB_ID"] = `${this.jobId}`;
+        predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
+        predefinedVariables["CI_PIPELINE_IID"] = `${this.pipelineIid}`;
+        predefinedVariables["CI_JOB_NAME"] = `${this.name}`;
+        predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
+        predefinedVariables["CI_PROJECT_DIR"] = ciProjectDir;
+        predefinedVariables["CI_JOB_URL"] = `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
+        predefinedVariables["CI_PIPELINE_URL"] = `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
+        predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
+        predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/\/|\s/g, "-").toLowerCase() ?? "";
+        predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
+        predefinedVariables["CI_NODE_INDEX"] = opt.nodeIndex;
+        predefinedVariables["CI_NODE_TOTAL"] = opt.nodesTotal;
 
         // Find environment matched variables
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
@@ -177,6 +146,10 @@ export class Job {
             this.allowFailure = ruleResult.allowFailure;
             this._expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables});
         }
+
+        // Set CI_REGISTRY variables
+        this._expandedVariables["CI_REGISTRY"] = this._expandedVariables["CI_REGISTRY"] ?? `local-registry.${this.gitData.remote.host}`;
+        this._expandedVariables["CI_REGISTRY_IMAGE"] = `${this._expandedVariables["CI_REGISTRY"]}/${this._expandedVariables["CI_PROJECT_PATH"]}`;
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
             throw new ExitError(`${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`);
