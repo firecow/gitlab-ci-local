@@ -26,14 +26,6 @@ export class GitData {
         SHORT_SHA: "00000000",
     };
 
-    get CI_PROJECT_PATH () {
-        return `${this.remote.group}/${this.remote.project}`;
-    }
-
-    get CI_PROJECT_PATH_SLUG () {
-        return `${this.remote.group.replace(/\//g, "-")}-${this.remote.project}`;
-    }
-
     static async init (cwd: string, writeStreams: WriteStreams): Promise<GitData> {
         const gitData = new GitData();
         const promises = [];
