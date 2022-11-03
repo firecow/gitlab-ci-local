@@ -1007,14 +1007,14 @@ export class Job {
             aliases.push(serviceAlias);
         }
 
-        if ((imageInspect[0]?.ContainerConfig?.ExposedPorts ?? null) === null) {
+        if ((imageInspect[0]?.Config?.ExposedPorts ?? null) === null) {
             return writeStreams.stderr(chalk`${this.chalkJobName} {yellow Could not find exposed tcp ports ${service.getName(this.expandedVariables)}}\n`);
         }
 
         // Iterate over each port defined in the image, and try to connect to the alias
         const time = process.hrtime();
         const hcPromises = [];
-        for (const port of Object.keys(imageInspect[0].ContainerConfig.ExposedPorts)) {
+        for (const port of Object.keys(imageInspect[0].Config.ExposedPorts)) {
             if (!port.endsWith("/tcp")) continue;
             const portNum = parseInt(port.replace("/tcp", ""));
             const spawnCmd = ["docker", "run", "--rm", "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${aliases[0]}:${portNum}`, "-t", "30"];
