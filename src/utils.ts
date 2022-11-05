@@ -101,7 +101,7 @@ export class Utils {
                     if (value.startsWith("\"/") && value.endsWith("/\"")) {
                         value = value.substring(1).slice(0, -1);
                     }
-                    return value;
+                    return `${value}`;
                 }
             }
         );

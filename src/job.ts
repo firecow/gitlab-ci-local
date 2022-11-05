@@ -130,8 +130,8 @@ export class Job {
         predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
         predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/\/|\s/g, "-").toLowerCase() ?? "";
         predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
-        predefinedVariables["CI_NODE_INDEX"] = opt.nodeIndex;
-        predefinedVariables["CI_NODE_TOTAL"] = opt.nodesTotal;
+        predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
+        predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
 
         // Find environment matched variables
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);

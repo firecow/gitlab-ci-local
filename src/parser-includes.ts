@@ -16,7 +16,7 @@ type ParserIncludesInitOptions = {
     gitData: GitData;
     fetchIncludes: boolean;
     excludedGlobs: string[];
-    predefinedVariables: {[key: string]: any};
+    predefinedVariables: {[key: string]: string};
 };
 
 export class ParserIncludes {
