@@ -13,6 +13,7 @@ import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
 import {CICDVariable} from "./variables-from-files";
+import path from "path";
 
 interface JobOptions {
     argv: Argv;
@@ -62,6 +63,7 @@ export class Job {
     private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
     private _coveragePercent: string | null = null;
+    private _runned = false;
     private _running = false;
     private _containerId: string | null = null;
     private _serviceNetworkId: string | null = null;
@@ -74,6 +76,7 @@ export class Job {
 
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
+    private readonly absoluteBasePath: any;
 
     constructor (opt: JobOptions) {
         const jobData = opt.data;
@@ -94,6 +97,7 @@ export class Job {
         this.jobId = Math.floor(Math.random() * 1000000);
         this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
+        this.absoluteBasePath = path.resolve(".");
 
         this.when = jobData.when || "on_success";
         this.exists = jobData.exists || [];
@@ -113,7 +117,7 @@ export class Job {
         }
 
         // Set job specific predefined variables
-        let ciProjectDir = `${cwd}`;
+        let ciProjectDir = `${cwd}/${stateDir}/builds/.docker`;
         if (this.imageName) {
             ciProjectDir = "/gcl-builds";
         } else if (argv.shellIsolation) {
@@ -321,6 +325,8 @@ export class Job {
     }
 
     async start (): Promise<void> {
+        if (this._runned) return;
+        if (this._running) return;
         this._running = true;
 
         const argv = this.argv;
@@ -329,6 +335,31 @@ export class Job {
         const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams);
         const safeJobname = this.safeJobName;
         this._expandedVariables = {...this.expandedVariables, ...reportsDotenvVariables};
+
+        await Mutex.exclusive(`${argv.cwd}/${argv.stateDir}/builds/.docker`, async () => {
+            await fs.mkdirp(`${this._expandedVariables["CI_PROJECT_DIR"]}`);
+            switch (this._expandedVariables["GIT_STRATEGY"]) {
+                case undefined:
+                case "none":
+                    return;
+                case "clone":
+                case "fetch":
+                    break;
+                default:
+                    throw new ExitError(`GIT_STRATEGY=${this._expandedVariables["GIT_STRATEGY"]} is not supported`);
+            }
+            await Utils.rsyncRepo(argv.cwd, argv.stateDir, this._expandedVariables["CI_PROJECT_DIR"]);
+
+        }).catch((err) => {
+            writeStreams.stderr(`${err.message}`);
+            this.cleanupResources();
+            this._runned = true;
+            this._running = false;
+        });
+
+        if (!this._running) {
+            return;
+        }
 
         const outputLogFilePath = `${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`;
         await fs.ensureFile(outputLogFilePath);
@@ -367,6 +398,7 @@ export class Job {
         this._prescriptsExitCode = await this.execScripts(prescripts);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
+            this._runned = true;
             this._running = false;
             await this.cleanupResources();
             return;
@@ -374,6 +406,7 @@ export class Job {
 
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
+            this._runned = true;
             this._running = false;
             await this.cleanupResources();
             return;
@@ -402,6 +435,7 @@ export class Job {
             this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobname);
         }
 
+        this._runned = true;
         this._running = false;
         await this.cleanupResources();
     }
@@ -638,7 +672,7 @@ export class Job {
         }
 
         const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
-            cwd,
+            cwd: this._expandedVariables["CI_PROJECT_DIR"],
             shell: "bash",
             env: this.expandedVariables,
         });
@@ -659,6 +693,9 @@ export class Job {
             }
         };
 
+        // required to avoid permission denied message
+        await new Promise<void>((resolve) => { setTimeout(() => { resolve(); }, 200); });
+
         const exitCode = await new Promise<number>((resolve, reject) => {
             cp.stdout?.on("data", (e) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
             cp.stderr?.on("data", (e) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
@@ -669,7 +706,7 @@ export class Job {
             if (this.imageName) {
                 cp.stdin?.end("/gcl-cmd");
             } else {
-                cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}`);
+                cp.stdin?.end(`${this.absoluteBasePath}/${cwd}/${stateDir}/scripts/${safeJobName}`);
             }
         });
 

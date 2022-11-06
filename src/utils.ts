@@ -306,4 +306,23 @@ export class Utils {
         }
         return {hrdeltatime: process.hrtime(time)};
     }
+
+    static async rsyncRepo (cwd: string, stateDir:string, ciProjectDir: string): Promise<{hrdeltatime: [number, number]}> {
+        const time = process.hrtime();
+
+        const submodules: string[] = [];
+        if (fs.existsSync(`${cwd}/.gitmodules`)) {
+            const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
+            const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
+            for (const match of matches) {
+                submodules.push(match[1] + "/");
+            }
+        }
+
+        const submodulesExcludeExpresion: string = submodules.length > 0 ? `--exclude ${submodules.join(" --exclude ")}` : "";
+
+        await fs.mkdirp(`${ciProjectDir}`);
+        await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} --exclude .git/modules --exclude ${stateDir}/ --exclude ${ciProjectDir}/ ./ ${ciProjectDir}/`, cwd);
+        return {hrdeltatime: process.hrtime(time)};
+    }
 }
