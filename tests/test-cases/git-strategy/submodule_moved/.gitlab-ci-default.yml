@@ -1,0 +1,14 @@
+---
+stages:
+ - test
+
+build-job:
+ stage: test
+ script:
+  - pwd
+  - test -f .gitlab-ci-default.yml || exit 1
+  - test -f submodule/test.txt && exit 1
+  - test -f mid_folder/submodule/test.txt && exit 1
+  - test -f mid_folder/submodule/submodule/test.txt && exit 1
+  - test -f mid_folder/submodule/submodule/submodule/test.txt && exit 1
+  - echo repo is correct

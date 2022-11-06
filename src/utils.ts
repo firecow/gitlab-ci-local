@@ -258,19 +258,79 @@ export class Utils {
         return checksum(result.join(""));
     }
 
-    static async moveGitDirInSubmodules (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
+    static async rsyncRepo (cwd: string, stateDir:string, ciProjectDir: string, submoduleStrategy:string): Promise<{hrdeltatime: [number, number]}> {
+        const time = process.hrtime();
+
+        function getTopSubmodulesPaths (): string[] {
+            const submodulePaths: string[] = [];
+            if (fs.existsSync(`${cwd}/.gitmodules`)) {
+                const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
+                const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
+                for (const match of matches) {
+                    submodulePaths.push(match[1] + "/");
+                }
+            }
+            return submodulePaths;
+        }
+
+        const submodulePaths: string[] = [];
+        const gitDirSubmodulePaths: string[] = [];
+        switch (submoduleStrategy) {
+            case undefined:
+            case "none":
+                submodulePaths.push(...getTopSubmodulesPaths());
+                gitDirSubmodulePaths.push("modules");
+                break;
+            case "normal":
+                getTopSubmodulesPaths().forEach(element => {
+                    if (fs.existsSync(`${cwd}/${element}/.gitmodules`)) {
+                        const gitmodules = fs.readFileSync(`${cwd}/${element}/.gitmodules`, "utf8");
+                        const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
+                        for (const match of matches) {
+                            submodulePaths.push(`${element}${match[1]}` + "/");
+                        }
+                    }
+                });
+                if (fs.existsSync(`${cwd}/.gitmodules`)) {
+                    const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
+                    const matches = gitmodules.matchAll(/\s*submodule\s*"([^\s]*)"/g);
+                    for (const match of matches) {
+                        gitDirSubmodulePaths.push(`modules/${match[1]}/modules`);
+                    }
+                }
+                break;
+            case "recursive":
+                break;
+        }
+
+        const submodulesExcludeExpresion: string = submodulePaths.length > 0 ? `--exclude ${submodulePaths.join(" --exclude ")}` : "";
+
+        const dotGitStat = fs.statSync(`${cwd}/.git`);
+
+        fs.mkdirpSync(`${ciProjectDir}`);
+        if (dotGitStat.isDirectory()) {
+            const gitDirSubmodulesExcludeExpresion: string = gitDirSubmodulePaths.length > 0 ? `--exclude ${gitDirSubmodulePaths.join(" --exclude .git/")}` : "";
+            await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} ${gitDirSubmodulesExcludeExpresion} --exclude ${stateDir}/ --exclude ${ciProjectDir}/ ./ ${ciProjectDir}/`, cwd);
+        } else {
+            const gitDirSubmodulesExcludeExpresion: string = gitDirSubmodulePaths.length > 0 ? `--exclude ${gitDirSubmodulePaths.join(" --exclude ")}` : "";
+            await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} --exclude ${stateDir}/ --exclude ${ciProjectDir}/ --exclude .git ./ ${ciProjectDir}/`, cwd);
+            const gitDir = fs.readFileSync(`${cwd}/.git`, "utf8").split(":")[1].trim() + "/";
+            fs.mkdirpSync(`${cwd}/${ciProjectDir}/.git`);
+            await Utils.bash(`rsync -a --delete ${gitDirSubmodulesExcludeExpresion} ${gitDir} ${ciProjectDir}/.git/`, cwd);
+            Utils.adjustGitDirInSubmodules (cwd, stateDir, ciProjectDir,gitDir);
+        }
+        return {hrdeltatime: process.hrtime(time)};
+    }
+
+    static async adjustGitDirInSubmodules (cwd: string, stateDir: string, target: string, gitDirToRemove: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
         const gitDirPath = `${stateDir}/builds/${target}/.git`;
         try {
-            const gitDirToRemove = fs.readFileSync(`${cwd}/.git`, "utf8").split(":")[1].trim() + "/";
-            const submoduleRootGitConfig = fs.readFileSync(`${cwd}/${gitDirToRemove}config`, "utf8");
+            const submoduleRootGitConfig = fs.readFileSync(`${gitDirPath}/config`, "utf8");
             const submoduleRootGitConfigLines = submoduleRootGitConfig.split("\n");
             const submoduleRootWorktreeLineIndex = submoduleRootGitConfigLines.findIndex((line) => line.startsWith("\tworktree = "));
             const workTreeToRemove = submoduleRootGitConfigLines[submoduleRootWorktreeLineIndex].replace("\tworktree = ", "") + "/";
 
-            fs.removeSync(`${cwd}/${gitDirPath}`);
-            await fs.mkdirp(`${cwd}/${gitDirPath}`);
-            await Utils.bash(`rsync -a --delete ${gitDirToRemove} ${gitDirPath}`, cwd);
             const configRelativePathQueue: string[] = [];
             configRelativePathQueue.push("");
             while (configRelativePathQueue.length > 0) {
@@ -307,89 +367,4 @@ export class Utils {
         return {hrdeltatime: process.hrtime(time)};
     }
 
-    static async rsyncRepo (cwd: string, stateDir:string, ciProjectDir: string): Promise<{hrdeltatime: [number, number]}> {
-        const time = process.hrtime();
-
-        const submodules: string[] = [];
-        if (fs.existsSync(`${cwd}/.gitmodules`)) {
-            const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
-            const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
-            for (const match of matches) {
-                submodules.push(match[1] + "/");
-            }
-        }
-
-        const submodulesExcludeExpresion: string = submodules.length > 0 ? `--exclude ${submodules.join(" --exclude ")}` : "";
-
-        await fs.mkdirp(`${ciProjectDir}`);
-        await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} --exclude .git/modules --exclude ${stateDir}/ --exclude ${ciProjectDir}/ ./ ${ciProjectDir}/`, cwd);
-        return {hrdeltatime: process.hrtime(time)};
-    }
-
-    static async moveGitDirRepoInSubmodules (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
-        const time = process.hrtime();
-        const gitDirPath = `${stateDir}/builds/${target}/.git`;
-        try {
-            const gitDirToRemove = fs.readFileSync(`${cwd}/.git`, "utf8").split(":")[1].trim() + "/";
-            fs.removeSync(`${cwd}/${gitDirPath}`);
-            await fs.mkdirp(`${cwd}/${gitDirPath}`);
-            await Utils.bash(`rsync -a --delete --exclude modules ${gitDirToRemove} ${gitDirPath}`, cwd);
-            const configPath = cwd + "/" + gitDirPath + "/config";
-            const config = await fs.readFile(configPath, "utf8");
-            const configLines = config.split("\n");
-            const worktreeLineIndex = configLines.findIndex((line) => line.startsWith("\tworktree = "));
-            configLines.splice(worktreeLineIndex, 1);
-            await fs.writeFile(configPath, configLines.join("\n"));
-        }
-        catch (e) {
-            // continue regardless of error
-        }
-        finally {
-            // continue regardless of error
-        }
-        return {hrdeltatime: process.hrtime(time)};
-    }
-
-
-    static async rsyncSubmodules (cwd: string, stateDir: string, target: string, envs: {[key: string]: string}): Promise<{hrdeltatime: [number, number]}> {
-        const time = process.hrtime();
-        if (!fs.existsSync(`${cwd}/.gitmodules`) || !(envs["GIT_SUBMODULE_STRATEGY"] === "normal" || envs["GIT_SUBMODULE_STRATEGY"] === "recursive")) return {hrdeltatime: process.hrtime(time)};
-
-        const submodulesToRsync: string[] = [];
-        if (envs["GIT_SUBMODULE_PATHS"] !== undefined) {
-            const includedSubmodules = envs["GIT_SUBMODULE_PATHS"].split(" ").map((path)=> path.trim()).filter((path) => !path.startsWith("(exclude)"));
-            submodulesToRsync.push(...includedSubmodules);
-        }
-
-        if (submodulesToRsync.length === 0) {
-            const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
-            const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
-            for (const match of matches) {
-                submodulesToRsync.push(match[1]);
-            }
-            if (envs["GIT_SUBMODULE_PATHS"] !== undefined) {
-                const excludedSubmodules = envs["GIT_SUBMODULE_PATHS"].split(" ").map((path)=> path.trim()).filter((path) => path.startsWith("(exclude)")).map((path) => path.replace("(exclude)", ""));
-                // remove excluded submodules
-                submodulesToRsync.filter((path) => !excludedSubmodules.includes(path));
-            }
-        }
-
-        for (const submodule of submodulesToRsync) {
-            await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}/${submodule}`);
-            let submodulesExcludeExpresion = "";
-            if (envs["GIT_SUBMODULE_STRATEGY"] === "normal" && fs.existsSync(`${cwd}/${submodule}/.gitmodules`)) {
-                const recurseSubmodules: string[] = [];
-                const recurseGitmodules = fs.readFileSync(`${cwd}/${submodule}/.gitmodules`, "utf8");
-                const matches = recurseGitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
-                for (const match of matches) {
-                    recurseSubmodules.push(match[1] + "/");
-                }
-                if (recurseSubmodules.length > 0) {
-                    submodulesExcludeExpresion = `--exclude ${recurseSubmodules.join(" --exclude ")}`;
-                }
-            }
-            await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} --exclude ${stateDir}/ ${submodule}/ ${stateDir}/builds/${target}/${submodule}/`, cwd);
-        }
-        return {hrdeltatime: process.hrtime(time)};
-    }
 }

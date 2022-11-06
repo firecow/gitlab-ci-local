@@ -77,3 +77,47 @@ test("git-strategy <build-job> default", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
+test("git-strategy <build-job> default in submodule", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/git-strategy/submodule_moved",
+        file: ".gitlab-ci-default.yml",
+        job: ["build-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright build-job} {greenBright >} repo is correct`,
+    ];
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test("git-strategy <build-job> default submodule_strategy normal", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/git-strategy",
+        file: ".gitlab-ci-default-submodule-normal.yml",
+        job: ["build-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright build-job} {greenBright >} repo is correct`,
+    ];
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test("git-strategy <build-job> default submodule_strategy recursive", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/git-strategy",
+        file: ".gitlab-ci-default-submodule-recursive.yml",
+        job: ["build-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright build-job} {greenBright >} repo is correct`,
+    ];
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
