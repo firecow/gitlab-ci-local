@@ -6,7 +6,7 @@ build-job:
  stage: test
  script:
   - pwd
-  - test -f .gitlab-ci.yml || exit 1
+  - test -f .gitlab-ci-default.yml || exit 1
   - test -f submodule_moved/test.txt && exit 1
   - test -f submodule_moved/submodule/test.txt && exit 1
   - test -f submodule_moved/mid_folder/submodule/test.txt && exit 1

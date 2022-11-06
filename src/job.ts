@@ -117,11 +117,11 @@ export class Job {
         }
 
         // Set job specific predefined variables
-        let ciProjectDir = `${cwd}/${stateDir}/builds/.docker`;
+        let ciProjectDir = `${stateDir}/builds/.docker`;
         if (this.imageName) {
             ciProjectDir = "/gcl-builds";
         } else if (argv.shellIsolation) {
-            ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
+            ciProjectDir = `${stateDir}/builds/${this.safeJobName}`;
         }
         predefinedVariables["CI_JOB_ID"] = `${this.jobId}`;
         predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;

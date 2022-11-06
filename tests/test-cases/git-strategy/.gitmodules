@@ -1,0 +1,4 @@
+[submodule "submodule"]
+	path = submodule_moved
+	url = ../submodule.git
+

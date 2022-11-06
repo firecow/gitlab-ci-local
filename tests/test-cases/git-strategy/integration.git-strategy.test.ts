@@ -25,21 +25,6 @@ GIT_DEPTH: defaults to 50
 GIT_CLONE_PATH: $CI_BUILDS_DIR/project-name (Handling concurrency) This can only be used when custom_build_dir is enabled in the runner’s configuration.
  */
 
-test("git-strategy <build-job> default", async () => {
-    const writeStreams = new WriteStreamsMock();
-    await handler({
-        cwd: "tests/test-cases/git-strategy",
-        file: ".gitlab-ci.yml",
-        job: ["build-job"],
-    }, writeStreams);
-
-    const expected = [
-        chalk`{blueBright build-job} {greenBright >} repo is correct`,
-    ];
-
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-});
-
 test("git-strategy <build-job> none", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
@@ -76,3 +61,19 @@ test("git-strategy <build-job> invalid", async () => {
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 
 });
+
+test("git-strategy <build-job> default", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/git-strategy",
+        file: ".gitlab-ci-default.yml",
+        job: ["build-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright build-job} {greenBright >} repo is correct`,
+    ];
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+

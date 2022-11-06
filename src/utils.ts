@@ -325,4 +325,71 @@ export class Utils {
         await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} --exclude .git/modules --exclude ${stateDir}/ --exclude ${ciProjectDir}/ ./ ${ciProjectDir}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
+
+    static async moveGitDirRepoInSubmodules (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
+        const time = process.hrtime();
+        const gitDirPath = `${stateDir}/builds/${target}/.git`;
+        try {
+            const gitDirToRemove = fs.readFileSync(`${cwd}/.git`, "utf8").split(":")[1].trim() + "/";
+            fs.removeSync(`${cwd}/${gitDirPath}`);
+            await fs.mkdirp(`${cwd}/${gitDirPath}`);
+            await Utils.bash(`rsync -a --delete --exclude modules ${gitDirToRemove} ${gitDirPath}`, cwd);
+            const configPath = cwd + "/" + gitDirPath + "/config";
+            const config = await fs.readFile(configPath, "utf8");
+            const configLines = config.split("\n");
+            const worktreeLineIndex = configLines.findIndex((line) => line.startsWith("\tworktree = "));
+            configLines.splice(worktreeLineIndex, 1);
+            await fs.writeFile(configPath, configLines.join("\n"));
+        }
+        catch (e) {
+            // continue regardless of error
+        }
+        finally {
+            // continue regardless of error
+        }
+        return {hrdeltatime: process.hrtime(time)};
+    }
+
+
+    static async rsyncSubmodules (cwd: string, stateDir: string, target: string, envs: {[key: string]: string}): Promise<{hrdeltatime: [number, number]}> {
+        const time = process.hrtime();
+        if (!fs.existsSync(`${cwd}/.gitmodules`) || !(envs["GIT_SUBMODULE_STRATEGY"] === "normal" || envs["GIT_SUBMODULE_STRATEGY"] === "recursive")) return {hrdeltatime: process.hrtime(time)};
+
+        const submodulesToRsync: string[] = [];
+        if (envs["GIT_SUBMODULE_PATHS"] !== undefined) {
+            const includedSubmodules = envs["GIT_SUBMODULE_PATHS"].split(" ").map((path)=> path.trim()).filter((path) => !path.startsWith("(exclude)"));
+            submodulesToRsync.push(...includedSubmodules);
+        }
+
+        if (submodulesToRsync.length === 0) {
+            const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
+            const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
+            for (const match of matches) {
+                submodulesToRsync.push(match[1]);
+            }
+            if (envs["GIT_SUBMODULE_PATHS"] !== undefined) {
+                const excludedSubmodules = envs["GIT_SUBMODULE_PATHS"].split(" ").map((path)=> path.trim()).filter((path) => path.startsWith("(exclude)")).map((path) => path.replace("(exclude)", ""));
+                // remove excluded submodules
+                submodulesToRsync.filter((path) => !excludedSubmodules.includes(path));
+            }
+        }
+
+        for (const submodule of submodulesToRsync) {
+            await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}/${submodule}`);
+            let submodulesExcludeExpresion = "";
+            if (envs["GIT_SUBMODULE_STRATEGY"] === "normal" && fs.existsSync(`${cwd}/${submodule}/.gitmodules`)) {
+                const recurseSubmodules: string[] = [];
+                const recurseGitmodules = fs.readFileSync(`${cwd}/${submodule}/.gitmodules`, "utf8");
+                const matches = recurseGitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
+                for (const match of matches) {
+                    recurseSubmodules.push(match[1] + "/");
+                }
+                if (recurseSubmodules.length > 0) {
+                    submodulesExcludeExpresion = `--exclude ${recurseSubmodules.join(" --exclude ")}`;
+                }
+            }
+            await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} --exclude ${stateDir}/ ${submodule}/ ${stateDir}/builds/${target}/${submodule}/`, cwd);
+        }
+        return {hrdeltatime: process.hrtime(time)};
+    }
 }
