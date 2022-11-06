@@ -337,24 +337,31 @@ export class Job {
         this._expandedVariables = {...this.expandedVariables, ...reportsDotenvVariables};
 
         await Mutex.exclusive(`${argv.cwd}/${argv.stateDir}/builds/.docker`, async () => {
-            await fs.mkdirp(`${this._expandedVariables["CI_PROJECT_DIR"]}`);
+            await fs.mkdirp(`${argv.cwd}/${argv.stateDir}/builds/.docker`);
             switch (this._expandedVariables["GIT_STRATEGY"]) {
-                case undefined:
                 case "none":
                     return;
+                case undefined:
                 case "clone":
                 case "fetch":
                     break;
                 default:
-                    throw new ExitError(`GIT_STRATEGY=${this._expandedVariables["GIT_STRATEGY"]} is not supported`);
+                    writeStreams.stderr(`GIT_STRATEGY=${this._expandedVariables["GIT_STRATEGY"]} is not supported`);
+                    this.cleanupResources();
+                    this._runned = true;
+                    this._running = false;
+                    return;
             }
-            await Utils.rsyncRepo(argv.cwd, argv.stateDir, this._expandedVariables["CI_PROJECT_DIR"]);
-
-        }).catch((err) => {
-            writeStreams.stderr(`${err.message}`);
-            this.cleanupResources();
-            this._runned = true;
-            this._running = false;
+            try {
+                await Utils.rsyncRepo(argv.cwd, argv.stateDir, `${argv.stateDir}/builds/.docker`);
+                await Utils.moveGitDirRepoInSubmodules(argv.cwd, argv.stateDir, `${argv.stateDir}/builds/.docker`);
+            } catch (err) {
+                writeStreams.stderr(`Failed to rsync: ${err}`);
+                this.cleanupResources();
+                this._runned = true;
+                this._running = false;
+                return;
+            }
         });
 
         if (!this._running) {
@@ -672,7 +679,7 @@ export class Job {
         }
 
         const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
-            cwd: this._expandedVariables["CI_PROJECT_DIR"],
+            cwd: `${cwd}/${stateDir}/builds/.docker`,
             shell: "bash",
             env: this.expandedVariables,
         });
