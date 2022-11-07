@@ -3,9 +3,10 @@ stages:
  - test
 
 build-job:
+ variables:
+  GIT_SUBMODULE_STRATEGY: recursive
  stage: test
  script:
-  - cd .gitlab-ci-local/builds/.docker
   - export SUBMODULE_FOLDER=mid_folder/submodule
   - export SUBMODULE_FOLDER_INSIDE_GIT=$(cat ${SUBMODULE_FOLDER}/.git | cut -b 9- )
   - test $SUBMODULE_FOLDER/$SUBMODULE_INSIDE_GIT/config || exit 1

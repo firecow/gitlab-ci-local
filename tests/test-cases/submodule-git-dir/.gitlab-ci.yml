@@ -3,6 +3,8 @@ stages:
  - test
 
 build-job:
+ variables:
+  GIT_SUBMODULE_STRATEGY: recursive
  stage: test
  script:
   - export SUBMODULE_FOLDER=submodule_moved

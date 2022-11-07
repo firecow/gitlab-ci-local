@@ -6,11 +6,13 @@ import {WhenStatics} from "../../mocks/when-statics";
 import {Utils} from "../../../src/utils";
 
 beforeAll(() => {
-    initSpawnSpy(WhenStatics.all);
     const cwd = "tests/test-cases/submodule-git-dir";
     Utils.bash("find . -name .gitlab-ci-local -type d | xargs -I{} rm -rf {} ", cwd);
     Utils.bash("rsync -a --delete git-dir/ .git", cwd);
     Utils.bash("find . -name git-dir -type f | xargs dirname | xargs -I{} cp {}/git-dir {}/.git", cwd);
+    Utils.bash("mkdir -p .gitlab-ci-local/output", cwd);
+    Utils.bash("touch .gitlab-ci-local/output/build-job.log", cwd);
+    initSpawnSpy(WhenStatics.all);
 });
 
 test("submodule-git-dir <build-job>", async () => {

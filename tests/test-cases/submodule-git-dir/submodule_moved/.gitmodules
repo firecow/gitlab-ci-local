@@ -1,0 +1,7 @@
+[submodule "mid_folder/submodule"]
+	path = mid_folder/submodule
+	url = ../submodule.git
+[submodule "submodule"]
+	path = submodule
+	url = ../submodule.git
+

@@ -362,7 +362,7 @@ export class Utils {
 
         const dotGitStat = fs.statSync(`${cwd}/.git`);
 
-        fs.mkdirpSync(`${ciProjectDir}`);
+        fs.mkdirpSync(`${cwd}/${ciProjectDir}`);
         if (dotGitStat.isDirectory()) {
             const gitDirSubmodulesExcludeExpresion: string = gitDirSubmodulePaths.length > 0 ? `--exclude /${gitDirSubmodulePaths.join("/ --exclude .git/")}/` : "";
             await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} ${gitDirSubmodulesExcludeExpresion} --exclude ${stateDir}/ --exclude ${ciProjectDir}/ ./ ${ciProjectDir}/`, cwd);
@@ -380,7 +380,7 @@ export class Utils {
 
     static async adjustGitDirInSubmodules (cwd: string, stateDir: string, target: string, gitDirToRemove: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
-        const gitDirPath = `${stateDir}/builds/${target}/.git`;
+        const gitDirPath = `${cwd}/${target}/.git`;
         try {
             const submoduleRootGitConfig = fs.readFileSync(`${gitDirPath}/config`, "utf8");
             const submoduleRootGitConfigLines = submoduleRootGitConfig.split("\n");
@@ -391,7 +391,7 @@ export class Utils {
             configRelativePathQueue.push("");
             while (configRelativePathQueue.length > 0) {
                 const configRelativePath = configRelativePathQueue.shift()?.toString();
-                const configPath = cwd + "/" + gitDirPath + "/" + (configRelativePath === "" ? "" : `modules/${configRelativePath}/`) + "config";
+                const configPath = gitDirPath + "/" + (configRelativePath === "" ? "" : `modules/${configRelativePath}/`) + "config";
                 if (!fs.existsSync(configPath)) continue;
                 const config = await fs.readFile(configPath, "utf8");
                 const configLines = config.split("\n");
@@ -406,7 +406,7 @@ export class Utils {
                     // remove workTreeToRemove string from worktree string only once
                     const worktree = configLines[worktreeLineIndex].replace("\tworktree = ", "../").replace(workTreeToRemove, "");
                     configLines[worktreeLineIndex] = "worktree = " + worktree;
-                    const gitDirFilePath = cwd + "/" + gitDirPath + "/" + (configRelativePath === "" ? "" : `modules/${configRelativePath}/`) + worktree + "/" + ".git";
+                    const gitDirFilePath = gitDirPath + "/" + (configRelativePath === "" ? "" : `modules/${configRelativePath}/`) + worktree + "/" + ".git";
                     const gitDirStatement = await fs.readFile(gitDirFilePath, "utf8");
                     const newGitWorkingDir = gitDirStatement.split(":")[1].trim().replace(gitDirToRemove, ".git/");
                     await fs.writeFile(gitDirFilePath, `gitdir: ${newGitWorkingDir}`);
