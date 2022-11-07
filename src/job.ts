@@ -353,7 +353,7 @@ export class Job {
                     return;
             }
             try {
-                await Utils.rsyncRepo(argv.cwd, argv.stateDir, `${argv.stateDir}/builds/.docker`,this._expandedVariables["GIT_SUBMODULE_STRATEGY"]);
+                await Utils.rsyncRepo(argv.cwd, argv.stateDir, `${argv.stateDir}/builds/.docker`,this._expandedVariables["GIT_SUBMODULE_STRATEGY"],this._expandedVariables["GIT_SUBMODULE_PATHS"]);
             } catch (err) {
                 writeStreams.stderr(`Failed to rsync: ${err}`);
                 this.cleanupResources();

@@ -258,61 +258,116 @@ export class Utils {
         return checksum(result.join(""));
     }
 
-    static async rsyncRepo (cwd: string, stateDir:string, ciProjectDir: string, submoduleStrategy:string): Promise<{hrdeltatime: [number, number]}> {
+    static async rsyncRepo (cwd: string, stateDir:string, ciProjectDir: string, submoduleStrategy:string, submodulePathsFilter:string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
 
-        function getTopSubmodulesPaths (): string[] {
-            const submodulePaths: string[] = [];
-            if (fs.existsSync(`${cwd}/.gitmodules`)) {
-                const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
-                const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
-                for (const match of matches) {
-                    submodulePaths.push(match[1] + "/");
+        function getSubmodules (): Map<string, string> {
+            const submodules: Map<string, string> = new Map();
+            if (!fs.existsSync(`${cwd}/.gitmodules`)) return submodules;
+
+            const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
+            const gitmodulesLines = gitmodules.split("\n");
+            let submoduleName = "";
+            for (const line of gitmodulesLines) {
+                if (submoduleName === "") {
+                    const match = line.match(/\[submodule\s+"(.+?)"\]/);
+                    if (match) {
+                        submoduleName = match[1];
+                    }
+                } else {
+                    const match = line.match(/\s*path\s*=\s*([^\s]*)\s*/);
+                    if (match) {
+                        submodules.set(match[1], submoduleName);
+                        submoduleName = "";
+                    }
                 }
             }
-            return submodulePaths;
+            return submodules;
         }
 
+        function processInnerSubmodules (key: string, value: string) {
+            if (fs.existsSync(`${cwd}/${key}/.gitmodules`)) {
+                const gitmodules = fs.readFileSync(`${cwd}/${key}/.gitmodules`, "utf8");
+                const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
+                for (const match of matches) {
+                    submodulePaths.push(`${key}/${match[1]}`);
+                }
+                gitDirSubmodulePaths.push(`modules/${value}/modules`);
+            }
+        }
+
+        const submodulesToInclude: string[] = [];
+        const submodulesToExcluded: string[] = [];
         const submodulePaths: string[] = [];
         const gitDirSubmodulePaths: string[] = [];
         switch (submoduleStrategy) {
             case undefined:
             case "none":
-                submodulePaths.push(...getTopSubmodulesPaths());
+                submodulePaths.push(...getSubmodules().keys());
                 gitDirSubmodulePaths.push("modules");
                 break;
             case "normal":
-                getTopSubmodulesPaths().forEach(element => {
-                    if (fs.existsSync(`${cwd}/${element}/.gitmodules`)) {
-                        const gitmodules = fs.readFileSync(`${cwd}/${element}/.gitmodules`, "utf8");
-                        const matches = gitmodules.matchAll(/\s*path\s*=\s*([^\s]*)\s*/g);
-                        for (const match of matches) {
-                            submodulePaths.push(`${element}${match[1]}` + "/");
+                if (submodulePathsFilter !== undefined) {
+                    if (submodulePathsFilter.includes(":(exclude)")) {
+                        submodulesToExcluded.push(...submodulePathsFilter.split(" ").map((path) => path.replace(":(exclude)", "").trim()));
+                    } else {
+                        submodulesToInclude.push(...submodulePathsFilter.split(" "));
+                    }
+                }
+                getSubmodules().forEach((value, key) => {
+                    if (submodulesToInclude.length > 0) {
+                        if (submodulesToInclude.includes(key)) {
+                            processInnerSubmodules(key, value);
+                        } else {
+                            submodulePaths.push(key);
+                            gitDirSubmodulePaths.push(`modules/${value}`);
+                        }
+                    } else if (submodulesToExcluded.length > 0) {
+                        if (submodulesToExcluded.includes(key)) {
+                            submodulePaths.push(key);
+                            gitDirSubmodulePaths.push(`modules/${value}`);
+                        } else {
+                            processInnerSubmodules(key, value);
+                        }
+                    } else {
+                        processInnerSubmodules(key, value);
+                    }
+                });
+                break;
+            case "recursive":
+                if (submodulePathsFilter !== undefined) {
+                    if (submodulePathsFilter.includes(":(exclude)")) {
+                        submodulesToExcluded.push(...submodulePathsFilter.split(" ").map((path) => path.replace(":(exclude)", "").trim()));
+                    } else {
+                        submodulesToInclude.push(...submodulePathsFilter.split(" "));
+                    }
+                }
+                getSubmodules().forEach((value, key) => {
+                    if (submodulesToInclude.length > 0) {
+                        if (!submodulesToInclude.includes(key)) {
+                            submodulePaths.push(key);
+                            gitDirSubmodulePaths.push(`modules/${value}`);
+                        }
+                    } else if (submodulesToExcluded.length > 0) {
+                        if (submodulesToExcluded.includes(key)) {
+                            submodulePaths.push(key);
+                            gitDirSubmodulePaths.push(`modules/${value}`);
                         }
                     }
                 });
-                if (fs.existsSync(`${cwd}/.gitmodules`)) {
-                    const gitmodules = fs.readFileSync(`${cwd}/.gitmodules`, "utf8");
-                    const matches = gitmodules.matchAll(/\s*submodule\s*"([^\s]*)"/g);
-                    for (const match of matches) {
-                        gitDirSubmodulePaths.push(`modules/${match[1]}/modules`);
-                    }
-                }
-                break;
-            case "recursive":
                 break;
         }
 
-        const submodulesExcludeExpresion: string = submodulePaths.length > 0 ? `--exclude ${submodulePaths.join(" --exclude ")}` : "";
+        const submodulesExcludeExpresion: string = submodulePaths.length > 0 ? `--exclude /${submodulePaths.join(" --exclude /")}/` : "";
 
         const dotGitStat = fs.statSync(`${cwd}/.git`);
 
         fs.mkdirpSync(`${ciProjectDir}`);
         if (dotGitStat.isDirectory()) {
-            const gitDirSubmodulesExcludeExpresion: string = gitDirSubmodulePaths.length > 0 ? `--exclude ${gitDirSubmodulePaths.join(" --exclude .git/")}` : "";
+            const gitDirSubmodulesExcludeExpresion: string = gitDirSubmodulePaths.length > 0 ? `--exclude /${gitDirSubmodulePaths.join("/ --exclude .git/")}/` : "";
             await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} ${gitDirSubmodulesExcludeExpresion} --exclude ${stateDir}/ --exclude ${ciProjectDir}/ ./ ${ciProjectDir}/`, cwd);
         } else {
-            const gitDirSubmodulesExcludeExpresion: string = gitDirSubmodulePaths.length > 0 ? `--exclude ${gitDirSubmodulePaths.join(" --exclude ")}` : "";
+            const gitDirSubmodulesExcludeExpresion: string = gitDirSubmodulePaths.length > 0 ? `--exclude /${gitDirSubmodulePaths.join("/ --exclude /")}/` : "";
             await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') ${submodulesExcludeExpresion} --exclude ${stateDir}/ --exclude ${ciProjectDir}/ --exclude .git ./ ${ciProjectDir}/`, cwd);
             const gitDir = fs.readFileSync(`${cwd}/.git`, "utf8").split(":")[1].trim() + "/";
             fs.mkdirpSync(`${cwd}/${ciProjectDir}/.git`);
@@ -320,6 +375,7 @@ export class Utils {
             Utils.adjustGitDirInSubmodules (cwd, stateDir, ciProjectDir,gitDir);
         }
         return {hrdeltatime: process.hrtime(time)};
+
     }
 
     static async adjustGitDirInSubmodules (cwd: string, stateDir: string, target: string, gitDirToRemove: string): Promise<{hrdeltatime: [number, number]}> {
