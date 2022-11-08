@@ -123,7 +123,7 @@ export class Job {
         predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
         predefinedVariables["CI_PIPELINE_IID"] = `${this.pipelineIid}`;
         predefinedVariables["CI_JOB_NAME"] = `${this.name}`;
-        predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").replace(/-$/, "").slice(0, 63).toLowerCase()}`;
+        predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
         predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
         predefinedVariables["CI_PROJECT_DIR"] = ciProjectDir;
         predefinedVariables["CI_JOB_URL"] = `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
