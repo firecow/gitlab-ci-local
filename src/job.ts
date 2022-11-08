@@ -268,7 +268,7 @@ export class Job {
         return this.jobData["description"] ?? "";
     }
 
-    get artifacts (): {paths?: string[]; exclude?: string[]; reports?: {dotenv?: string}} | null {
+    get artifacts (): {paths?: string[]; exclude?: string[]; reports?: {dotenv?: string}; when?: string} | null {
         return this.jobData["artifacts"];
     }
 
@@ -675,6 +675,9 @@ export class Job {
 
         if (exitCode == 0) {
             await this.copyCacheOut(writeStreams);
+        }
+
+        if (exitCode == 0 || this.artifacts?.when === "always") {
             await this.copyArtifactsOut(writeStreams);
         }
 

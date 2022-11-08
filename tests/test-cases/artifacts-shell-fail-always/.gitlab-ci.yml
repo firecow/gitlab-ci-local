@@ -1,0 +1,17 @@
+---
+produce:
+  stage: build
+  script:
+    - mkdir -p path/
+    - touch path/file1
+    - exit 1
+  artifacts:
+    when: always
+    paths: [path/]
+
+consume:
+  stage: test
+  dependencies: [produce]
+  script:
+    - pwd
+    - test -f path/file1
