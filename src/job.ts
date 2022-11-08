@@ -129,7 +129,7 @@ export class Job {
         predefinedVariables["CI_JOB_URL"] = `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
         predefinedVariables["CI_PIPELINE_URL"] = `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
         predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
-        predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").replace(/-$/, "").slice(0, 23).toLowerCase() ?? "";
+        predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 23).replace(/-$/, "").toLowerCase() ?? "";
         predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
         predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
