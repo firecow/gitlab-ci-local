@@ -612,7 +612,7 @@ export class Job {
         if (this.imageName) {
             // Files in docker-executor build folder must be root owned.
             await Utils.spawn([
-                "docker", "run", "--rm", "-v", `${tmpVolumeName}:/tmp/`, "-v", `${buildVolumeName}:/app/`, "firecow/gitlab-ci-local-util",
+                "docker", "run", "--rm", "-v", `${tmpVolumeName}:/tmp/`, "-v", `${buildVolumeName}:/app/`, "docker.io/firecow/gitlab-ci-local-util",
                 "bash", "-c", "chown 0:0 -R /app/ && chmod a+rw -R /app/ && chmod a+rw -R /tmp/",
             ]);
         }
@@ -883,7 +883,7 @@ export class Job {
         await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName) {
-            const {stdout: containerId} = await Utils.bash(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/gcl-builds/ -w /gcl-builds firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
+            const {stdout: containerId} = await Utils.bash(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/gcl-builds/ -w /gcl-builds docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.bash(`docker start ${containerId} --attach`);
             await Utils.bash(`docker cp ${containerId}:/${type}/. ${stateDir}/${type}/.`, cwd);
