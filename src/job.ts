@@ -690,7 +690,7 @@ export class Job {
         try {
             await Utils.spawn(["docker", "image", "inspect", imageToPull]);
         } catch (e: any) {
-            if (e.stderr?.includes(`No such image: ${imageToPull}`)) {
+            if (e.stderr?.includes("No such image") || e.stderr?.includes("failed to find image")) {
                 await Utils.spawn(["docker", "pull", imageToPull]);
                 const endTime = process.hrtime(time);
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
