@@ -24,7 +24,7 @@ export function init ({gitData}: PredefinedVariablesOpts): {[name: string]: stri
         CI_COMMIT_REF_PROTECTED: "false",
         CI_COMMIT_BRANCH: gitData.commit.REF_NAME, // Not available in merge request or tag pipelines
         CI_COMMIT_REF_NAME: gitData.commit.REF_NAME, // Tag or branch name
-        CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").replace(/-$/, "").slice(0, 63).toLowerCase(),
+        CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase(),
         CI_COMMIT_TITLE: "Commit Title", // First line of commit message.
         CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
         CI_COMMIT_DESCRIPTION: "More commit text",
