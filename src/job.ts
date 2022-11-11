@@ -975,7 +975,9 @@ export class Job {
         (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
 
         const time = process.hrtime();
+
         const {stdout: containerId} = await Utils.bash(dockerCmd, cwd, this.expandedVariables);
+        await Utils.spawn(["docker", "cp", `${stateDir}/builds/.docker/.` , `${containerId}:/gcl-builds`], cwd);
         this._containersToClean.push(containerId);
 
         // Copy docker entrypoint if specified for service
