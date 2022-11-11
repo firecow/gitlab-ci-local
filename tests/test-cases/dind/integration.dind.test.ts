@@ -15,7 +15,7 @@ test("dind <test-job> --needs", async () => {
     await handler({
         cwd: "tests/test-cases/dind",
         job: ["test-job"],
-        needs: true
+        needs: true,
     }, writeStreams);
 
     const expected = [
