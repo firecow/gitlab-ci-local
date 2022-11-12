@@ -31,6 +31,9 @@ export class Executor {
             if (job.when === "on_success" && Executor.isPastFailed(jobsToWaitFor)) {
                 continue;
             }
+            if (job.when === "manual" && Executor.isPastFailed(jobsToWaitFor)) {
+                continue;
+            }
             if (job.when === "on_failure" && !Executor.isPastFailed(jobsToWaitFor)) {
                 continue;
             }
