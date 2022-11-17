@@ -20,6 +20,7 @@ test("dind <test-job> --needs", async () => {
 
     const expected = [
         chalk`{blueBright test-job} {greenBright >} TestJobDIND`,
+        chalk`{blueBright test-job} {greenBright >} Touchme`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

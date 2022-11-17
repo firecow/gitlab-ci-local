@@ -342,12 +342,31 @@ export class Job {
         if (this.imageName) {
             const buildVolumeName = this.buildVolumeName;
             const tmpVolumeName = this.tmpVolumeName;
+            const fileVariablesDir = this.fileVariablesDir;
+
             const volumePromises = [];
             volumePromises.push(Utils.spawn(["docker", "volume", "create", `${buildVolumeName}`], argv.cwd));
             volumePromises.push(Utils.spawn(["docker", "volume", "create", `${tmpVolumeName}`], argv.cwd));
             this._containerVolumeNames.push(buildVolumeName);
             this._containerVolumeNames.push(tmpVolumeName);
             await Promise.all(volumePromises);
+
+            const time = process.hrtime();
+            this.refreshLongRunningSilentTimeout(writeStreams);
+            const {stdout: containerId} = await Utils.spawn([
+                "docker", "create", `--volume=${buildVolumeName}:/gcl-builds`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
+                "bash", "-c", "chown 0:0 -R /gcl-builds/ && chmod a+rw -R /gcl-builds/ && chmod a+rw -R /tmp/",
+            ], argv.cwd);
+            this._containersToClean.push(containerId);
+            if (await fs.pathExists(fileVariablesDir)) {
+                await Utils.spawn(["docker", "cp", `${fileVariablesDir}`, `${containerId}:${fileVariablesDir}/`], argv.cwd);
+                this.refreshLongRunningSilentTimeout(writeStreams);
+            }
+            await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.` , `${containerId}:/gcl-builds`], argv.cwd);
+            await Utils.spawn(["docker", "start", containerId], argv.cwd);
+            await Utils.spawn(["docker", "rm", containerId], argv.cwd);
+            const  endTime = process.hrtime(time);
+            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         if (this.services?.length) {
@@ -537,7 +556,7 @@ export class Job {
             }
 
             dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;
-            dockerCmd += `--volume ${tmpVolumeName}:/tmp/ `;
+            dockerCmd += `--volume ${tmpVolumeName}:${this.fileVariablesDir} `;
             dockerCmd += "--workdir /gcl-builds ";
 
             for (const volume of this.argv.volume) {
@@ -590,33 +609,10 @@ export class Job {
             const {stdout: containerId} = await Utils.bash(dockerCmd, cwd, this.expandedVariables);
             this._containerId = containerId;
             this._containersToClean.push(this._containerId);
-
-            time = process.hrtime();
-            // Copy source files into container.
-            await Utils.spawn(["docker", "cp", `${stateDir}/builds/.docker/.` , `${this._containerId}:/gcl-builds`], cwd);
-            this.refreshLongRunningSilentTimeout(writeStreams);
-
-            // Copy file variables into container.
-            const fileVariablesDir = this.fileVariablesDir;
-            if (await fs.pathExists(fileVariablesDir)) {
-                await Utils.spawn(["docker", "cp", `${fileVariablesDir}`, `${this._containerId}:${fileVariablesDir}/`], cwd);
-                this.refreshLongRunningSilentTimeout(writeStreams);
-            }
-
-            endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied to container} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         await this.copyCacheIn(writeStreams);
         await this.copyArtifactsIn(writeStreams);
-
-        if (this.imageName) {
-            // Files in docker-executor build folder must be root owned.
-            await Utils.spawn([
-                "docker", "run", "--rm", "-v", `${tmpVolumeName}:/tmp/`, "-v", `${buildVolumeName}:/app/`, "docker.io/firecow/gitlab-ci-local-util",
-                "bash", "-c", "chown 0:0 -R /app/ && chmod a+rw -R /app/ && chmod a+rw -R /tmp/",
-            ]);
-        }
 
         let cmd = "set -eo pipefail\n";
         cmd += "exec 0< /dev/null\n";
@@ -969,7 +965,8 @@ export class Job {
                 dockerCmd += "--entrypoint '/gcl-entry' ";
             }
         }
-        dockerCmd += `--volume ${this.tmpVolumeName}:/tmp/ `;
+        dockerCmd += `--volume ${this.buildVolumeName}:/gcl-builds `;
+        dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
         dockerCmd += `${serviceName} `;
 
         (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
@@ -977,19 +974,11 @@ export class Job {
         const time = process.hrtime();
 
         const {stdout: containerId} = await Utils.bash(dockerCmd, cwd, this.expandedVariables);
-        await Utils.spawn(["docker", "cp", `${stateDir}/builds/.docker/.` , `${containerId}:/gcl-builds`], cwd);
         this._containersToClean.push(containerId);
 
         // Copy docker entrypoint if specified for service
         if (serviceEntrypoint && serviceEntrypoint[0] != "") {
             await Utils.spawn(["docker", "cp", serviceEntrypointFile, `${containerId}:/gcl-entry`]);
-        }
-
-        // Copy file variables into service container.
-        const fileVariablesDir = this.fileVariablesDir;
-        if (await fs.pathExists(fileVariablesDir)) {
-            await Utils.spawn(["docker", "cp", `${fileVariablesDir}`, `${containerId}:${fileVariablesDir}/`], cwd);
-            this.refreshLongRunningSilentTimeout(writeStreams);
         }
 
         await Utils.spawn(["docker", "start", `${containerId}`]);
