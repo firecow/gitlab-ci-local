@@ -365,7 +365,7 @@ export class Job {
             await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.` , `${containerId}:/gcl-builds`], argv.cwd);
             await Utils.spawn(["docker", "start", containerId], argv.cwd);
             await Utils.spawn(["docker", "rm", containerId], argv.cwd);
-            const  endTime = process.hrtime(time);
+            const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
