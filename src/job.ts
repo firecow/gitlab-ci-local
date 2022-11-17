@@ -359,7 +359,7 @@ export class Job {
             ], argv.cwd);
             this._containersToClean.push(containerId);
             if (await fs.pathExists(fileVariablesDir)) {
-                await Utils.spawn(["docker", "cp", `${fileVariablesDir}`, `${containerId}:${fileVariablesDir}/`], argv.cwd);
+                await Utils.spawn(["docker", "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
             await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.` , `${containerId}:/gcl-builds`], argv.cwd);
@@ -514,8 +514,6 @@ export class Job {
         const buildVolumeName = this.buildVolumeName;
         const tmpVolumeName = this.tmpVolumeName;
         const writeStreams = this.writeStreams;
-        let time;
-        let endTime;
 
         if (scripts.length === 0 || scripts[0] == null) {
             return 0;
