@@ -41,7 +41,7 @@ export class ParserIncludes {
                 }
             }
             if (value["local"]) {
-                const files = await globby(value["local"], {dot: true, cwd});
+                const files = await globby(value["local"].replace(/^(\/)/,""), {dot: true, cwd});
                 if (files.length == 0) {
                     throw new ExitError(`Local include file cannot be found ${value["local"]}`);
                 }
