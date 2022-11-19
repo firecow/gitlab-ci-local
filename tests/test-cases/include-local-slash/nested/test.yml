@@ -1,0 +1,5 @@
+---
+build-job:
+  stage: build
+  script:
+    - echo "Nested test executed!"

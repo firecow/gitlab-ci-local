@@ -1,0 +1,3 @@
+---
+include:
+  - local: '/nested/test.yml'
