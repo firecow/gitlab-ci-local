@@ -41,7 +41,7 @@
     "@types/base64url": "2.0.3",
     "@types/camelcase": "5.2.0",
     "@types/checksum": "0.1.33",
-    "@types/deep-extend": "0.4.32",
+    "@types/deep-extend": "0.6.0",
     "@types/fs-extra": "9.0.13",
     "@types/jest": "29.2.3",
     "@types/jest-when": "3.5.2",
