@@ -19,8 +19,8 @@ test.concurrent("services <pre-job>", async () => {
     }, writeStreams);
 
     const expectedStdErr = [
-        chalk`{blueBright pre-job   } {yellow Could not find exposed tcp ports alpine:latest}`,
-        chalk`{blueBright pre-job   } {redBright >} cat: can't open '/foo.txt': No such file or directory`,
+        chalk`{blueBright pre-job                   } {yellow Could not find exposed tcp ports alpine:latest}`,
+        chalk`{blueBright pre-job                   } {redBright >} cat: can't open '/foo.txt': No such file or directory`,
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStdErr));
 });
@@ -33,12 +33,12 @@ test.concurrent("services <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgRed  FAIL } {blueBright test-job  }`,
+        chalk`{black.bgRed  FAIL } {blueBright test-job                  }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 
     const expectedStdErr = [
-        chalk`{blueBright test-job  } {yellow Could not find exposed tcp ports alpine:latest}`,
+        chalk`{blueBright test-job                  } {yellow Could not find exposed tcp ports alpine:latest}`,
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStdErr));
 });
@@ -51,7 +51,7 @@ test.concurrent("services <build-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright build-job }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright build-job                 }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -64,7 +64,7 @@ test.concurrent("services <deploy-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright deploy-job}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright deploy-job                }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -77,7 +77,20 @@ test.concurrent("services <alias-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright alias-job }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright alias-job                 }`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test.concurrent("services <alias-job-multiple-slashes>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["alias-job-multiple-slashes"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{black.bgGreenBright  PASS } {blueBright alias-job-multiple-slashes}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -105,7 +118,7 @@ test.concurrent("services <no-tmp>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright no-tmp    }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright no-tmp                    }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

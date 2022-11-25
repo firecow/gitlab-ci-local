@@ -936,8 +936,8 @@ export class Job {
         const serviceName = service.getName(this.expandedVariables);
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
         const aliases = new Set<string>();
-        aliases.add(serviceNameWithoutVersion.replace("/", "-"));
-        aliases.add(serviceNameWithoutVersion.replace("/", "__"));
+        aliases.add(serviceNameWithoutVersion.replaceAll("/", "-"));
+        aliases.add(serviceNameWithoutVersion.replaceAll("/", "__"));
         if (serviceAlias) {
             aliases.add(serviceAlias);
         }
@@ -995,7 +995,7 @@ export class Job {
         const serviceAlias = service.getAlias(this.expandedVariables);
         const serviceName = service.getName(this.expandedVariables);
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
-        const aliases = [serviceNameWithoutVersion.replace("/", "-"), serviceNameWithoutVersion.replace("/", "__")];
+        const aliases = [serviceNameWithoutVersion.replaceAll("/", "-"), serviceNameWithoutVersion.replaceAll("/", "__")];
         if (serviceAlias) {
             aliases.push(serviceAlias);
         }
