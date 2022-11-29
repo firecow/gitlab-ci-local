@@ -118,3 +118,18 @@ Author: Mads Jon Nielsen <madsjon@gmail.com>
 Name: gitlab-ci-local
 Website: https://github.com/firecow/gitlab-ci-local
 
+Package: gitlab-ci-local
+Version: 4.36.1
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Filename: ./gitlab-ci-local_4.36.1_amd64.deb
+Size: 14315968
+MD5sum: 7556d759e4cc57b84bc7235abd789d2c
+SHA1: fdc4cf086e0fc9fba2d3b00123c78202103005bb
+SHA256: 0ca468248b4443b33b8b65a0cf4a4dc1b9ef313a1bfad0bed2a5e71ef5d08e2e
+Homepage: https://github.com/firecow/gitlab-ci-local
+Description: Tired of pushing to test your .gitlab-ci.yml?
+Author: Mads Jon Nielsen <madsjon@gmail.com>
+Name: gitlab-ci-local
+Website: https://github.com/firecow/gitlab-ci-local
+
