@@ -363,8 +363,8 @@ export class Job {
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
             await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.` , `${containerId}:/gcl-builds`], argv.cwd);
-            await Utils.spawn(["docker", "start", containerId], argv.cwd);
-            await Utils.spawn(["docker", "rm", containerId], argv.cwd);
+            await Utils.spawn(["docker", "start", "--attach", containerId], argv.cwd);
+            await Utils.spawn(["docker", "rm", "-f", containerId], argv.cwd);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
