@@ -45,6 +45,17 @@ alias-job:
     - host redis
     - host redis-alias
 
+alias-job-multiple-slashes:
+  services:
+    - name: gcr.io/google-containers/redis
+      alias: redis-alias
+  stage: deploy
+  image: tutum/dnsutils
+  script:
+    - host gcr.io-google-containers-redis
+    - host gcr.io__google-containers__redis
+    - host redis-alias
+
 multie-job:
   services:
     - name: alpine
