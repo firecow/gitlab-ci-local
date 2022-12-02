@@ -71,7 +71,8 @@ brew install gitlab-ci-local
 
 ### Windows (Git bash)
 
-Install [gitbash](https://git-scm.com/downloads)
+- Install [gitbash](https://git-scm.com/downloads)
+- Install [rsync](https://prasaz.medium.com/add-rsync-to-windows-git-bash-f42736bae1b3)
 
 Download and put binary in `C:\Program Files\Git\mingw64\bin`
 
