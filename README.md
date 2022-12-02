@@ -80,6 +80,8 @@ Download and put binary in `C:\Program Files\Git\mingw64\bin`
 curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
 ```
 
+Executing `gitlab-ci-local` with `--variable MSYS_NO_PATHCONV=1` can be useful in certain situations
+
 ## Convenience
 
 ### CLI options via shell
