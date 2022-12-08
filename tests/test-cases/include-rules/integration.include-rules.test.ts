@@ -13,8 +13,8 @@ test("include-rules <build-job>", async () => {
     await handler({
         cwd: "tests/test-cases/include-rules",
         file: ".gitlab-ci.yml",
-        job: ["build-job"],
-        variable: ["CI_COMMIT_TAG=1.0.0"]
+        job: ["build-job", "test-job"],
+        variable: ["CI_COMMIT_TAG=1.0.0"],
     }, writeStreams);
 
     const expected = [
