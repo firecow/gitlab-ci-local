@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "express": "^4.16.4"
+    "express": "^4.17.3"
   },
   "devDependencies": {
     "npm-check-updates": "^10.2.5"
