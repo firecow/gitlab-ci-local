@@ -14,10 +14,12 @@ test("include-rules <build-job>", async () => {
         cwd: "tests/test-cases/include-rules",
         file: ".gitlab-ci.yml",
         job: ["build-job"],
+        variable: ["CI_COMMIT_TAG=1.0.0"]
     }, writeStreams);
 
     const expected = [
         chalk`{blueBright build-job} {greenBright >} This should appear`,
+        chalk`{blueBright test-job } {greenBright >} This should appear, because of CI_COMMIT_TAG variable`,
     ];
 
     const notExpected = [

@@ -1,0 +1,5 @@
+---
+test-job:
+  stage: test
+  script:
+    - echo "This should appear, because of CI_COMMIT_TAG variable"
