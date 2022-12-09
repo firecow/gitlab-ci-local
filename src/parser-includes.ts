@@ -16,7 +16,7 @@ type ParserIncludesInitOptions = {
     gitData: GitData;
     fetchIncludes: boolean;
     excludedGlobs: string[];
-    predefinedVariables: {[key: string]: string};
+    variables: {[key: string]: string};
 };
 
 export class ParserIncludes {
@@ -35,7 +35,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.predefinedVariables});
+                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables});
                 if (rulesResult.when === "never") {
                     continue;
                 }
@@ -64,7 +64,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.predefinedVariables});
+                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables});
                 if (rulesResult.when === "never") {
                     continue;
                 }
