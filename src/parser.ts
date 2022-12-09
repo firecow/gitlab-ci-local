@@ -74,13 +74,15 @@ export class Parser {
         const gitData = await GitData.init(cwd, writeStreams);
         const variablesFromFiles = await VariablesFromFiles.init(argv, writeStreams, gitData);
         const predefinedVariables = initPredefinedVariables({gitData});
+        const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles);
+        const variables = {...predefinedVariables, ...envMatchedVariables, ...argv.variable};
 
         let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, 0, {cwd, stateDir, writeStreams, gitData, fetchIncludes, excludedGlobs: [], predefinedVariables}));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, 0, {cwd, stateDir, writeStreams, gitData, fetchIncludes, excludedGlobs: [], variables}));
 
         const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, 0, {cwd, stateDir, writeStreams, gitData, fetchIncludes, excludedGlobs: [], predefinedVariables}));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, 0, {cwd, stateDir, writeStreams, gitData, fetchIncludes, excludedGlobs: [], variables}));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
