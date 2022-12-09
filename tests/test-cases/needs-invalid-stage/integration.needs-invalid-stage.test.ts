@@ -1,7 +1,7 @@
 import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
-import {assert} from "../../../src/asserts";
+import assert, {AssertionError} from "assert";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 
@@ -18,7 +18,7 @@ test("needs-invalid-stage <build-job> --needs", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`needs: [{blueBright test-job}] for {blueBright build-job} is in a future stage`);
     }
 });

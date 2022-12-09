@@ -1,7 +1,8 @@
 import {WriteStreamsMock} from "../src/write-streams-mock";
 import chalk from "chalk";
 import {handler} from "../src/handler";
-import {assert} from "../src/asserts";
+import assert from "assert";
+import {AssertionError} from "assert";
 
 test("--completion", async () => {
     const spy = jest.spyOn(console, "log").mockImplementation();
@@ -21,7 +22,7 @@ test("something/unknown-directory (non-existing dir)", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`something/unknown-directory is not a directory`);
     }
 });
@@ -34,7 +35,7 @@ test("docs (no .gitlab-ci.yml)", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`docs/.gitlab-ci.yml could not be found`);
     }
 });

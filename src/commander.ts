@@ -6,7 +6,7 @@ import {WriteStreams} from "./write-streams";
 import {Executor} from "./executor";
 import fs from "fs-extra";
 import {Argv} from "./argv";
-import {ExitError} from "./exit-error";
+import {AssertionError} from "assert";
 
 export class Commander {
 
@@ -40,7 +40,7 @@ export class Commander {
             }
         });
         if (potentialStarters.length === 0) {
-            throw new ExitError(chalk`{blueBright ${jobArgs.join(",")}} could not be found`);
+            throw new AssertionError({message: chalk`{blueBright ${jobArgs.join(",")}} could not be found`});
         }
 
         if (argv.onlyNeeds) {

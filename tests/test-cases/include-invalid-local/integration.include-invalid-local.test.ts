@@ -1,6 +1,6 @@
 import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
-import {assert} from "../../../src/asserts";
+import assert, {AssertionError} from "assert";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 
@@ -16,7 +16,7 @@ test("include-invalid-local", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe("Local include file cannot be found .gitlab-ci-invalid.yml");
     }
 });

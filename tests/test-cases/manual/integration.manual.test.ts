@@ -1,7 +1,7 @@
 import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
-import {assert} from "../../../src/asserts";
+import assert, {AssertionError} from "assert";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 
@@ -141,7 +141,7 @@ test("manual", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`{blueBright pre-job} is when:manual, its needed by {blueBright test-job}, and not specified in --manual`);
     }
 });

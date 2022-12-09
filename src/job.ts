@@ -2,12 +2,11 @@ import chalk from "chalk";
 import * as dotenv from "dotenv";
 import * as fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
-import {ExitError} from "./exit-error";
 import {Utils} from "./utils";
 import {WriteStreams} from "./write-streams";
 import {Service} from "./service";
 import {GitData} from "./git-data";
-import {assert} from "./asserts";
+import assert, {AssertionError} from "assert";
 import {CacheEntry} from "./cache-entry";
 import {Mutex} from "./mutex";
 import {Argv} from "./argv";
@@ -153,11 +152,11 @@ export class Job {
         this._expandedVariables["CI_REGISTRY_IMAGE"] = `${this._expandedVariables["CI_REGISTRY"]}/${this._expandedVariables["CI_PROJECT_PATH"]}`;
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
-            throw new ExitError(`${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`);
+            throw new AssertionError({message: `${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`});
         }
 
         if (this.injectSSHAgent && this.imageName === null) {
-            throw new ExitError(`${this.chalkJobName} @InjectSSHAgent can only be used with image:`);
+            throw new AssertionError({message: `${this.chalkJobName} @InjectSSHAgent can only be used with image:`});
         }
 
         if (this.imageName && argv.mountCache) {
@@ -165,7 +164,7 @@ export class Job {
                 c.paths.forEach((p) => {
                     const path = Utils.expandText(p, this.expandedVariables);
                     if (path.includes("*")) {
-                        throw new ExitError(`${this.name} cannot have * in cache paths, when --mount-cache is enabled`);
+                        throw new AssertionError({message: `${this.name} cannot have * in cache paths, when --mount-cache is enabled`});
                     }
                 });
             }

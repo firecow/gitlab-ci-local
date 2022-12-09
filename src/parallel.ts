@@ -1,4 +1,4 @@
-import {assert} from "./asserts";
+import assert from "assert";
 import deepExtend from "deep-extend";
 
 export function matrixVariablesList (jobData: any, jobName: string) {

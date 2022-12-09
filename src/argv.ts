@@ -1,4 +1,4 @@
-import {assert} from "./asserts";
+import assert from "assert";
 import * as fs from "fs-extra";
 import * as dotenv from "dotenv";
 import camelCase from "camelcase";

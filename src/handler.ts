@@ -9,9 +9,8 @@ import prettyHrtime from "pretty-hrtime";
 import {WriteStreams} from "./write-streams";
 import {Job} from "./job";
 import {Utils} from "./utils";
-import {ExitError} from "./exit-error";
 import {Argv} from "./argv";
-import {assert} from "./asserts";
+import assert, {AssertionError} from "assert";
 
 const generateGitIgnore = (cwd: string, stateDir: string) => {
     const gitIgnoreFilePath = `${cwd}/${stateDir}/.gitignore`;
@@ -44,7 +43,7 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
     });
 
     process.on("unhandledRejection", async (e) => {
-        if (e instanceof ExitError) {
+        if (e instanceof AssertionError) {
             process.stderr.write(chalk`{red ${e.message.trim()}}\n`);
         } else if (e instanceof Error) {
             process.stderr.write(chalk`{red ${e.stack?.trim() ?? e.message.trim()}}\n`);

@@ -4,7 +4,7 @@ import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import chalk from "chalk";
 import {Argv} from "./argv";
-import {assert} from "./asserts";
+import assert from "assert";
 import {Utils} from "./utils";
 
 export interface CICDVariable {
