@@ -1,8 +1,7 @@
 import {Utils} from "./utils";
-import {assert} from "./asserts";
+import assert, {AssertionError} from "assert";
 import {WriteStreams} from "./write-streams";
 import chalk from "chalk";
-import {ExitError} from "./exit-error";
 
 export class GitData {
 
@@ -60,7 +59,7 @@ export class GitData {
         try {
             await Promise.all(promises);
         } catch (e) {
-            if (e instanceof ExitError) {
+            if (e instanceof AssertionError) {
                 return writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
             }
             writeStreams.stderr(chalk`{yellow Using fallback git commit data}\n`);
@@ -79,7 +78,7 @@ export class GitData {
             this.remote.group = gitRemoteMatch.groups.group;
             this.remote.project = gitRemoteMatch.groups.project;
         } catch (e) {
-            if (e instanceof ExitError) {
+            if (e instanceof AssertionError) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
                 return;
             }

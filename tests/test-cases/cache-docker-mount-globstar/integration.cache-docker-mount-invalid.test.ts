@@ -2,7 +2,7 @@ import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
-import {assert} from "../../../src/asserts";
+import assert, {AssertionError} from "assert";
 
 jest.setTimeout(30000);
 
@@ -25,7 +25,7 @@ test("cache-docker-mount-globstar <consume-cache> --needs", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe("produce-cache cannot have * in cache paths, when --mount-cache is enabled");
     }
 });

@@ -4,7 +4,7 @@ import * as fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
 import execa from "execa";
-import {assert} from "./asserts";
+import assert from "assert";
 import {CICDVariable} from "./variables-from-files";
 import globby from "globby";
 

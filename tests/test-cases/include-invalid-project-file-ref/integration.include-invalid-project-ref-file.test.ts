@@ -1,6 +1,6 @@
 import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
-import {assert} from "../../../src/asserts";
+import assert, {AssertionError} from "assert";
 import {initBashSpyReject, initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 
@@ -25,7 +25,7 @@ test("include-invalid-project-file-ref", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe("Project include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: HEAD, file: .gitlab-modue.yml }");
     }
 });

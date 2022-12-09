@@ -1,5 +1,5 @@
 import {Utils} from "./utils";
-import {assert} from "./asserts";
+import assert from "assert";
 
 export class Service {
     private readonly data: any;

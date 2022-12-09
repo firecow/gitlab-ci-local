@@ -1,7 +1,8 @@
 import chalk from "chalk";
 import * as DataExpander from "../src/data-expander";
 import {Utils} from "../src/utils";
-import {assert} from "../src/asserts";
+import assert from "assert";
+import {AssertionError} from "assert";
 
 test("GITLAB_USER_LOGIN positive", () => {
     const variables = {APP_ENV: "$GITLAB_USER_LOGIN", HOSTNAME: "${GITLAB_USER_LOGIN}-stage.domain.com"};
@@ -52,7 +53,7 @@ test("extends invalid job", () => {
         });
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`{blueBright build-job} is extended from {blueBright test-job}, but is unspecified`);
     }
 });
@@ -65,7 +66,7 @@ test("extends infinite loop", () => {
         });
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`{blueBright test-job}: circular dependency detected in \`extends\``);
     }
 });

@@ -6,7 +6,7 @@ import prettyHrtime from "pretty-hrtime";
 import {Job} from "./job";
 import * as DataExpander from "./data-expander";
 import {Utils} from "./utils";
-import {assert} from "./asserts";
+import assert from "assert";
 import {Validator} from "./validator";
 import * as parallel from "./parallel";
 import {GitData} from "./git-data";
