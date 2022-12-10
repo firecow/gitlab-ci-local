@@ -1,0 +1,16 @@
+---
+
+skipped-job:
+  stage: build
+  script:
+    - echo "Job skipped!"
+  rules:
+    - when: never
+
+executed-job:
+  stage: test
+  script:
+    - echo "Job executed!"
+  needs:
+    - job: skipped-job
+      optional: true
