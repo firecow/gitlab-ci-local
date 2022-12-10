@@ -1,0 +1,30 @@
+---
+validate-job:
+  stage: build
+  script:
+    - echo "Validated!"
+
+variables:
+  TEST: "true"
+
+.rules-never:
+  rules:
+    - if: $TEST == "true"
+      exists:
+        - test.txt
+
+skipped-job:
+  stage: build
+  script:
+    - echo "Job skipped!"
+  rules:
+    - !reference [.rules-never, rules]
+
+executed-job:
+  stage: test
+  script:
+    - echo "Job executed!"
+  needs:
+    - validate-job
+    - job: skipped-job
+      optional: true
