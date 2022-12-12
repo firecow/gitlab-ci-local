@@ -121,6 +121,10 @@ gitlab-ci-local --completion >> ~/.bashrc
 
 ## Quirks
 
+git+http isn't properly supported https://github.com/firecow/gitlab-ci-local/issues/605 and has certain quirks
+
+
+
 ### Tracked Files
 
 Untracked and ignored files will not be synced inside isolated jobs, only tracked files are synced.
