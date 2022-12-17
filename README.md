@@ -282,7 +282,7 @@ GitLab CI Local is providing the ability of showing added jobs with the followin
 The command `gitlab-ci-local --list` will return pretty output and will also filter all jobs which are set
 to `when: never`.
 
-```shell
+```text
 name        description  stage   when        allow_failure  needs
 test-job    Run Tests    test    on_success  false      
 build-job                build   on_success  true           [test-job]
@@ -292,7 +292,7 @@ build-job                build   on_success  true           [test-job]
 
 Same as `--list` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via rules).
 
-```shell
+```text
 name        description  stage   when        allow_failure  needs
 test-job    Run Tests    test    on_success  false      
 build-job                build   on_success  true           [test-job]
