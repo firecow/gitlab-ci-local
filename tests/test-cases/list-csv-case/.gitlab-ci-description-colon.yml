@@ -1,7 +1,7 @@
 ---
-stages: [test, build, deploy]
+stages: [test, build]
 
-# @Description Run Tests
+# @Description Run;Tests
 test-job:
   stage: test
   script:
@@ -14,11 +14,3 @@ build-job:
   allow_failure: true
   script:
     - 'echo "Build something"'
-
-deploy-job:
-  stage: deploy
-  needs: [build-job]
-  allow_failure: true
-  script:
-    - 'echo "Build something"'
-  when: never

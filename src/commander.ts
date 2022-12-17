@@ -205,4 +205,24 @@ export class Commander {
         writeStreams.stdout(`${JSON.stringify(json, null, 2)}\n`);
     }
 
+    static runCsv (parser: Parser, writeStreams: WriteStreams, all: boolean) {
+        const stages = parser.stages;
+        let jobs = [...parser.jobs.values()];
+        jobs.sort((a, b) => {
+            return stages.indexOf(a.stage) - stages.indexOf(b.stage);
+        });
+
+        if (!all) {
+            jobs = jobs.filter(j => j.when !== "never");
+        }
+
+        writeStreams.stdout("name;description;stage;when;allowFailure;needs\n");
+        jobs.forEach((job) => {
+            const needs = job.needs || [];
+            const description = job.description.includes(";") ? "semicolon in description detected" : job.description;
+
+            writeStreams.stdout(`${job.name};${description};${job.stage};${job.when};${job.allowFailure};[${needs.map(n => n.job).join(",")}]\n`);
+        });
+    }
+
 }

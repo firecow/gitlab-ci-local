@@ -120,6 +120,14 @@ export class Argv {
         return this.map.get("listJson") ?? false;
     }
 
+    get listCsv (): boolean {
+        return this.map.get("listCsv") ?? false;
+    }
+
+    get listCsvAll (): boolean {
+        return this.map.get("listCsvAll") ?? false;
+    }
+
     get preview (): boolean {
         return this.map.get("preview") ?? false;
     }
