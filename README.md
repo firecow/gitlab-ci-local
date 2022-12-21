@@ -123,8 +123,6 @@ gitlab-ci-local --completion >> ~/.bashrc
 
 git+http isn't properly supported https://github.com/firecow/gitlab-ci-local/issues/605 and has certain quirks
 
-
-
 ### Tracked Files
 
 Untracked and ignored files will not be synced inside isolated jobs, only tracked files are synced.
@@ -172,7 +170,7 @@ global:
     values:
       '*production*': 'Im production only value'
       'staging': 'Im staging only value'
-  FILE_CONTENT_IN_VALLUES:
+  FILE_CONTENT_IN_VALUES:
     type: file
     values:
       '*': |
@@ -180,7 +178,7 @@ global:
         I'm great for certs n' stuff
 ```
 
-Variables will now appear in your jobs, if project or group matches git remote, global's are always present
+Variables will now appear in your jobs, if project or group matches git remote, globals are always present
 
 ### Remote file variables
 
@@ -254,17 +252,18 @@ Prevent artifacts from being copied to source folder
 produce:
   stage: build
   script: mkdir -p path/ && touch path/file1
-  artifacts: { paths: [path/] }
+  artifacts: { paths: [ path/ ] }
 ```
 
 A global configuration is possible when setting the following flag
+
 ```shell
 gitlab-ci-local --no-artifacts-to-source
 ```
 
 ### Includes
 
-Includes from external sources are only fetched once. Use `--fetch-includes` to invoke an external fetching rutine.
+Includes from external sources are only fetched once. Use `--fetch-includes` to invoke an external fetching routine.
 
 ### Artifacts
 
@@ -272,6 +271,59 @@ Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolatio
 handling for shell jobs.
 
 Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
+
+### List Pipeline Jobs
+
+Sometimes there is the need of knowing which jobs will be added before actually executing the pipeline.
+GitLab CI Local is providing the ability of showing added jobs with the following cli flags.
+
+#### --list
+
+The command `gitlab-ci-local --list` will return pretty output and will also filter all jobs which are set
+to `when: never`.
+
+```text
+name        description  stage   when        allow_failure  needs
+test-job    Run Tests    test    on_success  false      
+build-job                build   on_success  true           [test-job]
+```
+
+#### --list-all
+
+Same as `--list` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via rules).
+
+```text
+name        description  stage   when        allow_failure  needs
+test-job    Run Tests    test    on_success  false      
+build-job                build   on_success  true           [test-job]
+deploy-job               deploy  never       false          [build-job]
+```
+
+#### --list-csv
+
+The command `gitlab-ci-local --list-csv` will output the pipeline jobs as csv formatted list and will also filter all
+jobs which are set
+to `when: never`.
+The description will always be wrapped in quotes (even if there is none) to prevent semicolons in the description
+disturb the csv structure.
+
+```text
+name;description;stage;when;allow_failure;needs
+test-job;"Run Tests";test;on_success;false;[]
+build-job;"";build;on_success;true;[test-job]
+```
+
+#### --list-csv-all
+
+Same as `--list-csv-all` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via
+rules).
+
+```text
+name;description;stage;when;allow_failure;needs
+test-job;"Run Tests";test;on_success;false;[]
+build-job;"";build;on_success;true;[test-job]
+deploy-job;"";deploy;never;false;[build-job]
+```
 
 ## Development
 
