@@ -219,9 +219,8 @@ export class Commander {
         writeStreams.stdout("name;description;stage;when;allowFailure;needs\n");
         jobs.forEach((job) => {
             const needs = job.needs || [];
-            const description = job.description.includes(";") ? "semicolon in description detected" : job.description;
 
-            writeStreams.stdout(`${job.name};${description};${job.stage};${job.when};${job.allowFailure};[${needs.map(n => n.job).join(",")}]\n`);
+            writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure};[${needs.map(n => n.job).join(",")}]\n`);
         });
     }
 

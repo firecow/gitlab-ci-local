@@ -16,14 +16,14 @@ test("list-csv-case --list-csv", async () => {
 
     const expected = [
         "name;description;stage;when;allowFailure;needs",
-        "test-job;Run Tests;test;on_success;false;[]",
-        "build-job;;build;on_success;true;[test-job]",
+        "test-job;\"Run Tests\";test;on_success;false;[]",
+        "build-job;\"\";build;on_success;true;[test-job]",
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
 
-test("list-csv-case --list-csv colon should add placeholder", async () => {
+test("list-csv-case --list-csv colon should add process descriptors with semicolons", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/list-csv-case/",
@@ -33,24 +33,8 @@ test("list-csv-case --list-csv colon should add placeholder", async () => {
 
     const expected = [
         "name;description;stage;when;allowFailure;needs",
-        "test-job;semicolon in description detected;test;on_success;false;[]",
-        "build-job;;build;on_success;true;[test-job]",
-    ];
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-});
-
-test("list-csv-case --list-csv colon should add placeholder", async () => {
-    const writeStreams = new WriteStreamsMock();
-    await handler({
-        cwd: "tests/test-cases/list-csv-case/",
-        file: ".gitlab-ci-description-colon.yml",
-        listCsv: true,
-    }, writeStreams);
-
-    const expected = [
-        "name;description;stage;when;allowFailure;needs",
-        "test-job;semicolon in description detected;test;on_success;false;[]",
-        "build-job;;build;on_success;true;[test-job]",
+        "test-job;\"Run;Tests\";test;on_success;false;[]",
+        "build-job;\"\";build;on_success;true;[test-job]",
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

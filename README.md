@@ -304,24 +304,25 @@ deploy-job               deploy  never       false          [build-job]
 The command `gitlab-ci-local --list-csv` will output the pipeline jobs as csv formatted list and will also filter all
 jobs which are set
 to `when: never`.
-If the description contains a semicolon, the description will be replaced with the
-text `semicolon in description detected`.
+The description will always be wrapped in quotes (even if there is none) to prevent semicolons in the description
+disturb the csv structure.
 
 ```text
 name;description;stage;when;allow_failure;needs
-test-job;Run Tests;test;on_success;false;[]
-build-job;;build;on_success;true;[test-job]
+test-job;"Run Tests";test;on_success;false;[]
+build-job;"";build;on_success;true;[test-job]
 ```
 
 #### --list-csv-all
 
-Same as `--list-csv-all` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via rules).
+Same as `--list-csv-all` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via
+rules).
 
 ```text
 name;description;stage;when;allow_failure;needs
-test-job;Run Tests;test;on_success;false;[]
-build-job;;build;on_success;true;[test-job]
-deploy-job;;deploy;never;false;[build-job]
+test-job;"Run Tests";test;on_success;false;[]
+build-job;"";build;on_success;true;[test-job]
+deploy-job;"";deploy;never;false;[build-job]
 ```
 
 ## Development
