@@ -31,6 +31,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [DotEnv file](#dotenv-file)
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
+    * [Listing jobs](#list-pipeline-jobs)
 * [Quirks](#quirks)
     * [Tracked Files](#tracked-files)
     * [Local Only](#local-only)
@@ -117,6 +118,59 @@ echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
 
 ```bash
 gitlab-ci-local --completion >> ~/.bashrc 
+```
+
+### List Pipeline Jobs
+
+Sometimes there is the need of knowing which jobs will be added before actually executing the pipeline.
+GitLab CI Local is providing the ability of showing added jobs with the following cli flags.
+
+#### --list
+
+The command `gitlab-ci-local --list` will return pretty output and will also filter all jobs which are set
+to `when: never`.
+
+```text
+name        description  stage   when        allow_failure  needs
+test-job    Run Tests    test    on_success  false      
+build-job                build   on_success  true           [test-job]
+```
+
+#### --list-all
+
+Same as `--list` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via rules).
+
+```text
+name        description  stage   when        allow_failure  needs
+test-job    Run Tests    test    on_success  false      
+build-job                build   on_success  true           [test-job]
+deploy-job               deploy  never       false          [build-job]
+```
+
+#### --list-csv
+
+The command `gitlab-ci-local --list-csv` will output the pipeline jobs as csv formatted list and will also filter all
+jobs which are set
+to `when: never`.
+The description will always be wrapped in quotes (even if there is none) to prevent semicolons in the description
+disturb the csv structure.
+
+```text
+name;description;stage;when;allow_failure;needs
+test-job;"Run Tests";test;on_success;false;[]
+build-job;"";build;on_success;true;[test-job]
+```
+
+#### --list-csv-all
+
+Same as `--list-csv-all` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via
+rules).
+
+```text
+name;description;stage;when;allow_failure;needs
+test-job;"Run Tests";test;on_success;false;[]
+build-job;"";build;on_success;true;[test-job]
+deploy-job;"";deploy;never;false;[build-job]
 ```
 
 ## Quirks
@@ -271,59 +325,6 @@ Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolatio
 handling for shell jobs.
 
 Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
-
-### List Pipeline Jobs
-
-Sometimes there is the need of knowing which jobs will be added before actually executing the pipeline.
-GitLab CI Local is providing the ability of showing added jobs with the following cli flags.
-
-#### --list
-
-The command `gitlab-ci-local --list` will return pretty output and will also filter all jobs which are set
-to `when: never`.
-
-```text
-name        description  stage   when        allow_failure  needs
-test-job    Run Tests    test    on_success  false      
-build-job                build   on_success  true           [test-job]
-```
-
-#### --list-all
-
-Same as `--list` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via rules).
-
-```text
-name        description  stage   when        allow_failure  needs
-test-job    Run Tests    test    on_success  false      
-build-job                build   on_success  true           [test-job]
-deploy-job               deploy  never       false          [build-job]
-```
-
-#### --list-csv
-
-The command `gitlab-ci-local --list-csv` will output the pipeline jobs as csv formatted list and will also filter all
-jobs which are set
-to `when: never`.
-The description will always be wrapped in quotes (even if there is none) to prevent semicolons in the description
-disturb the csv structure.
-
-```text
-name;description;stage;when;allow_failure;needs
-test-job;"Run Tests";test;on_success;false;[]
-build-job;"";build;on_success;true;[test-job]
-```
-
-#### --list-csv-all
-
-Same as `--list-csv-all` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via
-rules).
-
-```text
-name;description;stage;when;allow_failure;needs
-test-job;"Run Tests";test;on_success;false;[]
-build-job;"";build;on_success;true;[test-job]
-deploy-job;"";deploy;never;false;[build-job]
-```
 
 ## Development
 
