@@ -92,6 +92,10 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid);
         Commander.runJson(parser, writeStreams);
+    } else if (argv.listCsv || argv.listCsvAll) {
+        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
+        parser = await Parser.create(argv, writeStreams, pipelineIid);
+        Commander.runCsv(parser, writeStreams, argv.listCsvAll);
     } else if (argv.job.length > 0) {
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();

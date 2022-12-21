@@ -65,6 +65,16 @@ import {AssertionError} from "assert";
             description: "List jobs and job information in json format, when:never included",
             requiresArg: false,
         })
+        .option("list-csv", {
+            type: "boolean",
+            description: "List jobs and job information in csv format, when:never excluded",
+            requiresArg: false,
+        })
+        .option("list-csv-all", {
+            type: "boolean",
+            description: "List jobs and job information in csv format, when:never included",
+            requiresArg: false,
+        })
         .option("preview", {
             type: "boolean",
             description: "Print YML with defaults, includes, extends and reference's expanded",
