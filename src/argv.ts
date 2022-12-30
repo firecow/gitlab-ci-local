@@ -92,6 +92,10 @@ export class Argv {
         return this.map.get("cleanup") ?? true;
     }
 
+    get umask (): boolean {
+        return this.map.get("umask") ?? true;
+    }
+
     get privileged (): boolean {
         return this.map.get("privileged") ?? false;
     }

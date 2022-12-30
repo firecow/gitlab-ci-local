@@ -542,12 +542,15 @@ export class Job {
         if (this.imageName) {
             await this.pullImage(writeStreams, this.imageName);
 
-            let dockerCmd = "";
+            let dockerCmd = `docker create --interactive ${this.generateInjectSSHAgentOptions()} `;
             if (this.argv.privileged) {
-                dockerCmd += `docker create --privileged -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
-            } else {
-                dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
+                dockerCmd += "--privileged ";
             }
+
+            if (this.argv.umask) {
+                dockerCmd += "--user 0:0 ";
+            }
+
             if (this.services?.length) {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
             }
@@ -920,8 +923,12 @@ export class Job {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
-        let dockerCmd = `docker create -u 0:0 -i --network gitlab-ci-local-${this.jobId} `;
+        let dockerCmd = `docker create --interactive --network gitlab-ci-local-${this.jobId} `;
         this.refreshLongRunningSilentTimeout(writeStreams);
+
+        if (this.argv.umask) {
+            dockerCmd += "--user 0:0 ";
+        }
 
         if (this.argv.privileged) {
             dockerCmd += "--privileged ";
