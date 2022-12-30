@@ -1,0 +1,8 @@
+---
+stages: [test]
+
+test-job:
+  stage: test
+  image: registry.access.redhat.com/ubi8/openjdk-11:1.14-10
+  script:
+    - echo "Test success! USER-ID=$(id -u)"

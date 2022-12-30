@@ -135,6 +135,11 @@ import {AssertionError} from "assert";
             description: "Enable docker mount based caching",
             requiresArg: false,
         })
+        .option("umask", {
+            type: "boolean",
+            description: "Sets docker user to 0:0",
+            requiresArg: false,
+        })
         .option("privileged", {
             type: "boolean",
             description: "Set docker executor to privileged mode",
