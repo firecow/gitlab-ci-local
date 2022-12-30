@@ -16,7 +16,7 @@ test("--umask should use the --user 0:0", async () => {
         umask: true,
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines.join("\n")).toContain("Test success! USER-ID: 0");
+    expect(writeStreams.stdoutLines.join("\n")).toContain("Test success! USER-ID=0");
 });
 
 test("--no-umask should not use the --user 0:0", async () => {
@@ -26,7 +26,7 @@ test("--no-umask should not use the --user 0:0", async () => {
         umask: false,
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines.join("\n")).toContain("Test success! USER-ID: 185");
+    expect(writeStreams.stdoutLines.join("\n")).toContain("Test success! USER-ID=185");
 
 });
 
