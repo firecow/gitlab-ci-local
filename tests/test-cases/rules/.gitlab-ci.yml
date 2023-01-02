@@ -1,0 +1,9 @@
+test-job:
+  stage: build
+  script:
+    - echo "$TEST!"
+  rules:
+    - if: $TEST == "true"
+      when: on_success
+    - if: $TEST != "true"
+      when: manual
