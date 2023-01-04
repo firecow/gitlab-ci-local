@@ -52,7 +52,8 @@ export class VariablesFromFiles {
                 catchAll.values["*"] = v;
                 return catchAll;
             } else {
-                v.type = v.type ?? "variable";
+                assert (typeof v.values === "object", "v.values should be an object");
+                return {values: v.values, type: v.type ?? null};
             }
             return v;
         };
