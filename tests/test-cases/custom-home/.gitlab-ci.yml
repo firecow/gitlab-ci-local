@@ -10,6 +10,7 @@ test-staging:
     - echo ${DOUBLE_QUOTE_VAR}
     - echo ${COMPLEX_VAR}
     - echo ${FILE}
+    - cat ${FILE_FROM_PATH}
 
 test-production:
   environment: production
@@ -17,6 +18,7 @@ test-production:
     - echo ${GROUP_VAR}
     - echo ${FILE}
     - cat ${FILE}
+    - cat ${FILE_FROM_PATH}
 
 # Test file variables are working with docker-executor jobs
 test-image:
@@ -27,6 +29,7 @@ test-image:
     - cat ${GLOBAL_FILE_VAR}
     - echo ${DOUBLE_QUOTE_VAR}
     - echo ${COMPLEX_VAR}
+    - cat ${FILE_FROM_PATH}
 
 test-normalize-key:
   script:

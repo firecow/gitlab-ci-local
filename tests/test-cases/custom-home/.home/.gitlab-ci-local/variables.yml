@@ -19,6 +19,11 @@ project:
         '*production*': |
           I'm the content of a file variable
           I'm the 2nd line of file variable
+    FILE_FROM_PATH:
+      values:
+        '*staging*': ~/somefolder/file-var-staging
+        '*production*': ~/somefolder/file-var
+        '*': ~/somefolder/file-var-does-not-exist
 
   gitlab.com/gcl/no-match:
     PROJECT_VAR: no-match

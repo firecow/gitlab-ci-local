@@ -28,6 +28,7 @@ test("custom-home <test-staging>", async () => {
         chalk`{blueBright test-staging             } {greenBright >} Im content of a file variable`,
         chalk`{blueBright test-staging             } {greenBright >} "This is crazy"`,
         chalk`{blueBright test-staging             } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
+        chalk`{blueBright test-staging             } {greenBright >} Im the staging content of a file variable`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -44,6 +45,7 @@ test("custom-home <test-production>", async () => {
         chalk`{blueBright test-production          } {greenBright >} production-project-group-var-override-value`,
         chalk`{blueBright test-production          } {greenBright >} I'm the content of a file variable`,
         chalk`{blueBright test-production          } {greenBright >} I'm the 2nd line of file variable`,
+        chalk`{blueBright test-production          } {greenBright >} Im content of a file variable`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -60,6 +62,7 @@ test("custom-home <test-image>", async () => {
         chalk`{blueBright test-image               } {greenBright >} Im content of a file variable`,
         chalk`{blueBright test-image               } {greenBright >} "This is crazy"`,
         chalk`{blueBright test-image               } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
+        chalk`{blueBright test-image               } {greenBright >} warn: FILE_FROM_PATH is pointing to invalid path`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
