@@ -11,7 +11,7 @@ test("rules-when test=true", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/rules",
-        variables: {TEST: true},
+        variable: ["TEST=true"],
         listCsv: true,
     }, writeStreams);
 
