@@ -11,12 +11,12 @@ test("rules-when test=true", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/rules",
-        variables: { TEST: true },
+        variables: {TEST: true},
         listCsv: true,
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join("\n");
-    expect(output).toContain('test-job;"";build;on_success;false;[]');
+    expect(output).toContain("test-job;\"\";build;on_success;false;[]");
 });
 
 test("rules-when test=undefined", async () => {
@@ -27,5 +27,5 @@ test("rules-when test=undefined", async () => {
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join("\n");
-    expect(output).toContain('test-job;"";build;manual;false;[]');
+    expect(output).toContain("test-job;\"\";build;manual;false;[]");
 });
