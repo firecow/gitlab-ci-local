@@ -112,11 +112,11 @@ export class Job {
         }
 
         // Set job specific predefined variables
-        let ciProjectDir = `${cwd}`;
+        let ciProjectDir = `${process.cwd()}/${cwd}`;
         if (this.imageName) {
             ciProjectDir = "/gcl-builds";
         } else if (argv.shellIsolation) {
-            ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
+            ciProjectDir = `${process.cwd()}/${cwd}/${stateDir}/builds/${this.safeJobName}`;
         }
         predefinedVariables["CI_JOB_ID"] = `${this.jobId}`;
         predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
@@ -833,7 +833,7 @@ export class Job {
             cpCmd += `--exclude '${expandedPath}' `;
         }
         for (const artifactPath of this.artifacts?.paths ?? []) {
-            const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
+            const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(`${this.expandedVariables.CI_PROJECT_DIR}/`, "");
             cpCmd += `${expandedPath} `;
         }
         cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
