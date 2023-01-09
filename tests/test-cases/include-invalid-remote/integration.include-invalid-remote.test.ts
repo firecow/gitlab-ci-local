@@ -1,6 +1,6 @@
 import {WriteStreamsMock} from "../../../src/write-streams-mock";
 import {handler} from "../../../src/handler";
-import {assert} from "../../../src/asserts";
+import assert, {AssertionError} from "assert";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 import AxiosMockAdapter from "axios-mock-adapter";
@@ -20,7 +20,7 @@ test("include-invalid-remote", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe("Remote include could not be fetched https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml Error: Request failed with status code 404");
     }
 });

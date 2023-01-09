@@ -1,9 +1,8 @@
 import {Utils} from "./utils";
-import {ExitError} from "./exit-error";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import {WriteStreams} from "./write-streams";
 import {GitData} from "./git-data";
-import {assert} from "./asserts";
+import assert, {AssertionError} from "assert";
 import chalk from "chalk";
 import {Parser} from "./parser";
 import axios from "axios";
@@ -16,7 +15,7 @@ type ParserIncludesInitOptions = {
     gitData: GitData;
     fetchIncludes: boolean;
     excludedGlobs: string[];
-    predefinedVariables: {[key: string]: string};
+    variables: {[key: string]: string};
 };
 
 export class ParserIncludes {
@@ -35,7 +34,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.predefinedVariables});
+                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables});
                 if (rulesResult.when === "never") {
                     continue;
                 }
@@ -43,7 +42,7 @@ export class ParserIncludes {
             if (value["local"]) {
                 const files = await globby(value["local"], {dot: true, cwd});
                 if (files.length == 0) {
-                    throw new ExitError(`Local include file cannot be found ${value["local"]}`);
+                    throw new AssertionError({message: `Local include file cannot be found ${value["local"]}`});
                 }
             } else if (value["file"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
@@ -64,7 +63,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.predefinedVariables});
+                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables});
                 if (rulesResult.when === "never") {
                     continue;
                 }
@@ -103,7 +102,7 @@ export class ParserIncludes {
                 const fileDoc = await Parser.loadYaml(`${cwd}/${stateDir}/includes/${fsUrl}`);
                 includeDatas = includeDatas.concat(await this.init(fileDoc, depth, opts));
             } else {
-                throw new ExitError(`Didn't understand include ${JSON.stringify(value)}`);
+                throw new AssertionError({message: `Didn't understand include ${JSON.stringify(value)}`});
             }
         }
 
@@ -149,7 +148,7 @@ export class ParserIncludes {
             const res = await axios.get(url);
             await fs.outputFile(target, res.data);
         } catch (e) {
-            throw new ExitError(`Remote include could not be fetched ${url} ${e}`);
+            throw new AssertionError({message: `Remote include could not be fetched ${url} ${e}`});
         }
     }
 
@@ -162,7 +161,7 @@ export class ParserIncludes {
             await fs.mkdirp(`${cwd}/${target}`);
             await Utils.bash(`git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}`, cwd);
         } catch (e) {
-            throw new ExitError(`Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }`);
+            throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }`});
         }
     }
 }

@@ -1,4 +1,4 @@
-import {assert} from "./asserts";
+import assert from "assert";
 import * as fs from "fs-extra";
 import * as dotenv from "dotenv";
 import camelCase from "camelcase";
@@ -92,6 +92,10 @@ export class Argv {
         return this.map.get("cleanup") ?? true;
     }
 
+    get umask (): boolean {
+        return this.map.get("umask") ?? true;
+    }
+
     get privileged (): boolean {
         return this.map.get("privileged") ?? false;
     }
@@ -118,6 +122,14 @@ export class Argv {
 
     get listJson (): boolean {
         return this.map.get("listJson") ?? false;
+    }
+
+    get listCsv (): boolean {
+        return this.map.get("listCsv") ?? false;
+    }
+
+    get listCsvAll (): boolean {
+        return this.map.get("listCsvAll") ?? false;
     }
 
     get preview (): boolean {

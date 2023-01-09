@@ -6,7 +6,7 @@ import {WriteStreams} from "./write-streams";
 import {Executor} from "./executor";
 import fs from "fs-extra";
 import {Argv} from "./argv";
-import {ExitError} from "./exit-error";
+import {AssertionError} from "assert";
 
 export class Commander {
 
@@ -40,7 +40,7 @@ export class Commander {
             }
         });
         if (potentialStarters.length === 0) {
-            throw new ExitError(chalk`{blueBright ${jobArgs.join(",")}} could not be found`);
+            throw new AssertionError({message: chalk`{blueBright ${jobArgs.join(",")}} could not be found`});
         }
 
         if (argv.onlyNeeds) {
@@ -203,6 +203,25 @@ export class Commander {
         });
 
         writeStreams.stdout(`${JSON.stringify(json, null, 2)}\n`);
+    }
+
+    static runCsv (parser: Parser, writeStreams: WriteStreams, all: boolean) {
+        const stages = parser.stages;
+        let jobs = [...parser.jobs.values()];
+        jobs.sort((a, b) => {
+            return stages.indexOf(a.stage) - stages.indexOf(b.stage);
+        });
+
+        if (!all) {
+            jobs = jobs.filter(j => j.when !== "never");
+        }
+
+        writeStreams.stdout("name;description;stage;when;allowFailure;needs\n");
+        jobs.forEach((job) => {
+            const needs = job.needs || [];
+
+            writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure};[${needs.map(n => n.job).join(",")}]\n`);
+        });
     }
 
 }

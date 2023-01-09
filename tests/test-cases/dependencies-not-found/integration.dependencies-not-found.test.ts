@@ -3,7 +3,7 @@ import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
-import {assert} from "../../../src/asserts";
+import assert, {AssertionError} from "assert";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -18,7 +18,7 @@ test("dependencies-not-found <test-job>", async () => {
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
-        assert(e instanceof Error, "e is not instanceof Error");
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`dependencies: [{blueBright invalid}] for {blueBright test-job} cannot be found`);
     }
 });

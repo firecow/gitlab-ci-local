@@ -1,12 +1,11 @@
 import chalk from "chalk";
 import deepExtend from "deep-extend";
 import {Utils} from "./utils";
-import {assert} from "./asserts";
+import assert, {AssertionError} from "assert";
 import {Job} from "./job";
 import {Service} from "./service";
 import {traverse} from "object-traversal";
 import {CacheEntry} from "./cache-entry";
-import {ExitError} from "./exit-error";
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
@@ -57,7 +56,7 @@ export function reference (gitlabData: any, recurseData: any) {
         }
 
         if (hasCircularChain(recurseData)) {
-            throw new ExitError(`!reference circular chain detected [${value.referenceData}]`);
+            throw new AssertionError({message: `!reference circular chain detected [${value.referenceData}]`});
         }
     }
 }
@@ -100,7 +99,7 @@ export function cache (gitlabData: any) {
                 const key = c["key"];
                 const policy = c["policy"] ?? "pull-push";
                 if (!["pull", "push", "pull-push"].includes(policy)) {
-                    throw new ExitError("cache policy is not 'pull', 'push' or 'pull-push'");
+                    throw new AssertionError({message: "cache policy is not 'pull', 'push' or 'pull-push'"});
                 }
                 const paths = c["paths"] ?? [];
                 cacheList.push(new CacheEntry(key, paths, policy));

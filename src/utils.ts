@@ -4,7 +4,7 @@ import * as fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
 import execa from "execa";
-import {assert} from "./asserts";
+import assert from "assert";
 import {CICDVariable} from "./variables-from-files";
 import globby from "globby";
 
@@ -152,16 +152,16 @@ export class Utils {
         return variables;
     }
 
-    static findEnvMatchedVariables (variables: {[name: string]: CICDVariable}, fileVariablesDir: string, environment?: {name: string}) {
+    static findEnvMatchedVariables (variables: {[name: string]: CICDVariable}, fileVariablesDir?: string, environment?: {name: string}) {
         const envMatchedVariables: {[key: string]: string} = {};
         for (const [k, v] of Object.entries(variables)) {
             for (const entry of v.environments) {
                 if (environment?.name.match(entry.regexp) || entry.regexp.source === ".*") {
-                    if (v.type === "file" && !entry.fileSource) {
+                    if (fileVariablesDir != null && v.type === "file" && !entry.fileSource) {
                         envMatchedVariables[k] = `${fileVariablesDir}/${k}`;
                         fs.mkdirpSync(`${fileVariablesDir}`);
                         fs.writeFileSync(`${fileVariablesDir}/${k}`, entry.content);
-                    } else if (v.type === "file" && entry.fileSource) {
+                    } else if (fileVariablesDir != null && v.type === "file" && entry.fileSource) {
                         envMatchedVariables[k] = `${fileVariablesDir}/${k}`;
                         fs.mkdirpSync(`${fileVariablesDir}`);
                         fs.copyFileSync(entry.fileSource, `${fileVariablesDir}/${k}`);

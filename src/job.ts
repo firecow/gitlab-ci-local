@@ -2,12 +2,11 @@ import chalk from "chalk";
 import * as dotenv from "dotenv";
 import * as fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
-import {ExitError} from "./exit-error";
 import {Utils} from "./utils";
 import {WriteStreams} from "./write-streams";
 import {Service} from "./service";
 import {GitData} from "./git-data";
-import {assert} from "./asserts";
+import assert, {AssertionError} from "assert";
 import {CacheEntry} from "./cache-entry";
 import {Mutex} from "./mutex";
 import {Argv} from "./argv";
@@ -153,11 +152,11 @@ export class Job {
         this._expandedVariables["CI_REGISTRY_IMAGE"] = `${this._expandedVariables["CI_REGISTRY"]}/${this._expandedVariables["CI_PROJECT_PATH"]}`;
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
-            throw new ExitError(`${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`);
+            throw new AssertionError({message: `${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`});
         }
 
         if (this.injectSSHAgent && this.imageName === null) {
-            throw new ExitError(`${this.chalkJobName} @InjectSSHAgent can only be used with image:`);
+            throw new AssertionError({message: `${this.chalkJobName} @InjectSSHAgent can only be used with image:`});
         }
 
         if (this.imageName && argv.mountCache) {
@@ -165,7 +164,7 @@ export class Job {
                 c.paths.forEach((p) => {
                     const path = Utils.expandText(p, this.expandedVariables);
                     if (path.includes("*")) {
-                        throw new ExitError(`${this.name} cannot have * in cache paths, when --mount-cache is enabled`);
+                        throw new AssertionError({message: `${this.name} cannot have * in cache paths, when --mount-cache is enabled`});
                     }
                 });
             }
@@ -363,8 +362,8 @@ export class Job {
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
             await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.` , `${containerId}:/gcl-builds`], argv.cwd);
-            await Utils.spawn(["docker", "start", containerId], argv.cwd);
-            await Utils.spawn(["docker", "rm", containerId], argv.cwd);
+            await Utils.spawn(["docker", "start", "--attach", containerId], argv.cwd);
+            await Utils.spawn(["docker", "rm", "-f", containerId], argv.cwd);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
@@ -543,12 +542,15 @@ export class Job {
         if (this.imageName) {
             await this.pullImage(writeStreams, this.imageName);
 
-            let dockerCmd = "";
+            let dockerCmd = `docker create --interactive ${this.generateInjectSSHAgentOptions()} `;
             if (this.argv.privileged) {
-                dockerCmd += `docker create --privileged -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
-            } else {
-                dockerCmd += `docker create -u 0:0 -i ${this.generateInjectSSHAgentOptions()} `;
+                dockerCmd += "--privileged ";
             }
+
+            if (this.argv.umask) {
+                dockerCmd += "--user 0:0 ";
+            }
+
             if (this.services?.length) {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
             }
@@ -921,8 +923,12 @@ export class Job {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
-        let dockerCmd = `docker create -u 0:0 -i --network gitlab-ci-local-${this.jobId} `;
+        let dockerCmd = `docker create --interactive --network gitlab-ci-local-${this.jobId} `;
         this.refreshLongRunningSilentTimeout(writeStreams);
+
+        if (this.argv.umask) {
+            dockerCmd += "--user 0:0 ";
+        }
 
         if (this.argv.privileged) {
             dockerCmd += "--privileged ";
@@ -936,8 +942,8 @@ export class Job {
         const serviceName = service.getName(this.expandedVariables);
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
         const aliases = new Set<string>();
-        aliases.add(serviceNameWithoutVersion.replace("/", "-"));
-        aliases.add(serviceNameWithoutVersion.replace("/", "__"));
+        aliases.add(serviceNameWithoutVersion.replaceAll("/", "-"));
+        aliases.add(serviceNameWithoutVersion.replaceAll("/", "__"));
         if (serviceAlias) {
             aliases.add(serviceAlias);
         }
@@ -995,7 +1001,7 @@ export class Job {
         const serviceAlias = service.getAlias(this.expandedVariables);
         const serviceName = service.getName(this.expandedVariables);
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
-        const aliases = [serviceNameWithoutVersion.replace("/", "-"), serviceNameWithoutVersion.replace("/", "__")];
+        const aliases = [serviceNameWithoutVersion.replaceAll("/", "-"), serviceNameWithoutVersion.replaceAll("/", "__")];
         if (serviceAlias) {
             aliases.push(serviceAlias);
         }

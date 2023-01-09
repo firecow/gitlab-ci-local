@@ -4,7 +4,7 @@ Run gitlab pipelines locally as shell executor or docker executor.
 
 Get rid of all those dev specific shell scripts and make files.
 
-[![build](https://img.shields.io/github/workflow/status/firecow/gitlab-ci-local/build)](https://github.com/firecow/gitlab-ci-local/actions)
+[![build](https://img.shields.io/github/actions/workflow/status/firecow/gitlab-ci-local/build.yml?branch=master)](https://github.com/firecow/gitlab-ci-local/actions)
 [![Known Vulnerabilities](https://snyk.io/test/github/firecow/gitlab-ci-local/badge.svg)](https://snyk.io/test/github/firecow/gitlab-ci-local)
 [![npm](https://img.shields.io/npm/v/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
 [![license](https://img.shields.io/github/license/firecow/gitlab-ci-local)](https://npmjs.org/package/gitlab-ci-local)
@@ -31,6 +31,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [DotEnv file](#dotenv-file)
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
+    * [Listing jobs](#list-pipeline-jobs)
 * [Quirks](#quirks)
     * [Tracked Files](#tracked-files)
     * [Local Only](#local-only)
@@ -71,13 +72,16 @@ brew install gitlab-ci-local
 
 ### Windows (Git bash)
 
-Install [gitbash](https://git-scm.com/downloads)
+- Install [gitbash](https://git-scm.com/downloads)
+- Install [rsync](https://prasaz.medium.com/add-rsync-to-windows-git-bash-f42736bae1b3)
 
 Download and put binary in `C:\Program Files\Git\mingw64\bin`
 
 ```bash
 curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
 ```
+
+Executing `gitlab-ci-local` with `--variable MSYS_NO_PATHCONV=1` can be useful in certain situations
 
 ## Convenience
 
@@ -116,7 +120,62 @@ echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
 gitlab-ci-local --completion >> ~/.bashrc 
 ```
 
+### List Pipeline Jobs
+
+Sometimes there is the need of knowing which jobs will be added before actually executing the pipeline.
+GitLab CI Local is providing the ability of showing added jobs with the following cli flags.
+
+#### --list
+
+The command `gitlab-ci-local --list` will return pretty output and will also filter all jobs which are set
+to `when: never`.
+
+```text
+name        description  stage   when        allow_failure  needs
+test-job    Run Tests    test    on_success  false      
+build-job                build   on_success  true           [test-job]
+```
+
+#### --list-all
+
+Same as `--list` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via rules).
+
+```text
+name        description  stage   when        allow_failure  needs
+test-job    Run Tests    test    on_success  false      
+build-job                build   on_success  true           [test-job]
+deploy-job               deploy  never       false          [build-job]
+```
+
+#### --list-csv
+
+The command `gitlab-ci-local --list-csv` will output the pipeline jobs as csv formatted list and will also filter all
+jobs which are set
+to `when: never`.
+The description will always be wrapped in quotes (even if there is none) to prevent semicolons in the description
+disturb the csv structure.
+
+```text
+name;description;stage;when;allow_failure;needs
+test-job;"Run Tests";test;on_success;false;[]
+build-job;"";build;on_success;true;[test-job]
+```
+
+#### --list-csv-all
+
+Same as `--list-csv-all` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via
+rules).
+
+```text
+name;description;stage;when;allow_failure;needs
+test-job;"Run Tests";test;on_success;false;[]
+build-job;"";build;on_success;true;[test-job]
+deploy-job;"";deploy;never;false;[build-job]
+```
+
 ## Quirks
+
+git+http isn't properly supported https://github.com/firecow/gitlab-ci-local/issues/605 and has certain quirks
 
 ### Tracked Files
 
@@ -165,7 +224,7 @@ global:
     values:
       '*production*': 'Im production only value'
       'staging': 'Im staging only value'
-  FILE_CONTENT_IN_VALLUES:
+  FILE_CONTENT_IN_VALUES:
     type: file
     values:
       '*': |
@@ -173,7 +232,7 @@ global:
         I'm great for certs n' stuff
 ```
 
-Variables will now appear in your jobs, if project or group matches git remote, global's are always present
+Variables will now appear in your jobs, if project or group matches git remote, globals are always present
 
 ### Remote file variables
 
@@ -247,17 +306,18 @@ Prevent artifacts from being copied to source folder
 produce:
   stage: build
   script: mkdir -p path/ && touch path/file1
-  artifacts: { paths: [path/] }
+  artifacts: { paths: [ path/ ] }
 ```
 
 A global configuration is possible when setting the following flag
+
 ```shell
 gitlab-ci-local --no-artifacts-to-source
 ```
 
 ### Includes
 
-Includes from external sources are only fetched once. Use `--fetch-includes` to invoke an external fetching rutine.
+Includes from external sources are only fetched once. Use `--fetch-includes` to invoke an external fetching routine.
 
 ### Artifacts
 

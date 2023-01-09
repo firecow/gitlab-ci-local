@@ -1,8 +1,7 @@
 import chalk from "chalk";
 import {Job} from "./job";
-import {assert} from "./asserts";
+import assert, {AssertionError} from "assert";
 import {Argv} from "./argv";
-import {ExitError} from "./exit-error";
 
 export class Executor {
 
@@ -94,10 +93,13 @@ export class Executor {
             const baseJobs = jobs.filter(j => j.baseName === need.job);
             for (const j of baseJobs) {
                 if (j.when === "never" && !need.optional) {
-                    throw new ExitError(chalk`{blueBright ${j.name}} is when:never, but its needed by {blueBright ${job.name}}`);
+                    throw new AssertionError({message: chalk`{blueBright ${j.name}} is when:never, but its needed by {blueBright ${job.name}}`});
+                }
+                if (j.when === "never" && need.optional) {
+                    continue;
                 }
                 if (j.when === "manual" && !manuals.includes(j.name)) {
-                    throw new ExitError(chalk`{blueBright ${j.name}} is when:manual, its needed by {blueBright ${job.name}}, and not specified in --manual`);
+                    throw new AssertionError({message: chalk`{blueBright ${j.name}} is when:manual, its needed by {blueBright ${job.name}}, and not specified in --manual`});
                 }
                 toWaitFor.push(j);
             }

@@ -6,12 +6,12 @@ import * as path from "path";
 import yargs from "yargs";
 import {Parser} from "./parser";
 import * as state from "./state";
-import {ExitError} from "./exit-error";
 import {WriteStreamsProcess} from "./write-streams-process";
 import {handler} from "./handler";
 import {Executor} from "./executor";
 import {WriteStreamsMock} from "./write-streams-mock";
 import {Argv} from "./argv";
+import {AssertionError} from "assert";
 
 (() => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
@@ -26,7 +26,7 @@ import {Argv} from "./argv";
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
                 } catch (e) {
-                    if (e instanceof ExitError) {
+                    if (e instanceof AssertionError) {
                         process.stderr.write(chalk`{red ${e.message}}\n`);
                         process.exit(1);
                     }
@@ -63,6 +63,16 @@ import {Argv} from "./argv";
         .option("list-json", {
             type: "boolean",
             description: "List jobs and job information in json format, when:never included",
+            requiresArg: false,
+        })
+        .option("list-csv", {
+            type: "boolean",
+            description: "List jobs and job information in csv format, when:never excluded",
+            requiresArg: false,
+        })
+        .option("list-csv-all", {
+            type: "boolean",
+            description: "List jobs and job information in csv format, when:never included",
             requiresArg: false,
         })
         .option("preview", {
@@ -123,6 +133,11 @@ import {Argv} from "./argv";
         .option("mount-cache", {
             type: "boolean",
             description: "Enable docker mount based caching",
+            requiresArg: false,
+        })
+        .option("umask", {
+            type: "boolean",
+            description: "Sets docker user to 0:0",
             requiresArg: false,
         })
         .option("privileged", {

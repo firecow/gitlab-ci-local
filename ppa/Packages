@@ -118,3 +118,48 @@ Author: Mads Jon Nielsen <madsjon@gmail.com>
 Name: gitlab-ci-local
 Website: https://github.com/firecow/gitlab-ci-local
 
+Package: gitlab-ci-local
+Version: 4.36.1
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Filename: ./gitlab-ci-local_4.36.1_amd64.deb
+Size: 14315968
+MD5sum: 7556d759e4cc57b84bc7235abd789d2c
+SHA1: fdc4cf086e0fc9fba2d3b00123c78202103005bb
+SHA256: 0ca468248b4443b33b8b65a0cf4a4dc1b9ef313a1bfad0bed2a5e71ef5d08e2e
+Homepage: https://github.com/firecow/gitlab-ci-local
+Description: Tired of pushing to test your .gitlab-ci.yml?
+Author: Mads Jon Nielsen <madsjon@gmail.com>
+Name: gitlab-ci-local
+Website: https://github.com/firecow/gitlab-ci-local
+
+Package: gitlab-ci-local
+Version: 4.36.2
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Filename: ./gitlab-ci-local_4.36.2_amd64.deb
+Size: 14318088
+MD5sum: 23a232ab1bd9e0c615405a5185a5ded7
+SHA1: 7a5b86fd307cc8af26eb629ec51a14a1fb95b630
+SHA256: fba3bd37c4dfd19bf095925d45d42d8c42cf1cb856fdf6c9852908e6cf6d2c39
+Homepage: https://github.com/firecow/gitlab-ci-local
+Description: Tired of pushing to test your .gitlab-ci.yml?
+Author: Mads Jon Nielsen <madsjon@gmail.com>
+Name: gitlab-ci-local
+Website: https://github.com/firecow/gitlab-ci-local
+
+Package: gitlab-ci-local
+Version: 4.37.0
+Architecture: amd64
+Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
+Filename: ./gitlab-ci-local_4.37.0_amd64.deb
+Size: 14315764
+MD5sum: a1b69e96afa99f1cb53deb07ec4ab2fd
+SHA1: 1986f231c3cc6dd3961dd7dda178b37505ba6cd4
+SHA256: bd818dd6332e56ceac459b5ffe746b5118ac902f57c59ffbb540fccd737c22ec
+Homepage: https://github.com/firecow/gitlab-ci-local
+Description: Tired of pushing to test your .gitlab-ci.yml?
+Author: Mads Jon Nielsen <madsjon@gmail.com>
+Name: gitlab-ci-local
+Website: https://github.com/firecow/gitlab-ci-local
+
