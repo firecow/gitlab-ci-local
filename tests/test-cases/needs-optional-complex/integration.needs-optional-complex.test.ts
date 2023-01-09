@@ -15,8 +15,6 @@ test("needs-optional-complex", async () => {
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join();
-    console.log(output);
-
     expect(output).toContain("Validated!");
     expect(output).toContain("Job executed!");
     expect(output).not.toContain("Job skipped!");
