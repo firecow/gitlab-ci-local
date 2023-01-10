@@ -6,7 +6,7 @@ produce:
     - touch path/file1
     - touch path/file2
   artifacts:
-    paths: [path/]
+    paths: [$CI_PROJECT_DIR/path/]
     exclude: [path/file2]
 
 consume:

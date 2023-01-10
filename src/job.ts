@@ -112,11 +112,11 @@ export class Job {
         }
 
         // Set job specific predefined variables
-        let ciProjectDir = `${cwd}`;
+        let ciProjectDir = `${process.cwd()}/${cwd}`;
         if (this.imageName) {
             ciProjectDir = "/gcl-builds";
         } else if (argv.shellIsolation) {
-            ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
+            ciProjectDir = `${process.cwd()}/${cwd}/${stateDir}/builds/${this.safeJobName}`;
         }
         predefinedVariables["CI_JOB_ID"] = `${this.jobId}`;
         predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
@@ -795,7 +795,7 @@ export class Job {
             const cacheName = await c.getUniqueCacheName(cwd, this.expandedVariables);
             for (const path of c.paths) {
                 time = process.hrtime();
-                const expandedPath = Utils.expandText(path, this.expandedVariables);
+                const expandedPath = Utils.expandText(path, this.expandedVariables).replace(`${this.expandedVariables.CI_PROJECT_DIR}/`, "");
                 let cmd = "shopt -s globstar nullglob dotglob\n";
                 cmd += `mkdir -p ../../cache/${cacheName}\n`;
                 cmd += `rsync -Ra ${expandedPath} ../../cache/${cacheName}/. || true\n`;
@@ -829,11 +829,11 @@ export class Job {
         cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}\n`;
         cpCmd += "rsync --exclude '.gitlab-ci-local/**' -Ra ";
         for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
-            const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
+            const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables).replace(`${this.expandedVariables.CI_PROJECT_DIR}/`, "");
             cpCmd += `--exclude '${expandedPath}' `;
         }
         for (const artifactPath of this.artifacts?.paths ?? []) {
-            const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
+            const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(`${this.expandedVariables.CI_PROJECT_DIR}/`, "");
             cpCmd += `${expandedPath} `;
         }
         cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
