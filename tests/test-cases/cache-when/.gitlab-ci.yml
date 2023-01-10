@@ -1,61 +1,56 @@
 ---
 cache:
-  paths: [$CACHEDIR/**.txt]
-
+  paths:
+    - $CACHEDIR/**.txt
 on_success_without_error:
   cache:
-    - when: "on_success"
+    - when: on_success
       paths:
-       - cache
+        - cache
       policy: push
       key: on_success_without_error
   script: mkdir -p cache && touch cache/file1.txt
-
 on_success_with_error:
   cache:
-    - when: "on_success"
+    - when: on_success
       paths:
-       - cache
+        - cache
       policy: push
       key: on_success_with_error
   script: |
     mkdir -p cache && touch cache/file1.txt
     exit 1
-
 on_failure_without_error:
   cache:
-    - when: "on_failure"
+    - when: on_failure
       paths:
-       - cache
+        - cache
       policy: push
       key: on_failure_without_error
   script: mkdir -p cache && touch cache/file1.txt
-
 on_failure_with_error:
   cache:
-    - when: "on_failure"
+    - when: on_failure
       paths:
-       - cache
+        - cache
       policy: push
       key: on_failure_with_error
   script: |
     mkdir -p cache && touch cache/file1.txt
     exit 1
-
 always_without_error:
   cache:
-    - when: "always"
+    - when: always
       paths:
-       - cache
+        - cache
       policy: push
       key: always_without_error
   script: mkdir -p cache && touch cache/file1.txt
-
 always_with_error:
   cache:
-    - when: "always"
+    - when: always
       paths:
-       - cache
+        - cache
       policy: push
       key: always_with_error
   script: |
