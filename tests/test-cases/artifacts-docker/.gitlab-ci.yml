@@ -3,6 +3,7 @@ produce artifacts 📝:
   stage: build
   image: alpine
   script:
+    - echo "CI_PROJECT_DIR=${CI_PROJECT_DIR}"
     - touch file1 file2
     - mkdir -p path/to/deep/folder
     - touch path/to/deep/folder/file3
@@ -11,7 +12,7 @@ produce artifacts 📝:
     paths:
       - file1
       - file2
-      - path/to/deep/folder
+      - ${CI_PROJECT_DIR}/path/to/deep/folder
       - another-path/to/deep/empty-folder
 
 consume artifacts 🏗️:
