@@ -98,11 +98,15 @@ export function cache (gitlabData: any) {
             (Array.isArray(mergedCache) ? mergedCache : [mergedCache]).forEach((c: any) => {
                 const key = c["key"];
                 const policy = c["policy"] ?? "pull-push";
+                const when = c["when"] ?? "on_success";
                 if (!["pull", "push", "pull-push"].includes(policy)) {
                     throw new AssertionError({message: "cache policy is not 'pull', 'push' or 'pull-push'"});
                 }
+                if (!["on_success", "on_failure", "always"].includes(when)) {
+                    throw new AssertionError({message: "cache when is not 'on_success', 'on_failure' or 'always'"});
+                }
                 const paths = c["paths"] ?? [];
-                cacheList.push(new CacheEntry(key, paths, policy));
+                cacheList.push(new CacheEntry(key, paths, policy, when));
             });
             jobData.cache = cacheList;
         }

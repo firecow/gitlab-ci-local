@@ -670,9 +670,7 @@ export class Job {
             }
         });
 
-        if (exitCode == 0) {
-            await this.copyCacheOut(writeStreams);
-        }
+        await this.copyCacheOut(writeStreams, exitCode);
 
         if (exitCode == 0 || this.artifacts?.when === "always") {
             await this.copyArtifactsOut(writeStreams);
@@ -782,7 +780,7 @@ export class Job {
         return Utils.bash(`docker cp ${source}/. ${this._containerId}:/gcl-builds`);
     }
 
-    private async copyCacheOut (writeStreams: WriteStreams) {
+    private async copyCacheOut (writeStreams: WriteStreams, exitCode: number) {
         if (this.argv.mountCache && this.imageName) return;
         if ((!this.imageName && !this.argv.shellIsolation) || this.cache.length === 0) return;
 
@@ -792,6 +790,8 @@ export class Job {
         let time, endTime;
         for (const c of this.cache) {
             if (!["push", "pull-push"].includes(c.policy)) return;
+            if ("on_success" === c.when && exitCode != 0) return;
+            if ("on_failure" === c.when && exitCode === 0) return;
             const cacheName = await c.getUniqueCacheName(cwd, this.expandedVariables);
             for (const path of c.paths) {
                 time = process.hrtime();
