@@ -41,9 +41,14 @@ test("VAR w/ escapes", () => {
     expect(expanded).toBe("$VAR $success $$VAR");
 });
 
+test("Expand number", () => {
+    const expanded = Utils.expandText(5, {});
+    expect(expanded).toBe("5");
+});
+
 test("Expand null", () => {
     const expanded = Utils.expandText(null, {});
-    expect(expanded).toBe(null);
+    expect(expanded).toBe("null");
 });
 
 test("extends invalid job", () => {

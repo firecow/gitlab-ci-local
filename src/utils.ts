@@ -89,7 +89,7 @@ export class Utils {
 
     private static expandTextWith (text: any, expandWith: ExpandWith) {
         if (typeof text !== "string") {
-            return text;
+            return `${text}`;
         }
 
         return text.replace(
