@@ -55,12 +55,27 @@ npm install -g gitlab-ci-local
 
 ### Linux based on Debian
 
+Users of Debian-based distributions should prefer the [the Deb822 format][deb822], installed with:
+
 ```bash
-curl -s "https://firecow.github.io/gitlab-ci-local/ppa/pubkey.gpg" | sudo apt-key add -
-sudo curl -s -o /etc/apt/sources.list.d/gitlab-ci-local.list "https://firecow.github.io/gitlab-ci-local/ppa/gitlab-ci-local.list"
+sudo wget -O /etc/apt/sources.list.d/gitlab-ci-local.sources https://firecow.github.io/gitlab-ci-local/ppa/gitlab-ci-local.sources
 sudo apt-get update
 sudo apt-get install gitlab-ci-local
 ```
+
+  [deb822]: https://repolib.readthedocs.io/en/latest/deb822-format.html#deb822-format
+
+If your distribution does not support this, you can run these commands:
+
+```bash
+sudo bash -c 'wget -O - https://firecow.github.io/gitlab-ci-local/ppa/pubkey.gpg | gpg --dearmor > /etc/apt/keyrings/gitlab-ci-local.gpg'
+sudo wget -O /etc/apt/sources.list.d/gitlab-ci-local.list https://firecow.github.io/gitlab-ci-local/ppa/gitlab-ci-local.list
+sudo apt-get update
+sudo apt-get install gitlab-ci-local
+```
+
+Note that the path `/etc/apt/sources.list.d/gitlab-ci-local.list` is used in the file `gitlab-ci-local.list`.
+If you change it in these commands you must also change it in `/etc/apt/sources.list.d/gitlab-ci-local.list`.
 
 ### Macos
 

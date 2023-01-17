@@ -1,1 +1,1 @@
-deb https://firecow.github.io/gitlab-ci-local/ppa/ ./
+deb [signed-by=/etc/apt/keyrings/gitlab-ci-local.gpg] https://firecow.github.io/gitlab-ci-local/ppa/ ./
