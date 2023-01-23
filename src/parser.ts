@@ -55,10 +55,13 @@ export class Parser {
         const parser = new Parser(argv, writeStreams, pipelineIid);
         const time = process.hrtime();
         await parser.init();
-        await Validator.run(parser.jobs, parser.stages);
+        const warnings = await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
 
         writeStreams.stderr(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
+        for (const warning of warnings) {
+            writeStreams.stderr(chalk`{yellow ${warning}}\n`);
+        }
 
         return parser;
     }

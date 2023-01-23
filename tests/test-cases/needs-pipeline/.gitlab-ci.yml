@@ -1,0 +1,14 @@
+---
+needed-job:
+  stage: build
+  script:
+    - echo "nothing"
+
+needs-pipeline-job:
+  stage: test
+  script:
+    - echo "Job executed!"
+  needs:
+    - job: needed-job
+    - job: other-pipeline-job
+      pipeline: "foobar"
