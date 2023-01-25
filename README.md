@@ -68,8 +68,8 @@ sudo apt-get install gitlab-ci-local
 If your distribution does not support this, you can run these commands:
 
 ```bash
-sudo bash -c 'wget -O - https://firecow.github.io/gitlab-ci-local/ppa/pubkey.gpg | gpg --dearmor > /etc/apt/keyrings/gitlab-ci-local.gpg'
-sudo wget -O /etc/apt/sources.list.d/gitlab-ci-local.list https://firecow.github.io/gitlab-ci-local/ppa/gitlab-ci-local.list
+curl -s "https://firecow.github.io/gitlab-ci-local/ppa/pubkey.gpg" | sudo apt-key add -
+sudo echo "deb https://firecow.github.io/gitlab-ci-local/ppa/ ./" > /etc/apt/sources.list.d/gitlab-ci-local.list
 sudo apt-get update
 sudo apt-get install gitlab-ci-local
 ```
