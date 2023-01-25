@@ -188,15 +188,16 @@ export class Job {
         return Utils.safeDockerString(this.name);
     }
 
-    get needs (): {job: string; artifacts: boolean; optional: boolean}[] | null {
+    get needs (): {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] | null {
         const needs = this.jobData["needs"];
         if (!needs) return null;
-        const list: {job: string; artifacts: boolean; optional: boolean}[] = [];
+        const list: {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] = [];
         needs.forEach((need: any) => {
             list.push({
                 job: typeof need === "string" ? need : need.job,
                 artifacts: typeof need === "string" ? true : need.artifacts,
                 optional: typeof need === "string" ? false : need.optional,
+                pipeline: typeof need === "string" ? null : need.pipeline,
             });
         });
         return list;

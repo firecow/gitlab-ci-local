@@ -15,3 +15,7 @@
 !/docker-npm
 
 /.gitlab-ci-local/
+
+.DS_Store
+
+.vscode
