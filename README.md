@@ -69,7 +69,7 @@ If your distribution does not support this, you can run these commands:
 
 ```bash
 curl -s "https://firecow.github.io/gitlab-ci-local/ppa/pubkey.gpg" | sudo apt-key add -
-sudo echo "deb https://firecow.github.io/gitlab-ci-local/ppa/ ./" > /etc/apt/sources.list.d/gitlab-ci-local.list
+echo "deb https://firecow.github.io/gitlab-ci-local/ppa/ ./" | sudo tee /etc/apt/sources.list.d/gitlab-ci-local.list
 sudo apt-get update
 sudo apt-get install gitlab-ci-local
 ```
