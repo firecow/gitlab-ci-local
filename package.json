@@ -35,6 +35,7 @@
     "object-traversal": "1.0.1",
     "pretty-hrtime": "1.0.3",
     "source-map-support": "0.5.21",
+    "split2": "4.1.0",
     "yargs": "17.6.2"
   },
   "devDependencies": {
@@ -48,6 +49,7 @@
     "@types/js-yaml": "4.0.5",
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.6",
+    "@types/split2": "3.2.1",
     "@types/yargs": "17.0.22",
     "@typescript-eslint/eslint-plugin": "5.50.0",
     "@typescript-eslint/parser": "5.50.0",
