@@ -194,17 +194,11 @@ export class Job {
         const list: {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] = [];
         needs.forEach((need: any) => {
             const entry = {
-                job: typeof need === "string" ? need : need.job,
-                artifacts: true,
-                optional: false,
-                pipeline: null,
+                job: need.job ?? need,
+                artifacts: need.artifacts ?? true,
+                optional: need.optional ?? false,
+                pipeline: need.pipeline ?? null,
             };
-            if (typeof need !== "string") {
-                entry.job = need.job;
-                entry.artifacts = need.artifacts ?? true;
-                entry.optional = need.optional ?? false;
-                entry.pipeline = need.pipeline ?? null;
-            }
             list.push(entry);
         });
         return list;
