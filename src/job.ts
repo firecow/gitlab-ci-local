@@ -193,12 +193,19 @@ export class Job {
         if (!needs) return null;
         const list: {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] = [];
         needs.forEach((need: any) => {
-            list.push({
+            const entry = {
                 job: typeof need === "string" ? need : need.job,
-                artifacts: typeof need === "string" ? true : need.artifacts,
-                optional: typeof need === "string" ? false : need.optional,
-                pipeline: typeof need === "string" ? null : need.pipeline,
-            });
+                artifacts: true,
+                optional: false,
+                pipeline: null,
+            };
+            if (typeof need !== "string") {
+                entry.job = need.job;
+                entry.artifacts = need.artifacts ?? true;
+                entry.optional = need.optional ?? false;
+                entry.pipeline = need.pipeline ?? null;
+            }
+            list.push(entry);
         });
         return list;
     }
@@ -362,7 +369,7 @@ export class Job {
                 await Utils.spawn(["docker", "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
-            await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.` , `${containerId}:/gcl-builds`], argv.cwd);
+            await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:/gcl-builds`], argv.cwd);
             await Utils.spawn(["docker", "start", "--attach", containerId], argv.cwd);
             await Utils.spawn(["docker", "rm", "-f", containerId], argv.cwd);
             const endTime = process.hrtime(time);
@@ -949,7 +956,7 @@ export class Job {
             aliases.add(serviceAlias);
         }
 
-        for(const alias of aliases) {
+        for (const alias of aliases) {
             dockerCmd += `--network-alias=${alias} `;
         }
 
