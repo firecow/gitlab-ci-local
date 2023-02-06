@@ -2,6 +2,7 @@ import chalk from "chalk";
 import * as dotenv from "dotenv";
 import * as fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
+import split2 from "split2";
 import {Utils} from "./utils";
 import {WriteStreams} from "./write-streams";
 import {Service} from "./service";
@@ -641,25 +642,19 @@ export class Job {
             env: this.expandedVariables,
         });
 
-        const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
+        const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
             this.refreshLongRunningSilentTimeout(writeStreams);
-            for (const line of `${e}`.split(/\r?\n/)) {
-                if (line.length === 0) {
-                    continue;
-                }
-
-                stream(`${this.chalkJobName} `);
-                if (!line.startsWith("\u001b[32m$")) {
-                    stream(`${colorize(">")} `);
-                }
-                stream(`${line}\n`);
-                fs.appendFileSync(outputFilesPath, `${line}\n`);
+            stream(`${this.chalkJobName} `);
+            if (!line.startsWith("\u001b[32m$")) {
+                stream(`${colorize(">")} `);
             }
+            stream(`${line}\n`);
+            fs.appendFileSync(outputFilesPath, `${line}\n`);
         };
 
         const exitCode = await new Promise<number>((resolve, reject) => {
-            cp.stdout?.on("data", (e) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
-            cp.stderr?.on("data", (e) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
+            cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
+            cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
 
             cp.on("exit", (code) => resolve(code ?? 0));
             cp.on("error", (err) => reject(err));
