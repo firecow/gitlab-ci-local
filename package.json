@@ -102,9 +102,21 @@
         "error",
         4
       ],
+      "@typescript-eslint/type-annotation-spacing": [
+        "error"
+      ],
+      "@typescript-eslint/func-call-spacing": [
+        "error"
+      ],
+      "@typescript-eslint/comma-spacing": [
+        "error"
+      ],
+      "keyword-spacing": "error",
       "space-in-parens": "error",
       "no-trailing-spaces": "error",
-      "no-multi-spaces": "error"
+      "no-multi-spaces": "error",
+      "arrow-spacing": "error",
+      "key-spacing": "error"
     }
   },
   "jest": {

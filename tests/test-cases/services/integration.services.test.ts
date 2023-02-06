@@ -96,8 +96,8 @@ test.concurrent("services <alias-job-multiple-slashes>", async () => {
 });
 
 test.concurrent("services <multie-job>", async () => {
-    await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-0.log", {force:true});
-    await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-1.log", {force:true});
+    await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-0.log", {force: true});
+    await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-1.log", {force: true});
 
     const writeStreams = new WriteStreamsMock();
     await handler({
