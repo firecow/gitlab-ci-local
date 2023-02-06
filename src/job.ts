@@ -362,7 +362,7 @@ export class Job {
                 await Utils.spawn(["docker", "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
-            await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.` , `${containerId}:/gcl-builds`], argv.cwd);
+            await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:/gcl-builds`], argv.cwd);
             await Utils.spawn(["docker", "start", "--attach", containerId], argv.cwd);
             await Utils.spawn(["docker", "rm", "-f", containerId], argv.cwd);
             const endTime = process.hrtime(time);
@@ -949,7 +949,7 @@ export class Job {
             aliases.add(serviceAlias);
         }
 
-        for(const alias of aliases) {
+        for (const alias of aliases) {
             dockerCmd += `--network-alias=${alias} `;
         }
 

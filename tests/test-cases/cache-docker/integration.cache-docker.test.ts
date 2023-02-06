@@ -9,7 +9,7 @@ beforeAll(() => {
 });
 
 test.concurrent("cache-docker <consume-cache> --needs", async () => {
-    await fs.rm("tests/test-cases/cache-docker/.gitlab-ci-local/cache/", {recursive: true, force:true});
+    await fs.rm("tests/test-cases/cache-docker/.gitlab-ci-local/cache/", {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/cache-docker",

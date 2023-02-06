@@ -10,7 +10,7 @@ beforeAll(() => {
 });
 
 test.concurrent("cache-double-run <test-job> --shell-isolation", async () => {
-    await fs.rm("tests/test-cases/cache-double-run/.gitlab-ci-local", {recursive: true, force:true});
+    await fs.rm("tests/test-cases/cache-double-run/.gitlab-ci-local", {recursive: true, force: true});
 
     let writeStreams = new WriteStreamsMock();
     await handler({
