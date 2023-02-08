@@ -355,6 +355,8 @@ npm run test
 
 ![example](./docs/images/example.png)
 
+It's also possible to run individual `.gitlab-ci.yml`, via `./ts-node --cwd examples/docker-compose-nodejs`
+
 ### Package binaries
 
 ```bash
