@@ -1,6 +1,7 @@
 import assert from "assert";
 import * as fs from "fs-extra";
 import * as dotenv from "dotenv";
+import * as path from "path";
 import camelCase from "camelcase";
 
 export class Argv {
@@ -29,8 +30,9 @@ export class Argv {
     }
 
     get cwd (): string {
-        let cwd = this.map.get("cwd") ?? process.cwd();
+        let cwd = this.map.get("cwd") ?? ".";
         assert(typeof cwd != "object", "--cwd option cannot be an array");
+        cwd = path.normalize(`${process.cwd()}/${cwd}`);
         cwd = cwd.replace(/\/$/, "");
         assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
         return cwd;
