@@ -3,3 +3,8 @@ test-job:
   coverage: /^\s*Lines:\s*(\d+.\d+)\%/
   script:
     - "echo \"  Lines:   78.46% (510/650)\""
+
+jest:
+  coverage: /All files.*?\|.*?\|.*?([\d\.]+)/
+  script:
+    - echo "All files            |    99.3 |    97.91 |     100 |     100 |                   "
