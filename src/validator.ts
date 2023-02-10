@@ -4,11 +4,16 @@ import chalk from "chalk";
 
 export class Validator {
 
-    private static needs (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
+    private static needs (jobs: ReadonlyArray<Job>, stages: readonly string[]): string[] {
+        const warnings: string[] = [];
         for (const job of jobs) {
             if (job.needs === null || job.needs.length === 0) continue;
 
             for (const need of job.needs) {
+                if (need.pipeline) {
+                    warnings.push(`${job.name} WARNING: Ignoring needs.job '${need.job}' because of unsupported needs.pipeline`);
+                    continue;
+                }
                 const needJob = jobs.find(j => j.baseName === need.job);
                 if (need.optional && !needJob) continue;
                 assert(needJob != null, chalk`needs: [{blueBright ${need.job}}] for {blueBright ${job.baseName}} could not be found`);
@@ -18,6 +23,7 @@ export class Validator {
             }
 
         }
+        return warnings;
     }
 
     private static dependencies (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
@@ -69,10 +75,12 @@ export class Validator {
     }
 
     static async run (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
+        const warnings: string[] = [];
         this.scriptBlank(jobs);
-        this.needs(jobs, stages);
+        warnings.push(...this.needs(jobs, stages));
         this.dependencies(jobs, stages);
         this.cache(jobs);
         this.dependenciesContainment(jobs);
+        return warnings;
     }
 }

@@ -69,6 +69,9 @@ export class Utils {
         const content = await fs.readFile(`${cwd}/${stateDir}/output/${jobName}.log`, "utf8");
         const regex = new RegExp(coverageRegex.replace(/^\//, "").replace(/\/$/, ""), "m");
         const match = content.match(regex);
+        if (match && match[1] != null) {
+            return match[1];
+        }
         if (match && match[0] != null) {
             const firstNumber = match[0].match(/\d+(\.\d+)?/);
             return firstNumber && firstNumber[0] ? firstNumber[0] : null;

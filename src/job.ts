@@ -2,6 +2,7 @@ import chalk from "chalk";
 import * as dotenv from "dotenv";
 import * as fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
+import split2 from "split2";
 import {Utils} from "./utils";
 import {WriteStreams} from "./write-streams";
 import {Service} from "./service";
@@ -188,16 +189,18 @@ export class Job {
         return Utils.safeDockerString(this.name);
     }
 
-    get needs (): {job: string; artifacts: boolean; optional: boolean}[] | null {
+    get needs (): {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] | null {
         const needs = this.jobData["needs"];
         if (!needs) return null;
-        const list: {job: string; artifacts: boolean; optional: boolean}[] = [];
+        const list: {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] = [];
         needs.forEach((need: any) => {
-            list.push({
-                job: typeof need === "string" ? need : need.job,
-                artifacts: typeof need === "string" ? true : need.artifacts,
-                optional: typeof need === "string" ? false : need.optional,
-            });
+            const entry = {
+                job: need.job ?? need,
+                artifacts: need.artifacts ?? true,
+                optional: need.optional ?? false,
+                pipeline: need.pipeline ?? null,
+            };
+            list.push(entry);
         });
         return list;
     }
@@ -361,7 +364,7 @@ export class Job {
                 await Utils.spawn(["docker", "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
-            await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.` , `${containerId}:/gcl-builds`], argv.cwd);
+            await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:/gcl-builds`], argv.cwd);
             await Utils.spawn(["docker", "start", "--attach", containerId], argv.cwd);
             await Utils.spawn(["docker", "rm", "-f", containerId], argv.cwd);
             const endTime = process.hrtime(time);
@@ -640,25 +643,19 @@ export class Job {
             env: this.expandedVariables,
         });
 
-        const outFunc = (e: any, stream: (txt: string) => void, colorize: (str: string) => string) => {
+        const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
             this.refreshLongRunningSilentTimeout(writeStreams);
-            for (const line of `${e}`.split(/\r?\n/)) {
-                if (line.length === 0) {
-                    continue;
-                }
-
-                stream(`${this.chalkJobName} `);
-                if (!line.startsWith("\u001b[32m$")) {
-                    stream(`${colorize(">")} `);
-                }
-                stream(`${line}\n`);
-                fs.appendFileSync(outputFilesPath, `${line}\n`);
+            stream(`${this.chalkJobName} `);
+            if (!line.startsWith("\u001b[32m$")) {
+                stream(`${colorize(">")} `);
             }
+            stream(`${line}\n`);
+            fs.appendFileSync(outputFilesPath, `${line}\n`);
         };
 
         const exitCode = await new Promise<number>((resolve, reject) => {
-            cp.stdout?.on("data", (e) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
-            cp.stderr?.on("data", (e) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
+            cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
+            cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
 
             cp.on("exit", (code) => resolve(code ?? 0));
             cp.on("error", (err) => reject(err));
@@ -670,9 +667,7 @@ export class Job {
             }
         });
 
-        if (exitCode == 0) {
-            await this.copyCacheOut(writeStreams);
-        }
+        await this.copyCacheOut(writeStreams, exitCode);
 
         if (exitCode == 0 || this.artifacts?.when === "always") {
             await this.copyArtifactsOut(writeStreams);
@@ -782,7 +777,7 @@ export class Job {
         return Utils.bash(`docker cp ${source}/. ${this._containerId}:/gcl-builds`);
     }
 
-    private async copyCacheOut (writeStreams: WriteStreams) {
+    private async copyCacheOut (writeStreams: WriteStreams, exitCode: number) {
         if (this.argv.mountCache && this.imageName) return;
         if ((!this.imageName && !this.argv.shellIsolation) || this.cache.length === 0) return;
 
@@ -792,10 +787,12 @@ export class Job {
         let time, endTime;
         for (const c of this.cache) {
             if (!["push", "pull-push"].includes(c.policy)) return;
+            if ("on_success" === c.when && exitCode != 0) return;
+            if ("on_failure" === c.when && exitCode === 0) return;
             const cacheName = await c.getUniqueCacheName(cwd, this.expandedVariables);
             for (const path of c.paths) {
                 time = process.hrtime();
-                const expandedPath = Utils.expandText(path, this.expandedVariables);
+                const expandedPath = Utils.expandText(path, this.expandedVariables).replace(`${this.expandedVariables.CI_PROJECT_DIR}/`, "");
                 let cmd = "shopt -s globstar nullglob dotglob\n";
                 cmd += `mkdir -p ../../cache/${cacheName}\n`;
                 cmd += `rsync -Ra ${expandedPath} ../../cache/${cacheName}/. || true\n`;
@@ -829,11 +826,11 @@ export class Job {
         cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}\n`;
         cpCmd += "rsync --exclude '.gitlab-ci-local/**' -Ra ";
         for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
-            const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables);
+            const expandedPath = Utils.expandText(artifactExcludePath, this.expandedVariables).replace(`${this.expandedVariables.CI_PROJECT_DIR}/`, "");
             cpCmd += `--exclude '${expandedPath}' `;
         }
         for (const artifactPath of this.artifacts?.paths ?? []) {
-            const expandedPath = Utils.expandText(artifactPath, this.expandedVariables);
+            const expandedPath = Utils.expandText(artifactPath, this.expandedVariables).replace(`${this.expandedVariables.CI_PROJECT_DIR}/`, "");
             cpCmd += `${expandedPath} `;
         }
         cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
@@ -948,7 +945,7 @@ export class Job {
             aliases.add(serviceAlias);
         }
 
-        for(const alias of aliases) {
+        for (const alias of aliases) {
             dockerCmd += `--network-alias=${alias} `;
         }
 

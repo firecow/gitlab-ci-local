@@ -16,7 +16,7 @@ beforeAll(() => {
 });
 
 test("cache-docker-mount <consume-cache> --mount-cache --needs", async () => {
-    await Utils.spawn(["docker", "volume", "rm", "-f", "glc-cache-docker-mount-maven"]);
+    void Utils.spawn(["docker", "volume", "rm", "-f", "gcl-gcl-cache-docker-mount-mavenLw"]);
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/cache-docker-mount",

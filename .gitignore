@@ -15,6 +15,10 @@
 !/docker-npm
 
 /.gitlab-ci-local/
+
+
 .DS_Store
-.vscode/launch.json
-.vscode/tasks.json
+
+.vscode
+
+/ppa/*.zip
