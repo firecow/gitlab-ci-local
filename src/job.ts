@@ -133,6 +133,8 @@ export class Job {
         predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
         predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
+        predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
+        predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._expandedVariables["CI_PROJECT_PATH"]}`;
 
         // Find environment matched variables
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
@@ -147,10 +149,6 @@ export class Job {
             this.allowFailure = ruleResult.allowFailure;
             this._expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables});
         }
-
-        // Set CI_REGISTRY variables
-        this._expandedVariables["CI_REGISTRY"] = this._expandedVariables["CI_REGISTRY"] ?? `local-registry.${this.gitData.remote.host}`;
-        this._expandedVariables["CI_REGISTRY_IMAGE"] = `${this._expandedVariables["CI_REGISTRY"]}/${this._expandedVariables["CI_PROJECT_PATH"]}`;
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
             throw new AssertionError({message: `${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`});
