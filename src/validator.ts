@@ -66,6 +66,15 @@ export class Validator {
         }
     }
 
+    private static arrayOfStrings (jobs: ReadonlyArray<Job>) {
+        for (const job of jobs) {
+            if (job.trigger) continue;
+            job.beforeScripts.forEach((s: any) => assert(typeof s === "string", chalk`{blue ${job.name}} before_script contains non string value`));
+            job.afterScripts.forEach((s: any) => assert(typeof s === "string", chalk`{blue ${job.name}} after_script contains non string value`));
+            job.scripts.forEach((s: any) => assert(typeof s === "string", chalk`{blue ${job.name}} script contains non string value`));
+        }
+    }
+
     private static cache (jobs: ReadonlyArray<Job>) {
         for (const job of jobs) {
             job.cache.forEach((c, i) => {
@@ -77,6 +86,7 @@ export class Validator {
     static async run (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
         const warnings: string[] = [];
         this.scriptBlank(jobs);
+        this.arrayOfStrings(jobs);
         warnings.push(...this.needs(jobs, stages));
         this.dependencies(jobs, stages);
         this.cache(jobs);
