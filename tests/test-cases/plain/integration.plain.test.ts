@@ -16,7 +16,7 @@ test("plain", async () => {
         cwd: "tests/test-cases/plain",
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines.length).toEqual(14);
+    expect(writeStreams.stdoutLines.length).toEqual(16);
     expect(writeStreams.stderrLines.length).toEqual(3);
 
     expect(await fs.pathExists("tests/test-cases/plain/.gitlab-ci-local/builds/test-job")).toBe(false);
@@ -48,4 +48,17 @@ test("plain <notfound>", async () => {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`{blueBright notfound} could not be found`);
     }
+});
+
+test("plain <build-job> --unset-variable ", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/plain",
+        job: ["build-job"],
+        unsetVariable: ["TEST_VAR"],
+    }, writeStreams);
+    const found = writeStreams.stdoutLines.filter((l) => {
+        return l.match(/whatwhatwhat/) !== null;
+    });
+    expect(found.length).toEqual(0);
 });
