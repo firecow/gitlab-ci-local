@@ -105,6 +105,11 @@ import {AssertionError} from "assert";
             description: "Add variable to all executed jobs (--variable HELLO=world)",
             requiresArg: false,
         })
+        .option("unset-variable", {
+            type: "array",
+            description: "Unsets a variable",
+            requiresArg: false,
+        })
         .option("remote-variables", {
             type: "string",
             description: "Fetch variables file from remote location",
