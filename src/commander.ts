@@ -21,6 +21,18 @@ export class Commander {
         await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
     }
 
+    static async runJobsInStage (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
+        const jobs = parser.jobs.filter(j => j.stage === argv.stage);
+        const stages = parser.stages;
+
+        let potentialStarters = [...jobs.values()];
+        potentialStarters = potentialStarters.filter(j => j.when !== "never");
+        potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
+        potentialStarters = potentialStarters.filter(j => j.stage === argv.stage);
+        await Executor.runLoop(argv, jobs, stages, potentialStarters);
+        await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
+    }
+
     static async runJobs (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
         const needs = argv.needs || argv.onlyNeeds;
         const jobArgs = argv.job;

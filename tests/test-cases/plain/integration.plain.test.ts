@@ -49,3 +49,16 @@ test("plain <notfound>", async () => {
         expect(e.message).toBe(chalk`{blueBright notfound} could not be found`);
     }
 });
+
+test("plain --stage", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/plain",
+        stage: "test"
+    }, writeStreams);
+
+    const found = writeStreams.stdoutLines.filter((l) => {
+        return l.match(/build-job/) !== null;
+    });
+    expect(found.length).toEqual(0);
+});
