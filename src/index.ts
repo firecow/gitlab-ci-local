@@ -170,6 +170,11 @@ import {AssertionError} from "assert";
             description: "Remove docker resources after they've been used",
             requiresArg: false,
         })
+        .option("quiet", {
+            type: "boolean",
+            description: "Suppres all job output",
+            requiresArg: false,
+        })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
                 const argv = new Argv({...yargsArgv, autoCompleting: true});
