@@ -54,7 +54,7 @@ test("plain --stage", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/plain",
-        stage: "test"
+        stage: "test",
     }, writeStreams);
 
     const found = writeStreams.stdoutLines.filter((l) => {
