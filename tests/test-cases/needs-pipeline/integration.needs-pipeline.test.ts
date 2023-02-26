@@ -16,7 +16,6 @@ test("needs-pipeline", async () => {
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join();
-    console.log(output);
 
     const expected = [
         chalk`{yellow needs-pipeline-job WARNING: Ignoring needs.job 'other-pipeline-job' because of unsupported needs.pipeline}`,
