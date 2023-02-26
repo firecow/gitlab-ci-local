@@ -33,16 +33,8 @@ export function jobExtends (gitlabData: any) {
         if (Job.illegalJobNames.includes(jobName)) continue;
         if (typeof jobData != "object") continue;
         jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
-    }
-
-    Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
         const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
         gitlabData[jobName] = deepExtend({}, ...parentDatas, jobData);
-    });
-
-    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
-        if (Job.illegalJobNames.includes(jobName)) continue;
-        if (typeof jobData != "object") continue;
         delete jobData.extends;
     }
 }
