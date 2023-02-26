@@ -113,7 +113,7 @@ export class Utils {
     static expandText (text: any, envs: {[key: string]: string}) {
         return this.expandTextWith(text, {
             unescape: "$",
-            variable: (name) => envs[name] ?? "",
+            variable: (name) => `${envs[name]}` ?? "",
         });
     }
 
@@ -140,7 +140,7 @@ export class Utils {
                 // the very end.
                 variables[k] = Utils.expandTextWith(v, {
                     unescape: "$$",
-                    variable: (name) => envsWithoutSelf[name] ?? "",
+                    variable: (name) => `${envsWithoutSelf[name]}` ?? "",
                 });
                 expandedAnyVariables ||= variables[k] !== v;
             }
