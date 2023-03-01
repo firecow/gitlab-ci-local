@@ -62,3 +62,16 @@ test("plain <build-job> --unset-variable ", async () => {
     });
     expect(found.length).toEqual(0);
 });
+
+test("plain --stage", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/plain",
+        stage: "test",
+    }, writeStreams);
+
+    const found = writeStreams.stdoutLines.filter((l) => {
+        return l.match(/build-job/) !== null;
+    });
+    expect(found.length).toEqual(0);
+});

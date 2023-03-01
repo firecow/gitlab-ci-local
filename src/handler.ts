@@ -97,6 +97,7 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
         parser = await Parser.create(argv, writeStreams, pipelineIid);
         Commander.runCsv(parser, writeStreams, argv.listCsvAll);
     } else if (argv.job.length > 0) {
+        assert(argv.stage == null, "You cannot use --stage when starting individual jobs");
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
         if (argv.needs || argv.onlyNeeds) {
@@ -110,6 +111,14 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
         if (argv.needs || argv.onlyNeeds) {
             writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
         }
+    } else if (argv.stage) {
+        generateGitIgnore(cwd, stateDir);
+        const time = process.hrtime();
+        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
+        parser = await Parser.create(argv, writeStreams, pipelineIid);
+        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        await Commander.runJobsInStage(argv, parser, writeStreams);
+        writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     } else {
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();

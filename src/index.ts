@@ -100,6 +100,11 @@ import {AssertionError} from "assert";
             description: "Run needed jobs, except the specified jobs themselves",
             requiresArg: false,
         })
+        .option("stage", {
+            type: "string",
+            description: "Run all jobs in a specific stage",
+            requiresArg: false,
+        })
         .option("variable", {
             type: "array",
             description: "Add variable to all executed jobs (--variable HELLO=world)",

@@ -118,6 +118,10 @@ export class Argv {
         return this.map.get("onlyNeeds") ?? false;
     }
 
+    get stage (): string | undefined {
+        return this.map.get("stage");
+    }
+
     get completion (): boolean {
         return this.map.get("completion") ?? false;
     }
