@@ -1,0 +1,15 @@
+.default-variables:
+  variables:
+    FOO: foo
+
+.variables-wrapper:
+  variables:
+    !reference [.default-variables, variables]
+
+.variables:
+  extends: .variables-wrapper
+
+job:
+  variables: !reference [.variables, variables]
+  script:
+    - echo $FOO

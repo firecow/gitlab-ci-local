@@ -24,3 +24,16 @@ test("reference <test-job>", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test("reference --file .gitlab-ci-complex.yml (issue 644)", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/reference",
+        file: ".gitlab-ci-complex.yml",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright job} {greenBright >} foo`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
