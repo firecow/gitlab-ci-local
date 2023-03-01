@@ -77,6 +77,10 @@ export class Argv {
         return variables;
     }
 
+    get unsetVariables (): string[] {
+        return this.map.get("unsetVariable") ?? [];
+    }
+
     get manual (): string[] {
         const val = this.map.get("manual") ?? [];
         return typeof val == "string" ? val.split(" ") : val;
@@ -92,6 +96,10 @@ export class Argv {
 
     get cleanup (): boolean {
         return this.map.get("cleanup") ?? true;
+    }
+
+    get quiet (): boolean {
+        return this.map.get("quiet") ?? false;
     }
 
     get umask (): boolean {

@@ -15,7 +15,6 @@ test("needs-optional", async () => {
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join();
-    console.log(output);
 
     expect(output).toContain("Job executed!");
     expect(output).not.toContain("Job skipped!");

@@ -110,6 +110,11 @@ import {AssertionError} from "assert";
             description: "Add variable to all executed jobs (--variable HELLO=world)",
             requiresArg: false,
         })
+        .option("unset-variable", {
+            type: "array",
+            description: "Unsets a variable",
+            requiresArg: false,
+        })
         .option("remote-variables", {
             type: "string",
             description: "Fetch variables file from remote location",
@@ -173,6 +178,11 @@ import {AssertionError} from "assert";
         .option("cleanup", {
             type: "boolean",
             description: "Remove docker resources after they've been used",
+            requiresArg: false,
+        })
+        .option("quiet", {
+            type: "boolean",
+            description: "Suppres all job output",
             requiresArg: false,
         })
         .completion("completion", false, async (_, yargsArgv) => {

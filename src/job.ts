@@ -149,6 +149,10 @@ export class Job {
             this.allowFailure = ruleResult.allowFailure;
             this._expandedVariables = Utils.expandRecursive({...globalVariables || {}, ...jobData.variables || {}, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables});
         }
+        // Delete variables the user intentionally wants unset
+        for (const unsetVariable of argv.unsetVariables) {
+            delete this._expandedVariables[unsetVariable];
+        }
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
             throw new AssertionError({message: `${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`});
@@ -651,10 +655,12 @@ export class Job {
             fs.appendFileSync(outputFilesPath, `${line}\n`);
         };
 
+        const quiet = this.argv.quiet;
         const exitCode = await new Promise<number>((resolve, reject) => {
-            cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
-            cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
-
+            if (!quiet) {
+                cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
+                cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
+            }
             cp.on("exit", (code) => resolve(code ?? 0));
             cp.on("error", (err) => reject(err));
 

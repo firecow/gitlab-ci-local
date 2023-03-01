@@ -1,7 +1,10 @@
 ---
 build-job:
   stage: build
+  variables:
+    TEST_VAR: whatwhatwhat
   script:
+    - 'echo ${TEST_VAR}'
     - 'echo "Build something"'
 
 # @Description Run Tests
