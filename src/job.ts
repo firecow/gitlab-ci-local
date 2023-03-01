@@ -655,10 +655,12 @@ export class Job {
             fs.appendFileSync(outputFilesPath, `${line}\n`);
         };
 
+        const quiet = this.argv.quiet;
         const exitCode = await new Promise<number>((resolve, reject) => {
-            cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
-            cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
-
+            if (!quiet) {
+                cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
+                cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
+            }
             cp.on("exit", (code) => resolve(code ?? 0));
             cp.on("error", (err) => reject(err));
 
