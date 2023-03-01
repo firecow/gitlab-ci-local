@@ -98,6 +98,10 @@ export class Argv {
         return this.map.get("cleanup") ?? true;
     }
 
+    get quiet (): boolean {
+        return this.map.get("quiet") ?? false;
+    }
+
     get umask (): boolean {
         return this.map.get("umask") ?? true;
     }
