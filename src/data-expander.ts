@@ -13,7 +13,7 @@ const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents:
     depth++;
     for (const parentName of (jobData.extends || [])) {
         const parentData = gitlabData[parentName];
-        assert(parentData != null, chalk`{blueBright ${parentName}} is extended from {blueBright ${jobName}}, but is unspecified`);
+        assert(parentData != null, chalk`{blueBright ${parentName}} is unspecified, used by {blueBright ${jobName}} extends`);
         extendsRecurse(gitlabData, parentName, parentData, parents, depth);
         parents.push(parentData);
     }
