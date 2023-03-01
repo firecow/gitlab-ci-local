@@ -2,9 +2,12 @@
 variables:
   V: production
   ENV: $V
+  NUM: 1
+  WHAT: $NUM
 
 test-job:
   script:
+    - echo "$WHAT"
     - echo "$KEY"
     - echo "$FUNNY3"
   environment:
