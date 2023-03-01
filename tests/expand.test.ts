@@ -54,7 +54,7 @@ test("extends invalid job", () => {
         expect(true).toBe(false);
     } catch (e) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
-        expect(e.message).toBe(chalk`{blueBright build-job} is extended from {blueBright test-job}, but is unspecified`);
+        expect(e.message).toBe(chalk`{blueBright build-job} is unspecified, used by {blueBright test-job} extends`);
     }
 });
 
