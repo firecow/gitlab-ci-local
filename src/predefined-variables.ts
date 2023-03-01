@@ -3,11 +3,11 @@ import {GitData} from "./git-data";
 
 type PredefinedVariablesOpts = {
     gitData: GitData;
+    argv: {unsetVariables: string[]};
 };
 
-export function init ({gitData}: PredefinedVariablesOpts): {[name: string]: string} {
-
-    return {
+export function init ({gitData, argv}: PredefinedVariablesOpts): {[name: string]: string} {
+    const predefinedVariables: {[key: string]: string} = {
         GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
         GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
         GITLAB_USER_NAME: gitData.user["GITLAB_USER_NAME"],
@@ -37,4 +37,11 @@ export function init ({gitData}: PredefinedVariablesOpts): {[name: string]: stri
         CI_PROJECT_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}`,
         GITLAB_CI: "false",
     };
+
+    // Delete variables the user intentionally wants unset
+    for (const unsetVariable of argv.unsetVariables) {
+        delete predefinedVariables[unsetVariable];
+    }
+
+    return predefinedVariables;
 }
