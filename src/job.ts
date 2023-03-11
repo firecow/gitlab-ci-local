@@ -107,6 +107,13 @@ export class Job {
         // Merge and expand variables recursive
         this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables};
 
+        const image = this.jobData["image"];
+        if (image) {
+            const expanded = Utils.expandVariables(this._variables);
+            const imageName = Utils.expandText(image.name, expanded);
+            this.imageName = imageName.includes(":") ? imageName : `${imageName}:latest`;
+        }
+
         // Set job specific predefined variables
         let ciProjectDir = `${cwd}`;
         if (this.imageName) {
@@ -132,6 +139,11 @@ export class Job {
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH"]}`;
 
         // Find environment matched variables
+        if (this.environment) {
+            const expanded = Utils.expandVariables(this._variables);
+            this.environment.name = Utils.expandText(this.environment.name, expanded);
+            this.environment.url = Utils.expandText(this.environment.url, expanded);
+        }
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
         // Merge and expand after finding env matched variables
@@ -147,20 +159,6 @@ export class Job {
         // Delete variables the user intentionally wants unset
         for (const unsetVariable of argv.unsetVariables) {
             delete this._variables[unsetVariable];
-        }
-
-        const expanded = Utils.expandVariables(this._variables);
-
-        // Set environment name and url
-        if (this.environment) {
-            this.environment.name = Utils.expandText(this.environment.name, expanded);
-            this.environment.url = Utils.expandText(this.environment.url, expanded);
-        }
-
-        const image = this.jobData["image"];
-        if (image) {
-            const imageName = Utils.expandText(image.name, expanded);
-            this.imageName = imageName.includes(":") ? imageName : `${imageName}:latest`;
         }
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
