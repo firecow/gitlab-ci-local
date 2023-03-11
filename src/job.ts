@@ -170,9 +170,10 @@ export class Job {
         }
 
         if (this.imageName && argv.mountCache) {
+            const expanded = Utils.expandVariables(this._variables);
             for (const c of this.cache) {
                 c.paths.forEach((p) => {
-                    const path = Utils.expandText(p, Utils.expandVariables(this._variables));
+                    const path = Utils.expandText(p, expanded);
                     if (path.includes("*")) {
                         throw new AssertionError({message: `${this.name} cannot have * in cache paths, when --mount-cache is enabled`});
                     }
@@ -324,9 +325,10 @@ export class Job {
         const argv = this.argv;
         const startTime = process.hrtime();
         const writeStreams = this.writeStreams;
-        const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams);
-        const safeJobname = this.safeJobName;
+        const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
         const expanded = Utils.expandVariables({...this._variables, ...reportsDotenvVariables});
+        const safeJobname = this.safeJobName;
+
 
         const outputLogFilePath = `${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`;
         await fs.ensureFile(outputLogFilePath);
@@ -370,9 +372,9 @@ export class Job {
             await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
             for (const service of this.services) {
                 await this.pullImage(writeStreams, service.getName(expanded));
-                const serviceContainerId = await this.startService(writeStreams, service);
+                const serviceContainerId = await this.startService(writeStreams, expanded, service);
                 const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${service.getName(this._variables)}-${service.index}.log`;
-                await this.serviceHealthCheck(writeStreams, service, serviceContanerLogFile);
+                await this.serviceHealthCheck(writeStreams, expanded, service, serviceContanerLogFile);
                 const {all} = await Utils.spawn(["docker", "logs", serviceContainerId]);
                 await fs.ensureFile(serviceContanerLogFile);
                 await fs.promises.writeFile(serviceContanerLogFile, all ?? "Service container had no output");
@@ -381,7 +383,7 @@ export class Job {
 
         const prescripts = this.beforeScripts.concat(this.scripts);
         this._variables["CI_JOB_STATUS"] = "running";
-        this._prescriptsExitCode = await this.execScripts(prescripts);
+        this._prescriptsExitCode = await this.execScripts(prescripts, expanded);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
             writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
             this._running = false;
@@ -406,7 +408,7 @@ export class Job {
 
         if (this.afterScripts.length > 0) {
             this._variables["CI_JOB_STATUS"] = this._prescriptsExitCode === 0 ? "success" : "failed";
-            this._afterScriptsExitCode = await this.execScripts(this.afterScripts);
+            this._afterScriptsExitCode = await this.execScripts(this.afterScripts, expanded);
         }
 
         if (this._afterScriptsExitCode > 0) {
@@ -487,11 +489,10 @@ export class Job {
         return cmd;
     }
 
-    private async mountCacheCmd (writeStreams: WriteStreams) {
+    private async mountCacheCmd (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
         if (this.imageName && !this.argv.mountCache) return "";
 
         let cmd = "";
-        const expanded = Utils.expandVariables(this._variables);
         for (const c of this.cache) {
             const uniqueCacheName = await c.getUniqueCacheName(this.argv.cwd, expanded);
             c.paths.forEach((p) => {
@@ -504,7 +505,7 @@ export class Job {
         return cmd;
     }
 
-    private async execScripts (scripts: string[]): Promise<number> {
+    private async execScripts (scripts: string[], expanded: {[key: string]: string}): Promise<number> {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
@@ -512,7 +513,6 @@ export class Job {
         const buildVolumeName = this.buildVolumeName;
         const tmpVolumeName = this.tmpVolumeName;
         const writeStreams = this.writeStreams;
-        const expanded = Utils.expandVariables(this._variables);
 
         if (scripts.length === 0 || scripts[0] == null) {
             return 0;
@@ -584,7 +584,7 @@ export class Job {
                 dockerCmd += `-e ${key} `;
             }
 
-            dockerCmd += await this.mountCacheCmd(writeStreams);
+            dockerCmd += await this.mountCacheCmd(writeStreams, expanded);
 
             dockerCmd += `${this.imageName} sh -c "\n`;
             dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
@@ -611,7 +611,7 @@ export class Job {
             this._containersToClean.push(this._containerId);
         }
 
-        await this.copyCacheIn(writeStreams);
+        await this.copyCacheIn(writeStreams, expanded);
         await this.copyArtifactsIn(writeStreams);
 
         let cmd = "set -eo pipefail\n";
@@ -666,10 +666,10 @@ export class Job {
             }
         });
 
-        await this.copyCacheOut(writeStreams, exitCode);
+        await this.copyCacheOut(writeStreams, expanded, exitCode);
 
         if (exitCode == 0 || this.artifacts?.when === "always") {
-            await this.copyArtifactsOut(writeStreams);
+            await this.copyArtifactsOut(writeStreams, expanded);
         }
 
         return exitCode;
@@ -691,11 +691,10 @@ export class Job {
         }
     }
 
-    private async initProducerReportsDotenvVariables (writeStreams: WriteStreams) {
+    private async initProducerReportsDotenvVariables (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const producers = this.producers;
-        const expanded = Utils.expandVariables(this._variables);
         let producerReportsEnvs = {};
         for (const producer of producers ?? []) {
             const producerDotenv = Utils.expandText(producer.dotenv, expanded);
@@ -718,13 +717,12 @@ export class Job {
         return producerReportsEnvs;
     }
 
-    private async copyCacheIn (writeStreams: WriteStreams) {
+    private async copyCacheIn (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
         if (this.argv.mountCache && this.imageName) return;
         if ((!this.imageName && !this.argv.shellIsolation) || this.cache.length === 0) return;
 
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
-        const expanded = Utils.expandVariables(this._variables);
 
         for (const c of this.cache) {
             if (!["pull", "pull-push"].includes(c.policy)) return;
@@ -778,13 +776,12 @@ export class Job {
         return Utils.bash(`docker cp ${source}/. ${this._containerId}:/gcl-builds`);
     }
 
-    private async copyCacheOut (writeStreams: WriteStreams, exitCode: number) {
+    private async copyCacheOut (writeStreams: WriteStreams, expanded: {[key: string]: string}, exitCode: number) {
         if (this.argv.mountCache && this.imageName) return;
         if ((!this.imageName && !this.argv.shellIsolation) || this.cache.length === 0) return;
 
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
-        const expanded = Utils.expandVariables(this._variables);
 
         let time, endTime;
         for (const c of this.cache) {
@@ -814,7 +811,7 @@ export class Job {
         }
     }
 
-    private async copyArtifactsOut (writeStreams: WriteStreams) {
+    private async copyArtifactsOut (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
         const safeJobName = this.safeJobName;
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
@@ -822,8 +819,6 @@ export class Job {
 
         if (!this.artifacts) return;
         if ((this.artifacts.paths?.length ?? 0) === 0 && this.artifacts.reports?.dotenv == null) return;
-
-        const expanded = Utils.expandVariables(this._variables);
 
         let time, endTime;
         let cpCmd = "shopt -s globstar nullglob dotglob\n";
@@ -847,7 +842,7 @@ export class Job {
         }
 
         time = process.hrtime();
-        const dockerCmdExtras = this.argv.mountCache ? [await this.mountCacheCmd(writeStreams)] : [];
+        const dockerCmdExtras = this.argv.mountCache ? [await this.mountCacheCmd(writeStreams, expanded)] : [];
         await this.copyOut(cpCmd, stateDir, "artifacts", dockerCmdExtras);
         endTime = process.hrtime(time);
 
@@ -920,11 +915,10 @@ export class Job {
         this._serviceNetworkId = networkId;
     }
 
-    private async startService (writeStreams: WriteStreams, service: Service) {
+    private async startService (writeStreams: WriteStreams, expanded: {[key: string]: string}, service: Service) {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
-        const expanded = Utils.expandVariables(this._variables);
         let dockerCmd = `docker create --interactive --network gitlab-ci-local-${this.jobId} `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
@@ -995,8 +989,7 @@ export class Job {
         return containerId;
     }
 
-    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceContanerLogFile: string) {
-        const expanded = Utils.expandVariables(this._variables);
+    private async serviceHealthCheck (writeStreams: WriteStreams, expanded: {[key: string]: string}, service: Service, serviceContanerLogFile: string) {
         const {stdout} = await Utils.spawn(["docker", "image", "inspect", service.getName(expanded)]);
         const imageInspect = JSON.parse(stdout);
 
