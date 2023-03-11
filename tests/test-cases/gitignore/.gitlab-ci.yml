@@ -1,4 +1,0 @@
----
-test-job:
-  script:
-    - (! test -f .gitlab-ci-local/state.yml)
