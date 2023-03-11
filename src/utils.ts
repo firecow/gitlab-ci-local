@@ -117,14 +117,6 @@ export class Utils {
         });
     }
 
-    static expandVariables (variables: {[key: string]: string}, envs: {[key: string]: string}): {[key: string]: string} {
-        const expandedVariables: {[key: string]: string} = {};
-        for (const [key, value] of Object.entries(variables)) {
-            expandedVariables[key] = Utils.expandText(value, envs);
-        }
-        return expandedVariables;
-    }
-
     static expandRecursive (variables: {[key: string]: string}) {
         let expandedAnyVariables, i = 0;
         do {
