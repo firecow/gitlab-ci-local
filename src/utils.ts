@@ -117,7 +117,7 @@ export class Utils {
         });
     }
 
-    static expandRecursive (variables: {[key: string]: string}) {
+    static expandVariables (variables: {[key: string]: string}) {
         let expandedAnyVariables, i = 0;
         do {
             assert(i < 100, "Recursive variable expansion reached 100 iterations");
