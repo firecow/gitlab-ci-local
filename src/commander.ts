@@ -149,8 +149,8 @@ export class Commander {
             if (e == null) {
                 continue;
             }
-            const name = Utils.expandText(e.name, job.expandedVariables);
-            const url = Utils.expandText(e.url, job.expandedVariables);
+            const name = e.name;
+            const url = e.url;
             writeStreams.stdout(chalk`{blueBright ${job.name}} environment: \{ name: {bold ${name}}`);
             if (url != null) {
                 writeStreams.stdout(chalk`, url: {bold ${url}}`);
