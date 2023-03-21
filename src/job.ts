@@ -614,7 +614,8 @@ export class Job {
         await this.copyCacheIn(writeStreams, expanded);
         await this.copyArtifactsIn(writeStreams);
 
-        let cmd = "set -eo pipefail\n";
+        let cmd = "#!/bin/sh\n";
+        cmd += "set -eo pipefail\n";
         cmd += "exec 0< /dev/null\n";
 
         if (!this.imageName && this.argv.shellIsolation) {
