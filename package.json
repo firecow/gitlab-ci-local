@@ -49,7 +49,7 @@
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.6",
     "@types/split2": "3.2.1",
-    "@types/yargs": "17.0.23",
+    "@types/yargs": "17.0.24",
     "@typescript-eslint/eslint-plugin": "5.57.0",
     "@typescript-eslint/parser": "5.57.0",
     "axios-mock-adapter": "1.21.3",
