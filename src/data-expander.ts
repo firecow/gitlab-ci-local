@@ -31,7 +31,7 @@ export function globalVariables (gitlabData: any) {
 export function jobExtends (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
-        if (typeof jobData != "object") continue;
+        if (Object.getPrototypeOf(jobData) !== Object.prototype) continue;
         jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
         const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
         gitlabData[jobName] = deepExtend({}, ...parentDatas, jobData);
@@ -39,7 +39,7 @@ export function jobExtends (gitlabData: any) {
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
-        if (typeof jobData != "object") continue;
+        if (Object.getPrototypeOf(jobData) !== Object.prototype) continue;
         delete jobData.extends;
     }
 }
