@@ -20,6 +20,7 @@ test("reference <test-job>", async () => {
         chalk`{blueBright test-job} {greenBright >} Ancient`,
         chalk`{blueBright test-job} {greenBright >} Base`,
         chalk`{blueBright test-job} {greenBright >} Setting something general up`,
+        chalk`{blueBright test-job} {greenBright >} array root`,
         chalk`{blueBright test-job} {greenBright >} Yoyo`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
