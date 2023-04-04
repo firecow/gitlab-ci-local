@@ -9,6 +9,9 @@ test-job:
     - !reference [.jibof2, script]
     - echo ${MYVAR}
 
+.arr:
+  - echo "array root"
+
 .jibof2:
   script:
     - !reference [.jibof, script]
@@ -16,3 +19,4 @@ test-job:
 .jibof:
   script:
     - !reference [.setup, script]
+    - !reference [.arr]
