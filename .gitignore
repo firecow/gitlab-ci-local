@@ -1,7 +1,7 @@
 /.idea/
 /node_modules/
 /bin/
-
+/ppa/
 /*.sh
 
 /src/**/*.js
@@ -19,5 +19,3 @@
 .DS_Store
 
 .vscode
-
-/ppa/*.zip
