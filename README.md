@@ -58,7 +58,7 @@ npm install -g gitlab-ci-local
 Users of Debian-based distributions should prefer the [the Deb822 format][deb822], installed with:
 
 ```bash
-sudo wget -O /etc/apt/sources.list.d/gitlab-ci-local.sources https://firecow.github.io/gitlab-ci-local/ppa/gitlab-ci-local.sources
+sudo wget -O /etc/apt/sources.list.d/gitlab-ci-local.sources https://gitlab-ci-local-ppa.firecow.dk/gitlab-ci-local.sources
 sudo apt-get update
 sudo apt-get install gitlab-ci-local
 ```
@@ -68,8 +68,8 @@ sudo apt-get install gitlab-ci-local
 If your distribution does not support this, you can run these commands:
 
 ```bash
-curl -s "https://firecow.github.io/gitlab-ci-local/ppa/pubkey.gpg" | sudo apt-key add -
-echo "deb https://firecow.github.io/gitlab-ci-local/ppa/ ./" | sudo tee /etc/apt/sources.list.d/gitlab-ci-local.list
+curl -s "https://gitlab-ci-local-ppa.firecow.dk/pubkey.gpg" | sudo apt-key add -
+echo "deb https://gitlab-ci-local-ppa.firecow.dk ./" | sudo tee /etc/apt/sources.list.d/gitlab-ci-local.list
 sudo apt-get update
 sudo apt-get install gitlab-ci-local
 ```
