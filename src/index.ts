@@ -16,6 +16,7 @@ import {AssertionError} from "assert";
 (() => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
     yargs(process.argv.slice(2))
+        .parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
         .version(packageJson["version"])
         .wrap(yargs.terminalWidth())
