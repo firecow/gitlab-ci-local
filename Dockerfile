@@ -1,4 +1,4 @@
-FROM debian:bullseye-20210927-slim
+FROM debian:bullseye-20230320-slim
 
 RUN apt-get update && \
   apt-get install -y rsync && \
