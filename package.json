@@ -48,7 +48,7 @@
     "@types/js-yaml": "4.0.5",
     "@types/pretty-hrtime": "1.0.1",
     "@types/source-map-support": "0.5.6",
-    "@types/split2": "3.2.1",
+    "@types/split2": "4.2.0",
     "@types/yargs": "17.0.24",
     "@typescript-eslint/eslint-plugin": "5.59.0",
     "@typescript-eslint/parser": "5.59.0",
