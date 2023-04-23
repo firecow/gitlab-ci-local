@@ -8,3 +8,9 @@ jest:
   coverage: /All files.*?\|.*?\|.*?([\d\.]+)/
   script:
     - echo "All files            |    99.3 |    97.91 |     100 |     100 |                   "
+
+issue-809:
+  script:
+    - echo "print coverage from files" && echo "or print 0 % covered"
+    - echo "88.4176 % covered"
+  coverage: /\d+[\.*\d+]* % covered/
