@@ -73,7 +73,9 @@ export class Utils {
         if (matches.length === 0) return "0";
 
         const lastMatch = matches[matches.length - 1];
-        return (lastMatch[1] ?? lastMatch[0]).match(/\d+(?:\.\d+)?/) ?? "0";
+        const digits = (lastMatch[1] ?? lastMatch[0]).match(/\d+(?:\.\d+)?/);
+        if (!digits) return "0";
+        return digits[0] ?? "0";
     }
 
     static printJobNames (stream: (txt: string) => void, job: {name: string}, i: number, arr: {name: string}[]) {
