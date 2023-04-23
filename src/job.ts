@@ -107,20 +107,13 @@ export class Job {
         // Merge and expand variables recursive
         this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables};
 
-        const image = this.jobData["image"];
-        if (image) {
-            const expanded = Utils.expandVariables(this._variables);
-            const imageName = Utils.expandText(image.name, expanded);
-            this.imageName = imageName.includes(":") ? imageName : `${imageName}:latest`;
-        }
-
-        // Set job specific predefined variables
         let ciProjectDir = `${cwd}`;
-        if (this.imageName) {
+        if (this.jobData["image"]) {
             ciProjectDir = "/gcl-builds";
         } else if (argv.shellIsolation) {
             ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
         }
+
         predefinedVariables["CI_JOB_ID"] = `${this.jobId}`;
         predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
         predefinedVariables["CI_PIPELINE_IID"] = `${this.pipelineIid}`;
@@ -169,8 +162,14 @@ export class Job {
             throw new AssertionError({message: `${this.chalkJobName} @InjectSSHAgent can only be used with image:`});
         }
 
+        const expanded = Utils.expandVariables(this._variables);
+        const image = this.jobData["image"];
+        if (image) {
+            const imageName = Utils.expandText(image.name, expanded);
+            this.imageName = imageName.includes(":") ? imageName : `${imageName}:latest`;
+        }
+
         if (this.imageName && argv.mountCache) {
-            const expanded = Utils.expandVariables(this._variables);
             for (const c of this.cache) {
                 c.paths.forEach((p) => {
                     const path = Utils.expandText(p, expanded);
