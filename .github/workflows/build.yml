@@ -72,7 +72,7 @@ jobs:
       - run: npm install
       - name: Run Tests
         run: FORCE_COLOR=1 npx jest --coverage --testTimeout 90000
-      - uses: sonarsource/sonarcloud-github-action@master
+      - uses: sonarsource/sonarcloud-github-action@v1.8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
