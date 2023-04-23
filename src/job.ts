@@ -57,7 +57,6 @@ export class Job {
     readonly exists: string[];
     readonly pipelineIid: number;
     readonly gitData: GitData;
-    readonly imageName: string | null = null;
 
     private readonly _variables: {[key: string]: string} = {};
     private _prescriptsExitCode: number | null = null;
@@ -154,13 +153,6 @@ export class Job {
             delete this._variables[unsetVariable];
         }
 
-        const expanded = Utils.expandVariables(this._variables);
-        const image = this.jobData["image"];
-        if (image) {
-            const imageName = Utils.expandText(image.name, expanded);
-            this.imageName = imageName.includes(":") ? imageName : `${imageName}:latest`;
-        }
-
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
             throw new AssertionError({message: `${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`});
         }
@@ -170,6 +162,7 @@ export class Job {
         }
 
         if (this.imageName && argv.mountCache) {
+            const expanded = Utils.expandVariables(this._variables);
             for (const c of this.cache) {
                 c.paths.forEach((p) => {
                     const path = Utils.expandText(p, expanded);
@@ -216,6 +209,14 @@ export class Job {
 
     get tmpVolumeName (): string {
         return `gcl-${this.safeJobName}-${this.jobId}-tmp`;
+    }
+
+    get imageName (): string | null {
+        const image = this.jobData["image"];
+        if (!image) return null;
+        const expanded = Utils.expandVariables(this._variables);
+        const imageName = Utils.expandText(image.name, expanded);
+        return imageName.includes(":") ? imageName : `${imageName}:latest`;
     }
 
     get imageEntrypoint (): string[] | null {
