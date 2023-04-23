@@ -1,7 +1,5 @@
 ---
 test job:
-  variables:
-    DEBIAN_IMAGE_URL: debian:stable-slim
   image: ${DEBIAN_IMAGE_URL}
   script:
     - echo "Test something"
