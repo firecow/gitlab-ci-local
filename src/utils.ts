@@ -69,12 +69,11 @@ export class Utils {
         const content = await fs.readFile(`${cwd}/${stateDir}/output/${jobName}.log`, "utf8");
 
         const regex = new RegExp(coverageRegex.replace(/^\//, "").replace(/\/$/, ""), "gm");
-        const match = content.match(regex);
-        if (!match) return "0";
+        const matches = Array.from(content.matchAll(regex));
+        if (matches.length === 0) return "0";
 
-        const lastMatch = match[match.length - 1].match(/\d+(?:\.\d+)?/);
-        if (!lastMatch) return "0";
-        return lastMatch[0];
+        const lastMatch = matches[matches.length - 1];
+        return (lastMatch[1] ?? lastMatch[0]).match(/\d+(?:\.\d+)?/) ?? "0";
     }
 
     static printJobNames (stream: (txt: string) => void, job: {name: string}, i: number, arr: {name: string}[]) {
