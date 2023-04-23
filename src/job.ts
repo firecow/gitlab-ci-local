@@ -154,19 +154,19 @@ export class Job {
             delete this._variables[unsetVariable];
         }
 
+        const expanded = Utils.expandVariables(this._variables);
+        const image = this.jobData["image"];
+        if (image) {
+            const imageName = Utils.expandText(image.name, expanded);
+            this.imageName = imageName.includes(":") ? imageName : `${imageName}:latest`;
+        }
+
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
             throw new AssertionError({message: `${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`});
         }
 
         if (this.injectSSHAgent && this.imageName === null) {
             throw new AssertionError({message: `${this.chalkJobName} @InjectSSHAgent can only be used with image:`});
-        }
-
-        const expanded = Utils.expandVariables(this._variables);
-        const image = this.jobData["image"];
-        if (image) {
-            const imageName = Utils.expandText(image.name, expanded);
-            this.imageName = imageName.includes(":") ? imageName : `${imageName}:latest`;
         }
 
         if (this.imageName && argv.mountCache) {
