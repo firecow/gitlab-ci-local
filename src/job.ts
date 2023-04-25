@@ -547,6 +547,10 @@ export class Job {
                 dockerCmd += "--privileged ";
             }
 
+            if (this.argv.ulimit > 0) {
+                dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
+            }
+
             if (this.argv.umask) {
                 dockerCmd += "--user 0:0 ";
             }
@@ -928,6 +932,10 @@ export class Job {
 
         if (this.argv.privileged) {
             dockerCmd += "--privileged ";
+        }
+
+        if (this.argv.ulimit > 0) {
+            dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
         }
 
         for (const volume of this.argv.volume) {

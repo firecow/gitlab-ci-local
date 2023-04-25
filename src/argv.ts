@@ -110,6 +110,10 @@ export class Argv {
         return this.map.get("privileged") ?? false;
     }
 
+    get ulimit (): number {
+        return this.map.get("ulimit") ?? -1;
+    }
+
     get needs (): boolean {
         return this.map.get("needs") ?? false;
     }

@@ -156,6 +156,11 @@ import {AssertionError} from "assert";
             description: "Set docker executor to privileged mode",
             requiresArg: false,
         })
+        .option("ulimit", {
+            type: "number",
+            description: "Set docker executor ulimit",
+            requiresArg: false,
+        })
         .option("volume", {
             type: "array",
             description: "Add volumes to docker executor",
