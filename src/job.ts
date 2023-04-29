@@ -188,19 +188,7 @@ export class Job {
     }
 
     get needs (): {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] | null {
-        const needs = this.jobData["needs"];
-        if (!needs) return null;
-        const list: {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] = [];
-        needs.forEach((need: any) => {
-            const entry = {
-                job: need.job ?? need,
-                artifacts: need.artifacts ?? true,
-                optional: need.optional ?? false,
-                pipeline: need.pipeline ?? null,
-            };
-            list.push(entry);
-        });
-        return list;
+        return this.jobData["needs"] ?? null;
     }
 
     get buildVolumeName (): string {

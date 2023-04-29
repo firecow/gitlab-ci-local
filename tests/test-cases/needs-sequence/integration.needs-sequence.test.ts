@@ -86,6 +86,7 @@ test("needs-sequence", async () => {
         chalk`{blueBright test-job    } {greenBright >} Test something`,
         chalk`{blueBright no-needs-job} {greenBright >} NoNeeds something`,
         chalk`{blueBright deploy-job  } {greenBright >} Deploy something`,
+        chalk`{blueBright premium-job } {greenBright >} I'm utilizing premium feature`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
