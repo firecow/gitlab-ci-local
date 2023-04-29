@@ -156,7 +156,7 @@ export class ParserIncludes {
             const res = await axios.get(url);
             await fs.outputFile(target, res.data);
         } catch (e) {
-            throw new AssertionError({message: `Remote include could not be fetched ${url} ${e}`});
+            throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});
         }
     }
 
@@ -169,7 +169,7 @@ export class ParserIncludes {
             await fs.mkdirp(`${cwd}/${target}`);
             await Utils.bash(`git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}`, cwd);
         } catch (e) {
-            throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }`});
+            throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }\n${e}}`});
         }
     }
 }
