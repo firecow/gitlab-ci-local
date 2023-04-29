@@ -1,0 +1,2 @@
+---
+CI_INCLUDE_LOCAL: { values: { "*" : /.gitlab-ci-base.yml} }
