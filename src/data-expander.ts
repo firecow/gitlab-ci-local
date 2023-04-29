@@ -79,16 +79,16 @@ function hasCircularChain (data: any) {
 }
 
 export function artifacts (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
+    for (const jobData of Object.values<any>(gitlabData)) {
         const expandedArtifacts = jobData.artifacts || (gitlabData.default || {}).artifacts || gitlabData.artifacts;
         if (expandedArtifacts) {
             jobData.artifacts = expandedArtifacts;
         }
-    });
+    }
 }
 
 export function cache (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
+    for (const jobData of Object.values<any>(gitlabData)) {
         const mergedCache = jobData.cache || (gitlabData.default || {}).cache || gitlabData.cache;
         if (mergedCache) {
             const cacheList: CacheEntry[] = [];
@@ -107,11 +107,11 @@ export function cache (gitlabData: any) {
             });
             jobData.cache = cacheList;
         }
-    });
+    }
 }
 
 export function services (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
+    for (const jobData of Object.values<any>(gitlabData)) {
         const expandedServices = jobData.services || (gitlabData.default || {}).services || gitlabData.services;
         if (expandedServices) {
             jobData.services = [];
@@ -124,11 +124,11 @@ export function services (gitlabData: any) {
                 }, Number(index));
             }
         }
-    });
+    }
 }
 
 export function image (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
+    for (const jobData of Object.values<any>(gitlabData)) {
         const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
         if (expandedImage) {
             jobData.image = {
@@ -136,7 +136,7 @@ export function image (gitlabData: any) {
                 entrypoint: expandedImage.entrypoint,
             };
         }
-    });
+    }
 }
 
 export function beforeScripts (gitlabData: any) {
