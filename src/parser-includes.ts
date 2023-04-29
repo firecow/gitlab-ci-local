@@ -28,7 +28,7 @@ export class ParserIncludes {
         assert(depth < 100, chalk`circular dependency detected in \`include\``);
         depth++;
 
-        const include = this.expandInclude(gitlabData["include"]);
+        const include = this.expandInclude(gitlabData["include"], opts.variables);
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
@@ -80,7 +80,7 @@ export class ParserIncludes {
                     const fileDoc = await Parser.loadYaml(`${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`);
 
                     // Expand local includes inside a "project"-like include
-                    fileDoc["include"] = this.expandInclude(fileDoc["include"]);
+                    fileDoc["include"] = this.expandInclude(fileDoc["include"], opts.variables);
                     fileDoc["include"].forEach((inner: any, i: number) => {
                         if (!inner["local"]) return;
                         fileDoc["include"][i] = {
@@ -110,7 +110,7 @@ export class ParserIncludes {
         return includeDatas;
     }
 
-    static expandInclude (i: any): any[] {
+    static expandInclude (i: any, variables: {[key: string]: string}): any[] {
         let include = i || [];
         if (include && include.length == null) {
             include = [ i ];
@@ -118,6 +118,7 @@ export class ParserIncludes {
         if (typeof include === "string") {
             include = [include];
         }
+
         for (const [index, entry] of Object.entries(include)) {
             if (typeof entry === "string" && (entry.startsWith("https:") || entry.startsWith("http:"))) {
                 include[index] = {"remote": entry};
@@ -128,6 +129,13 @@ export class ParserIncludes {
             }
 
         }
+
+        for (const entry of include) {
+            for (const [key, value] of Object.entries(entry)) {
+                entry[key] = Utils.expandText(value, variables);
+            }
+        }
+
         return include;
     }
 
