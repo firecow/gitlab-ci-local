@@ -169,4 +169,8 @@ export class Argv {
     get artifactsToSource (): boolean {
         return this.map.get("artifactsToSource") ?? true;
     }
+
+    get maxJobNameLength (): number | undefined {
+        return this.map.get("maxJobNameLength");
+    }
 }

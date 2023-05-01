@@ -188,7 +188,12 @@ import {AssertionError} from "assert";
         })
         .option("quiet", {
             type: "boolean",
-            description: "Suppres all job output",
+            description: "Suppress all job output",
+            requiresArg: false,
+        })
+        .option("maxJobNameLength", {
+            type: "number",
+            description: "Maximum padding for job name (use <= 0 for no padding)",
             requiresArg: false,
         })
         .completion("completion", false, async (_, yargsArgv) => {
