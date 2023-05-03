@@ -3,7 +3,6 @@ import deepExtend from "deep-extend";
 import {Utils} from "./utils";
 import assert, {AssertionError} from "assert";
 import {Job} from "./job";
-import {Service} from "./service";
 import {traverse} from "object-traversal";
 import {CacheEntry} from "./cache-entry";
 
@@ -79,7 +78,8 @@ function hasCircularChain (data: any) {
 }
 
 export function artifacts (gitlabData: any) {
-    for (const jobData of Object.values<any>(gitlabData)) {
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
         const expandedArtifacts = jobData.artifacts || (gitlabData.default || {}).artifacts || gitlabData.artifacts;
         if (expandedArtifacts) {
             jobData.artifacts = expandedArtifacts;
@@ -88,7 +88,8 @@ export function artifacts (gitlabData: any) {
 }
 
 export function cache (gitlabData: any) {
-    for (const jobData of Object.values<any>(gitlabData)) {
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
         const mergedCache = jobData.cache || (gitlabData.default || {}).cache || gitlabData.cache;
         if (mergedCache) {
             const cacheList: CacheEntry[] = [];
@@ -111,24 +112,34 @@ export function cache (gitlabData: any) {
 }
 
 export function services (gitlabData: any) {
-    for (const jobData of Object.values<any>(gitlabData)) {
-        const expandedServices = jobData.services || (gitlabData.default || {}).services || gitlabData.services;
-        if (expandedServices) {
-            jobData.services = [];
-            for (const [index, expandedService] of Object.entries<any>(expandedServices)) {
-                jobData.services[index] = new Service({
-                    name: typeof expandedService === "string" ? expandedService : expandedService.name,
-                    entrypoint: expandedService.entrypoint,
-                    command: expandedService.command,
-                    alias: expandedService.alias,
-                }, Number(index));
-            }
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
+        const expandedServices = jobData["services"] || (gitlabData["default"] || {})["services"] || gitlabData["services"];
+        if (!expandedServices) continue;
+
+        for (const [index, expandedService] of Object.entries<any>(expandedServices)) {
+            const expandedName = typeof expandedService === "string" ? expandedService : expandedService["name"];
+            expandedServices[index] = {
+                name: expandedName,
+                entrypoint: expandedService["entrypoint"],
+                command: expandedService["command"],
+                alias: expandedService["alias"],
+            };
+            const name = expandedServices[index].name;
+            const command = expandedServices[index].command;
+            const entrypoint = expandedServices[index].entrypoint;
+            assert(name, `services[${index}].name is undefined`);
+            assert(!command || Array.isArray(command), `services[${index}].command must be an array`);
+            assert(!entrypoint || Array.isArray(entrypoint), `services[${index}].entrypoint must be an array`);
         }
+
+        gitlabData[jobName].services = expandedServices;
     }
 }
 
 export function image (gitlabData: any) {
-    for (const jobData of Object.values<any>(gitlabData)) {
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
         const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
         if (expandedImage) {
             jobData.image = {
