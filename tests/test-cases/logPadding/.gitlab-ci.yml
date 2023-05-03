@@ -1,0 +1,10 @@
+---
+my-job-with-a-very-long-long-long-long-name:
+  stage: .pre
+  script:
+    - echo "long-name"
+
+short-name:
+  stage: .pre
+  script:
+    - echo "short-name"
