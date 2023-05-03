@@ -9,36 +9,26 @@ beforeAll(() => {
 
 const pipelineDirectory = "tests/test-cases/logPadding";
 
-// tip: just `cat __snapshots__/*` to inspect the results
-
-test("logs - maxJobNameLength set to 0", async () => {
+async function verifyLogs ({maxJobNameLength}: {maxJobNameLength?: number}) {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: pipelineDirectory,
         job: ["short-name"],
-        maxJobNameLength: 0,
+        maxJobNameLength,
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines.join("\n")).toMatchSnapshot();
+    // tip: use `cat __snapshots__/*` to inspect the results
+    expect(writeStreams.stdoutLines.join("\n").replace(/[0-9.]+ ms/g, "1 ms")).toMatchSnapshot();
+}
+
+test("logs - maxJobNameLength set to 0", async () => {
+    await verifyLogs({maxJobNameLength: 0});
 });
 
 test("logs - maxJobNameLength set to 30", async () => {
-    const writeStreams = new WriteStreamsMock();
-    await handler({
-        cwd: pipelineDirectory,
-        job: ["short-name"],
-        maxJobNameLength: 30,
-    }, writeStreams);
-
-    expect(writeStreams.stdoutLines.join("\n")).toMatchSnapshot();
+    await verifyLogs({maxJobNameLength: 30});
 });
 
 test("logs - maxJobNameLength unset", async () => {
-    const writeStreams = new WriteStreamsMock();
-    await handler({
-        cwd: pipelineDirectory,
-        job: ["short-name"],
-    }, writeStreams);
-
-    expect(writeStreams.stdoutLines.join("\n")).toMatchSnapshot();
+    await verifyLogs({maxJobNameLength: undefined});
 });
