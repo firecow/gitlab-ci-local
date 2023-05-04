@@ -92,15 +92,14 @@ export function cache (gitlabData: any) {
         const mergedCache = jobData.cache || (gitlabData.default || {}).cache || gitlabData.cache;
         if (mergedCache) {
             const cacheList: any[] = [];
-            (Array.isArray(mergedCache) ? mergedCache : [mergedCache]).forEach((c: any) => {
-                const paths = Array.isArray(c["paths"]) ? c["paths"] : [c["paths"]];
+            (Array.isArray(mergedCache) ? mergedCache : [mergedCache]).forEach((c: any, i: number) => {
+                const paths = c["paths"] ?? [];
                 const key = c["key"];
                 const policy = c["policy"] ?? "pull-push";
                 const when = c["when"] ?? "on_success";
-                assert(["pull", "push", "pull-push"].includes(policy), `cache policy is not 'pull', 'push' or 'pull-push' on ${jobName}`);
-                assert(["on_success", "on_failure", "always"].includes(when), `cache when is not 'on_success', 'on_failure' or 'always' on ${jobName}`);
-                assert(Array.isArray(paths), `cache paths is not an array on ${jobName}`);
-                assert(paths[0], `cache paths is not an array on ${jobName}`);
+                assert(["pull", "push", "pull-push"].includes(policy), chalk`{blue ${jobName}} cache[${i}].policy is not 'pull', 'push' or 'pull-push'`);
+                assert(["on_success", "on_failure", "always"].includes(when), chalk`{blue ${jobName}} cache[${i}].when is not 'on_success', 'on_failure' or 'always'`);
+                assert(Array.isArray(c.paths), chalk`{blue ${jobName}} cache[${i}].paths must be array`);
                 cacheList.push({key, paths, policy, when});
             });
             jobData.cache = cacheList;
