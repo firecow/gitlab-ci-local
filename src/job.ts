@@ -7,7 +7,6 @@ import {Utils} from "./utils";
 import {WriteStreams} from "./write-streams";
 import {GitData} from "./git-data";
 import assert, {AssertionError} from "assert";
-import {CacheEntry} from "./cache-entry";
 import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
@@ -27,6 +26,13 @@ interface JobOptions {
     matrixVariables: {[key: string]: string} | null;
     nodeIndex: number | null;
     nodesTotal: number;
+}
+
+interface Cache {
+    policy: "pull" | "pull-push" | "push";
+    key: string | {files: string[]};
+    paths: string[];
+    when: "on_success" | "on_failure" | "always";
 }
 
 interface Service {
@@ -291,8 +297,17 @@ export class Job {
         return this.jobData["artifacts"];
     }
 
-    get cache (): CacheEntry[] {
+    get cache (): Cache[] {
         return this.jobData["cache"] || [];
+    }
+
+    public async getUniqueCacheName (cwd: string, expanded: {[key: string]: string}, key: any) {
+        if (typeof key === "string" || key == null) {
+            return Utils.expandText(key ?? "default", expanded);
+        }
+        return "md-" + await Utils.checksumFiles(key["files"].map((f: any) => {
+            return `${cwd}/${Utils.expandText(f, expanded)}`;
+        }));
     }
 
     get beforeScripts (): string[] {
@@ -515,7 +530,7 @@ export class Job {
 
         let cmd = "";
         for (const c of this.cache) {
-            const uniqueCacheName = await c.getUniqueCacheName(this.argv.cwd, expanded);
+            const uniqueCacheName = await this.getUniqueCacheName(this.argv.cwd, expanded, c.key);
             c.paths.forEach((p) => {
                 const path = Utils.expandText(p, expanded);
                 writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
@@ -753,7 +768,7 @@ export class Job {
             if (!["pull", "pull-push"].includes(c.policy)) return;
 
             const time = process.hrtime();
-            const cacheName = await c.getUniqueCacheName(cwd, expanded);
+            const cacheName = await this.getUniqueCacheName(cwd, expanded, c.key);
             const cacheFolder = `${cwd}/${stateDir}/cache/${cacheName}`;
             if (!await fs.pathExists(cacheFolder)) {
                 continue;
@@ -813,7 +828,7 @@ export class Job {
             if (!["push", "pull-push"].includes(c.policy)) return;
             if ("on_success" === c.when && exitCode != 0) return;
             if ("on_failure" === c.when && exitCode === 0) return;
-            const cacheName = await c.getUniqueCacheName(cwd, expanded);
+            const cacheName = await this.getUniqueCacheName(cwd, expanded, c.key);
             for (const path of c.paths) {
                 time = process.hrtime();
                 const expandedPath = Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");

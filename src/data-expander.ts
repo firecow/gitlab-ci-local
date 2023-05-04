@@ -4,7 +4,6 @@ import {Utils} from "./utils";
 import assert, {AssertionError} from "assert";
 import {Job} from "./job";
 import {traverse} from "object-traversal";
-import {CacheEntry} from "./cache-entry";
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
@@ -92,19 +91,17 @@ export function cache (gitlabData: any) {
         if (Job.illegalJobNames.includes(jobName)) continue;
         const mergedCache = jobData.cache || (gitlabData.default || {}).cache || gitlabData.cache;
         if (mergedCache) {
-            const cacheList: CacheEntry[] = [];
+            const cacheList: any[] = [];
             (Array.isArray(mergedCache) ? mergedCache : [mergedCache]).forEach((c: any) => {
+                const paths = Array.isArray(c["paths"]) ? c["paths"] : [c["paths"]];
                 const key = c["key"];
                 const policy = c["policy"] ?? "pull-push";
                 const when = c["when"] ?? "on_success";
-                if (!["pull", "push", "pull-push"].includes(policy)) {
-                    throw new AssertionError({message: "cache policy is not 'pull', 'push' or 'pull-push'"});
-                }
-                if (!["on_success", "on_failure", "always"].includes(when)) {
-                    throw new AssertionError({message: "cache when is not 'on_success', 'on_failure' or 'always'"});
-                }
-                const paths = c["paths"] ?? [];
-                cacheList.push(new CacheEntry(key, paths, policy, when));
+                assert(["pull", "push", "pull-push"].includes(policy), `cache policy is not 'pull', 'push' or 'pull-push' on ${jobName}`);
+                assert(["on_success", "on_failure", "always"].includes(when), `cache when is not 'on_success', 'on_failure' or 'always' on ${jobName}`);
+                assert(Array.isArray(paths), `cache paths is not an array on ${jobName}`);
+                assert(paths[0], `cache paths is not an array on ${jobName}`);
+                cacheList.push({key, paths, policy, when});
             });
             jobData.cache = cacheList;
         }
