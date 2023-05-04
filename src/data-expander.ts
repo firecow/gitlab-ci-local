@@ -110,7 +110,7 @@ export function cache (gitlabData: any) {
 export function services (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
-        const expandedServices = jobData["services"] || (gitlabData["default"] || {})["services"] || gitlabData["services"];
+        const expandedServices = jobData.services ?? gitlabData.default?.services ?? gitlabData.services;
         if (!expandedServices) continue;
 
         for (const [index, expandedService] of Object.entries<any>(expandedServices)) {
