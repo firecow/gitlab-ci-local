@@ -19,6 +19,8 @@ export class Producers {
         });
         (job.needs ?? []).forEach(need => {
             if (!need.artifacts) return;
+            if (need.pipeline) return;
+            if (need.project) return;
             producerSet.add(need.job);
         });
 

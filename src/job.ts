@@ -30,6 +30,14 @@ interface JobOptions {
     nodesTotal: number;
 }
 
+interface Need {
+    job: string;
+    artifacts: boolean;
+    optional: boolean;
+    pipeline: string | null;
+    project: string | null;
+}
+
 export class Job {
 
     static readonly illegalJobNames = [
@@ -187,7 +195,7 @@ export class Job {
         return Utils.safeDockerString(this.name);
     }
 
-    get needs (): {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] | null {
+    get needs (): Need[] | null {
         return this.jobData["needs"] ?? null;
     }
 

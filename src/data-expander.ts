@@ -86,15 +86,12 @@ export function needs (gitlabData: any) {
         const expandedNeeds = [];
 
         for (const need of needs) {
-            if (need.project) {
-                // TODO: Print message somehow.
-                continue;
-            }
             expandedNeeds.push({
                 job: need.job ?? need,
                 artifacts: need.artifacts ?? true,
                 optional: need.optional ?? false,
                 pipeline: need.pipeline ?? null,
+                project: need.project ?? null,
             });
         }
         jobData.needs = expandedNeeds;
