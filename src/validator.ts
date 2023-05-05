@@ -54,7 +54,7 @@ export class Validator {
             const everyIncluded = dependencies.every((dep: string) => {
                 return needs.some(n => n.job === dep);
             });
-            const assertMsg = `${job.chalkJobName} needs: '${needs.map(n => n.job).join(",")}' doesn't fully contain dependencies: '${dependencies.join(",")}'`;
+            const assertMsg = `${job.formattedJobName} needs: '${needs.map(n => n.job).join(",")}' doesn't fully contain dependencies: '${dependencies.join(",")}'`;
             assert(everyIncluded, assertMsg);
         }
     }

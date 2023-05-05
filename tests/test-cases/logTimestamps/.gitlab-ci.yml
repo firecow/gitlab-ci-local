@@ -1,0 +1,11 @@
+---
+build-job:
+  stage: build
+  script:
+    - sleep 1
+    - echo 'test done'
+
+failed-job:
+  stage: .post
+  script:
+    - exit 1

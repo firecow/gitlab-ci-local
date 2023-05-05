@@ -191,6 +191,11 @@ import {AssertionError} from "assert";
             description: "Suppress all job output",
             requiresArg: false,
         })
+        .option("timestamps", {
+            type: "boolean",
+            description: "Show timestamps and job duration in the logs",
+            requiresArg: false,
+        })
         .option("maxJobNameLength", {
             type: "number",
             description: "Maximum padding for job name (use <= 0 for no padding)",
