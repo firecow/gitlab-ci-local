@@ -18,7 +18,15 @@ export class Commander {
         potentialStarters = potentialStarters.filter(j => j.when !== "never");
         potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
         await Executor.runLoop(argv, jobs, stages, potentialStarters);
-        await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
+        await Commander.printReport({
+            cwd: argv.cwd,
+            showTimestamps: argv.showTimestamps,
+            stateDir: argv.stateDir,
+            writeStreams: writeStreams,
+            jobs: jobs,
+            stages: stages,
+            jobNamePad: parser.jobNamePad,
+        });
     }
 
     static async runJobsInStage (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
@@ -30,7 +38,15 @@ export class Commander {
         potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
         potentialStarters = potentialStarters.filter(j => j.stage === argv.stage);
         await Executor.runLoop(argv, jobs, stages, potentialStarters);
-        await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
+        await Commander.printReport({
+            cwd: argv.cwd,
+            showTimestamps: argv.showTimestamps,
+            stateDir: argv.stateDir,
+            writeStreams: writeStreams,
+            jobs: jobs,
+            stages: stages,
+            jobNamePad: parser.jobNamePad,
+        });
     }
 
     static async runJobs (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
@@ -62,12 +78,30 @@ export class Commander {
         }
 
         await Executor.runLoop(argv, Array.from(jobSet), stages, potentialStarters);
-        await Commander.printReport(argv.cwd, argv.stateDir, writeStreams, jobs, stages, parser.jobNamePad);
+        await Commander.printReport({
+            cwd: argv.cwd,
+            showTimestamps: argv.showTimestamps,
+            stateDir: argv.stateDir,
+            writeStreams: writeStreams,
+            jobs: jobs,
+            stages: stages,
+            jobNamePad: parser.jobNamePad,
+        });
     }
 
-    static async printReport (cwd: string, stateDir: string, writeStreams: WriteStreams, jobs: ReadonlyArray<Job>, stages: readonly string[], jobNamePad: number) {
+    static async printReport ({cwd, stateDir, showTimestamps, writeStreams, jobs, stages, jobNamePad}: {
+        cwd: string;
+        showTimestamps: boolean;
+        stateDir: string;
+        writeStreams: WriteStreams;
+        jobs: ReadonlyArray<Job>;
+        stages: readonly string[];
+        jobNamePad: number;
+    }) {
 
         writeStreams.stdout("\n");
+
+        const renderDuration = (duration: string) => showTimestamps ? ` [${duration.padStart(7)}]` : "";
 
         const preScripts: {successful: Job[]; failed: Job[]; warned: Job[]} = {
             successful: [],
@@ -100,11 +134,11 @@ export class Commander {
 
         if (preScripts.successful.length !== 0) {
             preScripts.successful.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            preScripts.successful.forEach((job) => {
-                const namePad = job.name.padEnd(jobNamePad);
-                writeStreams.stdout(chalk`{black.bgGreenBright  PASS } {blueBright ${namePad}}`);
-                if (job.coveragePercent) {
-                    writeStreams.stdout(chalk` ${job.coveragePercent}% {grey coverage}`);
+            preScripts.successful.forEach(({coveragePercent, name, prettyDuration}) => {
+                const namePad = name.padEnd(jobNamePad);
+                writeStreams.stdout(chalk`{black.bgGreenBright  PASS }${renderDuration(prettyDuration)} {blueBright ${namePad}}`);
+                if (coveragePercent) {
+                    writeStreams.stdout(chalk` ${coveragePercent}% {grey coverage}`);
                 }
                 writeStreams.stdout("\n");
             });
@@ -112,10 +146,10 @@ export class Commander {
 
         if (preScripts.warned.length !== 0) {
             preScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            for (const {name} of preScripts.warned) {
+            for (const {name, prettyDuration} of preScripts.warned) {
                 const namePad = name.padEnd(jobNamePad);
                 const safeName = Utils.safeDockerString(name);
-                writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  pre_script\n`);
+                writeStreams.stdout(chalk`{black.bgYellowBright  WARN }${renderDuration(prettyDuration)} {blueBright ${namePad}}  pre_script\n`);
                 const outputLog = await fs.readFile(`${cwd}/${stateDir}/output/${safeName}.log`, "utf8");
                 for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
                     writeStreams.stdout(chalk`  {yellow >} ${line}\n`);
@@ -125,18 +159,18 @@ export class Commander {
 
         if (afterScripts.warned.length !== 0) {
             afterScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            afterScripts.warned.forEach(({name}) => {
+            afterScripts.warned.forEach(({name, prettyDuration}) => {
                 const namePad = name.padEnd(jobNamePad);
-                writeStreams.stdout(chalk`{black.bgYellowBright  WARN } {blueBright ${namePad}}  after_script\n`);
+                writeStreams.stdout(chalk`{black.bgYellowBright  WARN }${renderDuration(prettyDuration)} {blueBright ${namePad}}  after_script\n`);
             });
         }
 
         if (preScripts.failed.length !== 0) {
             preScripts.failed.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            for (const {name} of preScripts.failed) {
+            for (const {name, prettyDuration} of preScripts.failed) {
                 const namePad = name.padEnd(jobNamePad);
                 const safeName = Utils.safeDockerString(name);
-                writeStreams.stdout(chalk`{black.bgRed  FAIL } {blueBright ${namePad}}\n`);
+                writeStreams.stdout(chalk`{black.bgRed  FAIL }${renderDuration(prettyDuration)} {blueBright ${namePad}}\n`);
                 const outputLog = await fs.readFile(`${cwd}/${stateDir}/output/${safeName}.log`, "utf8");
                 for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
                     writeStreams.stdout(chalk`  {red >} ${line}\n`);

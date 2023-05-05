@@ -30,6 +30,15 @@ interface JobOptions {
     nodesTotal: number;
 }
 
+const dateFormatter = new Intl.DateTimeFormat(undefined, {
+    year: undefined,
+    month: undefined,
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false,
+});
+
 export class Job {
 
     static readonly illegalJobNames = [
@@ -71,6 +80,8 @@ export class Job {
     private _jobNamePad: number | null = null;
 
     private _containersToClean: string[] = [];
+    private _startTime?: [number, number];
+    private _endTime?: [number, number];
 
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
@@ -154,11 +165,11 @@ export class Job {
         }
 
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
-            throw new AssertionError({message: `${this.chalkJobName} @Interactive decorator cannot have image: and must be when:manual`});
+            throw new AssertionError({message: `${this.formattedJobName} @Interactive decorator cannot have image: and must be when:manual`});
         }
 
         if (this.injectSSHAgent && this.imageName === null) {
-            throw new AssertionError({message: `${this.chalkJobName} @InjectSSHAgent can only be used with image:`});
+            throw new AssertionError({message: `${this.formattedJobName} @InjectSSHAgent can only be used with image:`});
         }
 
         if (this.imageName && argv.mountCache) {
@@ -179,8 +190,23 @@ export class Job {
         return this.argv.artifactsToSource;
     }
 
-    get chalkJobName () {
-        return chalk`{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
+    get prettyDuration () {
+        if (this._endTime) {
+            return prettyHrtime(this._endTime);
+        }
+
+        return this._startTime
+            ? prettyHrtime(process.hrtime(this._startTime))
+            : "0 ms";
+    }
+
+    get formattedJobName () {
+        const timestampPrefix = this.argv.showTimestamps
+            ? `[${dateFormatter.format(new Date())} ${this.prettyDuration.padStart(7)}] `
+            : "";
+
+        // [16:33:19 1.37 min] my-job     > hello world
+        return chalk`${timestampPrefix}{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
     }
 
     get safeJobName () {
@@ -323,19 +349,19 @@ export class Job {
         this._running = true;
 
         const argv = this.argv;
-        const startTime = process.hrtime();
+        this._startTime = process.hrtime();
         const writeStreams = this.writeStreams;
         const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
         const expanded = Utils.expandVariables({...this._variables, ...reportsDotenvVariables});
-        const safeJobname = this.safeJobName;
+        const safeJobName = this.safeJobName;
 
 
-        const outputLogFilePath = `${argv.cwd}/${argv.stateDir}/output/${safeJobname}.log`;
+        const outputLogFilePath = `${argv.cwd}/${argv.stateDir}/output/${safeJobName}.log`;
         await fs.ensureFile(outputLogFilePath);
         await fs.truncate(outputLogFilePath);
 
         if (!this.interactive) {
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright starting} ${this.imageName ?? "shell"} ({yellow ${this.stage}})\n`);
         }
 
         if (this.imageName) {
@@ -365,7 +391,7 @@ export class Job {
             await Utils.spawn(["docker", "start", "--attach", containerId], argv.cwd);
             await Utils.spawn(["docker", "rm", "-f", containerId], argv.cwd);
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         if (this.services?.length) {
@@ -385,25 +411,29 @@ export class Job {
         expanded["CI_JOB_STATUS"] = "running";
         this._prescriptsExitCode = await this.execScripts(prescripts, expanded);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
-            writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
+            this.registerEndTime();
+            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, false)}\n`);
             this._running = false;
             await this.cleanupResources();
             return;
         }
 
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
-            writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
+            this.registerEndTime();
+            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, true)}\n`);
             this._running = false;
             await this.cleanupResources();
             return;
         }
 
         if (this._prescriptsExitCode > 0 && this.allowFailure) {
-            writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, true)}\n`);
+            this.registerEndTime();
+            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, true)}\n`);
         }
 
         if (this._prescriptsExitCode > 0 && !this.allowFailure) {
-            writeStreams.stderr(`${this.getExitedString(startTime, this._prescriptsExitCode, false)}\n`);
+            this.registerEndTime();
+            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, false)}\n`);
         }
 
         if (this.afterScripts.length > 0) {
@@ -412,13 +442,15 @@ export class Job {
         }
 
         if (this._afterScriptsExitCode > 0) {
-            writeStreams.stderr(`${this.getExitedString(startTime, this._afterScriptsExitCode, true, " after_script")}\n`);
+            this.registerEndTime();
+            writeStreams.stderr(`${this.getExitedString(this._afterScriptsExitCode, true, " after_script")}\n`);
         }
 
-        writeStreams.stdout(`${this.getFinishedString(startTime)}\n`);
+        this.registerEndTime();
+        writeStreams.stdout(`${this.getFinishedString()}\n`);
 
         if (this.jobData["coverage"]) {
-            this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobname);
+            this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobName);
         }
 
         this._running = false;
@@ -497,7 +529,7 @@ export class Job {
             const uniqueCacheName = await c.getUniqueCacheName(this.argv.cwd, expanded);
             c.paths.forEach((p) => {
                 const path = Utils.expandText(p, expanded);
-                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright mounting cache} for path ${path}\n`);
+                writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright mounting cache} for path ${path}\n`);
                 const cacheMount = Utils.safeDockerString(`gcl-${expanded.CI_PROJECT_PATH_SLUG}-${uniqueCacheName}`);
                 cmd += `-v ${cacheMount}:/gcl-builds/${path} `;
             });
@@ -646,7 +678,7 @@ export class Job {
 
         const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
             this.refreshLongRunningSilentTimeout(writeStreams);
-            stream(`${this.chalkJobName} `);
+            stream(`${this.formattedJobName} `);
             if (!line.startsWith("\u001b[32m$")) {
                 stream(`${colorize(">")} `);
             }
@@ -687,7 +719,7 @@ export class Job {
             if (e.stderr?.includes("No such image") || e.stderr?.includes("failed to find image")) {
                 await Utils.spawn(["docker", "pull", imageToPull]);
                 const endTime = process.hrtime(time);
-                writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+                writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
             } else {
                 throw e;
             }
@@ -714,7 +746,7 @@ export class Job {
                     producerReportsEnvs = {...producerReportsEnvs, ...producerReportEnv};
                 }
             } else {
-                writeStreams.stderr(chalk`${this.chalkJobName} {yellow reports.dotenv produced by '${producer.name}' could not be found}\n`);
+                writeStreams.stderr(chalk`${this.formattedJobName} {yellow reports.dotenv produced by '${producer.name}' could not be found}\n`);
             }
 
         }
@@ -742,7 +774,7 @@ export class Job {
                 await this.copyIn(cacheFolder);
             });
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
     }
 
@@ -762,14 +794,14 @@ export class Job {
 
             const readdir = await fs.readdir(artifactFolder);
             if (readdir.length === 0) {
-                writeStreams.stderr(chalk`${this.chalkJobName} {yellow artifacts from {blueBright ${producerSafeName}} was empty}\n`);
+                writeStreams.stderr(chalk`${this.formattedJobName} {yellow artifacts from {blueBright ${producerSafeName}} was empty}\n`);
             }
 
             promises.push(this.copyIn(artifactFolder));
         }
         await Promise.all(promises);
         const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright imported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
     copyIn (source: string) {
@@ -807,9 +839,9 @@ export class Job {
 
                 const readdir = await fs.readdir(`${this.argv.cwd}/${stateDir}/cache/${cacheName}`);
                 if (readdir.length === 0) {
-                    writeStreams.stdout(chalk`${this.chalkJobName} {yellow !! no cache was copied for ${path} !!}\n`);
+                    writeStreams.stdout(chalk`${this.formattedJobName} {yellow !! no cache was copied for ${path} !!}\n`);
                 } else {
-                    writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright exported cache ${expandedPath} '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
+                    writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright exported cache ${expandedPath} '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
                 }
             }
         }
@@ -851,14 +883,14 @@ export class Job {
         endTime = process.hrtime(time);
 
         if (reportDotenv != null && !await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) {
-            writeStreams.stderr(chalk`${this.chalkJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
+            writeStreams.stderr(chalk`${this.formattedJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
         }
 
         const readdir = await fs.readdir(`${cwd}/${stateDir}/artifacts/${safeJobName}`);
         if (readdir.length === 0) {
-            writeStreams.stdout(chalk`${this.chalkJobName} {yellow !! no artifacts was copied !!}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {yellow !! no artifacts was copied !!}\n`);
         } else {
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright exported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright exported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         if (this.artifactsToSource && (this.argv.shellIsolation || this.imageName)) {
@@ -868,7 +900,7 @@ export class Job {
                 await Utils.bash(`rsync -a ${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${cwd}`);
             }
             endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
     }
 
@@ -894,13 +926,13 @@ export class Job {
     private refreshLongRunningSilentTimeout (writeStreams: WriteStreams) {
         clearTimeout(this._longRunningSilentTimeout);
         this._longRunningSilentTimeout = setTimeout(() => {
-            writeStreams.stdout(chalk`${this.chalkJobName} {grey > still running...}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {grey > still running...}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
         }, 10000);
     }
 
-    private getExitedString (startTime: [number, number], code: number, warning = false, prependString = "") {
-        const finishedStr = this.getFinishedString(startTime);
+    private getExitedString (code: number, warning = false, prependString = "") {
+        const finishedStr = this.getFinishedString();
         if (warning) {
             return chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }${prependString}`;
         }
@@ -908,10 +940,13 @@ export class Job {
         return chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} } ${prependString}`;
     }
 
-    private getFinishedString (startTime: [number, number]) {
-        const endTime = process.hrtime(startTime);
-        const timeStr = prettyHrtime(endTime);
-        return chalk`${this.chalkJobName} {magentaBright finished} in {magenta ${timeStr}}`;
+    private registerEndTime () {
+        this._endTime = this._endTime ?? process.hrtime(this._startTime);
+    }
+
+    private getFinishedString () {
+        this._endTime = this._endTime ?? process.hrtime(this._startTime);
+        return chalk`${this.formattedJobName} {magentaBright finished} in {magenta ${this.prettyDuration}}`;
     }
 
     private async createDockerNetwork (networkName: string) {
@@ -992,7 +1027,7 @@ export class Job {
         await Utils.spawn(["docker", "start", `${containerId}`]);
 
         const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
+        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
 
         return containerId;
     }
@@ -1011,7 +1046,7 @@ export class Job {
         }
 
         if ((imageInspect[0]?.Config?.ExposedPorts ?? null) === null) {
-            return writeStreams.stderr(chalk`${this.chalkJobName} {yellow Could not find exposed tcp ports ${service.getName(expanded)}}\n`);
+            return writeStreams.stderr(chalk`${this.formattedJobName} {yellow Could not find exposed tcp ports ${service.getName(expanded)}}\n`);
         }
 
         // Iterate over each port defined in the image, and try to connect to the alias
@@ -1022,12 +1057,12 @@ export class Job {
             const portNum = parseInt(port.replace("/tcp", ""));
             const spawnCmd = ["docker", "run", "--rm", "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${aliases[0]}:${portNum}`, "-t", "30"];
             hcPromises.push(Utils.spawn(spawnCmd).catch(() => {
-                writeStreams.stdout(chalk`${this.chalkJobName} {redBright service image: ${serviceName} healthcheck failed: ${aliases[0]}:${portNum}}\n`);
-                writeStreams.stdout(chalk`${this.chalkJobName} {redBright see (${serviceContanerLogFile})}\n`);
+                writeStreams.stdout(chalk`${this.formattedJobName} {redBright service image: ${serviceName} healthcheck failed: ${aliases[0]}:${portNum}}\n`);
+                writeStreams.stdout(chalk`${this.formattedJobName} {redBright see (${serviceContanerLogFile})}\n`);
             }));
         }
         await Promise.any(hcPromises);
         const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.chalkJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${prettyHrtime(endTime)}}}\n`);
+        writeStreams.stdout(chalk`${this.formattedJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${prettyHrtime(endTime)}}}\n`);
     }
 }
