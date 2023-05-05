@@ -186,12 +186,12 @@ export class Commander {
         writeStreams.stdout(chalk`{grey allow_failure  needs}\n`);
 
         const renderLine = (job: Job) => {
-            const needs = job.needs;
+            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job).join(",");
             const allowFailure = job.allowFailure ? "true " : "false";
             let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
             jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
             if (needs) {
-                jobLine += chalk`    [{blueBright ${needs.map(n => n.job).join(",")}}]`;
+                jobLine += chalk`    [{blueBright ${needs}}]`;
             }
             writeStreams.stdout(`${jobLine}\n`);
         };
@@ -210,7 +210,7 @@ export class Commander {
                 stage: job.stage,
                 when: job.when,
                 allow_failure: job.allowFailure,
-                needs: job.needs,
+                needs: job.needs?.filter(n => !n.project && !n.pipeline),
             });
         });
 
@@ -230,9 +230,8 @@ export class Commander {
 
         writeStreams.stdout("name;description;stage;when;allowFailure;needs\n");
         jobs.forEach((job) => {
-            const needs = job.needs || [];
-
-            writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure};[${needs.map(n => n.job).join(",")}]\n`);
+            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job).join(",") || [];
+            writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure};[${needs}]\n`);
         });
     }
 
