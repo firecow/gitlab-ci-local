@@ -20,9 +20,11 @@ test-entrypoint:
     - cd folder
     - cat < test-file.txt
 
+.test-entrypoint-override/ci-image: firecow/gitlab-ci-local-test-image:entrypoint-with-exit
+
 test-entrypoint-override:
   image:
-    name: firecow/gitlab-ci-local-test-image:entrypoint-with-exit
+    name: !reference [.test-entrypoint-override/ci-image]
     entrypoint: [""]
   script:
     echo "Test something"

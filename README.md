@@ -356,9 +356,17 @@ You need nodejs 18+
 ### Scripts
 
 ```bash
+# Install node_modules
 npm install
+
+# Compiled typescript to javascript
 npm run build
+
+# Run all tests
 npm run test
+
+# Run individual test-case
+node src/index.js --cwd tests/test-cases/cache-paths-not-array/ test-job --shell-isolation
 ```
 
 ![example](./docs/images/example.png)

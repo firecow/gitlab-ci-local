@@ -5,10 +5,8 @@ import prettyHrtime from "pretty-hrtime";
 import split2 from "split2";
 import {Utils} from "./utils";
 import {WriteStreams} from "./write-streams";
-import {Service} from "./service";
 import {GitData} from "./git-data";
 import assert, {AssertionError} from "assert";
-import {CacheEntry} from "./cache-entry";
 import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
@@ -28,6 +26,20 @@ interface JobOptions {
     matrixVariables: {[key: string]: string} | null;
     nodeIndex: number | null;
     nodesTotal: number;
+}
+
+interface Cache {
+    policy: "pull" | "pull-push" | "push";
+    key: string | {files: string[]};
+    paths: string[];
+    when: "on_success" | "on_failure" | "always";
+}
+
+interface Service {
+    name: string;
+    entrypoint: string[] | null;
+    command: string[] | null;
+    alias: string | null;
 }
 
 interface Need {
@@ -252,7 +264,21 @@ export class Job {
     }
 
     get services (): Service[] {
-        return this.jobData["services"];
+        const services: Service[] = [];
+        if (!this.jobData["services"]) return [];
+
+        const expanded = Utils.expandVariables(this._variables);
+        for (const service of Object.values<any>(this.jobData["services"])) {
+            let serviceName = Utils.expandText(service["name"], expanded);
+            serviceName = serviceName.includes(":") ? serviceName : `${serviceName}:latest`;
+            services.push({
+                name: serviceName,
+                entrypoint: service["entrypoint"] ?? null,
+                command: service["command"] ?? null,
+                alias: Utils.expandText(service["alias"], expanded) ?? null,
+            });
+        }
+        return services;
     }
 
     set jobNamePad (jobNamePad: number) {
@@ -293,8 +319,17 @@ export class Job {
         return this.jobData["artifacts"];
     }
 
-    get cache (): CacheEntry[] {
+    get cache (): Cache[] {
         return this.jobData["cache"] || [];
+    }
+
+    public async getUniqueCacheName (cwd: string, expanded: {[key: string]: string}, key: any) {
+        if (typeof key === "string" || key == null) {
+            return Utils.expandText(key ?? "default", expanded);
+        }
+        return "md-" + await Utils.checksumFiles(key["files"].map((f: any) => {
+            return `${cwd}/${Utils.expandText(f, expanded)}`;
+        }));
     }
 
     get beforeScripts (): string[] {
@@ -392,11 +427,12 @@ export class Job {
 
         if (this.services?.length) {
             await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
-            for (const service of this.services) {
-                await this.pullImage(writeStreams, service.getName(expanded));
-                const serviceContainerId = await this.startService(writeStreams, expanded, service);
-                const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${service.getName(this._variables)}-${service.index}.log`;
-                await this.serviceHealthCheck(writeStreams, expanded, service, serviceContanerLogFile);
+            for (const [serviceIndex, service] of this.services.entries()) {
+                const serviceName = service.name;
+                await this.pullImage(writeStreams, serviceName);
+                const serviceContainerId = await this.startService(writeStreams, expanded, service, serviceIndex);
+                const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
+                await this.serviceHealthCheck(writeStreams, service, serviceContanerLogFile);
                 const {all} = await Utils.spawn(["docker", "logs", serviceContainerId]);
                 await fs.ensureFile(serviceContanerLogFile);
                 await fs.promises.writeFile(serviceContanerLogFile, all ?? "Service container had no output");
@@ -522,7 +558,7 @@ export class Job {
 
         let cmd = "";
         for (const c of this.cache) {
-            const uniqueCacheName = await c.getUniqueCacheName(this.argv.cwd, expanded);
+            const uniqueCacheName = await this.getUniqueCacheName(this.argv.cwd, expanded, c.key);
             c.paths.forEach((p) => {
                 const path = Utils.expandText(p, expanded);
                 writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright mounting cache} for path ${path}\n`);
@@ -760,7 +796,7 @@ export class Job {
             if (!["pull", "pull-push"].includes(c.policy)) return;
 
             const time = process.hrtime();
-            const cacheName = await c.getUniqueCacheName(cwd, expanded);
+            const cacheName = await this.getUniqueCacheName(cwd, expanded, c.key);
             const cacheFolder = `${cwd}/${stateDir}/cache/${cacheName}`;
             if (!await fs.pathExists(cacheFolder)) {
                 continue;
@@ -820,7 +856,7 @@ export class Job {
             if (!["push", "pull-push"].includes(c.policy)) return;
             if ("on_success" === c.when && exitCode != 0) return;
             if ("on_failure" === c.when && exitCode === 0) return;
-            const cacheName = await c.getUniqueCacheName(cwd, expanded);
+            const cacheName = await this.getUniqueCacheName(cwd, expanded, c.key);
             for (const path of c.paths) {
                 time = process.hrtime();
                 const expandedPath = Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
@@ -950,7 +986,7 @@ export class Job {
         this._serviceNetworkId = networkId;
     }
 
-    private async startService (writeStreams: WriteStreams, expanded: {[key: string]: string}, service: Service) {
+    private async startService (writeStreams: WriteStreams, expanded: {[key: string]: string}, service: Service, serviceIndex: number) {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
@@ -973,8 +1009,8 @@ export class Job {
             dockerCmd += `--volume ${volume} `;
         }
 
-        const serviceAlias = service.getAlias(expanded);
-        const serviceName = service.getName(expanded);
+        const serviceAlias = service.alias;
+        const serviceName = service.name;
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
         const aliases = new Set<string>();
         aliases.add(serviceNameWithoutVersion.replaceAll("/", "-"));
@@ -991,8 +1027,8 @@ export class Job {
             dockerCmd += `-e ${key} `;
         }
 
-        const serviceEntrypoint = service.getEntrypoint();
-        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${service.index}`;
+        const serviceEntrypoint = service.entrypoint;
+        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${serviceIndex}`;
         if (serviceEntrypoint) {
             if (serviceEntrypoint[0] == "") {
                 dockerCmd += "--entrypoint '' ";
@@ -1008,7 +1044,7 @@ export class Job {
         dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
         dockerCmd += `${serviceName} `;
 
-        (service.getCommand() ?? []).forEach((e) => dockerCmd += `"${e}" `);
+        (service.command ?? []).forEach((e) => dockerCmd += `"${e}" `);
 
         const time = process.hrtime();
 
@@ -1028,13 +1064,14 @@ export class Job {
         return containerId;
     }
 
-    private async serviceHealthCheck (writeStreams: WriteStreams, expanded: {[key: string]: string}, service: Service, serviceContanerLogFile: string) {
-        const {stdout} = await Utils.spawn(["docker", "image", "inspect", service.getName(expanded)]);
+    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceContanerLogFile: string) {
+        const serviceAlias = service.alias;
+        const serviceName = service.name;
+
+        const {stdout} = await Utils.spawn(["docker", "image", "inspect", serviceName]);
         const imageInspect = JSON.parse(stdout);
 
         // Copied from the startService block. Important thing is that the aliases match
-        const serviceAlias = service.getAlias(expanded);
-        const serviceName = service.getName(expanded);
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
         const aliases = [serviceNameWithoutVersion.replaceAll("/", "-"), serviceNameWithoutVersion.replaceAll("/", "__")];
         if (serviceAlias) {
@@ -1042,7 +1079,7 @@ export class Job {
         }
 
         if ((imageInspect[0]?.Config?.ExposedPorts ?? null) === null) {
-            return writeStreams.stderr(chalk`${this.formattedJobName} {yellow Could not find exposed tcp ports ${service.getName(expanded)}}\n`);
+            return writeStreams.stderr(chalk`${this.formattedJobName} {yellow Could not find exposed tcp ports ${serviceName}}\n`);
         }
 
         // Iterate over each port defined in the image, and try to connect to the alias

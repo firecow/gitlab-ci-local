@@ -3,9 +3,7 @@ import deepExtend from "deep-extend";
 import {Utils} from "./utils";
 import assert, {AssertionError} from "assert";
 import {Job} from "./job";
-import {Service} from "./service";
 import {traverse} from "object-traversal";
-import {CacheEntry} from "./cache-entry";
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
@@ -99,56 +97,65 @@ export function needs (gitlabData: any) {
 }
 
 export function artifacts (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
         const expandedArtifacts = jobData.artifacts || (gitlabData.default || {}).artifacts || gitlabData.artifacts;
         if (expandedArtifacts) {
             jobData.artifacts = expandedArtifacts;
         }
-    });
+    }
 }
 
 export function cache (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
         const mergedCache = jobData.cache || (gitlabData.default || {}).cache || gitlabData.cache;
         if (mergedCache) {
-            const cacheList: CacheEntry[] = [];
-            (Array.isArray(mergedCache) ? mergedCache : [mergedCache]).forEach((c: any) => {
+            const cacheList: any[] = [];
+            (Array.isArray(mergedCache) ? mergedCache : [mergedCache]).forEach((c: any, i: number) => {
+                const paths = c["paths"] ?? [];
                 const key = c["key"];
                 const policy = c["policy"] ?? "pull-push";
                 const when = c["when"] ?? "on_success";
-                if (!["pull", "push", "pull-push"].includes(policy)) {
-                    throw new AssertionError({message: "cache policy is not 'pull', 'push' or 'pull-push'"});
-                }
-                if (!["on_success", "on_failure", "always"].includes(when)) {
-                    throw new AssertionError({message: "cache when is not 'on_success', 'on_failure' or 'always'"});
-                }
-                const paths = c["paths"] ?? [];
-                cacheList.push(new CacheEntry(key, paths, policy, when));
+                assert(["pull", "push", "pull-push"].includes(policy), chalk`{blue ${jobName}} cache[${i}].policy is not 'pull', 'push' or 'pull-push'`);
+                assert(["on_success", "on_failure", "always"].includes(when), chalk`{blue ${jobName}} cache[${i}].when is not 'on_success', 'on_failure' or 'always'`);
+                assert(Array.isArray(c.paths), chalk`{blue ${jobName}} cache[${i}].paths must be array`);
+                cacheList.push({key, paths, policy, when});
             });
             jobData.cache = cacheList;
         }
-    });
+    }
 }
 
 export function services (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
-        const expandedServices = jobData.services || (gitlabData.default || {}).services || gitlabData.services;
-        if (expandedServices) {
-            jobData.services = [];
-            for (const [index, expandedService] of Object.entries<any>(expandedServices)) {
-                jobData.services[index] = new Service({
-                    name: typeof expandedService === "string" ? expandedService : expandedService.name,
-                    entrypoint: expandedService.entrypoint,
-                    command: expandedService.command,
-                    alias: expandedService.alias,
-                }, Number(index));
-            }
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
+        const expandedServices = jobData.services ?? gitlabData.default?.services ?? gitlabData.services;
+        if (!expandedServices) continue;
+
+        for (const [index, expandedService] of Object.entries<any>(expandedServices)) {
+            const expandedName = typeof expandedService === "string" ? expandedService : expandedService["name"];
+            expandedServices[index] = {
+                name: expandedName,
+                entrypoint: expandedService["entrypoint"],
+                command: expandedService["command"],
+                alias: expandedService["alias"],
+            };
+            const name = expandedServices[index].name;
+            const command = expandedServices[index].command;
+            const entrypoint = expandedServices[index].entrypoint;
+            assert(name, `services[${index}].name is undefined`);
+            assert(!command || Array.isArray(command), `services[${index}].command must be an array`);
+            assert(!entrypoint || Array.isArray(entrypoint), `services[${index}].entrypoint must be an array`);
         }
-    });
+
+        gitlabData[jobName].services = expandedServices;
+    }
 }
 
 export function image (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
         const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
         if (expandedImage) {
             jobData.image = {
@@ -156,7 +163,7 @@ export function image (gitlabData: any) {
                 entrypoint: expandedImage.entrypoint,
             };
         }
-    });
+    }
 }
 
 export function beforeScripts (gitlabData: any) {

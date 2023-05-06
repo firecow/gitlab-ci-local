@@ -9,10 +9,5 @@
     "inlineSources": true,
     "strict": true,
     "skipLibCheck": true
-  },
-  "ts-node": {
-    "transpileOnly": true,
-    "logError": true
-  },
-  "compileOnSave": true
+  }
 }
