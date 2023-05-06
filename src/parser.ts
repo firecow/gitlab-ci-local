@@ -97,6 +97,7 @@ export class Parser {
         DataExpander.cache(gitlabData);
         DataExpander.image(gitlabData);
         DataExpander.services(gitlabData);
+        DataExpander.needs(gitlabData);
         DataExpander.beforeScripts(gitlabData);
         DataExpander.afterScripts(gitlabData);
         DataExpander.scripts(gitlabData);

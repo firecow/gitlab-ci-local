@@ -18,7 +18,7 @@ test("needs-pipeline", async () => {
     const output = writeStreams.stdoutLines.join();
 
     const expected = [
-        chalk`{yellow needs-pipeline-job WARNING: Ignoring needs.job 'other-pipeline-job' because of unsupported needs.pipeline}`,
+        chalk`{yellow needs-pipeline-job.needs[1].job:other-pipeline-job ignored, pipeline key not supported}`,
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
     expect(output).toContain("Job executed!");

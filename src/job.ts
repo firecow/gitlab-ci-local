@@ -30,6 +30,14 @@ interface JobOptions {
     nodesTotal: number;
 }
 
+interface Need {
+    job: string;
+    artifacts: boolean;
+    optional: boolean;
+    pipeline: string | null;
+    project: string | null;
+}
+
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
     year: undefined,
     month: undefined,
@@ -213,20 +221,8 @@ export class Job {
         return Utils.safeDockerString(this.name);
     }
 
-    get needs (): {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] | null {
-        const needs = this.jobData["needs"];
-        if (!needs) return null;
-        const list: {job: string; artifacts: boolean; optional: boolean; pipeline: string | null}[] = [];
-        needs.forEach((need: any) => {
-            const entry = {
-                job: need.job ?? need,
-                artifacts: need.artifacts ?? true,
-                optional: need.optional ?? false,
-                pipeline: need.pipeline ?? null,
-            };
-            list.push(entry);
-        });
-        return list;
+    get needs (): Need[] | null {
+        return this.jobData["needs"] ?? null;
     }
 
     get buildVolumeName (): string {

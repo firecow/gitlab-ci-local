@@ -9,9 +9,13 @@ export class Validator {
         for (const job of jobs) {
             if (job.needs === null || job.needs.length === 0) continue;
 
-            for (const need of job.needs) {
+            for (const [i, need] of job.needs.entries()) {
                 if (need.pipeline) {
-                    warnings.push(`${job.name} WARNING: Ignoring needs.job '${need.job}' because of unsupported needs.pipeline`);
+                    warnings.push(`${job.name}.needs[${i}].job:${need.job} ignored, pipeline key not supported`);
+                    continue;
+                }
+                if (need.project) {
+                    warnings.push(`${job.name}.needs[${i}] ignored, project key not supported`);
                     continue;
                 }
                 const needJob = jobs.find(j => j.baseName === need.job);
