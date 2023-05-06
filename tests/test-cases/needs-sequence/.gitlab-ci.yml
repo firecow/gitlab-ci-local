@@ -26,3 +26,12 @@ no-needs-job:
   stage: test
   script:
     - echo "NoNeeds something"
+
+premium-job:
+  needs:
+    - project: my/other/project
+      job: release_version
+      ref: master
+      artifacts: true
+  script:
+    - echo "I'm utilizing premium feature"
