@@ -76,6 +76,26 @@ function hasCircularChain (data: any) {
     return false;
 }
 
+export function needs (gitlabData: any) {
+    Utils.forEachRealJob(gitlabData, (_, jobData) => {
+        if (!jobData.needs) return;
+
+        const needs = jobData.needs;
+        const expandedNeeds = [];
+
+        for (const need of needs) {
+            expandedNeeds.push({
+                job: need.job ?? need,
+                artifacts: need.artifacts ?? true,
+                optional: need.optional ?? false,
+                pipeline: need.pipeline ?? null,
+                project: need.project ?? null,
+            });
+        }
+        jobData.needs = expandedNeeds;
+    });
+}
+
 export function artifacts (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;

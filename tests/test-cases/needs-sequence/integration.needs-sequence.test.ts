@@ -41,6 +41,9 @@ test("needs-sequence <deploy-job> --needs", async () => {
         chalk`{blueBright deploy-job  } {greenBright >} Deploy something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stderrLines).toEqual(expect.arrayContaining([
+        chalk`{yellow premium-job.needs[0] ignored, project key not supported}`,
+    ]));
 
     const found = writeStreams.stdoutLines.filter((l) => {
         return l.match(/NoNeeds something/) !== null;
@@ -86,6 +89,7 @@ test("needs-sequence", async () => {
         chalk`{blueBright test-job    } {greenBright >} Test something`,
         chalk`{blueBright no-needs-job} {greenBright >} NoNeeds something`,
         chalk`{blueBright deploy-job  } {greenBright >} Deploy something`,
+        chalk`{blueBright premium-job } {greenBright >} I'm utilizing premium feature`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

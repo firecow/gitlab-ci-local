@@ -135,6 +135,14 @@ echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
 gitlab-ci-local --completion >> ~/.bashrc 
 ```
 
+### Logging options
+
+```shell
+export GCL_TIMESTAMPS=true # or --timestamps: show timestamps in logs
+export GCL_MAX_JOB_NAME_LENGTH=30 # or --maxJobNameLength: limit padding around job name
+export GCL_QUIET=true # or --quiet: Suppress all job output
+```
+
 ### List Pipeline Jobs
 
 Sometimes there is the need of knowing which jobs will be added before actually executing the pipeline.
