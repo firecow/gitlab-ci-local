@@ -112,14 +112,11 @@ export function cache (gitlabData: any) {
         const mergedCache = jobData.cache || (gitlabData.default || {}).cache || gitlabData.cache;
         if (mergedCache) {
             const cacheList: any[] = [];
-            (Array.isArray(mergedCache) ? mergedCache : [mergedCache]).forEach((c: any, i: number) => {
+            (Array.isArray(mergedCache) ? mergedCache : [mergedCache]).forEach((c: any) => {
                 const paths = c["paths"] ?? [];
                 const key = c["key"];
                 const policy = c["policy"] ?? "pull-push";
                 const when = c["when"] ?? "on_success";
-                assert(["pull", "push", "pull-push"].includes(policy), chalk`{blue ${jobName}} cache[${i}].policy is not 'pull', 'push' or 'pull-push'`);
-                assert(["on_success", "on_failure", "always"].includes(when), chalk`{blue ${jobName}} cache[${i}].when is not 'on_success', 'on_failure' or 'always'`);
-                assert(Array.isArray(c.paths), chalk`{blue ${jobName}} cache[${i}].paths must be array`);
                 cacheList.push({key, paths, policy, when});
             });
             jobData.cache = cacheList;
@@ -141,12 +138,6 @@ export function services (gitlabData: any) {
                 command: expandedService["command"],
                 alias: expandedService["alias"],
             };
-            const name = expandedServices[index].name;
-            const command = expandedServices[index].command;
-            const entrypoint = expandedServices[index].entrypoint;
-            assert(name, `services[${index}].name is undefined`);
-            assert(!command || Array.isArray(command), `services[${index}].command must be an array`);
-            assert(!entrypoint || Array.isArray(entrypoint), `services[${index}].entrypoint must be an array`);
         }
 
         gitlabData[jobName].services = expandedServices;
