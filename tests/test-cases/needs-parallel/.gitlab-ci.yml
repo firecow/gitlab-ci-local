@@ -10,9 +10,12 @@ build-job:
   script:
     - echo "Build something"
 
+.hidden:
+  needs: [build-job]
+
 test-job:
   stage: test
-  needs: [pre-job, build-job]
+  needs: [pre-job, !reference [.hidden, needs]]
   script:
     - echo "Test something"
 

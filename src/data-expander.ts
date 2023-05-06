@@ -77,49 +77,48 @@ function hasCircularChain (data: any) {
 }
 
 export function needs (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
-        if (!jobData.needs) return;
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.includes(jobName)) continue;
+        if (typeof jobData === "string") continue;
+        if (!jobData.needs) continue;
 
-        const needs = jobData.needs;
-        const expandedNeeds = [];
-
-        for (const need of needs) {
-            expandedNeeds.push({
+        for (const [i, need] of Object.entries<any>(jobData.needs)) {
+            if (need.referenceData) continue;
+            jobData.needs[i] = {
                 job: need.job ?? need,
                 artifacts: need.artifacts ?? true,
                 optional: need.optional ?? false,
                 pipeline: need.pipeline ?? null,
                 project: need.project ?? null,
-            });
+            };
         }
-        jobData.needs = expandedNeeds;
-    });
+    }
 }
 
 export function artifacts (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
-        const expandedArtifacts = jobData.artifacts || (gitlabData.default || {}).artifacts || gitlabData.artifacts;
-        if (expandedArtifacts) {
-            jobData.artifacts = expandedArtifacts;
-        }
+        if (typeof jobData === "string") continue;
+        jobData.artifacts = jobData.artifacts ?? gitlabData.default?.artifacts ?? gitlabData.artifacts;
     }
 }
 
 export function cache (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
-        const mergedCache = jobData.cache || (gitlabData.default || {}).cache || gitlabData.cache;
-        if (mergedCache) {
-            const cacheList: any[] = [];
-            (Array.isArray(mergedCache) ? mergedCache : [mergedCache]).forEach((c: any) => {
-                const paths = c["paths"] ?? [];
-                const key = c["key"];
-                const policy = c["policy"] ?? "pull-push";
-                const when = c["when"] ?? "on_success";
-                cacheList.push({key, paths, policy, when});
-            });
-            jobData.cache = cacheList;
+        if (typeof jobData === "string") continue;
+        jobData.cache = jobData.cache ?? gitlabData.default?.cache ?? gitlabData.cache;
+        if (!jobData.cache) continue;
+        jobData.cache = Array.isArray(jobData.cache) ? jobData.cache : [jobData.cache];
+
+        for (const [i, c] of Object.entries<any>(jobData.cache)) {
+            if (c.referenceData) continue;
+            jobData.cache[i] = {
+                key: c.key,
+                paths: c.paths ?? [],
+                policy: c.policy ?? "pull-push",
+                when: c.when ?? "on_success",
+            };
         }
     }
 }
@@ -127,39 +126,39 @@ export function cache (gitlabData: any) {
 export function services (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
-        const expandedServices = jobData.services ?? gitlabData.default?.services ?? gitlabData.services;
-        if (!expandedServices) continue;
+        if (typeof jobData === "string") continue;
+        jobData.services = jobData.services ?? gitlabData.default?.services ?? gitlabData.services;
+        if (!jobData.services) continue;
 
-        for (const [index, expandedService] of Object.entries<any>(expandedServices)) {
-            const expandedName = typeof expandedService === "string" ? expandedService : expandedService["name"];
-            expandedServices[index] = {
-                name: expandedName,
-                entrypoint: expandedService["entrypoint"],
-                command: expandedService["command"],
-                alias: expandedService["alias"],
+        for (const [index, s] of Object.entries<any>(jobData.services)) {
+            if (s.referenceData) continue;
+            jobData.services[index] = {
+                name: typeof s === "string" ? s : s.name,
+                entrypoint: s.entrypoint,
+                command: s.command,
+                alias: s.alias,
             };
         }
-
-        gitlabData[jobName].services = expandedServices;
     }
 }
 
 export function image (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.includes(jobName)) continue;
-        const expandedImage = jobData.image || (gitlabData.default || {}).image || gitlabData.image;
-        if (expandedImage) {
-            jobData.image = {
-                name: typeof expandedImage === "string" ? expandedImage : expandedImage.name,
-                entrypoint: expandedImage.entrypoint,
-            };
-        }
+        if (typeof jobData === "string") continue;
+        jobData.image = jobData.image ?? gitlabData.default?.image ?? gitlabData.image;
+        if (!jobData.image) continue;
+
+        jobData.image = {
+            name: typeof jobData.image === "string" ? jobData.image : jobData.image.name,
+            entrypoint: jobData.image.entrypoint,
+        };
     }
 }
 
 export function beforeScripts (gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
-        const expandedBeforeScripts = [].concat(jobData.before_script || (gitlabData.default || {}).before_script || gitlabData.before_script || []);
+        const expandedBeforeScripts = [].concat(jobData.before_script ?? gitlabData.default?.before_script ?? gitlabData.before_script ?? []);
         if (expandedBeforeScripts.length > 0) {
             jobData.before_script = expandedBeforeScripts;
         }
@@ -168,7 +167,7 @@ export function beforeScripts (gitlabData: any) {
 
 export function afterScripts (gitlabData: any) {
     Utils.forEachRealJob(gitlabData, (_, jobData) => {
-        const expandedAfterScripts = [].concat(jobData.after_script || (gitlabData.default || {}).after_script || gitlabData.after_script || []);
+        const expandedAfterScripts = [].concat(jobData.after_script ?? gitlabData.default?.after_script ?? gitlabData.after_script ?? []);
         if (expandedAfterScripts.length > 0) {
             jobData.after_script = expandedAfterScripts;
         }
