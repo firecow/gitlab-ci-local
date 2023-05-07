@@ -50,7 +50,7 @@ export class Commander {
     }
 
     static async runJobs (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
-        const needs = argv.needs ?? argv.onlyNeeds;
+        const needs = argv.needs || argv.onlyNeeds;
         const jobArgs = argv.job;
         const jobs = parser.jobs;
         const stages = parser.stages;
