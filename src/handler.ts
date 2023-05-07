@@ -38,10 +38,6 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
     const file = argv.file;
     let parser: Parser | null = null;
 
-    process.on("exit", () => {
-        cleanupResources(parser);
-    });
-
     process.on("unhandledRejection", (e) => {
         if (e instanceof AssertionError) {
             process.stderr.write(chalk`{red ${e.message.trim()}}\n`);
