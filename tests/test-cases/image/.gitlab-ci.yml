@@ -1,6 +1,9 @@
 ---
-test job:
+.image:
   image: ${DEBIAN_IMAGE_URL}
+
+test job:
+  extends: .image
   script:
     - echo "Test something"
 
