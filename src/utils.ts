@@ -73,7 +73,7 @@ export class Utils {
         if (matches.length === 0) return "0";
 
         const lastMatch = matches[matches.length - 1];
-        const digits = (lastMatch[1] ?? lastMatch[0]).match(/\d+(?:\.\d+)?/);
+        const digits = /\d+(?:\.\d+)?/.exec(lastMatch[1] ?? lastMatch[0]);
         if (!digits) return "0";
         return digits[0] ?? "0";
     }
@@ -150,7 +150,7 @@ export class Utils {
         const envMatchedVariables: {[key: string]: string} = {};
         for (const [k, v] of Object.entries(variables)) {
             for (const entry of v.environments) {
-                if (environment?.name.match(entry.regexp) || entry.regexp.source === ".*") {
+                if (entry.regexp.exec(environment?.name ?? "") || entry.regexp.source === ".*") {
                     if (fileVariablesDir != null && v.type === "file" && !entry.fileSource) {
                         envMatchedVariables[k] = `${fileVariablesDir}/${k}`;
                         fs.mkdirpSync(`${fileVariablesDir}`);

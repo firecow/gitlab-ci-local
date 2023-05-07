@@ -66,7 +66,7 @@ export class GitData {
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
             const {stdout: gitRemote} = await Utils.spawn(["git", "remote", "-v"], cwd);
-            const gitRemoteMatch = gitRemote.match(/.*(?:\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>[^ .]+)(?:\.git)?.*/);
+            const gitRemoteMatch = /.*(?:\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>[^ .]+)(?:\.git)?.*/.exec(gitRemote);
 
             assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
 
