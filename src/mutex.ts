@@ -1,5 +1,3 @@
-type MutexExclusiveCallback = () => Promise<void>;
-
 export class Mutex {
 
     private static locks = new Set();
@@ -15,7 +13,7 @@ export class Mutex {
         });
     }
 
-    static async exclusive (key: string, cb: MutexExclusiveCallback) {
+    static async exclusive (key: string, cb: () => Promise<void>) {
         await Mutex.waitForLock(key);
         Mutex.locks.add(key);
         await cb();
