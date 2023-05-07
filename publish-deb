@@ -38,4 +38,4 @@ mv "bin/gitlab-ci-local_${VERSION}_amd64.deb" "ppa/"
 (cd ppa && gpg --default-key "madsjon@gmail.com" --clearsign -o - Release > InRelease)
 
 rm -f ppa/ppa.zip
-zip -r ppa/ppa.zip ppa
+(cd ppa && zip -r ppa.zip .)
