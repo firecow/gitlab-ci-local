@@ -88,7 +88,6 @@ export function complexObjects (gitlabData: any) {
 }
 
 export function needsComplex (data: any) {
-    if (data == null) return data;
     return {
         job: data.job ?? data,
         artifacts: data.artifacts ?? true,
@@ -117,6 +116,7 @@ export function servicesComplex (data: any) {
 }
 
 export function imageComplex (data: any) {
+    if (data == null) return data;
     return {
         name: typeof data === "string" ? data : data.name,
         entrypoint: data.entrypoint,
