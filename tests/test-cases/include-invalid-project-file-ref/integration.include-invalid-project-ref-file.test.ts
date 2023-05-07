@@ -1,4 +1,4 @@
-import {WriteStreamsMock} from "../../../src/write-streams-mock";
+import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import assert, {AssertionError} from "assert";
 import {initBashSpyReject, initSpawnSpy} from "../../mocks/utils.mock";

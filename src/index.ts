@@ -6,10 +6,9 @@ import * as path from "path";
 import yargs from "yargs";
 import {Parser} from "./parser";
 import * as state from "./state";
-import {WriteStreamsProcess} from "./write-streams-process";
+import {WriteStreamsProcess, WriteStreamsMock} from "./write-streams";
 import {handler} from "./handler";
 import {Executor} from "./executor";
-import {WriteStreamsMock} from "./write-streams-mock";
 import {Argv} from "./argv";
 import {AssertionError} from "assert";
 

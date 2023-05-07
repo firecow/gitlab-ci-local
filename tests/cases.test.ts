@@ -1,4 +1,4 @@
-import {WriteStreamsMock} from "../src/write-streams-mock";
+import {WriteStreamsMock} from "../src/write-streams";
 import chalk from "chalk";
 import {handler} from "../src/handler";
 import assert from "assert";
