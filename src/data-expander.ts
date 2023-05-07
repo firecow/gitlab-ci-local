@@ -99,8 +99,6 @@ export function needsComplex (data: any) {
 }
 
 export function cacheComplex (data: any) {
-    if (data == null) return data;
-
     return {
         key: data.key,
         paths: data.paths ?? [],
@@ -110,8 +108,6 @@ export function cacheComplex (data: any) {
 }
 
 export function servicesComplex (data: any) {
-    if (data == null) return data;
-
     return {
         name: typeof data === "string" ? data : data.name,
         entrypoint: data.entrypoint,
@@ -121,8 +117,6 @@ export function servicesComplex (data: any) {
 }
 
 export function imageComplex (data: any) {
-    if (data == null) return data;
-
     return {
         name: typeof data === "string" ? data : data.name,
         entrypoint: data.entrypoint,
