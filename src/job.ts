@@ -203,7 +203,7 @@ export class Job {
             assert(!s.entrypoint || Array.isArray(s.entrypoint), chalk`{blue ${this.name}} services[${i}].entrypoint must be an array`);
         }
 
-        assert(!this.artifacts || !this.artifacts.paths || Array.isArray(this.artifacts.paths), chalk`{blue ${this.name}} artifacts.paths must be an array`);
+        assert(!this.artifacts?.paths || Array.isArray(this.artifacts.paths), chalk`{blue ${this.name}} artifacts.paths must be an array`);
 
         if (this.imageName && argv.mountCache) {
             const expanded = Utils.expandVariables(this._variables);
