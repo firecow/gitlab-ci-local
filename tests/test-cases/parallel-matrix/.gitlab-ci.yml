@@ -22,14 +22,21 @@ build-job:
 
 test-job:
   stage: test
-  needs: [build-job, pre-job]
+  needs:
+    - pre-job
+    - job: build-job
+      parallel:
+        matrix:
+          - NAME: foo
   script:
     - echo "NAME:'${NAME}' TIER:'${TIER}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
-    - test -f files/build-job__bar_.txt
-    - test -f files/build-job__bear_.txt
+    - "[ ! -f files/build-job__bar_.txt ]"
+    - "[ ! -f files/build-job__beb_.txt ]"
     - test -f files/build-job__foo_.txt
   parallel:
     matrix:
       - NAME: [foo, bar]
         TIER: [dev, sta, pro]
       - NAME: beb
+
+# deploy-job:
