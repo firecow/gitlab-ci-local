@@ -3,10 +3,12 @@ default:
   services:
     - nginx
 
+.service-entry-ref: ["/bin/sh", "-c", "echo 'foo\nhey' > /foo.txt && cat /foo.txt", "/bin/sh"]
+
 .service:
   services:
     - name: alpine
-      command: ["/bin/sh", "-c", "echo 'foo\nhey' > /foo.txt && cat /foo.txt", "/bin/sh"]
+      command: !reference [.service-entry-ref]
 
 pre-job:
   extends: .service
