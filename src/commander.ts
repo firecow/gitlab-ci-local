@@ -16,7 +16,7 @@ export class Commander {
 
         let potentialStarters = [...jobs.values()];
         potentialStarters = potentialStarters.filter(j => j.when !== "never");
-        potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
+        potentialStarters = potentialStarters.filter(j => j.when !== "manual" ?? argv.manual.includes(j.name));
         await Executor.runLoop(argv, jobs, stages, potentialStarters);
         await Commander.printReport({
             cwd: argv.cwd,
@@ -35,7 +35,7 @@ export class Commander {
 
         let potentialStarters = [...jobs.values()];
         potentialStarters = potentialStarters.filter(j => j.when !== "never");
-        potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
+        potentialStarters = potentialStarters.filter(j => j.when !== "manual" ?? argv.manual.includes(j.name));
         potentialStarters = potentialStarters.filter(j => j.stage === argv.stage);
         await Executor.runLoop(argv, jobs, stages, potentialStarters);
         await Commander.printReport({
@@ -50,7 +50,7 @@ export class Commander {
     }
 
     static async runJobs (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
-        const needs = argv.needs || argv.onlyNeeds;
+        const needs = argv.needs ?? argv.onlyNeeds;
         const jobArgs = argv.job;
         const jobs = parser.jobs;
         const stages = parser.stages;
@@ -264,7 +264,7 @@ export class Commander {
 
         writeStreams.stdout("name;description;stage;when;allowFailure;needs\n");
         jobs.forEach((job) => {
-            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job).join(",") || [];
+            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job).join(",") ?? [];
             writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure};[${needs}]\n`);
         });
     }

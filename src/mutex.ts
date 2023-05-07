@@ -1,6 +1,4 @@
-interface MutexExclusiveCallback {
-    (): Promise<void>;
-}
+type MutexExclusiveCallback = () => Promise<void>;
 
 export class Mutex {
 
