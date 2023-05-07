@@ -3,7 +3,7 @@
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.39.1",
+  "version": "4.40.0",
   "scripts": {
     "pkg-linux": "pkg src/index.js --public -t node18-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
     "pkg-macos": "pkg src/index.js --public -t node18-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
@@ -54,7 +54,7 @@
     "@typescript-eslint/parser": "5.59.2",
     "axios-mock-adapter": "1.21.4",
     "depcheck": "1.4.3",
-    "eslint": "8.39.0",
+    "eslint": "8.40.0",
     "jest": "29.5.0",
     "jest-when": "3.5.2",
     "pkg": "5.8.1",
