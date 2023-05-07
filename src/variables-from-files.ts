@@ -32,7 +32,7 @@ export class VariablesFromFiles {
         let homeFileData: any = {};
 
         if (remoteVariables && !autoCompleting) {
-            const match = remoteVariables.match(/(?<url>git@.*?)=(?<file>.*?)=(?<ref>.*)/);
+            const match = /(?<url>git@.*?)=(?<file>.*?)=(?<ref>.*)/.exec(remoteVariables);
             assert(match != null, "--remote-variables is malformed use 'git@gitlab.com:firecow/example.git=gitlab-variables.yml=master' syntax");
             const url = match.groups?.url;
             const file = match.groups?.file;
@@ -60,11 +60,11 @@ export class VariablesFromFiles {
             const {type, values} = unpack(val);
             for (const [matcher, content] of Object.entries(values)) {
                 assert(typeof content == "string", `${key}.${matcher} content must be text or multiline text`);
-                if (type === "variable" || (type === null && !content.match(/^[/|~]/))) {
+                if (type === "variable" || (type === null && !/^[/|~]/.exec(content))) {
                     const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "variable", environments: []};
                     variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
-                } else if (type === null && content.match(/^[/|~]/)) {
+                } else if (type === null && /^[/|~]/.exec(content)) {
                     const fileSource = content.replace(/^~\/(.*)/, `${homeDir}/$1`);
                     const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};

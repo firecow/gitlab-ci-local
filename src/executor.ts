@@ -6,15 +6,16 @@ import {Argv} from "./argv";
 export class Executor {
 
     static async runLoop (argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]) {
-        let runningJobs = [];
         let startCandidates = [];
 
         do {
+            const promises = [];
             startCandidates = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
-            startCandidates.forEach(j => j.start().then());
-            runningJobs = Executor.getRunning(jobs);
-            await new Promise<void>((resolve) => { setTimeout(() => { resolve(); }, 5); });
-        } while (runningJobs.length > 0);
+            for (const s of startCandidates) {
+                promises.push(s.start());
+            }
+            await Promise.allSettled(promises);
+        } while (startCandidates.length > 0);
     }
 
     static getStartCandidates (jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: readonly Job[], manuals: string[]) {
@@ -55,10 +56,6 @@ export class Executor {
     static isNotFinished (jobsToWaitFor: ReadonlyArray<Job>) {
         const notFinishedJobs = jobsToWaitFor.filter(j => !j.finished);
         return notFinishedJobs.length > 0;
-    }
-
-    static getRunning (jobs: ReadonlyArray<Job>) {
-        return jobs.filter(j => j.running);
     }
 
     static getFailed (jobs: ReadonlyArray<Job>) {

@@ -134,7 +134,6 @@ export class Job {
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
 
         const matrixVariables = opt.matrixVariables ?? {};
-        // Merge and expand variables recursive
         this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables};
 
         let ciProjectDir = `${cwd}`;
@@ -268,7 +267,7 @@ export class Job {
     get imageEntrypoint (): string[] | null {
         const image = this.jobData["image"];
 
-        if (!image || !image.entrypoint) {
+        if (!image?.entrypoint) {
             return null;
         }
         assert(Array.isArray(image.entrypoint), "image:entrypoint must be an array");
@@ -368,10 +367,6 @@ export class Job {
         return this._afterScriptsExitCode;
     }
 
-    get running () {
-        return this._running;
-    }
-
     get started () {
         return this._running || this._prescriptsExitCode !== null;
     }
@@ -445,9 +440,9 @@ export class Job {
                 const serviceContainerId = await this.startService(writeStreams, expanded, service, serviceIndex);
                 const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
                 await this.serviceHealthCheck(writeStreams, service, serviceContanerLogFile);
-                const {all} = await Utils.spawn(["docker", "logs", serviceContainerId]);
+                const {stdout, stderr} = await Utils.spawn(["docker", "logs", serviceContainerId]);
                 await fs.ensureFile(serviceContanerLogFile);
-                await fs.promises.writeFile(serviceContanerLogFile, all ?? "Service container had no output");
+                await fs.promises.writeFile(serviceContanerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
             }
         }
 
@@ -544,7 +539,7 @@ export class Job {
         if (!this.injectSSHAgent) {
             return "";
         }
-        if (process.platform === "darwin" || (process.env.OSTYPE?.match(/^darwin/) ?? null)) {
+        if (process.platform === "darwin" || /^darwin/.exec(process.env.OSTYPE ?? "")) {
             return "--env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock";
         }
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
@@ -566,16 +561,16 @@ export class Job {
     }
 
     private async mountCacheCmd (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
-        if (this.imageName && !this.argv.mountCache) return "";
+        if (this.imageName && !this.argv.mountCache) return [];
 
-        let cmd = "";
+        const cmd: string[] = [];
         for (const c of this.cache) {
             const uniqueCacheName = await this.getUniqueCacheName(this.argv.cwd, expanded, c.key);
             c.paths.forEach((p) => {
                 const path = Utils.expandText(p, expanded);
                 writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright mounting cache} for path ${path}\n`);
                 const cacheMount = Utils.safeDockerString(`gcl-${expanded.CI_PROJECT_PATH_SLUG}-${uniqueCacheName}`);
-                cmd += `-v ${cacheMount}:/gcl-builds/${path} `;
+                cmd.push("-v", `${cacheMount}:/gcl-builds/${path}`);
             });
         }
         return cmd;
@@ -608,8 +603,8 @@ export class Job {
                 env: {...expanded, ...process.env},
             });
             return new Promise<number>((resolve, reject) => {
-                interactiveCp.on("exit", (code) => resolve(code ?? 0));
-                interactiveCp.on("error", (err) => reject(err));
+                void interactiveCp.on("exit", (code) => resolve(code ?? 0));
+                void interactiveCp.on("error", (err) => reject(err));
             });
         }
 
@@ -664,8 +659,7 @@ export class Job {
                 dockerCmd += `-e ${key} `;
             }
 
-            dockerCmd += await this.mountCacheCmd(writeStreams, expanded);
-
+            dockerCmd += `${(await this.mountCacheCmd(writeStreams, expanded)).join(" ")} `;
             dockerCmd += `${this.imageName} sh -c "\n`;
             dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
             dockerCmd += "\texec /usr/local/bin/bash \n";
@@ -736,8 +730,8 @@ export class Job {
                 cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
                 cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
             }
-            cp.on("exit", (code) => resolve(code ?? 0));
-            cp.on("error", (err) => reject(err));
+            void cp.on("exit", (code) => resolve(code ?? 0));
+            void cp.on("error", (err) => reject(err));
 
             if (this.imageName) {
                 cp.stdin?.end("/gcl-cmd");
@@ -851,9 +845,9 @@ export class Job {
     copyIn (source: string) {
         const safeJobName = this.safeJobName;
         if (!this.imageName && this.argv.shellIsolation) {
-            return Utils.bash(`rsync -a ${source}/. ${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`);
+            return Utils.spawn(["rsync", "-a", `${source}/.`, `${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`]);
         }
-        return Utils.bash(`docker cp ${source}/. ${this._containerId}:/gcl-builds`);
+        return Utils.spawn(["docker", "cp", `${source}/.`, `${this._containerId}:/gcl-builds`]);
     }
 
     private async copyCacheOut (writeStreams: WriteStreams, expanded: {[key: string]: string}, exitCode: number) {
@@ -922,7 +916,7 @@ export class Job {
         }
 
         time = process.hrtime();
-        const dockerCmdExtras = this.argv.mountCache ? [await this.mountCacheCmd(writeStreams, expanded)] : [];
+        const dockerCmdExtras = this.argv.mountCache ? await this.mountCacheCmd(writeStreams, expanded) : [];
         await this.copyOut(cpCmd, stateDir, "artifacts", dockerCmdExtras);
         endTime = process.hrtime(time);
 
@@ -939,9 +933,9 @@ export class Job {
 
         if (this.artifactsToSource && (this.argv.shellIsolation || this.imageName)) {
             time = process.hrtime();
-            await Utils.bash(`rsync --exclude=/.gitlab-ci-reports/ -a ${cwd}/${stateDir}/artifacts/${safeJobName}/. ${cwd}`);
+            await Utils.spawn(["rsync", "--exclude=/.gitlab-ci-reports/", "-a", `${cwd}/${stateDir}/artifacts/${safeJobName}/.`, cwd]);
             if (reportDotenv != null) {
-                await Utils.bash(`rsync -a ${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${cwd}`);
+                await Utils.spawn(["rsync", "-a", `${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.`, cwd]);
             }
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -958,8 +952,9 @@ export class Job {
         if (this.imageName) {
             const {stdout: containerId} = await Utils.bash(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/gcl-builds/ -w /gcl-builds docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
             this._containersToClean.push(containerId);
-            await Utils.bash(`docker start ${containerId} --attach`);
-            await Utils.bash(`docker cp ${containerId}:/${type}/. ${stateDir}/${type}/.`, cwd);
+
+            await Utils.spawn(["docker", "start", containerId, "--attach"]);
+            await Utils.spawn(["docker", "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
         } else if (this.argv.shellIsolation) {
             await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}/${stateDir}/builds/${safeJobName}`);
         } else if (!this.argv.shellIsolation) {

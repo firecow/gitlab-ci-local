@@ -197,12 +197,12 @@ export class Parser {
         let noArtifactsToSourceMatch = null;
         let index = 0;
         for (const line of fileSplit) {
-            interactiveMatch = !interactiveMatch ? line.match(/#\s?@\s?[Ii]nteractive/) : interactiveMatch;
-            injectSSHAgent = !injectSSHAgent ? line.match(/#\s?@\s?[Ii]njectSSHAgent/) : injectSSHAgent;
-            noArtifactsToSourceMatch = !noArtifactsToSourceMatch ? line.match(/#\s?@\s?NoArtifactsToSource/i) : noArtifactsToSourceMatch;
-            descriptionMatch = !descriptionMatch ? line.match(/#\s?@\s?[Dd]escription (?<description>.*)/) : descriptionMatch;
+            interactiveMatch = !interactiveMatch ? /#\s?@\s?[Ii]nteractive/.exec(line) : interactiveMatch;
+            injectSSHAgent = !injectSSHAgent ? /#\s?@\s?[Ii]njectSSHAgent/.exec(line) : injectSSHAgent;
+            noArtifactsToSourceMatch = !noArtifactsToSourceMatch ? /#\s?@\s?NoArtifactsToSource/i.exec(line) : noArtifactsToSourceMatch;
+            descriptionMatch = !descriptionMatch ? /#\s?@\s?[Dd]escription (?<description>.*)/.exec(line) : descriptionMatch;
 
-            const jobMatch = line.match(/\w:/);
+            const jobMatch = /\w:/.exec(line);
             if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
                 if (interactiveMatch) {
                     fileSplitClone.splice(index + 1, 0, "  interactive: true");

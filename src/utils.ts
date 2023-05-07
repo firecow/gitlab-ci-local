@@ -26,12 +26,12 @@ type ExpandWith = {
 };
 
 export class Utils {
-    static bash (shellScript: string, cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
-        return execa(shellScript, {shell: "bash", cwd, env, all: true});
+    static bash (shellScript: string, cwd = process.cwd(), env = process.env): Promise<{stdout: string; stderr: string; exitCode: number}> {
+        return execa(shellScript, {shell: "bash", cwd, env});
     }
 
-    static spawn (cmdArgs: string[], cwd = process.cwd(), env = process.env): execa.ExecaChildProcess {
-        return execa(cmdArgs[0], cmdArgs.slice(1), {cwd, env, all: true});
+    static spawn (cmdArgs: string[], cwd = process.cwd(), env = process.env): Promise<{stdout: string; stderr: string}> {
+        return execa(cmdArgs[0], cmdArgs.slice(1), {cwd, env});
     }
 
     static fsUrl (url: string): string {
@@ -46,7 +46,7 @@ export class Utils {
 
     static forEachRealJob (gitlabData: any, callback: (jobName: string, jobData: any) => void) {
         for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
-            if (Job.illegalJobNames.includes(jobName) || jobName[0] === ".") {
+            if (Job.illegalJobNames.includes(jobName) || jobName[0].startsWith(".")) {
                 continue;
             }
             callback(jobName, jobData);
@@ -73,7 +73,7 @@ export class Utils {
         if (matches.length === 0) return "0";
 
         const lastMatch = matches[matches.length - 1];
-        const digits = (lastMatch[1] ?? lastMatch[0]).match(/\d+(?:\.\d+)?/);
+        const digits = /\d+(?:\.\d+)?/.exec(lastMatch[1] ?? lastMatch[0]);
         if (!digits) return "0";
         return digits[0] ?? "0";
     }
@@ -150,7 +150,7 @@ export class Utils {
         const envMatchedVariables: {[key: string]: string} = {};
         for (const [k, v] of Object.entries(variables)) {
             for (const entry of v.environments) {
-                if (environment?.name.match(entry.regexp) || entry.regexp.source === ".*") {
+                if (entry.regexp.exec(environment?.name ?? "") || entry.regexp.source === ".*") {
                     if (fileVariablesDir != null && v.type === "file" && !entry.fileSource) {
                         envMatchedVariables[k] = `${fileVariablesDir}/${k}`;
                         fs.mkdirpSync(`${fileVariablesDir}`);

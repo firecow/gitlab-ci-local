@@ -44,7 +44,7 @@ export function jobExtends (gitlabData: any) {
 
 export function reference (gitlabData: any, recurseData: any) {
     for (const [key, value] of Object.entries<any>(recurseData || {})) {
-        if (value && value.referenceData) {
+        if (value?.referenceData) {
             recurseData[key] = getSubDataByReference(gitlabData, value.referenceData);
         } else if (typeof value === "object") {
             reference(gitlabData, value);
