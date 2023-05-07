@@ -100,7 +100,7 @@ export function needsComplex (data: any) {
 export function cacheComplex (data: any) {
     return {
         key: data.key,
-        paths: data.paths ?? [],
+        paths: data.paths,
         policy: data.policy ?? "pull-push",
         when: data.when ?? "on_success",
     };
