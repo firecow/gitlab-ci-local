@@ -28,7 +28,7 @@ export function globalVariables (gitlabData: any) {
 
 export function jobExtends (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
-        if (Job.illegalJobNames.includes(jobName)) continue;
+        if (Job.illegalJobNames.has(jobName)) continue;
         if (Object.getPrototypeOf(jobData) !== Object.prototype) continue;
         jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
         const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
@@ -36,7 +36,7 @@ export function jobExtends (gitlabData: any) {
     }
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
-        if (Job.illegalJobNames.includes(jobName)) continue;
+        if (Job.illegalJobNames.has(jobName)) continue;
         if (Object.getPrototypeOf(jobData) !== Object.prototype) continue;
         delete jobData.extends;
     }
@@ -78,7 +78,7 @@ function hasCircularChain (data: any) {
 
 export function complexObjects (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
-        if (Job.illegalJobNames.includes(jobName)) continue;
+        if (Job.illegalJobNames.has(jobName)) continue;
         if (typeof jobData === "string") continue;
         needs(jobName, gitlabData);
         artifacts(jobName, gitlabData);
@@ -106,14 +106,17 @@ export function needs (jobName: string, gitlabData: any) {
 
 export function artifacts (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
-    jobData.artifacts = jobData.artifacts ?? gitlabData.default?.artifacts ?? gitlabData.artifacts;
+    const artifacts = jobData.artifacts ?? gitlabData.default?.artifacts ?? gitlabData.artifacts;
+    if (!artifacts) return;
+
+    jobData.artifacts = artifacts;
 }
 
 export function cache (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
-    jobData.cache = jobData.cache ?? gitlabData.default?.cache ?? gitlabData.cache;
-    if (!jobData.cache) return;
-    jobData.cache = Array.isArray(jobData.cache) ? jobData.cache : [jobData.cache];
+    const cache = jobData.cache ?? gitlabData.default?.cache ?? gitlabData.cache;
+    if (!cache) return;
+    jobData.cache = Array.isArray(cache) ? cache : [cache];
 
     for (const [i, c] of Object.entries<any>(jobData.cache)) {
         if (c.referenceData) continue;
@@ -128,8 +131,9 @@ export function cache (jobName: string, gitlabData: any) {
 
 export function services (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
-    jobData.services = jobData.services ?? gitlabData.default?.services ?? gitlabData.services;
-    if (!jobData.services) return;
+    const services = jobData.services ?? gitlabData.default?.services ?? gitlabData.services;
+    if (!services) return;
+    jobData.services = services;
 
     for (const [index, s] of Object.entries<any>(jobData.services)) {
         if (s.referenceData) continue;
@@ -144,12 +148,12 @@ export function services (jobName: string, gitlabData: any) {
 
 export function image (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
-    jobData.image = jobData.image ?? gitlabData.default?.image ?? gitlabData.image;
-    if (!jobData.image) return;
+    const image = jobData.image ?? gitlabData.default?.image ?? gitlabData.image;
+    if (!image) return;
 
     jobData.image = {
-        name: typeof jobData.image === "string" ? jobData.image : jobData.image.name,
-        entrypoint: jobData.image.entrypoint,
+        name: typeof image === "string" ? image : image.name,
+        entrypoint: image.entrypoint,
     };
 }
 

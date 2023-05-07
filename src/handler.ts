@@ -81,7 +81,7 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
             if (jobName === "stages") {
                 continue;
             }
-            if (Job.illegalJobNames.includes(jobName) || jobName.startsWith(".")) {
+            if (Job.illegalJobNames.has(jobName) || jobName.startsWith(".")) {
                 delete gitlabData[jobName];
             }
         }

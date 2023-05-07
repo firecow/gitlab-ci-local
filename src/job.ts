@@ -61,11 +61,11 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 
 export class Job {
 
-    static readonly illegalJobNames = [
+    static readonly illegalJobNames = new Set([
         "include", "local_configuration", "image", "services",
         "stages", "types", "before_script", "default",
         "after_script", "variables", "cache", "workflow",
-    ];
+    ]);
 
     readonly argv: Argv;
     readonly name: string;
