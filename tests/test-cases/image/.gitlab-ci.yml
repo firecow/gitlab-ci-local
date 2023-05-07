@@ -1,4 +1,7 @@
 ---
+default:
+  image: invalid
+
 .image:
   image: ${DEBIAN_IMAGE_URL}
 

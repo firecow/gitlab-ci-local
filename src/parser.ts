@@ -94,6 +94,7 @@ export class Parser {
         DataExpander.complexObjects(gitlabData);
         DataExpander.jobExtends(gitlabData);
         DataExpander.reference(gitlabData, gitlabData);
+        DataExpander.defaults(gitlabData);
         DataExpander.beforeScripts(gitlabData);
         DataExpander.afterScripts(gitlabData);
         DataExpander.scripts(gitlabData);

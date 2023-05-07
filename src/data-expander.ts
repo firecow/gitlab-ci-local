@@ -81,10 +81,83 @@ export function complexObjects (gitlabData: any) {
         if (Job.illegalJobNames.has(jobName)) continue;
         if (typeof jobData === "string") continue;
         needs(jobName, gitlabData);
-        artifacts(jobName, gitlabData);
         cache(jobName, gitlabData);
         services(jobName, gitlabData);
         image(jobName, gitlabData);
+    }
+}
+
+export function needsComplex (data: any) {
+    if (data == null) return data;
+    return {
+        job: data.job ?? data,
+        artifacts: data.artifacts ?? true,
+        optional: data.optional ?? false,
+        pipeline: data.pipeline ?? null,
+        project: data.project ?? null,
+    };
+}
+
+export function cacheComplex (data: any) {
+    if (data == null) return data;
+
+    return {
+        key: data.key,
+        paths: data.paths ?? [],
+        policy: data.policy ?? "pull-push",
+        when: data.when ?? "on_success",
+    };
+}
+
+export function servicesComplex (data: any) {
+    if (data == null) return data;
+
+    return {
+        name: typeof data === "string" ? data : data.name,
+        entrypoint: data.entrypoint,
+        command: data.command,
+        alias: data.alias,
+    };
+}
+
+export function imageComplex (data: any) {
+    if (data == null) return data;
+
+    return {
+        name: typeof data === "string" ? data : data.name,
+        entrypoint: data.entrypoint,
+    };
+}
+
+export function defaults (gitlabData: any) {
+    const cacheData = gitlabData.default?.cache ?? gitlabData.cache;
+    let cache = null;
+    if (cacheData) {
+        cache = [];
+        for (const c of Array.isArray(cacheData) ? cacheData : [cacheData]) {
+            cache.push(cacheComplex(c));
+        }
+    }
+
+    const serviceData = gitlabData.default?.services ?? gitlabData.services;
+    let services = null;
+    if (serviceData) {
+        services = [];
+        for (const s of serviceData) {
+            services.push(servicesComplex(s));
+        }
+    }
+
+    const artifacts = gitlabData.default?.artifacts ?? gitlabData.artifacts;
+    const image = imageComplex(gitlabData.default?.image ?? gitlabData.image);
+
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.has(jobName)) continue;
+        if (typeof jobData === "string") continue;
+        if (!jobData.artifacts && artifacts) jobData.artifacts = artifacts;
+        if (!jobData.cache && cache) jobData.cache = cache;
+        if (!jobData.services && services) jobData.services = services;
+        if (!jobData.image && image) jobData.image = image;
     }
 }
 
@@ -92,69 +165,45 @@ export function needs (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
     if (!jobData.needs) return;
 
-    for (const [i, need] of Object.entries<any>(jobData.needs)) {
-        if (need.referenceData) continue;
-        jobData.needs[i] = {
-            job: need.job ?? need,
-            artifacts: need.artifacts ?? true,
-            optional: need.optional ?? false,
-            pipeline: need.pipeline ?? null,
-            project: need.project ?? null,
-        };
+    for (const [i, n] of Object.entries<any>(jobData.needs)) {
+        if (n.referenceData) continue;
+        jobData.needs[i] = needsComplex(n);
     }
-}
-
-export function artifacts (jobName: string, gitlabData: any) {
-    const jobData = gitlabData[jobName];
-    const artifacts = jobData.artifacts ?? gitlabData.default?.artifacts ?? gitlabData.artifacts;
-    if (!artifacts) return;
-
-    jobData.artifacts = artifacts;
 }
 
 export function cache (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
-    const cache = jobData.cache ?? gitlabData.default?.cache ?? gitlabData.cache;
+    const cache = jobData.cache;
     if (!cache) return;
+
     jobData.cache = Array.isArray(cache) ? cache : [cache];
 
     for (const [i, c] of Object.entries<any>(jobData.cache)) {
         if (c.referenceData) continue;
-        jobData.cache[i] = {
-            key: c.key,
-            paths: c.paths ?? [],
-            policy: c.policy ?? "pull-push",
-            when: c.when ?? "on_success",
-        };
+        jobData.cache[i] = cacheComplex(c);
     }
+
 }
 
 export function services (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
-    const services = jobData.services ?? gitlabData.default?.services ?? gitlabData.services;
+    const services = jobData.services;
     if (!services) return;
+
     jobData.services = services;
 
-    for (const [index, s] of Object.entries<any>(jobData.services)) {
+    for (const [i, s] of Object.entries<any>(jobData.services)) {
         if (s.referenceData) continue;
-        jobData.services[index] = {
-            name: typeof s === "string" ? s : s.name,
-            entrypoint: s.entrypoint,
-            command: s.command,
-            alias: s.alias,
-        };
+        jobData.services[i] = servicesComplex(s);
     }
 }
 
 export function image (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
-    const image = jobData.image ?? gitlabData.default?.image ?? gitlabData.image;
+    const image = jobData.image;
     if (!image) return;
 
-    jobData.image = {
-        name: typeof image === "string" ? image : image.name,
-        entrypoint: image.entrypoint,
-    };
+    jobData.image = imageComplex(jobData.image);
 }
 
 export function beforeScripts (gitlabData: any) {
