@@ -39,22 +39,19 @@ export class GitData {
         const promises = [];
 
         const refNamePromise = Utils.spawn(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd);
-        refNamePromise.then(({stdout}) => {
+        promises.push(refNamePromise.then(({stdout}) => {
             this.commit.REF_NAME = stdout.trimEnd();
-        });
-        promises.push(refNamePromise);
+        }));
 
         const shaPromise = Utils.spawn(["git", "rev-parse", "HEAD"], cwd);
-        shaPromise.then(({stdout}) => {
+        promises.push(shaPromise.then(({stdout}) => {
             this.commit.SHA = stdout.trimEnd();
-        });
-        promises.push(shaPromise);
+        }));
 
         const shortShaPromise = Utils.spawn(["git", "rev-parse", "--short", "HEAD"], cwd);
-        shortShaPromise.then(({stdout}) => {
+        promises.push(shortShaPromise.then(({stdout}) => {
             this.commit.SHORT_SHA = stdout.trimEnd();
-        });
-        promises.push(shortShaPromise);
+        }));
 
         try {
             await Promise.all(promises);
