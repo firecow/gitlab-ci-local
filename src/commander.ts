@@ -16,7 +16,7 @@ export class Commander {
 
         let potentialStarters = [...jobs.values()];
         potentialStarters = potentialStarters.filter(j => j.when !== "never");
-        potentialStarters = potentialStarters.filter(j => j.when !== "manual" ?? argv.manual.includes(j.name));
+        potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
         await Executor.runLoop(argv, jobs, stages, potentialStarters);
         await Commander.printReport({
             cwd: argv.cwd,
@@ -35,7 +35,7 @@ export class Commander {
 
         let potentialStarters = [...jobs.values()];
         potentialStarters = potentialStarters.filter(j => j.when !== "never");
-        potentialStarters = potentialStarters.filter(j => j.when !== "manual" ?? argv.manual.includes(j.name));
+        potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
         potentialStarters = potentialStarters.filter(j => j.stage === argv.stage);
         await Executor.runLoop(argv, jobs, stages, potentialStarters);
         await Commander.printReport({
