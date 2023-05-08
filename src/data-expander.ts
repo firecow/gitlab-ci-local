@@ -1,6 +1,5 @@
 import chalk from "chalk";
 import deepExtend from "deep-extend";
-import {Utils} from "./utils";
 import assert, {AssertionError} from "assert";
 import {Job} from "./job";
 import {traverse} from "object-traversal";
@@ -17,14 +16,6 @@ const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents:
     }
     return parents;
 };
-
-export function globalVariables (gitlabData: any) {
-    for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
-        if (typeof value == "object") {
-            gitlabData.variables[key] = value["value"];
-        }
-    }
-}
 
 export function jobExtends (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
@@ -84,6 +75,7 @@ export function complexObjects (gitlabData: any) {
         cache(jobName, gitlabData);
         services(jobName, gitlabData);
         image(jobName, gitlabData);
+        if (jobData.script) jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
     }
 }
 
@@ -123,6 +115,61 @@ export function imageComplex (data: any) {
     };
 }
 
+export function globalVariables (gitlabData: any) {
+    for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
+        if (typeof value == "object") {
+            gitlabData.variables[key] = value["value"];
+        }
+    }
+}
+
+export function needs (jobName: string, gitlabData: any) {
+    const jobData = gitlabData[jobName];
+    if (!jobData.needs) return;
+
+    reference(gitlabData, jobData.needs);
+    jobData.needs = jobData.needs.flat(5);
+    for (const [i, n] of Object.entries<any>(jobData.needs)) {
+        jobData.needs[i] = needsComplex(n);
+    }
+}
+
+export function cache (jobName: string, gitlabData: any) {
+    const jobData = gitlabData[jobName];
+    const cache = jobData.cache;
+    if (!cache) return;
+
+    reference(gitlabData, jobData.cache);
+    jobData.cache = Array.isArray(cache) ? cache : [cache];
+    jobData.cache = jobData.cache.flat(5);
+    for (const [i, c] of Object.entries<any>(jobData.cache)) {
+        jobData.cache[i] = cacheComplex(c);
+    }
+}
+
+export function services (jobName: string, gitlabData: any) {
+    const jobData = gitlabData[jobName];
+    const services = jobData.services;
+    if (!services) return;
+
+    reference(gitlabData, jobData.services);
+    jobData.services = jobData.services.flat(5);
+    jobData.services = services;
+
+    for (const [i, s] of Object.entries<any>(jobData.services)) {
+        jobData.services[i] = servicesComplex(s);
+    }
+}
+
+export function image (jobName: string, gitlabData: any) {
+    const jobData = gitlabData[jobName];
+    const image = jobData.image;
+    if (!image) return;
+
+    reference(gitlabData, jobData.image);
+    jobData.image = imageComplex(jobData.image);
+}
+
 export function defaults (gitlabData: any) {
     const cacheData = gitlabData.default?.cache ?? gitlabData.cache;
     let cache = null;
@@ -142,8 +189,10 @@ export function defaults (gitlabData: any) {
         }
     }
 
-    const artifacts = gitlabData.default?.artifacts ?? gitlabData.artifacts;
     const image = imageComplex(gitlabData.default?.image ?? gitlabData.image);
+    const artifacts = gitlabData.default?.artifacts ?? gitlabData.artifacts;
+    const beforeScript = gitlabData.default?.before_script ?? gitlabData.before_script;
+    const afterScript = gitlabData.default?.after_script ?? gitlabData.after_script;
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName)) continue;
@@ -152,77 +201,9 @@ export function defaults (gitlabData: any) {
         if (!jobData.cache && cache) jobData.cache = cache;
         if (!jobData.services && services) jobData.services = services;
         if (!jobData.image && image) jobData.image = image;
+        if (!jobData.after_script && afterScript) jobData.after_script = afterScript;
+        if (!jobData.before_script && beforeScript) jobData.before_script = beforeScript;
     }
-}
-
-export function needs (jobName: string, gitlabData: any) {
-    const jobData = gitlabData[jobName];
-    if (!jobData.needs) return;
-
-    for (const [i, n] of Object.entries<any>(jobData.needs)) {
-        if (n.referenceData) continue;
-        jobData.needs[i] = needsComplex(n);
-    }
-}
-
-export function cache (jobName: string, gitlabData: any) {
-    const jobData = gitlabData[jobName];
-    const cache = jobData.cache;
-    if (!cache) return;
-
-    jobData.cache = Array.isArray(cache) ? cache : [cache];
-
-    for (const [i, c] of Object.entries<any>(jobData.cache)) {
-        if (c.referenceData) continue;
-        jobData.cache[i] = cacheComplex(c);
-    }
-
-}
-
-export function services (jobName: string, gitlabData: any) {
-    const jobData = gitlabData[jobName];
-    const services = jobData.services;
-    if (!services) return;
-
-    jobData.services = services;
-
-    for (const [i, s] of Object.entries<any>(jobData.services)) {
-        if (s.referenceData) continue;
-        jobData.services[i] = servicesComplex(s);
-    }
-}
-
-export function image (jobName: string, gitlabData: any) {
-    const jobData = gitlabData[jobName];
-    const image = jobData.image;
-    if (!image) return;
-
-    jobData.image = imageComplex(jobData.image);
-}
-
-export function beforeScripts (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
-        const expandedBeforeScripts = [].concat(jobData.before_script ?? gitlabData.default?.before_script ?? gitlabData.before_script ?? []);
-        if (expandedBeforeScripts.length > 0) {
-            jobData.before_script = expandedBeforeScripts;
-        }
-    });
-}
-
-export function afterScripts (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (_, jobData) => {
-        const expandedAfterScripts = [].concat(jobData.after_script ?? gitlabData.default?.after_script ?? gitlabData.after_script ?? []);
-        if (expandedAfterScripts.length > 0) {
-            jobData.after_script = expandedAfterScripts;
-        }
-    });
-}
-
-export function scripts (gitlabData: any) {
-    Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
-        assert(jobData.script || jobData.trigger, chalk`{blueBright ${jobName}} must have script specified`);
-        jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
-    });
 }
 
 export function flattenLists (gitlabData: any) {

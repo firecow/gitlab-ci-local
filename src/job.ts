@@ -183,6 +183,8 @@ export class Job {
             delete this._variables[unsetVariable];
         }
 
+        assert(this.scripts || this.trigger, chalk`{blueBright ${this.name}} must have script specified`);
+
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
             throw new AssertionError({message: `${this.formattedJobName} @Interactive decorator cannot have image: and must be when:manual`});
         }

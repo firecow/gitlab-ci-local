@@ -1,9 +1,10 @@
 ---
-.cache-ref: [cache/**.txt]
+.cache-ref:
+  paths: [cache/**.txt]
 
 .cache:
   cache:
-    paths: !reference [.cache-ref]
+    - !reference [.cache-ref]
 
 produce-cache:
   extends: .cache
