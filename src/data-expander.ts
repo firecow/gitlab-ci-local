@@ -139,8 +139,8 @@ export function cache (jobName: string, gitlabData: any) {
     const cache = jobData.cache;
     if (!cache) return;
 
-    reference(gitlabData, jobData.cache);
     jobData.cache = Array.isArray(cache) ? cache : [cache];
+    reference(gitlabData, jobData.cache);
     jobData.cache = jobData.cache.flat(5);
     for (const [i, c] of Object.entries<any>(jobData.cache)) {
         jobData.cache[i] = cacheComplex(c);
