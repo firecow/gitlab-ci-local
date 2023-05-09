@@ -117,7 +117,7 @@ export function imageComplex (data: any) {
 
 export function globalVariables (gitlabData: any) {
     for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
-        if (typeof value == "object") {
+        if (typeof value == "object" && !Array.isArray(value)) {
             gitlabData.variables[key] = value["value"];
         }
     }
