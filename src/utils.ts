@@ -150,7 +150,7 @@ export class Utils {
         const envMatchedVariables: {[key: string]: string} = {};
         for (const [k, v] of Object.entries(variables)) {
             for (const entry of v.environments) {
-                if (entry.regexp.exec(environment?.name ?? "") || entry.regexp.source === ".*") {
+                if (environment?.name.match(entry.regexp) || entry.regexp.source === ".*") {
                     if (fileVariablesDir != null && v.type === "file" && !entry.fileSource) {
                         envMatchedVariables[k] = `${fileVariablesDir}/${k}`;
                         fs.mkdirpSync(`${fileVariablesDir}`);
