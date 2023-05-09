@@ -1,13 +1,16 @@
 ---
+.artifacts:
+  artifacts:
+    paths: [$CI_PROJECT_DIR/path/]
+    exclude: [path/file2]
+
 produce:
+  extends: .artifacts
   stage: build
   script:
     - mkdir -p path/
     - touch path/file1
     - touch path/file2
-  artifacts:
-    paths: [$CI_PROJECT_DIR/path/]
-    exclude: [path/file2]
 
 consume:
   stage: test

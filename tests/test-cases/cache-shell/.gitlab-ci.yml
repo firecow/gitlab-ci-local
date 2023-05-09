@@ -1,8 +1,14 @@
 ---
-produce-cache:
-  stage: build
+.cache-ref:
+  paths: [cache/**.txt]
+
+.cache:
   cache:
-    paths: [cache/**.txt]
+    - !reference [.cache-ref]
+
+produce-cache:
+  extends: .cache
+  stage: build
   script: mkdir -p cache && touch cache/file1.txt
 
 consume-cache:

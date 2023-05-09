@@ -183,6 +183,8 @@ export class Job {
             delete this._variables[unsetVariable];
         }
 
+        assert(this.scripts || this.trigger, chalk`{blueBright ${this.name}} must have script specified`);
+
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
             throw new AssertionError({message: `${this.formattedJobName} @Interactive decorator cannot have image: and must be when:manual`});
         }
@@ -198,19 +200,19 @@ export class Job {
         }
 
         for (const [i, s] of Object.entries<any>(this.services)) {
-            assert(s.name, `services[${i}].name is undefined`);
-            assert(!s.command || Array.isArray(s.command), `services[${i}].command must be an array`);
-            assert(!s.entrypoint || Array.isArray(s.entrypoint), `services[${i}].entrypoint must be an array`);
+            assert(s.name, chalk`{blue ${this.name}} services[${i}].name is undefined`);
+            assert(!s.command || Array.isArray(s.command), chalk`{blue ${this.name}} services[${i}].command must be an array`);
+            assert(!s.entrypoint || Array.isArray(s.entrypoint), chalk`{blue ${this.name}} services[${i}].entrypoint must be an array`);
         }
+
+        assert(!this.artifacts?.paths || Array.isArray(this.artifacts.paths), chalk`{blue ${this.name}} artifacts.paths must be an array`);
 
         if (this.imageName && argv.mountCache) {
             const expanded = Utils.expandVariables(this._variables);
             for (const c of this.cache) {
                 c.paths.forEach((p) => {
                     const path = Utils.expandText(p, expanded);
-                    if (path.includes("*")) {
-                        throw new AssertionError({message: `${this.name} cannot have * in cache paths, when --mount-cache is enabled`});
-                    }
+                    assert(!path.includes("*"), chalk`{blue ${this.name}} cannot have * in cache paths, when --mount-cache is enabled`);
                 });
             }
         }
@@ -326,7 +328,7 @@ export class Job {
         return this.jobData["description"] ?? "";
     }
 
-    get artifacts (): {paths?: string[]; exclude?: string[]; reports?: {dotenv?: string}; when?: string} | null {
+    get artifacts (): {paths: string[]; exclude?: string[]; reports?: {dotenv?: string}; when?: string} | null {
         return this.jobData["artifacts"];
     }
 
@@ -952,7 +954,6 @@ export class Job {
         if (this.imageName) {
             const {stdout: containerId} = await Utils.bash(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/gcl-builds/ -w /gcl-builds docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
             this._containersToClean.push(containerId);
-
             await Utils.spawn(["docker", "start", containerId, "--attach"]);
             await Utils.spawn(["docker", "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
         } else if (this.argv.shellIsolation) {

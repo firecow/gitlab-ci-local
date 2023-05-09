@@ -9,7 +9,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("image <test job>", async () => {
+test.concurrent("image <test job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
@@ -19,7 +19,7 @@ test("image <test job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("image <test-entrypoint>", async () => {
+test.concurrent("image <test-entrypoint>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
@@ -37,7 +37,7 @@ test("image <test-entrypoint>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("image <test-entrypoint-override>", async () => {
+test.concurrent("image <test-entrypoint-override>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
@@ -50,7 +50,7 @@ test("image <test-entrypoint-override>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("image <test-from-scratch>", async () => {
+test.concurrent("image <test-from-scratch>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
@@ -70,7 +70,7 @@ test("image <test-from-scratch>", async () => {
 // ignored. The bug would cause this to also ignore test-file.txt in ./folder,
 // which it should not. Expected output will differ if ./folder/test-file.txt
 // is also ignored.
-test("image <test-ignore-regression>", async () => {
+test.concurrent("image <test-ignore-regression>", async () => {
     const writeStreams = new WriteStreamsMock();
 
     try {
@@ -89,7 +89,7 @@ test("image <test-ignore-regression>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("image <issue-206>", async () => {
+test.concurrent("image <issue-206>", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
