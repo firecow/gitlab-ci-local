@@ -55,29 +55,28 @@ export class Commander {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
-        let potentialStarters: Job[] = [];
+        const potentialStarters: Job[] = [];
         const jobSet = needs ? new Set(jobs) : new Set<Job>();
-        jobArgs.forEach(jobName => {
-            const baseJobs = jobs.filter(j => j.baseName == jobName);
+        jobArgs.forEach(jobArgName => {
+            const baseJobs = jobs.filter(j => j.baseName == jobArgName || j.name === jobArgName);
             for (const b of baseJobs) {
                 jobSet.add(b);
                 if (needs) {
-                    potentialStarters = potentialStarters.concat(Executor.getPastToWaitFor(jobs, stages, b, argv.manual));
+                    potentialStarters.push(...Executor.getPastToWaitFor(jobs, stages, b, argv.manual));
                 }
                 potentialStarters.push(b);
             }
         });
+
         if (potentialStarters.length === 0) {
             throw new AssertionError({message: chalk`{blueBright ${jobArgs.join(",")}} could not be found`});
         }
 
-        if (argv.onlyNeeds) {
-            jobArgs.forEach((j) => {
-                potentialStarters = potentialStarters.filter(p => p.name !== j);
-            });
-        }
+        const starters = argv.onlyNeeds
+            ? potentialStarters.filter(p => !jobArgs.includes(p.name))
+            : potentialStarters;
 
-        await Executor.runLoop(argv, Array.from(jobSet), stages, potentialStarters);
+        await Executor.runLoop(argv, Array.from(jobSet), stages, starters);
         await Commander.printReport({
             cwd: argv.cwd,
             showTimestamps: argv.showTimestamps,
