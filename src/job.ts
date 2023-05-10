@@ -1090,20 +1090,33 @@ export class Job {
             return writeStreams.stderr(chalk`${this.formattedJobName} {yellow Could not find exposed tcp ports ${serviceName}}\n`);
         }
 
-        // Iterate over each port defined in the image, and try to connect to the alias
         const time = process.hrtime();
-        const hcPromises = [];
-        for (const port of Object.keys(imageInspect[0].Config.ExposedPorts)) {
-            if (!port.endsWith("/tcp")) continue;
-            const portNum = parseInt(port.replace("/tcp", ""));
-            const spawnCmd = ["docker", "run", "--rm", "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${aliases[0]}:${portNum}`, "-t", "30"];
-            hcPromises.push(Utils.spawn(spawnCmd).catch(() => {
-                writeStreams.stdout(chalk`${this.formattedJobName} {redBright service image: ${serviceName} healthcheck failed: ${aliases[0]}:${portNum}}\n`);
-                writeStreams.stdout(chalk`${this.formattedJobName} {redBright see (${serviceContanerLogFile})}\n`);
+        try {
+            // Iterate over each port defined in the image, and try to connect to the alias
+            await Promise.any(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
+                if (!port.endsWith("/tcp")) return;
+                const portNum = parseInt(port.replace("/tcp", ""));
+                const spawnCmd = ["docker", "run", "--rm", `--name=gcl-wait-for-it-${this.jobId}-${portNum}`, "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${aliases[0]}:${portNum}`, "-t", "30"];
+                return Utils.spawn(spawnCmd);
+            }));
+            const endTime = process.hrtime(time);
+            writeStreams.stdout(chalk`${this.formattedJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${prettyHrtime(endTime)}}}\n`);
+        } catch (e: any) {
+            if (!(e instanceof AggregateError)) throw e;
+            e.errors.forEach((singleError: Error) => {
+                writeStreams.stdout(chalk`${this.formattedJobName} {redBright service image: ${serviceName} healthcheck failed}\n`);
+                singleError.message.split(/\r?\n/g).forEach((line: string) => {
+                    writeStreams.stdout(chalk`${this.formattedJobName} {redBright   ${line}}\n`);
+                });
+                writeStreams.stdout(chalk`${this.formattedJobName} {redBright also see (${serviceContanerLogFile})}\n`);
+            });
+        } finally {
+            // Kill all wait-for-it containers, when one have been successful
+            await Promise.all(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
+                if (!port.endsWith("/tcp")) return;
+                const portNum = parseInt(port.replace("/tcp", ""));
+                return Utils.spawn(["docker", "rm", "-f", `gcl-wait-for-it-${this.jobId}-${portNum}`]);
             }));
         }
-        await Promise.any(hcPromises);
-        const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.formattedJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${prettyHrtime(endTime)}}}\n`);
     }
 }
