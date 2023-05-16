@@ -141,7 +141,7 @@ export class Parser {
             for (const parallelMatrixVariables of parallelMatrixVariablesList) {
                 let matrixJobName = jobName;
                 if (parallelMatrixVariables) {
-                    matrixJobName = `${jobName} [${Object.values(parallelMatrixVariables ?? []).join(",")}]`;
+                    matrixJobName = `${jobName}: [${Object.values(parallelMatrixVariables ?? []).join(",")}]`;
                 }
 
                 const job = new Job({
