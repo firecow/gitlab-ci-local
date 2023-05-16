@@ -5,10 +5,6 @@ default:
 .image:
   image: ${DEBIAN_IMAGE_URL}
 
-bad-image:
-  image: alpino
-  script: echo "Must not show"
-
 test job:
   extends: .image
   script:
