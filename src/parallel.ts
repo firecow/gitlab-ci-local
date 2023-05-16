@@ -2,12 +2,18 @@ import assert from "assert";
 import deepExtend from "deep-extend";
 
 export function matrixVariablesList (jobData: any, jobName: string) {
+    const matrixVariables: {[key: string]: string}[] = [];
+
     if (jobData?.parallel?.matrix == null) {
+        if (Number.isInteger(jobData?.parallel)) {
+            for (let i = 0; i < jobData.parallel; i++) {
+                matrixVariables.push({});
+            }
+            return matrixVariables;
+        }
         return null;
     }
-    assert(Array.isArray(jobData.parallel.matrix), `${jobName} parallel.matrix is not an array`);
-
-    const matrixVariables: {[key: string]: string}[] = [];
+    assert(Array.isArray(jobData.parallel.matrix), `${jobName} parallel.matrix is not an array or integer`);
 
     // Expand string value to array of values
     for (const m of jobData.parallel.matrix) {

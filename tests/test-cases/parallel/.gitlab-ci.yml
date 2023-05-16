@@ -1,0 +1,26 @@
+---
+pre-job:
+  stage: .pre
+  script:
+    - echo "Pre-job"
+
+build-job:
+  stage: build
+  script:
+    - echo "NODE $CI_NODE_INDEX/$CI_NODE_TOTAL"
+    - mkdir -p files/
+    - filename="build-job-${CI_NODE_INDEX}.txt"
+    - echo "${filename}"
+    - echo "${CI_JOB_NAME}" > "files/${filename}.txt"
+  artifacts:
+    paths:
+      - files/
+  parallel: 3
+
+test-job:
+  stage: test
+  needs: [build-job, pre-job]
+  script:
+    - test -f files/build-job-1.txt
+    - test -f files/build-job-2.txt
+    - test -f files/build-job-3.txt

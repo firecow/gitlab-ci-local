@@ -25,9 +25,9 @@ test-job:
   needs: [build-job, pre-job]
   script:
     - echo "NAME:'${NAME}' TIER:'${TIER}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
-    - test -f files/build-job__bar_.txt
-    - test -f files/build-job__bear_.txt
     - test -f files/build-job__foo_.txt
+    - test -f files/build-job__bar_.txt
+    - test -f files/build-job__beb_.txt
   parallel:
     matrix:
       - NAME: [foo, bar]

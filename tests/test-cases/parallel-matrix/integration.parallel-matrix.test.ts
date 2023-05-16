@@ -22,6 +22,17 @@ test("parallel-matrix <test-job>", async () => {
         chalk`{blueBright test-job [bar,pro]} {greenBright >} NAME:'bar' TIER:'pro' 6/7`,
         chalk`{blueBright test-job [beb]    } {greenBright >} NAME:'beb' TIER:'' 7/7`,
 
+        chalk`{black.bgGreenBright  PASS } {blueBright pre-job           }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright build-job [foo]   }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright build-job [bar]   }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright build-job [beb]   }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job [foo,dev]}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job [foo,sta]}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job [foo,pro]}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job [bar,dev]}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job [bar,sta]}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job [bar,pro]}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job [beb]    }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
