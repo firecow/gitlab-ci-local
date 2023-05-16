@@ -116,6 +116,17 @@ export class Parser {
                 );
                 jobData.variables[key] = String(value);
             }
+
+            for (let i = 0; i < (jobData.services ?? []).length; i++) {
+                const service = jobData.services[i];
+                for (const [key, value] of Object.entries(service.variables || {})) {
+                    assert(
+                        typeof value === "string" || typeof value === "number",
+                        chalk`{blueBright ${jobName}.services[${i}]} has invalid variables hash of key value pairs. ${key}=${value}`
+                    );
+                    jobData.services[i].variables[key] = String(value);
+                }
+            }
         });
 
         this._gitlabData = gitlabData;
@@ -134,7 +145,7 @@ export class Parser {
                         ? Object.values(parallelMatrixVariables).join(",")
                         : nodeIndex;
 
-                    matrixJobName = `${jobName} [${identifier}]`;
+                    matrixJobName = `${jobName}: [${identifier}]`;
                 }
 
                 const job = new Job({

@@ -40,6 +40,7 @@ interface Service {
     entrypoint: string[] | null;
     command: string[] | null;
     alias: string | null;
+    variables: {[name: string]: string};
 }
 
 interface Need {
@@ -280,14 +281,15 @@ export class Job {
         const services: Service[] = [];
         if (!this.jobData["services"]) return [];
 
-        const expanded = Utils.expandVariables(this._variables);
         for (const service of Object.values<any>(this.jobData["services"])) {
+            const expanded = Utils.expandVariables({...this._variables, ...service["variables"]});
             let serviceName = Utils.expandText(service["name"], expanded);
             serviceName = serviceName.includes(":") ? serviceName : `${serviceName}:latest`;
             services.push({
                 name: serviceName,
                 entrypoint: service["entrypoint"] ?? null,
                 command: service["command"] ?? null,
+                variables: expanded,
                 alias: Utils.expandText(service["alias"], expanded) ?? null,
             });
         }
@@ -439,7 +441,7 @@ export class Job {
             for (const [serviceIndex, service] of this.services.entries()) {
                 const serviceName = service.name;
                 await this.pullImage(writeStreams, serviceName);
-                const serviceContainerId = await this.startService(writeStreams, expanded, service, serviceIndex);
+                const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service, serviceIndex);
                 const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
                 await this.serviceHealthCheck(writeStreams, service, serviceContanerLogFile);
                 const {stdout, stderr} = await Utils.spawn(["docker", "logs", serviceContainerId]);
