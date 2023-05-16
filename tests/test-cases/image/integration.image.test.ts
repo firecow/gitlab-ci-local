@@ -1,6 +1,6 @@
 import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
-import fs, {write} from "fs-extra";
+import fs from "fs-extra";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
