@@ -104,6 +104,7 @@ export function servicesComplex (data: any) {
         entrypoint: data.entrypoint,
         command: data.command,
         alias: data.alias,
+        variables: data.variables,
     };
 }
 
