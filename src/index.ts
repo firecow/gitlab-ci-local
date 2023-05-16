@@ -25,12 +25,13 @@ import {AssertionError} from "assert";
                     const jobs = await handler(argv, new WriteStreamsProcess());
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
-                } catch (e) {
+                } catch (e: any) {
                     if (e instanceof AssertionError) {
                         process.stderr.write(chalk`{red ${e.message}}\n`);
                         process.exit(1);
                     }
-                    throw e;
+                    process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
+                    process.exit(1);
                 }
             },
             builder: (y: any) => {

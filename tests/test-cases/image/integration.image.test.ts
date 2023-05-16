@@ -1,6 +1,6 @@
 import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
-import fs from "fs-extra";
+import fs, {write} from "fs-extra";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
@@ -88,20 +88,6 @@ test.concurrent("image <test-ignore-regression>", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
-
-// test.concurrent("image <bad-image>", async () => {
-//     const writeStreams = new WriteStreamsMock();
-//
-//     await handler({
-//         cwd: "tests/test-cases/image",
-//         job: ["bad-image"],
-//     }, writeStreams);
-//
-//     const expected = [
-//         chalk`{red Error: Command failed with exit code 1: docker pull alpino:latest\nError response from daemon: pull access denied for alpino, repository does not exist or may require 'docker login': denied: requested access to the resource is denied}`,
-//     ];
-//     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
-// });
 
 test.concurrent("image <issue-206>", async () => {
     const writeStreams = new WriteStreamsMock();
