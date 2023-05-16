@@ -14,7 +14,7 @@ export class Executor {
             for (const s of startCandidates) {
                 promises.push(s.start());
             }
-            await Promise.allSettled(promises);
+            await Promise.all(promises);
         } while (startCandidates.length > 0);
     }
 
