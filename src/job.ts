@@ -445,7 +445,7 @@ export class Job {
                     await this.pullImage(writeStreams, serviceName);
                     const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service, serviceIndex);
                     const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
-                    await this.serviceHealthCheck(writeStreams, service, serviceContanerLogFile);
+                    await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContanerLogFile);
                     const {stdout, stderr} = await Utils.spawn(["docker", "logs", serviceContainerId]);
                     await fs.ensureFile(serviceContanerLogFile);
                     await fs.promises.writeFile(serviceContanerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
