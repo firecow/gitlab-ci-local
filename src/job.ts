@@ -438,16 +438,19 @@ export class Job {
 
         if (this.services?.length) {
             await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
-            for (const [serviceIndex, service] of this.services.entries()) {
-                const serviceName = service.name;
-                await this.pullImage(writeStreams, serviceName);
-                const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service, serviceIndex);
-                const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
-                await this.serviceHealthCheck(writeStreams, service, serviceContanerLogFile);
-                const {stdout, stderr} = await Utils.spawn(["docker", "logs", serviceContainerId]);
-                await fs.ensureFile(serviceContanerLogFile);
-                await fs.promises.writeFile(serviceContanerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
-            }
+
+            await Promise.all(
+                this.services.map(async (service, serviceIndex) => {
+                    const serviceName = service.name;
+                    await this.pullImage(writeStreams, serviceName);
+                    const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service, serviceIndex);
+                    const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
+                    await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContanerLogFile);
+                    const {stdout, stderr} = await Utils.spawn(["docker", "logs", serviceContainerId]);
+                    await fs.ensureFile(serviceContanerLogFile);
+                    await fs.promises.writeFile(serviceContanerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
+                })
+            );
         }
 
         const prescripts = this.beforeScripts.concat(this.scripts);
@@ -1074,7 +1077,7 @@ export class Job {
         return containerId;
     }
 
-    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceContanerLogFile: string) {
+    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceIndex: number, serviceContanerLogFile: string) {
         const serviceAlias = service.alias;
         const serviceName = service.name;
 
@@ -1088,6 +1091,8 @@ export class Job {
             aliases.push(serviceAlias);
         }
 
+        const uniqueAlias = aliases[aliases.length - 1];
+
         if ((imageInspect[0]?.Config?.ExposedPorts ?? null) === null) {
             return writeStreams.stderr(chalk`${this.formattedJobName} {yellow Could not find exposed tcp ports ${serviceName}}\n`);
         }
@@ -1098,7 +1103,7 @@ export class Job {
             await Promise.any(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
-                const spawnCmd = ["docker", "run", "--rm", `--name=gcl-wait-for-it-${this.jobId}-${portNum}`, "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${aliases[0]}:${portNum}`, "-t", "30"];
+                const spawnCmd = ["docker", "run", "--rm", `--name=gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`, "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${uniqueAlias}:${portNum}`, "-t", "30"];
                 return Utils.spawn(spawnCmd);
             }));
             const endTime = process.hrtime(time);
@@ -1117,7 +1122,7 @@ export class Job {
             await Promise.all(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
-                return Utils.spawn(["docker", "rm", "-f", `gcl-wait-for-it-${this.jobId}-${portNum}`]);
+                return Utils.spawn(["docker", "rm", "-f", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
             }));
         }
     }
