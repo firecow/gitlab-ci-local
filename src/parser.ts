@@ -130,7 +130,11 @@ export class Parser {
             for (const parallelMatrixVariables of parallelMatrixVariablesList) {
                 let matrixJobName = jobName;
                 if (parallelMatrixVariables) {
-                    matrixJobName = `${jobName} [${Object.values(parallelMatrixVariables ?? []).join(",")}]`;
+                    const identifier = Object.values(parallelMatrixVariables).length > 0
+                        ? Object.values(parallelMatrixVariables).join(",")
+                        : nodeIndex;
+
+                    matrixJobName = `${jobName} [${identifier}]`;
                 }
 
                 const job = new Job({
