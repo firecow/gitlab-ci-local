@@ -69,6 +69,11 @@ multie-job:
     - name: alpine
       entrypoint: ["/bin/sh", "-c", "'echo Service 2'"]
       command: ["sh"]
+    - name: alpine
+      variables:
+        ENV_TEST: Service 3
+      entrypoint: ["/bin/sh", "-c"]
+      command: ["echo $ENV_TEST"]
   image: tutum/dnsutils
   script:
     - echo "Hello"
