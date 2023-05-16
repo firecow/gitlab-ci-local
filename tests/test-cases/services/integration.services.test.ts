@@ -106,11 +106,11 @@ test.concurrent("services <multie-job>", async () => {
         job: ["multie-job"],
     }, writeStreams);
 
-    expect(writeStreams.stderrLines.length).toEqual(3);
+    expect(writeStreams.stderrLines.length).toEqual(4);
     expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-0.log")).toEqual(true);
     expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-1.log")).toEqual(true);
     expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-2.log")).toEqual(true);
-    expect(await fs.readFile("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-2.log")).toMatch(/Service 3/)
+    expect(await fs.readFile("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/alpine:latest-2.log", "utf-8")).toMatch(/Service 3/);
 });
 
 test.concurrent("services <no-tmp>", async () => {
