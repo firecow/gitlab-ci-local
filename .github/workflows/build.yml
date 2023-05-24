@@ -43,6 +43,7 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
       - run: npm install
       - run: npm run build
+      - run: node src/index.js --help
 
   unused-deps:
     runs-on: ubuntu-latest
