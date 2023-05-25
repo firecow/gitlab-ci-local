@@ -36,6 +36,7 @@ jobs:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
       - run: npm install
+      - run: npm run build
       - run: npm run pkg-linux
         env:
           PKG_CACHE: .pkg
