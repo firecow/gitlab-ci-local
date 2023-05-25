@@ -37,6 +37,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run pkg-linux
+      - run: node src/index.js --version
       - run: bin/linux/gitlab-ci-local --version
       - run: bin/linux/gitlab-ci-local --help
 
@@ -53,21 +54,6 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
-
-  typescript-compile:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-      - run: node src/index.js --help
 
   unused-deps:
     runs-on: ubuntu-latest
