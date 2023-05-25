@@ -431,7 +431,7 @@ export class Job {
             }
             await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:/gcl-builds`], argv.cwd);
             await Utils.spawn(["docker", "start", "--attach", containerId], argv.cwd);
-            await Utils.spawn(["docker", "rm", "-f", containerId], argv.cwd);
+            await Utils.spawn(["docker", "rm", "-vf", containerId], argv.cwd);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
@@ -510,7 +510,7 @@ export class Job {
 
         for (const id of this._containersToClean) {
             try {
-                await Utils.spawn(["docker", "rm", "-f", `${id}`]);
+                await Utils.spawn(["docker", "rm", "-vf", `${id}`]);
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
             }
@@ -1122,7 +1122,7 @@ export class Job {
             await Promise.allSettled(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
-                return Utils.spawn(["docker", "rm", "-f", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
+                return Utils.spawn(["docker", "rm", "-vf", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
             }));
         }
     }
