@@ -53,6 +53,10 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
         }
     });
 
+    process.on("exit", (_: string, code: number) => {
+        cleanupResources(parser).finally(process.exit(code));
+    });
+
     process.on("SIGINT", (_: string, code: number) => {
         cleanupResources(parser).finally(process.exit(code));
     });
