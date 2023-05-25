@@ -34,7 +34,6 @@ jobs:
         with:
           path: ${{ env.PKG_CACHE_PATH }}
           key: pkg-cache-${{ matrix.node-version }}
-      - uses: actions/cache@v3
       - run: npm ci
       - run: npm run build
       - run: npm run pkg-linux
@@ -52,7 +51,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      - uses: actions/cache@v3
       - run: npm ci
       - run: npm run lint
 
