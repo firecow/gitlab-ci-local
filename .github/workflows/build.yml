@@ -16,6 +16,27 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ibiqlik/action-yamllint@v3
 
+  pkg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - uses: actions/cache@v3
+        with:
+          path: '.pkg'
+      - uses: actions/cache@v3
+        with:
+          path: 'node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
+      - run: npm install
+      - run: npm run pkg-linux
+        env:
+          PKG_CACHE: .pkg
+      - run: bin/linux/gitlab-ci-local --version
+      - run: bin/linux/gitlab-ci-local --help
+
   eslint:
     runs-on: ubuntu-latest
     steps:
