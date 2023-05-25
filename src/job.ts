@@ -1119,7 +1119,7 @@ export class Job {
             });
         } finally {
             // Kill all wait-for-it containers, when one have been successful
-            await Promise.all(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
+            await Promise.allSettled(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
                 return Utils.spawn(["docker", "rm", "-f", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);

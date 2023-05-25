@@ -40,6 +40,16 @@ deploy-job:
   after_script:
     - echo "Deploy something in after_script"
 
+multiport-job:
+  services:
+    - name: mysql:8.0.33
+      variables:
+        MYSQL_ROOT_PASSWORD: secret
+  stage: deploy
+  image: tutum/dnsutils
+  script:
+    - host mysql
+
 alias-job:
   services:
     - name: redis

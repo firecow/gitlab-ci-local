@@ -69,6 +69,19 @@ test.concurrent("services <deploy-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
+test.concurrent("services <multiport-job>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["multiport-job"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{black.bgGreenBright  PASS } {blueBright multiport-job             }`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
 test.concurrent("services <alias-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
