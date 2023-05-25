@@ -28,10 +28,12 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - uses: actions/cache@v3
+        name: cache pkg cache
         with:
           path: '.pkg'
           key: pkg-cache-${{ matrix.node-version }}
       - uses: actions/cache@v3
+        name: cache node_modules
         with:
           path: 'node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
