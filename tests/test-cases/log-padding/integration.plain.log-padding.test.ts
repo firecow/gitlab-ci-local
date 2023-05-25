@@ -7,7 +7,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-const pipelineDirectory = "tests/test-cases/logPadding";
+const pipelineDirectory = "tests/test-cases/log-padding";
 
 async function verifyLogs ({maxJobNameLength}: {maxJobNameLength?: number}) {
     const writeStreams = new WriteStreamsMock();

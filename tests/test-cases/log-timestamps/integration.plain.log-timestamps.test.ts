@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-const pipelineDirectory = "tests/test-cases/logTimestamps";
+const pipelineDirectory = "tests/test-cases/log-timestamps";
 
 test("logs - show timestamps", async () => {
     const writeStreams = new WriteStreamsMock();
