@@ -8,6 +8,9 @@ on:
       - master
   pull_request:
 
+env:
+  PKG_CACHE_PATH: .pkg
+
 jobs:
 
   yamllint:
@@ -16,61 +19,68 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ibiqlik/action-yamllint@v3
 
+  pkg:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - uses: actions/cache@v3
+        with:
+          path: ${{ env.PKG_CACHE_PATH }}
+          key: pkg-cache-${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm run build
+      - run: npm run pkg-linux
+      - run: node src/index.js --version
+      - run: bin/linux/gitlab-ci-local --version
+      - run: bin/linux/gitlab-ci-local --help
+
   eslint:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '18'
-      - uses: actions/cache@v3
-        with:
-          path: 'node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
-      - run: npm install
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
       - run: npm run lint
-
-  typescript-compile:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - uses: actions/cache@v3
-        with:
-          path: 'node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
-      - run: npm install
-      - run: npm run build
-      - run: node src/index.js --help
 
   unused-deps:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '18'
-      - uses: actions/cache@v3
-        with:
-          path: 'node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
-      - run: npm install
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
       - run: npx depcheck --ignores depcheck,@types/jest
 
   jest:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '18'
-      - uses: actions/cache@v3
-        with:
-          path: 'node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
-      - run: npm install
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
       - name: Run Tests
         run: FORCE_COLOR=1 npx jest --coverage --testTimeout 90000
       - uses: sonarsource/sonarcloud-github-action@v1.9
