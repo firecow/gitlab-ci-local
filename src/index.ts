@@ -53,27 +53,27 @@ import {AssertionError} from "assert";
         })
         .option("list", {
             type: "boolean",
-            description: "List jobs and job information, when:never excluded",
+            description: "List job information, when:never excluded",
             requiresArg: false,
         })
         .option("list-all", {
             type: "boolean",
-            description: "List jobs and job information, when:never included",
+            description: "List job information, when:never included",
             requiresArg: false,
         })
         .option("list-json", {
             type: "boolean",
-            description: "List jobs and job information in json format, when:never included",
+            description: "List job information in json format, when:never included",
             requiresArg: false,
         })
         .option("list-csv", {
             type: "boolean",
-            description: "List jobs and job information in csv format, when:never excluded",
+            description: "List job information in csv format, when:never excluded",
             requiresArg: false,
         })
         .option("list-csv-all", {
             type: "boolean",
-            description: "List jobs and job information in csv format, when:never included",
+            description: "List job information in csv format, when:never included",
             requiresArg: false,
         })
         .option("preview", {
@@ -113,7 +113,7 @@ import {AssertionError} from "assert";
         })
         .option("unset-variable", {
             type: "array",
-            description: "Unsets a variable",
+            description: "Unsets a variable (--unset-variable HELLO)",
             requiresArg: false,
         })
         .option("remote-variables", {
@@ -123,17 +123,17 @@ import {AssertionError} from "assert";
         })
         .option("state-dir", {
             type: "string",
-            description: "Specify custom location of the .gitlab-ci-local state dir. Relative to cwd, eg. (symfony/.gitlab-ci-local)",
+            description: "Location of the .gitlab-ci-local state dir, relative to cwd, eg. (symfony/.gitlab-ci-local/)",
             requiresArg: false,
         })
         .option("file", {
             type: "string",
-            description: "Specify custom location of the .gitlab-ci.yml. Relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
+            description: "Location of the .gitlab-ci.yml, relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
             requiresArg: false,
         })
         .option("home", {
             type: "string",
-            description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml)",
+            description: "Location of the HOME .gitlab-ci-local folder ($HOME/.gitlab-ci-local/variables.yml)",
             requiresArg: false,
         })
         .option("shell-isolation", {
@@ -178,7 +178,7 @@ import {AssertionError} from "assert";
         })
         .option("artifacts-to-source", {
             type: "boolean",
-            description: "Do not copy the generated artifacts into cwd.",
+            description: "Copy the generated artifacts into cwd",
             requiresArg: false,
         })
         .option("cleanup", {
