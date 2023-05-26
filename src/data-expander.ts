@@ -21,7 +21,6 @@ export function jobExtends (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName)) continue;
         if (Object.getPrototypeOf(jobData) !== Object.prototype) continue;
-        jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends ?? [];
         const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
         gitlabData[jobName] = deepExtend({}, ...parentDatas, jobData);
     }
