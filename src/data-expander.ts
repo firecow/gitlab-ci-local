@@ -71,12 +71,22 @@ export function complexObjects (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName)) continue;
         if (typeof jobData === "string") continue;
-        needs(jobName, gitlabData);
-        cache(jobName, gitlabData);
-        services(jobName, gitlabData);
-        image(jobName, gitlabData);
+        extendsEach(jobName, gitlabData);
+        needsEach(jobName, gitlabData);
+        cacheEach(jobName, gitlabData);
+        servicesEach(jobName, gitlabData);
+        imageEach(jobName, gitlabData);
         if (jobData.script) jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
     }
+}
+
+export function extendsEach (jobName: string, gitlabData: any) {
+    const jobData = gitlabData[jobName];
+    if (!jobData.extends) return;
+
+    jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends;
+    reference(gitlabData, jobData.extends);
+    jobData.extends = jobData.extends.flat(5);
 }
 
 export function needsComplex (data: any) {
@@ -89,42 +99,7 @@ export function needsComplex (data: any) {
     };
 }
 
-export function cacheComplex (data: any) {
-    return {
-        key: data.key,
-        paths: data.paths,
-        policy: data.policy ?? "pull-push",
-        when: data.when ?? "on_success",
-    };
-}
-
-export function servicesComplex (data: any) {
-    return {
-        name: typeof data === "string" ? data : data.name,
-        entrypoint: data.entrypoint,
-        command: data.command,
-        alias: data.alias,
-        variables: data.variables,
-    };
-}
-
-export function imageComplex (data: any) {
-    if (data == null) return data;
-    return {
-        name: typeof data === "string" ? data : data.name,
-        entrypoint: data.entrypoint,
-    };
-}
-
-export function globalVariables (gitlabData: any) {
-    for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
-        if (typeof value == "object" && !Array.isArray(value)) {
-            gitlabData.variables[key] = value["value"];
-        }
-    }
-}
-
-export function needs (jobName: string, gitlabData: any) {
+export function needsEach (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
     if (!jobData.needs) return;
 
@@ -135,7 +110,16 @@ export function needs (jobName: string, gitlabData: any) {
     }
 }
 
-export function cache (jobName: string, gitlabData: any) {
+export function cacheComplex (data: any) {
+    return {
+        key: data.key,
+        paths: data.paths,
+        policy: data.policy ?? "pull-push",
+        when: data.when ?? "on_success",
+    };
+}
+
+export function cacheEach (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
     const cache = jobData.cache;
     if (!cache) return;
@@ -148,7 +132,17 @@ export function cache (jobName: string, gitlabData: any) {
     }
 }
 
-export function services (jobName: string, gitlabData: any) {
+export function servicesComplex (data: any) {
+    return {
+        name: typeof data === "string" ? data : data.name,
+        entrypoint: data.entrypoint,
+        command: data.command,
+        alias: data.alias,
+        variables: data.variables,
+    };
+}
+
+export function servicesEach (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
     const services = jobData.services;
     if (!services) return;
@@ -162,7 +156,15 @@ export function services (jobName: string, gitlabData: any) {
     }
 }
 
-export function image (jobName: string, gitlabData: any) {
+export function imageComplex (data: any) {
+    if (data == null) return data;
+    return {
+        name: typeof data === "string" ? data : data.name,
+        entrypoint: data.entrypoint,
+    };
+}
+
+export function imageEach (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
     const image = jobData.image;
     if (!image) return;
@@ -204,6 +206,14 @@ export function defaults (gitlabData: any) {
         if (!jobData.image && image) jobData.image = image;
         if (!jobData.after_script && afterScript) jobData.after_script = afterScript;
         if (!jobData.before_script && beforeScript) jobData.before_script = beforeScript;
+    }
+}
+
+export function globalVariables (gitlabData: any) {
+    for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
+        if (typeof value == "object" && !Array.isArray(value)) {
+            gitlabData.variables[key] = value["value"];
+        }
     }
 }
 

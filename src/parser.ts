@@ -92,6 +92,7 @@ export class Parser {
 
         // Expand various fields in gitlabData
         DataExpander.complexObjects(gitlabData);
+        console.log(gitlabData);
         DataExpander.jobExtends(gitlabData);
         DataExpander.reference(gitlabData, gitlabData);
         DataExpander.defaults(gitlabData);
