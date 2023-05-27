@@ -1,9 +1,17 @@
 ---
+.ancient:
+  stage: test
+
 .after:
+  extends: .elder
   script:
     - echo "Should not be printed"
   after_script:
     - echo "Test something (after_script)"
+
+.elder:
+  extends: .ancient
+  stage: test
 
 .before:
   stage: test
