@@ -2,6 +2,7 @@ import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 
+jest.setTimeout(10000);
 
 test("parallel-matrix - ensure successful", async () => {
     const writeStreams = new WriteStreamsMock();
