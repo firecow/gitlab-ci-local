@@ -67,7 +67,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - run: npm ci
-      - run: npx depcheck --ignores depcheck,@types/jest
+      - run: npx depcheck --ignores depcheck
 
   jest:
     runs-on: ubuntu-latest
