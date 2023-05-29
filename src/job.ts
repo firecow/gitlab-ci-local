@@ -635,6 +635,7 @@ export class Job {
 
             if (this.services?.length) {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
+                dockerCmd += "--network-alias=build ";
             }
 
             dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;
