@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import deepExtend from "deep-extend";
+import justExtend from "just-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import prettyHrtime from "pretty-hrtime";
@@ -88,7 +88,7 @@ export class Parser {
         const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`);
         yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, 0, {cwd, stateDir, writeStreams, gitData, fetchIncludes, excludedGlobs: [], variables: expanded}));
 
-        const gitlabData: any = deepExtend({}, ...yamlDataList);
+        const gitlabData: any = justExtend(true, {}, ...yamlDataList);
 
         // Expand various fields in gitlabData
         DataExpander.complexObjects(gitlabData);

@@ -1,5 +1,5 @@
 import assert from "assert";
-import deepExtend from "deep-extend";
+import justExtend from "just-extend";
 
 export function matrixVariablesList (jobData: any, jobName: string) {
     if (jobData?.parallel?.matrix == null) {
@@ -17,7 +17,7 @@ export function matrixVariablesList (jobData: any, jobName: string) {
     }
 
     // Generate variables in while loop by expanding the matrix
-    const deep = deepExtend({}, jobData);
+    const deep: any = justExtend(true, {}, jobData);
     for (const m of deep.parallel.matrix) {
         let i = 0;
 

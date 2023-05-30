@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import deepExtend from "deep-extend";
+import justExtend from "just-extend";
 import assert, {AssertionError} from "assert";
 import {Job} from "./job";
 import {traverse} from "object-traversal";
@@ -22,7 +22,7 @@ export function jobExtends (gitlabData: any) {
         if (Job.illegalJobNames.has(jobName)) continue;
         if (Object.getPrototypeOf(jobData) !== Object.prototype) continue;
         const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
-        gitlabData[jobName] = deepExtend({}, ...parentDatas, jobData);
+        gitlabData[jobName] = justExtend(true, {}, ...parentDatas, jobData);
     }
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
