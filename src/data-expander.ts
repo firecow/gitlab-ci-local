@@ -168,7 +168,7 @@ export function imageEach (jobName: string, gitlabData: any) {
     const image = jobData.image;
     if (!image) return;
 
-    reference(gitlabData, jobData.image);
+    reference(gitlabData, jobData);
     jobData.image = imageComplex(jobData.image);
 }
 

@@ -26,6 +26,11 @@ test-entrypoint:
 
 .test-entrypoint-override/ci-image: firecow/gitlab-ci-local-test-image:entrypoint-with-exit
 
+issue-890:
+  image: !reference [.test-entrypoint-override/ci-image]
+  script:
+    - "Heya"
+
 test-entrypoint-override:
   image:
     name: !reference [.test-entrypoint-override/ci-image]
