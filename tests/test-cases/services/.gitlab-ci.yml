@@ -95,3 +95,8 @@ no-tmp:
     - name: greenmaid/basic_listen
   script:
     - echo "I should run normaly"
+
+issue-904:
+  services: !reference [.service-entry-ref]
+  script:
+    - echo "I shouldn't combust into flames"
