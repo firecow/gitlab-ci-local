@@ -146,9 +146,9 @@ export function servicesEach (jobName: string, gitlabData: any) {
     const services = jobData.services;
     if (!services) return;
 
+    jobData.services = Array.isArray(services) ? services : [services];
     reference(gitlabData, jobData.services);
     jobData.services = jobData.services.flat(5);
-    jobData.services = services;
 
     for (const [i, s] of Object.entries<any>(jobData.services)) {
         jobData.services[i] = servicesComplex(s);
