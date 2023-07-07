@@ -196,7 +196,7 @@ import {AssertionError} from "assert";
             description: "Show timestamps and job duration in the logs",
             requiresArg: false,
         })
-        .option("maxJobNameLength", {
+        .option("max-job-name-length", {
             type: "number",
             description: "Maximum padding for job name (use <= 0 for no padding)",
             requiresArg: false,
