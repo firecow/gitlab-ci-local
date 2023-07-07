@@ -1,0 +1,5 @@
+---
+test-job:
+  cache:
+    key: global
+  script: exit 0
