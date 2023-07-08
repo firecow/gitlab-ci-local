@@ -201,6 +201,11 @@ import {AssertionError} from "assert";
             description: "Maximum padding for job name (use <= 0 for no padding)",
             requiresArg: false,
         })
+        .option("jobs", {
+            type: "number",
+            description: "Limit the number of jobs that run simultaneously",
+            requiresArg: false,
+        })
         .completion("completion", false, async (_, yargsArgv) => {
             try {
                 const argv = new Argv({...yargsArgv, autoCompleting: true});
