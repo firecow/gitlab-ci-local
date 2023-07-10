@@ -178,7 +178,7 @@ export class Argv {
         return this.map.get("maxJobNameLength");
     }
 
-    get jobs (): number | undefined {
-        return this.map.get("jobs");
+    get concurrency (): number | undefined {
+        return this.map.get("concurrency");
     }
 }

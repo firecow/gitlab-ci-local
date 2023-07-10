@@ -13,7 +13,7 @@ export class Executor {
             startCandidates = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
             if (startCandidates.length > 0) {
                 await PromisePool
-                    .withConcurrency(argv.jobs ?? startCandidates.length)
+                    .withConcurrency(argv.concurrency ?? startCandidates.length)
                     .for(startCandidates)
                     .process(async (job, index, pool) => {
                         return job.start();
