@@ -15,7 +15,7 @@ export class Executor {
                 await PromisePool
                     .withConcurrency(argv.concurrency ?? startCandidates.length)
                     .for(startCandidates)
-                    .process(async (job: Job, _: int, _: PromisePool) => {
+                    .process(async (job: Job) => {
                         return job.start();
                     });
             }
