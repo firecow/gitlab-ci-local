@@ -2,7 +2,6 @@ import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
-import assert from "assert";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);

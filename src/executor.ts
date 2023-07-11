@@ -2,7 +2,7 @@ import chalk from "chalk";
 import {Job} from "./job";
 import assert, {AssertionError} from "assert";
 import {Argv} from "./argv";
-import { PromisePool } from '@supercharge/promise-pool'
+import {PromisePool} from "@supercharge/promise-pool";
 
 export class Executor {
 
@@ -15,10 +15,10 @@ export class Executor {
                 await PromisePool
                     .withConcurrency(argv.concurrency ?? startCandidates.length)
                     .for(startCandidates)
-                    .process(async (job, index, pool) => {
+                    .process(async (job: Job, _: int, _: PromisePool) => {
                         return job.start();
-	            });
-	    }
+                    });
+            }
         } while (startCandidates.length > 0);
     }
 
