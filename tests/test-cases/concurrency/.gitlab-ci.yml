@@ -1,0 +1,8 @@
+---
+one:
+  script:
+    - sleep 1
+
+two:
+  script:
+    - sleep 1

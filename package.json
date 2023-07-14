@@ -20,6 +20,7 @@
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
+    "@supercharge/promise-pool": "^2.4.0",
     "axios": "0.27.2",
     "base64url": "3.0.1",
     "camelcase": "6.3.0",
