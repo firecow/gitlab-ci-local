@@ -8,9 +8,14 @@ pipe-gen-job:
   script:
     - cat .gitlab-ci.tmpl | envsubst > .gitlab-ci-child.yml
 
-trigger_job:
+include-trigger:
   stage: test
   trigger:
     include:
       - artifact: .gitlab-ci-child.yml
         job: pipe-gen-job
+
+remote-trigger:
+  trigger:
+    project: mytarget/project
+    branch: master
