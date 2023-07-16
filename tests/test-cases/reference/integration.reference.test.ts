@@ -38,3 +38,16 @@ test("reference --file .gitlab-ci-complex.yml (issue 644)", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test("reference --file .gitlab-ci-issue-899.yml", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/reference",
+        file: ".gitlab-ci-issue-899.yml",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright job} {greenBright >} works`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
