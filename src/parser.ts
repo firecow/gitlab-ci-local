@@ -91,6 +91,7 @@ export class Parser {
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
         // Expand various fields in gitlabData
+        DataExpander.reference(gitlabData, gitlabData);
         DataExpander.complexObjects(gitlabData);
         DataExpander.jobExtends(gitlabData);
         DataExpander.reference(gitlabData, gitlabData);
