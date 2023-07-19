@@ -7,19 +7,23 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("artifacts-sequence artifacts copied to next stages", async () => {
+test("artifacts-sequence --shell-isolation artifacts copied to next stages", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-sequence",
         shellIsolation: true,
     }, writeStreams);
+
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
-test("artifacts-sequence parallel matrix artifacts copied to next stages", async () => {
+test("artifacts-sequence --shell-isolation parallel matrix artifacts copied to next stages", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-sequence",
         file: ".gitlab-ci-parallel.yml",
         shellIsolation: true,
     }, writeStreams);
+
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
