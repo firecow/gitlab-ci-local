@@ -1,0 +1,17 @@
+---
+produce-artifacts:
+  stage: build
+  parallel:
+    matrix:
+      - NAME: [file3, file4]
+  script:
+    - touch "${NAME}"
+  artifacts:
+    paths:
+      - "${NAME}"
+
+consume-artifacts:
+  stage: test
+  script:
+    - if [ ! -f file3 ]; then exit 1; fi
+    - if [ ! -f file4 ]; then exit 1; fi
