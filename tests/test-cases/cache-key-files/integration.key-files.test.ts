@@ -18,4 +18,5 @@ test.concurrent("cache-key-files <consume-cache> --shell-isolation --needs", asy
         shellIsolation: true,
     }, writeStreams);
 
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
