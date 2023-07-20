@@ -17,4 +17,6 @@ test.concurrent("cache-shell <consume-cache> --shell-isolation --needs", async (
         needs: true,
         shellIsolation: true,
     }, writeStreams);
+
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
