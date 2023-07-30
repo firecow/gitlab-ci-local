@@ -1,0 +1,5 @@
+---
+test-job:
+  image: totally-invalid-image-not-able-to-fetch-throw-error
+  script:
+    - echo "What ever"

@@ -102,3 +102,11 @@ test.concurrent("image <issue-206>", async () => {
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 });
+
+test.concurrent("pull invalid image", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await expect(handler({
+        cwd: "tests/test-cases/image",
+        file: ".gitlab-ci-invalid-image.yml",
+    }, writeStreams)).rejects.toThrow("Command failed with exit code 1: docker pull totally-invalid-image-not-able-to-fetch-throw-error:latest");
+});
