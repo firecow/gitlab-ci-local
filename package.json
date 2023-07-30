@@ -20,7 +20,6 @@
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
-    "@supercharge/promise-pool": "3.x.x",
     "axios": "0.27.x",
     "base64url": "3.x.x",
     "camelcase": "6.x.x",
@@ -33,6 +32,7 @@
     "globby": "11.x.x",
     "js-yaml": "4.x.x",
     "object-traversal": "1.x.x",
+    "p-map": "4.x.x",
     "pretty-hrtime": "1.x.x",
     "source-map-support": "0.5.x",
     "split2": "4.x.x",
