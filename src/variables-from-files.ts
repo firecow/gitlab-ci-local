@@ -61,12 +61,12 @@ export class VariablesFromFiles {
             for (const [matcher, content] of Object.entries(values)) {
                 assert(typeof content == "string", `${key}.${matcher} content must be text or multiline text`);
                 if (type === "variable" || (type === null && !/^[/|~]/.exec(content))) {
-                    const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
+                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replace(/\*/g, ".*")}$`, "g");
                     variables[key] = variables[key] ?? {type: "variable", environments: []};
                     variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
                 } else if (type === null && /^[/|~]/.exec(content)) {
                     const fileSource = content.replace(/^~\/(.*)/, `${homeDir}/$1`);
-                    const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
+                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replace(/\*/g, ".*")}$`, "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};
                     if (fs.existsSync(fileSource)) {
                         variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority, fileSource});
@@ -74,7 +74,7 @@ export class VariablesFromFiles {
                         variables[key].environments.push({content: `warn: ${key} is pointing to invalid path\n`, regexp, regexpPriority: matcher.length, scopePriority});
                     }
                 } else if (type === "file") {
-                    const regexp = new RegExp(matcher.replace(/\*/g, ".*"), "g");
+                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replace(/\*/g, ".*")}$`, "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};
                     variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
                 } else {

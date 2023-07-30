@@ -2,3 +2,6 @@
 global:
   HOME_VARIABLE: home-value
   PROJECT_VARIABLE: home-value
+  PROD_ONLY_VARIABLE:
+    values:
+      'prod': prod-value

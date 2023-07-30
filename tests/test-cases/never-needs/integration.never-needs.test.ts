@@ -31,4 +31,6 @@ test("never-needs <test-job-optional> --needs", async () => {
         job: ["test-job-optional"],
         needs: true,
     }, writeStreams);
+
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });

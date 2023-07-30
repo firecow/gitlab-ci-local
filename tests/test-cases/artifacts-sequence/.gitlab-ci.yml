@@ -1,0 +1,15 @@
+---
+produce-artifacts:
+  stage: build
+  script:
+    - touch file1 file2
+  artifacts:
+    paths:
+      - file1
+      - file2
+
+consume-artifacts:
+  stage: test
+  script:
+    - if [ ! -f file1 ]; then exit 1; fi
+    - if [ ! -f file2 ]; then exit 1; fi
