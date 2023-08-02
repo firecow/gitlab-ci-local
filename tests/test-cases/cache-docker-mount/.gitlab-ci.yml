@@ -3,7 +3,7 @@ produce-cache:
   stage: build
   image: alpine
   cache:
-    key: maven/ # Make sure to have invalid character for docker volume name
+    key: maven/  # Make sure to have invalid character for docker volume name
     paths: [.cache]
   script: mkdir -p .cache && touch .cache/file1
 
@@ -13,7 +13,7 @@ consume-cache:
   needs: [produce-cache]
   dependencies: [produce-cache]  # testing the absence of artifacts
   cache:
-    key: maven/ # Make sure to have invalid character for docker volume name
+    key: maven/  # Make sure to have invalid character for docker volume name
     paths: [.cache]
     policy: pull
   script: if [ ! -f .cache/file1 ]; then exit 1; fi
