@@ -32,7 +32,7 @@
     "globby": "11.x.x",
     "js-yaml": "4.x.x",
     "object-traversal": "1.x.x",
-    "p-map": "4.x.x",
+    "p-map": "6.x",
     "pretty-hrtime": "1.x.x",
     "source-map-support": "0.5.x",
     "split2": "4.x.x",
