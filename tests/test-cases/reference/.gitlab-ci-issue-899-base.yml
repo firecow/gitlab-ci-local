@@ -1,0 +1,3 @@
+---
+include: .gitlab-ci-issue-899-other.yml
+.common/util-image: !reference [.other/image]

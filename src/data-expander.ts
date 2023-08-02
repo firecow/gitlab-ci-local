@@ -8,7 +8,13 @@ const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
     assert(depth < extendsMaxDepth, chalk`{blueBright ${jobName}}: circular dependency detected in \`extends\``);
     depth++;
-    for (const parentName of (jobData.extends || [])) {
+
+    jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends;
+    jobData.extends = jobData.extends ?? [];
+    reference(gitlabData, jobData.extends);
+    jobData.extends = jobData.extends.flat(5);
+
+    for (const parentName of jobData.extends) {
         const parentData = gitlabData[parentName];
         assert(parentData != null, chalk`{blueBright ${parentName}} is unspecified, used by {blueBright ${jobName}} extends`);
         extendsRecurse(gitlabData, parentName, parentData, parents, depth);
@@ -70,22 +76,12 @@ export function complexObjects (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName)) continue;
         if (typeof jobData === "string") continue;
-        extendsEach(jobName, gitlabData);
         needsEach(jobName, gitlabData);
         cacheEach(jobName, gitlabData);
         servicesEach(jobName, gitlabData);
         imageEach(jobName, gitlabData);
         if (jobData.script) jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
     }
-}
-
-export function extendsEach (jobName: string, gitlabData: any) {
-    const jobData = gitlabData[jobName];
-    if (!jobData.extends) return;
-
-    jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends;
-    reference(gitlabData, jobData.extends);
-    jobData.extends = jobData.extends.flat(5);
 }
 
 export function needsComplex (data: any) {
