@@ -4,7 +4,7 @@ import fs from "fs-extra";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
-import {cleanupJobResources, Job} from "../../../src/job.js";
+import {cleanupJobResources, Job} from "../../../src/job";
 
 jest.setTimeout(30000);
 
