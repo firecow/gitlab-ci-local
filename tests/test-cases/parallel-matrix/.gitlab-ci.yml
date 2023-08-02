@@ -6,6 +6,7 @@ pre-job:
 
 build-job:
   stage: build
+  image: alpine:edge
   script:
     - echo "NAME:'${NAME}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
     - echo "NAME:'${NAME}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
@@ -22,6 +23,7 @@ build-job:
 
 test-job:
   stage: test
+  image: alpine:edge
   needs:
     - pre-job
     - job: build-job
@@ -30,9 +32,10 @@ test-job:
           - NAME: foo
   script:
     - echo "NAME:'${NAME}' TIER:'${TIER}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
-    - "[ ! -f files/build-job__bar_.txt ]"
-    - "[ ! -f files/build-job__beb_.txt ]"
-    - test -f files/build-job__foo_.txt
+    - ls files
+    - test -f files/build-job___bar_.txt
+    - test -f files/build-job___beb_.txt
+    - test -f files/build-job___foo_.txt
   parallel:
     matrix:
       - NAME: [foo, bar]

@@ -1,4 +1,4 @@
-import {WriteStreamsMock} from "../../../src/write-streams-mock";
+import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import assert, {AssertionError} from "assert";
@@ -31,4 +31,6 @@ test("never-needs <test-job-optional> --needs", async () => {
         job: ["test-job-optional"],
         needs: true,
     }, writeStreams);
+
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });

@@ -1,13 +1,17 @@
 ---
-test job:
+default:
+  image: firecow/gitlab-ci-local-test-image
+
+.image:
   image: ${DEBIAN_IMAGE_URL}
+
+test job:
+  extends: .image
   script:
     - echo "Test something"
 
 test-entrypoint:
   # This image have an `echo ${MULTILINE_VARIABLE}` in its entry point
-  image:
-    name: firecow/gitlab-ci-local-test-image
   variables:
     MULTILINE_VARIABLE: |
       I am
@@ -21,6 +25,11 @@ test-entrypoint:
     - cat < test-file.txt
 
 .test-entrypoint-override/ci-image: firecow/gitlab-ci-local-test-image:entrypoint-with-exit
+
+issue-890:
+  image: !reference [.test-entrypoint-override/ci-image]
+  script:
+    - "Heya"
 
 test-entrypoint-override:
   image:

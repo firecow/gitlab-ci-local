@@ -17,14 +17,14 @@ build-job:
 deploy-job:
   stage: deploy
   script:
-    - echo ${CI_JOB_STATUS} # running
+    - echo ${CI_JOB_STATUS}  # running
     - exit 0
   after_script:
-    - echo ${CI_JOB_STATUS} # success
+    - echo ${CI_JOB_STATUS}  # success
 
 post-job:
   stage: .post
   script:
     - exit 1
   after_script:
-    - echo ${CI_JOB_STATUS} # failed
+    - echo ${CI_JOB_STATUS}  # failed

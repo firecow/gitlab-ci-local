@@ -40,6 +40,7 @@ interface Service {
     entrypoint: string[] | null;
     command: string[] | null;
     alias: string | null;
+    variables: {[name: string]: string};
 }
 
 interface Need {
@@ -61,11 +62,11 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 
 export class Job {
 
-    static readonly illegalJobNames = [
+    static readonly illegalJobNames = new Set([
         "include", "local_configuration", "image", "services",
         "stages", "types", "before_script", "default",
         "after_script", "variables", "cache", "workflow",
-    ];
+    ]);
 
     readonly argv: Argv;
     readonly name: string;
@@ -134,7 +135,6 @@ export class Job {
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
 
         const matrixVariables = opt.matrixVariables ?? {};
-        // Merge and expand variables recursive
         this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables};
 
         let ciProjectDir = `${cwd}`;
@@ -159,7 +159,7 @@ export class Job {
         predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
         predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
-        predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH"]}`;
+        predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH_SLUG"]}`;
 
         // Find environment matched variables
         if (this.environment) {
@@ -184,6 +184,8 @@ export class Job {
             delete this._variables[unsetVariable];
         }
 
+        assert(this.scripts || this.trigger, chalk`{blueBright ${this.name}} must have script specified`);
+
         if (this.interactive && (this.when !== "manual" || this.imageName !== null)) {
             throw new AssertionError({message: `${this.formattedJobName} @Interactive decorator cannot have image: and must be when:manual`});
         }
@@ -199,19 +201,19 @@ export class Job {
         }
 
         for (const [i, s] of Object.entries<any>(this.services)) {
-            assert(s.name, `services[${i}].name is undefined`);
-            assert(!s.command || Array.isArray(s.command), `services[${i}].command must be an array`);
-            assert(!s.entrypoint || Array.isArray(s.entrypoint), `services[${i}].entrypoint must be an array`);
+            assert(s.name, chalk`{blue ${this.name}} services[${i}].name is undefined`);
+            assert(!s.command || Array.isArray(s.command), chalk`{blue ${this.name}} services[${i}].command must be an array`);
+            assert(!s.entrypoint || Array.isArray(s.entrypoint), chalk`{blue ${this.name}} services[${i}].entrypoint must be an array`);
         }
+
+        assert(!this.artifacts?.paths || Array.isArray(this.artifacts.paths), chalk`{blue ${this.name}} artifacts.paths must be an array`);
 
         if (this.imageName && argv.mountCache) {
             const expanded = Utils.expandVariables(this._variables);
             for (const c of this.cache) {
                 c.paths.forEach((p) => {
                     const path = Utils.expandText(p, expanded);
-                    if (path.includes("*")) {
-                        throw new AssertionError({message: `${this.name} cannot have * in cache paths, when --mount-cache is enabled`});
-                    }
+                    assert(!path.includes("*"), chalk`{blue ${this.name}} cannot have * in cache paths, when --mount-cache is enabled`);
                 });
             }
         }
@@ -268,7 +270,7 @@ export class Job {
     get imageEntrypoint (): string[] | null {
         const image = this.jobData["image"];
 
-        if (!image || !image.entrypoint) {
+        if (!image?.entrypoint) {
             return null;
         }
         assert(Array.isArray(image.entrypoint), "image:entrypoint must be an array");
@@ -279,14 +281,15 @@ export class Job {
         const services: Service[] = [];
         if (!this.jobData["services"]) return [];
 
-        const expanded = Utils.expandVariables(this._variables);
         for (const service of Object.values<any>(this.jobData["services"])) {
+            const expanded = Utils.expandVariables({...this._variables, ...service["variables"]});
             let serviceName = Utils.expandText(service["name"], expanded);
             serviceName = serviceName.includes(":") ? serviceName : `${serviceName}:latest`;
             services.push({
                 name: serviceName,
                 entrypoint: service["entrypoint"] ?? null,
                 command: service["command"] ?? null,
+                variables: expanded,
                 alias: Utils.expandText(service["alias"], expanded) ?? null,
             });
         }
@@ -327,7 +330,7 @@ export class Job {
         return this.jobData["description"] ?? "";
     }
 
-    get artifacts (): {paths?: string[]; exclude?: string[]; reports?: {dotenv?: string}; when?: string} | null {
+    get artifacts (): {paths: string[]; exclude?: string[]; reports?: {dotenv?: string}; when?: string} | null {
         return this.jobData["artifacts"];
     }
 
@@ -366,10 +369,6 @@ export class Job {
 
     get afterScriptsExitCode () {
         return this._afterScriptsExitCode;
-    }
-
-    get running () {
-        return this._running;
     }
 
     get started () {
@@ -432,23 +431,26 @@ export class Job {
             }
             await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:/gcl-builds`], argv.cwd);
             await Utils.spawn(["docker", "start", "--attach", containerId], argv.cwd);
-            await Utils.spawn(["docker", "rm", "-f", containerId], argv.cwd);
+            await Utils.spawn(["docker", "rm", "-vf", containerId], argv.cwd);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         if (this.services?.length) {
             await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
-            for (const [serviceIndex, service] of this.services.entries()) {
-                const serviceName = service.name;
-                await this.pullImage(writeStreams, serviceName);
-                const serviceContainerId = await this.startService(writeStreams, expanded, service, serviceIndex);
-                const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
-                await this.serviceHealthCheck(writeStreams, service, serviceContanerLogFile);
-                const {all} = await Utils.spawn(["docker", "logs", serviceContainerId]);
-                await fs.ensureFile(serviceContanerLogFile);
-                await fs.promises.writeFile(serviceContanerLogFile, all ?? "Service container had no output");
-            }
+
+            await Promise.all(
+                this.services.map(async (service, serviceIndex) => {
+                    const serviceName = service.name;
+                    await this.pullImage(writeStreams, serviceName);
+                    const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service, serviceIndex);
+                    const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
+                    await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContanerLogFile);
+                    const {stdout, stderr} = await Utils.spawn(["docker", "logs", serviceContainerId]);
+                    await fs.ensureFile(serviceContanerLogFile);
+                    await fs.promises.writeFile(serviceContanerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
+                })
+            );
         }
 
         const prescripts = this.beforeScripts.concat(this.scripts);
@@ -508,7 +510,7 @@ export class Job {
 
         for (const id of this._containersToClean) {
             try {
-                await Utils.spawn(["docker", "rm", "-f", `${id}`]);
+                await Utils.spawn(["docker", "rm", "-vf", `${id}`]);
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
             }
@@ -544,7 +546,7 @@ export class Job {
         if (!this.injectSSHAgent) {
             return "";
         }
-        if (process.platform === "darwin" || (process.env.OSTYPE?.match(/^darwin/) ?? null)) {
+        if (process.platform === "darwin" || /^darwin/.exec(process.env.OSTYPE ?? "")) {
             return "--env SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock -v /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock";
         }
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
@@ -566,16 +568,16 @@ export class Job {
     }
 
     private async mountCacheCmd (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
-        if (this.imageName && !this.argv.mountCache) return "";
+        if (this.imageName && !this.argv.mountCache) return [];
 
-        let cmd = "";
+        const cmd: string[] = [];
         for (const c of this.cache) {
             const uniqueCacheName = await this.getUniqueCacheName(this.argv.cwd, expanded, c.key);
             c.paths.forEach((p) => {
                 const path = Utils.expandText(p, expanded);
                 writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright mounting cache} for path ${path}\n`);
                 const cacheMount = Utils.safeDockerString(`gcl-${expanded.CI_PROJECT_PATH_SLUG}-${uniqueCacheName}`);
-                cmd += `-v ${cacheMount}:/gcl-builds/${path} `;
+                cmd.push("-v", `${cacheMount}:/gcl-builds/${path}`);
             });
         }
         return cmd;
@@ -608,8 +610,8 @@ export class Job {
                 env: {...expanded, ...process.env},
             });
             return new Promise<number>((resolve, reject) => {
-                interactiveCp.on("exit", (code) => resolve(code ?? 0));
-                interactiveCp.on("error", (err) => reject(err));
+                void interactiveCp.on("exit", (code) => resolve(code ?? 0));
+                void interactiveCp.on("error", (err) => reject(err));
             });
         }
 
@@ -633,6 +635,7 @@ export class Job {
 
             if (this.services?.length) {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
+                dockerCmd += "--network-alias=build ";
             }
 
             dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;
@@ -664,8 +667,7 @@ export class Job {
                 dockerCmd += `-e ${key} `;
             }
 
-            dockerCmd += await this.mountCacheCmd(writeStreams, expanded);
-
+            dockerCmd += `${(await this.mountCacheCmd(writeStreams, expanded)).join(" ")} `;
             dockerCmd += `${this.imageName} sh -c "\n`;
             dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
             dockerCmd += "\texec /usr/local/bin/bash \n";
@@ -736,8 +738,8 @@ export class Job {
                 cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
                 cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
             }
-            cp.on("exit", (code) => resolve(code ?? 0));
-            cp.on("error", (err) => reject(err));
+            void cp.on("exit", (code) => resolve(code ?? 0));
+            void cp.on("error", (err) => reject(err));
 
             if (this.imageName) {
                 cp.stdin?.end("/gcl-cmd");
@@ -851,9 +853,9 @@ export class Job {
     copyIn (source: string) {
         const safeJobName = this.safeJobName;
         if (!this.imageName && this.argv.shellIsolation) {
-            return Utils.bash(`rsync -a ${source}/. ${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`);
+            return Utils.spawn(["rsync", "-a", `${source}/.`, `${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`]);
         }
-        return Utils.bash(`docker cp ${source}/. ${this._containerId}:/gcl-builds`);
+        return Utils.spawn(["docker", "cp", `${source}/.`, `${this._containerId}:/gcl-builds`]);
     }
 
     private async copyCacheOut (writeStreams: WriteStreams, expanded: {[key: string]: string}, exitCode: number) {
@@ -922,7 +924,7 @@ export class Job {
         }
 
         time = process.hrtime();
-        const dockerCmdExtras = this.argv.mountCache ? [await this.mountCacheCmd(writeStreams, expanded)] : [];
+        const dockerCmdExtras = this.argv.mountCache ? await this.mountCacheCmd(writeStreams, expanded) : [];
         await this.copyOut(cpCmd, stateDir, "artifacts", dockerCmdExtras);
         endTime = process.hrtime(time);
 
@@ -939,9 +941,9 @@ export class Job {
 
         if (this.artifactsToSource && (this.argv.shellIsolation || this.imageName)) {
             time = process.hrtime();
-            await Utils.bash(`rsync --exclude=/.gitlab-ci-reports/ -a ${cwd}/${stateDir}/artifacts/${safeJobName}/. ${cwd}`);
+            await Utils.spawn(["rsync", "--exclude=/.gitlab-ci-reports/", "-a", `${cwd}/${stateDir}/artifacts/${safeJobName}/.`, cwd]);
             if (reportDotenv != null) {
-                await Utils.bash(`rsync -a ${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/. ${cwd}`);
+                await Utils.spawn(["rsync", "-a", `${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.`, cwd]);
             }
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -958,8 +960,8 @@ export class Job {
         if (this.imageName) {
             const {stdout: containerId} = await Utils.bash(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/gcl-builds/ -w /gcl-builds docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
             this._containersToClean.push(containerId);
-            await Utils.bash(`docker start ${containerId} --attach`);
-            await Utils.bash(`docker cp ${containerId}:/${type}/. ${stateDir}/${type}/.`, cwd);
+            await Utils.spawn(["docker", "start", containerId, "--attach"]);
+            await Utils.spawn(["docker", "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
         } else if (this.argv.shellIsolation) {
             await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}/${stateDir}/builds/${safeJobName}`);
         } else if (!this.argv.shellIsolation) {
@@ -1076,7 +1078,7 @@ export class Job {
         return containerId;
     }
 
-    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceContanerLogFile: string) {
+    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceIndex: number, serviceContanerLogFile: string) {
         const serviceAlias = service.alias;
         const serviceName = service.name;
 
@@ -1090,24 +1092,39 @@ export class Job {
             aliases.push(serviceAlias);
         }
 
+        const uniqueAlias = aliases[aliases.length - 1];
+
         if ((imageInspect[0]?.Config?.ExposedPorts ?? null) === null) {
             return writeStreams.stderr(chalk`${this.formattedJobName} {yellow Could not find exposed tcp ports ${serviceName}}\n`);
         }
 
-        // Iterate over each port defined in the image, and try to connect to the alias
         const time = process.hrtime();
-        const hcPromises = [];
-        for (const port of Object.keys(imageInspect[0].Config.ExposedPorts)) {
-            if (!port.endsWith("/tcp")) continue;
-            const portNum = parseInt(port.replace("/tcp", ""));
-            const spawnCmd = ["docker", "run", "--rm", "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${aliases[0]}:${portNum}`, "-t", "30"];
-            hcPromises.push(Utils.spawn(spawnCmd).catch(() => {
-                writeStreams.stdout(chalk`${this.formattedJobName} {redBright service image: ${serviceName} healthcheck failed: ${aliases[0]}:${portNum}}\n`);
-                writeStreams.stdout(chalk`${this.formattedJobName} {redBright see (${serviceContanerLogFile})}\n`);
+        try {
+            // Iterate over each port defined in the image, and try to connect to the alias
+            await Promise.any(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
+                if (!port.endsWith("/tcp")) return;
+                const portNum = parseInt(port.replace("/tcp", ""));
+                const spawnCmd = ["docker", "run", "--rm", `--name=gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`, "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${uniqueAlias}:${portNum}`, "-t", "30"];
+                return Utils.spawn(spawnCmd);
+            }));
+            const endTime = process.hrtime(time);
+            writeStreams.stdout(chalk`${this.formattedJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${prettyHrtime(endTime)}}}\n`);
+        } catch (e: any) {
+            if (!(e instanceof AggregateError)) throw e;
+            e.errors.forEach((singleError: Error) => {
+                writeStreams.stdout(chalk`${this.formattedJobName} {redBright service image: ${serviceName} healthcheck failed}\n`);
+                singleError.message.split(/\r?\n/g).forEach((line: string) => {
+                    writeStreams.stdout(chalk`${this.formattedJobName} {redBright   ${line}}\n`);
+                });
+                writeStreams.stdout(chalk`${this.formattedJobName} {redBright also see (${serviceContanerLogFile})}\n`);
+            });
+        } finally {
+            // Kill all wait-for-it containers, when one have been successful
+            await Promise.allSettled(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
+                if (!port.endsWith("/tcp")) return;
+                const portNum = parseInt(port.replace("/tcp", ""));
+                return Utils.spawn(["docker", "rm", "-vf", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
             }));
         }
-        await Promise.any(hcPromises);
-        const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.formattedJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${prettyHrtime(endTime)}}}\n`);
     }
 }

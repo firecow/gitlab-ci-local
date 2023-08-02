@@ -3,6 +3,7 @@
 /bin/
 /ppa/
 /*.sh
+tsconfig.tsbuildinfo
 
 /src/**/*.js
 /src/**/*.d.ts

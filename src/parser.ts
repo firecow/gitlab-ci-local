@@ -91,12 +91,10 @@ export class Parser {
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 
         // Expand various fields in gitlabData
-        DataExpander.complexObjects(gitlabData);
         DataExpander.jobExtends(gitlabData);
         DataExpander.reference(gitlabData, gitlabData);
-        DataExpander.beforeScripts(gitlabData);
-        DataExpander.afterScripts(gitlabData);
-        DataExpander.scripts(gitlabData);
+        DataExpander.complexObjects(gitlabData);
+        DataExpander.defaults(gitlabData);
         DataExpander.globalVariables(gitlabData);
         DataExpander.flattenLists(gitlabData);
 
@@ -118,6 +116,17 @@ export class Parser {
                 );
                 jobData.variables[key] = String(value);
             }
+
+            for (let i = 0; i < (jobData.services ?? []).length; i++) {
+                const service = jobData.services[i];
+                for (const [key, value] of Object.entries(service.variables || {})) {
+                    assert(
+                        typeof value === "string" || typeof value === "number",
+                        chalk`{blueBright ${jobName}.services[${i}]} has invalid variables hash of key value pairs. ${key}=${value}`
+                    );
+                    jobData.services[i].variables[key] = String(value);
+                }
+            }
         });
 
         this._gitlabData = gitlabData;
@@ -132,7 +141,7 @@ export class Parser {
             for (const parallelMatrixVariables of parallelMatrixVariablesList) {
                 let matrixJobName = jobName;
                 if (parallelMatrixVariables) {
-                    matrixJobName = `${jobName} [${Object.values(parallelMatrixVariables ?? []).join(",")}]`;
+                    matrixJobName = `${jobName}: [${Object.values(parallelMatrixVariables ?? []).join(",")}]`;
                 }
 
                 const job = new Job({
@@ -197,12 +206,12 @@ export class Parser {
         let noArtifactsToSourceMatch = null;
         let index = 0;
         for (const line of fileSplit) {
-            interactiveMatch = !interactiveMatch ? line.match(/#\s?@\s?[Ii]nteractive/) : interactiveMatch;
-            injectSSHAgent = !injectSSHAgent ? line.match(/#\s?@\s?[Ii]njectSSHAgent/) : injectSSHAgent;
-            noArtifactsToSourceMatch = !noArtifactsToSourceMatch ? line.match(/#\s?@\s?NoArtifactsToSource/i) : noArtifactsToSourceMatch;
-            descriptionMatch = !descriptionMatch ? line.match(/#\s?@\s?[Dd]escription (?<description>.*)/) : descriptionMatch;
+            interactiveMatch = !interactiveMatch ? /#\s?@\s?[Ii]nteractive/.exec(line) : interactiveMatch;
+            injectSSHAgent = !injectSSHAgent ? /#\s?@\s?[Ii]njectSSHAgent/.exec(line) : injectSSHAgent;
+            noArtifactsToSourceMatch = !noArtifactsToSourceMatch ? /#\s?@\s?NoArtifactsToSource/i.exec(line) : noArtifactsToSourceMatch;
+            descriptionMatch = !descriptionMatch ? /#\s?@\s?[Dd]escription (?<description>.*)/.exec(line) : descriptionMatch;
 
-            const jobMatch = line.match(/\w:/);
+            const jobMatch = /\w:/.exec(line);
             if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
                 if (interactiveMatch) {
                     fileSplitClone.splice(index + 1, 0, "  interactive: true");

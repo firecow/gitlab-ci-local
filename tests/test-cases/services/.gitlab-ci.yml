@@ -3,12 +3,17 @@ default:
   services:
     - nginx
 
+.service-entry-ref:
+  - name: alpine
+    command: ["/bin/sh", "-c", "echo 'foo\nhey' > /foo.txt && cat /foo.txt", "/bin/sh"]
+
+.service:
+  services: [!reference [.service-entry-ref, 0]]
+
 pre-job:
+  extends: .service
   stage: .pre
   image: alpine
-  services:
-    - name: alpine
-      command: ["/bin/sh", "-c", "echo 'foo\nhey' > /foo.txt && cat /foo.txt", "/bin/sh"]
   script:
     - cat /foo.txt
 
@@ -34,6 +39,16 @@ deploy-job:
     - host redis
   after_script:
     - echo "Deploy something in after_script"
+
+multiport-job:
+  services:
+    - name: mysql:8.0.33
+      variables:
+        MYSQL_ROOT_PASSWORD: secret
+  stage: deploy
+  image: tutum/dnsutils
+  script:
+    - host mysql
 
 alias-job:
   services:
@@ -64,6 +79,11 @@ multie-job:
     - name: alpine
       entrypoint: ["/bin/sh", "-c", "'echo Service 2'"]
       command: ["sh"]
+    - name: alpine
+      variables:
+        ENV_TEST: Service 3
+      entrypoint: ["/bin/sh", "-c"]
+      command: ["echo $ENV_TEST"]
   image: tutum/dnsutils
   script:
     - echo "Hello"
@@ -75,3 +95,8 @@ no-tmp:
     - name: greenmaid/basic_listen
   script:
     - echo "I should run normaly"
+
+issue-904:
+  services: !reference [.service-entry-ref]
+  script:
+    - echo "I shouldn't combust into flames"

@@ -1,4 +1,4 @@
-import {WriteStreamsMock} from "../../../src/write-streams-mock";
+import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -15,8 +15,9 @@ test("trigger", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright pipe-gen-job}`,
-        chalk`{black.bgGreenBright  PASS } {blueBright trigger_job }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright pipe-gen-job   }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright include-trigger}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright remote-trigger }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

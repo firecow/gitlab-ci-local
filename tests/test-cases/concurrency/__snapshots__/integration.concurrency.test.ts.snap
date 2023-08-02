@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`--concurrency 1 - should run sequentially 1`] = `
+"[94mone[39m [95mstarting[39m shell ([33mtest[39m)
+[94mone[39m [32m$ sleep 1[39m
+[94mone[39m [95mfinished[39m in [35m1 ms[39m
+[94mtwo[39m [95mstarting[39m shell ([33mtest[39m)
+[94mtwo[39m [32m$ sleep 1[39m
+[94mtwo[39m [95mfinished[39m in [35m1 ms[39m
+
+[30m[102m PASS [49m[39m [94mone[39m
+[30m[102m PASS [49m[39m [94mtwo[39m"
+`;

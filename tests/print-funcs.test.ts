@@ -1,5 +1,5 @@
 import {Utils} from "../src/utils";
-import {WriteStreamsMock} from "../src/write-streams-mock";
+import {WriteStreamsMock} from "../src/write-streams";
 
 test("Print job on first index", () => {
     const writeStreams = new WriteStreamsMock();

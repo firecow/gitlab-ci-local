@@ -1,4 +1,4 @@
-import {WriteStreamsMock} from "../../../src/write-streams-mock";
+import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
@@ -7,7 +7,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-const pipelineDirectory = "tests/test-cases/logPadding";
+const pipelineDirectory = "tests/test-cases/log-padding";
 
 async function verifyLogs ({maxJobNameLength}: {maxJobNameLength?: number}) {
     const writeStreams = new WriteStreamsMock();

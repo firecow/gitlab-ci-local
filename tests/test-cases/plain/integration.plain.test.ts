@@ -1,4 +1,4 @@
-import {WriteStreamsMock} from "../../../src/write-streams-mock";
+import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import fs from "fs-extra";

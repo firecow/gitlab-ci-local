@@ -1,4 +1,4 @@
-import {WriteStreamsMock} from "../../../src/write-streams-mock";
+import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -24,6 +24,7 @@ test("variable-order <test-job> --needs", async () => {
         chalk`{blueBright test-job} {greenBright >} CI_PIPELINE_ID=1000`,
         chalk`{blueBright test-job} {greenBright >} HOME_VARIABLE=home-value`,
         chalk`{blueBright test-job} {greenBright >} PROJECT_VARIABLE=project-value`,
+        chalk`{blueBright test-job} {greenBright >} PROD_ONLY_VARIABLE=notprod`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

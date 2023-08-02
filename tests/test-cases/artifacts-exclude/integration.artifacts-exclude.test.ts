@@ -1,4 +1,4 @@
-import {WriteStreamsMock} from "../../../src/write-streams-mock";
+import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
@@ -16,4 +16,5 @@ test("artifacts-exclude <consume-artifacts> --needs --exclude", async () => {
         shellIsolation: true,
     }, writeStreams);
 
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });

@@ -6,10 +6,9 @@ import * as path from "path";
 import yargs from "yargs";
 import {Parser} from "./parser";
 import * as state from "./state";
-import {WriteStreamsProcess} from "./write-streams-process";
+import {WriteStreamsProcess, WriteStreamsMock} from "./write-streams";
 import {handler} from "./handler";
 import {Executor} from "./executor";
-import {WriteStreamsMock} from "./write-streams-mock";
 import {Argv} from "./argv";
 import {AssertionError} from "assert";
 
@@ -26,12 +25,13 @@ import {AssertionError} from "assert";
                     const jobs = await handler(argv, new WriteStreamsProcess());
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
-                } catch (e) {
+                } catch (e: any) {
                     if (e instanceof AssertionError) {
                         process.stderr.write(chalk`{red ${e.message}}\n`);
                         process.exit(1);
                     }
-                    throw e;
+                    process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
+                    process.exit(1);
                 }
             },
             builder: (y: any) => {
@@ -53,27 +53,27 @@ import {AssertionError} from "assert";
         })
         .option("list", {
             type: "boolean",
-            description: "List jobs and job information, when:never excluded",
+            description: "List job information, when:never excluded",
             requiresArg: false,
         })
         .option("list-all", {
             type: "boolean",
-            description: "List jobs and job information, when:never included",
+            description: "List job information, when:never included",
             requiresArg: false,
         })
         .option("list-json", {
             type: "boolean",
-            description: "List jobs and job information in json format, when:never included",
+            description: "List job information in json format, when:never included",
             requiresArg: false,
         })
         .option("list-csv", {
             type: "boolean",
-            description: "List jobs and job information in csv format, when:never excluded",
+            description: "List job information in csv format, when:never excluded",
             requiresArg: false,
         })
         .option("list-csv-all", {
             type: "boolean",
-            description: "List jobs and job information in csv format, when:never included",
+            description: "List job information in csv format, when:never included",
             requiresArg: false,
         })
         .option("preview", {
@@ -113,7 +113,7 @@ import {AssertionError} from "assert";
         })
         .option("unset-variable", {
             type: "array",
-            description: "Unsets a variable",
+            description: "Unsets a variable (--unset-variable HELLO)",
             requiresArg: false,
         })
         .option("remote-variables", {
@@ -123,17 +123,17 @@ import {AssertionError} from "assert";
         })
         .option("state-dir", {
             type: "string",
-            description: "Specify custom location of the .gitlab-ci-local state dir. Relative to cwd, eg. (symfony/.gitlab-ci-local)",
+            description: "Location of the .gitlab-ci-local state dir, relative to cwd, eg. (symfony/.gitlab-ci-local/)",
             requiresArg: false,
         })
         .option("file", {
             type: "string",
-            description: "Specify custom location of the .gitlab-ci.yml. Relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
+            description: "Location of the .gitlab-ci.yml, relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
             requiresArg: false,
         })
         .option("home", {
             type: "string",
-            description: "Specify custom HOME location ($HOME/.gitlab-ci-local/variables.yml)",
+            description: "Location of the HOME .gitlab-ci-local folder ($HOME/.gitlab-ci-local/variables.yml)",
             requiresArg: false,
         })
         .option("shell-isolation", {
@@ -178,7 +178,7 @@ import {AssertionError} from "assert";
         })
         .option("artifacts-to-source", {
             type: "boolean",
-            description: "Do not copy the generated artifacts into cwd.",
+            description: "Copy the generated artifacts into cwd",
             requiresArg: false,
         })
         .option("cleanup", {
@@ -196,17 +196,29 @@ import {AssertionError} from "assert";
             description: "Show timestamps and job duration in the logs",
             requiresArg: false,
         })
-        .option("maxJobNameLength", {
+        .option("max-job-name-length", {
             type: "number",
             description: "Maximum padding for job name (use <= 0 for no padding)",
             requiresArg: false,
         })
-        .completion("completion", false, async (_, yargsArgv) => {
+        .option("concurrency", {
+            type: "number",
+            description: "Limit the number of jobs that run simultaneously",
+            requiresArg: false,
+        })
+        .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {
             try {
-                const argv = new Argv({...yargsArgv, autoCompleting: true});
-                const pipelineIid = await state.getPipelineIid(argv.cwd, argv.stateDir);
-                const parser = await Parser.create(argv, new WriteStreamsMock(), pipelineIid);
-                return [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
+                if (current.startsWith("-")) {
+                    completionFilter();
+                } else {
+                    const argv = new Argv({...yargsArgv, autoCompleting: true});
+                    state.getPipelineIid(argv.cwd, argv.stateDir).then((pipelineIid) => {
+                        Parser.create(argv, new WriteStreamsMock(), pipelineIid).then((parser) => {
+                            const jobNames = [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
+                            done(jobNames);
+                        });
+                    });
+                }
             } catch (e) {
                 return ["Parser-Failed!"];
             }

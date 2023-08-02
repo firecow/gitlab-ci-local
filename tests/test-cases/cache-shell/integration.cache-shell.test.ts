@@ -1,4 +1,4 @@
-import {WriteStreamsMock} from "../../../src/write-streams-mock";
+import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import fs from "fs-extra";
 import {initSpawnSpy} from "../../mocks/utils.mock";
@@ -18,5 +18,5 @@ test.concurrent("cache-shell <consume-cache> --shell-isolation --needs", async (
         shellIsolation: true,
     }, writeStreams);
 
-
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });

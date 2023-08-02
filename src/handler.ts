@@ -38,11 +38,7 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
     const file = argv.file;
     let parser: Parser | null = null;
 
-    process.on("exit", () => {
-        if (parser) cleanupResources(parser).then().catch();
-    });
-
-    process.on("unhandledRejection", async (e) => {
+    process.on("unhandledRejection", (e) => {
         if (e instanceof AssertionError) {
             process.stderr.write(chalk`{red ${e.message.trim()}}\n`);
         } else if (e instanceof Error) {
@@ -50,13 +46,19 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
         } else if (e) {
             process.stderr.write(chalk`{red ${e.toString().trim()}}\n`);
         }
-        if (parser) await cleanupResources(parser);
-        process.exit(1);
+        if (parser) {
+            cleanupResources(parser).finally(process.exit(1));
+        } else {
+            process.exit(1);
+        }
     });
 
-    process.on("SIGINT", async (_: string, code: number) => {
-        await cleanupResources(parser);
-        process.exit(code);
+    process.on("exit", (_: string, code: number) => {
+        cleanupResources(parser).finally(process.exit(code));
+    });
+
+    process.on("SIGINT", (_: string, code: number) => {
+        cleanupResources(parser).finally(process.exit(code));
     });
 
     if (argv.completion) {
@@ -79,7 +81,7 @@ export async function handler (args: any, writeStreams: WriteStreams): Promise<R
             if (jobName === "stages") {
                 continue;
             }
-            if (Job.illegalJobNames.includes(jobName) || jobName.startsWith(".")) {
+            if (Job.illegalJobNames.has(jobName) || jobName.startsWith(".")) {
                 delete gitlabData[jobName];
             }
         }

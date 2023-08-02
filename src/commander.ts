@@ -55,29 +55,28 @@ export class Commander {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
-        let potentialStarters: Job[] = [];
+        const potentialStarters: Job[] = [];
         const jobSet = needs ? new Set(jobs) : new Set<Job>();
-        jobArgs.forEach(jobName => {
-            const baseJobs = jobs.filter(j => j.baseName == jobName);
+        jobArgs.forEach(jobArgName => {
+            const baseJobs = jobs.filter(j => j.baseName == jobArgName || j.name === jobArgName);
             for (const b of baseJobs) {
                 jobSet.add(b);
                 if (needs) {
-                    potentialStarters = potentialStarters.concat(Executor.getPastToWaitFor(jobs, stages, b, argv.manual));
+                    potentialStarters.push(...Executor.getPastToWaitFor(jobs, stages, b, argv.manual));
                 }
                 potentialStarters.push(b);
             }
         });
+
         if (potentialStarters.length === 0) {
             throw new AssertionError({message: chalk`{blueBright ${jobArgs.join(",")}} could not be found`});
         }
 
-        if (argv.onlyNeeds) {
-            jobArgs.forEach((j) => {
-                potentialStarters = potentialStarters.filter(p => p.name !== j);
-            });
-        }
+        const starters = argv.onlyNeeds
+            ? potentialStarters.filter(p => !jobArgs.includes(p.name))
+            : potentialStarters;
 
-        await Executor.runLoop(argv, Array.from(jobSet), stages, potentialStarters);
+        await Executor.runLoop(argv, Array.from(jobSet), stages, starters);
         await Commander.printReport({
             cwd: argv.cwd,
             showTimestamps: argv.showTimestamps,
@@ -220,7 +219,7 @@ export class Commander {
         writeStreams.stdout(chalk`{grey allow_failure  needs}\n`);
 
         const renderLine = (job: Job) => {
-            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job).join(",");
+            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job);
             const allowFailure = job.allowFailure ? "true " : "false";
             let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
             jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
@@ -264,7 +263,7 @@ export class Commander {
 
         writeStreams.stdout("name;description;stage;when;allowFailure;needs\n");
         jobs.forEach((job) => {
-            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job).join(",") || [];
+            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job).join(",") ?? [];
             writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure};[${needs}]\n`);
         });
     }

@@ -1,0 +1,21 @@
+---
+# @Description Run Tests
+test-job:
+  services: [busybox]
+  image: busybox
+  stage: test
+  script:
+    - ping build -c 1 2>&1 >/dev/null
+    - exit $?
+  after_script:
+    - echo ${CI_JOB_STATUS}  # success
+# @Description Run Tests
+test-job-failure:
+  services: [busybox]
+  image: busybox
+  stage: test
+  script:
+    - ping nope -c 1 2>&1 >/dev/null
+    - exit $?
+  after_script:
+    - echo ${CI_JOB_STATUS}  # failed

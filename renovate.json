@@ -4,7 +4,6 @@
     ":disableDependencyDashboard",
     ":automergeAll",
     ":automergeBranch",
-    ":pinAllExceptPeerDependencies",
     ":maintainLockFilesWeekly"
   ]
 }

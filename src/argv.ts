@@ -177,4 +177,8 @@ export class Argv {
     get maxJobNameLength (): number | undefined {
         return this.map.get("maxJobNameLength");
     }
+
+    get concurrency (): number | undefined {
+        return this.map.get("concurrency");
+    }
 }
