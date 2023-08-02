@@ -11,6 +11,16 @@ import {handler} from "./handler";
 import {Executor} from "./executor";
 import {Argv} from "./argv";
 import {AssertionError} from "assert";
+import {Job, cleanupJobResources} from "./job.js";
+
+const jobs: Job[] = [];
+
+process.on("exit", (_: string, code: number) => {
+    cleanupJobResources(jobs).finally(process.exit(code));
+});
+process.on("SIGINT", (_: string, code: number) => {
+    cleanupJobResources(jobs).finally(process.exit(code));
+});
 
 (() => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
@@ -22,16 +32,17 @@ import {AssertionError} from "assert";
         .command({
             handler: async (argv) => {
                 try {
-                    const jobs = await handler(argv, new WriteStreamsProcess());
+                    const jobs: Job[] = [];
+                    await handler(argv, new WriteStreamsProcess(), jobs);
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
                 } catch (e: any) {
                     if (e instanceof AssertionError) {
-                        process.stderr.write(chalk`{red ${e.message}}\n`);
-                        process.exit(1);
+                        process.stderr.write(chalk`{red ${e.message.trim()}}\n`);
+                    } else {
+                        process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
                     }
-                    process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
-                    process.exit(1);
+                    cleanupJobResources(jobs).finally(process.exit(1));
                 }
             },
             builder: (y: any) => {
@@ -213,7 +224,7 @@ import {AssertionError} from "assert";
                 } else {
                     const argv = new Argv({...yargsArgv, autoCompleting: true});
                     state.getPipelineIid(argv.cwd, argv.stateDir).then((pipelineIid) => {
-                        Parser.create(argv, new WriteStreamsMock(), pipelineIid).then((parser) => {
+                        Parser.create(argv, new WriteStreamsMock(), pipelineIid, []).then((parser) => {
                             const jobNames = [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
                             done(jobNames);
                         });

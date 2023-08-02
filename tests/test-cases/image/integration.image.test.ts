@@ -4,6 +4,9 @@ import fs from "fs-extra";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
+import {cleanupJobResources, Job} from "../../../src/job";
+
+jest.setTimeout(30000);
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -101,4 +104,17 @@ test.concurrent("image <issue-206>", async () => {
         chalk`{blueBright issue-206               } {redBright >} Error: open /gcl-builds/hugo: no such file or directory`,
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
+});
+
+test.concurrent("pull invalid image", async () => {
+    const jobs: Job[] = [];
+    const writeStreams = new WriteStreamsMock();
+    const handlerPromise = handler({
+        cwd: "tests/test-cases/image",
+        file: ".gitlab-ci-invalid-image.yml",
+    }, writeStreams, jobs);
+
+    await expect(handlerPromise).rejects.toThrow("Command failed with exit code 1: docker pull totally-invalid-image-not-able-to-fetch-throw-error:latest");
+
+    await cleanupJobResources(jobs);
 });

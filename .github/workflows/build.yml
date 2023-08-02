@@ -23,14 +23,10 @@ jobs:
 
   pkg:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - uses: actions/cache@v3
         with:
@@ -45,46 +41,36 @@ jobs:
 
   eslint:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
 
   unused-deps:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - run: npm ci
       - run: npx depcheck --ignores depcheck
 
   jest:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18]
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - run: npm ci
       - name: Run Tests
-        run: FORCE_COLOR=1 npx jest --coverage --testTimeout 90000
+        run: FORCE_COLOR=1 npx jest --coverage --testTimeout 90000 --verbose
       - uses: sonarsource/sonarcloud-github-action@v1.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -99,11 +85,6 @@ jobs:
       contents: read
       security-events: write
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'typescript' ]
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -111,7 +92,7 @@ jobs:
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
-        languages: ${{ matrix.language }}
+        languages: 'typescript'
 
     - name: Autobuild
       uses: github/codeql-action/autobuild@v2

@@ -4,7 +4,7 @@ import chalk from "chalk";
 
 jest.setTimeout(60000);
 
-test("parallel-matrix - ensure successful", async () => {
+test.concurrent("parallel-matrix - ensure successful", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel-matrix",
@@ -30,7 +30,7 @@ test("parallel-matrix - ensure successful", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("parallel-matrix <test-job>", async () => {
+test.concurrent("parallel-matrix <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel-matrix",
@@ -54,8 +54,7 @@ test("parallel-matrix <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-
-test("parallel-matrix 'test-job [beb]'", async () => {
+test.concurrent("parallel-matrix 'test-job [beb]'", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel-matrix",

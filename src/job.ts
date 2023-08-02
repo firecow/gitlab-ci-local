@@ -1128,3 +1128,12 @@ export class Job {
         }
     }
 }
+
+export async function cleanupJobResources (jobs?: Iterable<Job>) {
+    if (!jobs) return;
+    const promises = [];
+    for (const job of jobs) {
+        promises.push(job.cleanupResources());
+    }
+    await Promise.all(promises);
+}
