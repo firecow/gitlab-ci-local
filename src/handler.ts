@@ -7,7 +7,7 @@ import {Parser} from "./parser";
 import * as state from "./state";
 import prettyHrtime from "pretty-hrtime";
 import {WriteStreams} from "./write-streams";
-import {Job} from "./job";
+import {cleanupJobResources, Job} from "./job";
 import {Utils} from "./utils";
 import {Argv} from "./argv";
 import assert from "assert";
@@ -99,5 +99,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();
+
+    return cleanupJobResources(jobs);
 }
 
