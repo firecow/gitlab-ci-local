@@ -1,3 +1,4 @@
+---
 build-images:
   stage: build
   script:

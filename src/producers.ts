@@ -29,7 +29,7 @@ export class Producers {
         for (const potential of jobs) {
             if (potential.artifacts == null) continue;
             if (potential.when == "never") continue;
-            if (!producerSet.has(potential.baseName)) continue;
+            if (!producerSet.has(potential.name) && !producerSet.has(potential.baseName)) continue;
             producers.push(potential);
         }
         return producers.map(producer => {

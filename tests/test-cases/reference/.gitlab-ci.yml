@@ -20,3 +20,11 @@ test-job:
   script:
     - !reference [.setup, script]
     - !reference [.arr]
+
+.issue-909:
+  cache:
+    - echo TEST
+
+issue-909:
+  script:
+    - !reference [.issue-909, cache]

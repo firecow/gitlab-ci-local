@@ -15,6 +15,7 @@ test("artifacts-reports-dotenv <deploy-image> --needs", async () => {
         needs: true,
     }, writeStreams);
 
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
 test("artifacts-reports-dotenv <deploy-shell-iso> --needs", async () => {
@@ -26,6 +27,7 @@ test("artifacts-reports-dotenv <deploy-shell-iso> --needs", async () => {
         shellIsolation: true,
     }, writeStreams);
 
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
 test("artifacts-reports-dotenv <deploy-shell-noiso> --needs", async () => {
@@ -37,4 +39,5 @@ test("artifacts-reports-dotenv <deploy-shell-noiso> --needs", async () => {
         shellIsolation: false,
     }, writeStreams);
 
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });

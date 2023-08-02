@@ -8,7 +8,7 @@ test-job:
     - ping build -c 1 2>&1 >/dev/null
     - exit $?
   after_script:
-    - echo ${CI_JOB_STATUS} # success
+    - echo ${CI_JOB_STATUS}  # success
 # @Description Run Tests
 test-job-failure:
   services: [busybox]
@@ -18,4 +18,4 @@ test-job-failure:
     - ping nope -c 1 2>&1 >/dev/null
     - exit $?
   after_script:
-    - echo ${CI_JOB_STATUS} # failed
+    - echo ${CI_JOB_STATUS}  # failed

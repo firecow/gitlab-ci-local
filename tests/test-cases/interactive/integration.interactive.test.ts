@@ -13,4 +13,6 @@ test("interactive <fake-shell-job>", async () => {
         cwd: "tests/test-cases/interactive",
         job: ["fake-shell-job"],
     }, writeStreams);
+
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
