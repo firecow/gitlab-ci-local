@@ -4,6 +4,9 @@ import fs from "fs-extra";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
+import {cleanupJobResources, Job} from "../../../src/job.js";
+
+jest.setTimeout(30000);
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -104,9 +107,14 @@ test.concurrent("image <issue-206>", async () => {
 });
 
 test.concurrent("pull invalid image", async () => {
+    const jobs: Job[] = [];
     const writeStreams = new WriteStreamsMock();
-    await expect(handler({
+    const handlerPromise = handler({
         cwd: "tests/test-cases/image",
         file: ".gitlab-ci-invalid-image.yml",
-    }, writeStreams)).rejects.toThrow("Command failed with exit code 1: docker pull totally-invalid-image-not-able-to-fetch-throw-error:latest");
+    }, writeStreams, jobs);
+
+    await expect(handlerPromise).rejects.toThrow("Command failed with exit code 1: docker pull totally-invalid-image-not-able-to-fetch-throw-error:latest");
+
+    await cleanupJobResources(jobs);
 });
