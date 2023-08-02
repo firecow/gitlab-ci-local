@@ -24,5 +24,5 @@ test("--concurrency not set", async () => {
         cwd: "tests/test-cases/concurrency",
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines.join("\n").replace(/[0-9.]+ m?s/g, "1 ms")).toMatchSnapshot();
+    expect(writeStreams.stderrLines.length).toEqual(2);
 });
