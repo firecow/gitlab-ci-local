@@ -1,0 +1,7 @@
+---
+include: '.gitlab-ci-issue-899-base.yml'
+
+job:
+  image: !reference [.common/util-image]
+  script:
+    - echo "works"
