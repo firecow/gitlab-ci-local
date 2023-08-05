@@ -54,7 +54,7 @@ process.on("SIGINT", (_: string, code: number) => {
             command: "$0 [job..]",
             describe: "Runs the entire pipeline or job's",
         })
-        .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
+        .usage("Find more information at https://github.com/firecow/gitlab-ci-local.\nNote: To negate an option use '--no-(option)'.")
         .strictOptions()
         .env("GCL")
         .option("manual", {
@@ -161,6 +161,7 @@ process.on("SIGINT", (_: string, code: number) => {
             type: "boolean",
             description: "Sets docker user to 0:0",
             requiresArg: false,
+            default: true,
         })
         .option("privileged", {
             type: "boolean",
@@ -191,11 +192,13 @@ process.on("SIGINT", (_: string, code: number) => {
             type: "boolean",
             description: "Copy the generated artifacts into cwd",
             requiresArg: false,
+            default: true,
         })
         .option("cleanup", {
             type: "boolean",
             description: "Remove docker resources after they've been used",
             requiresArg: false,
+            default: true,
         })
         .option("quiet", {
             type: "boolean",
