@@ -181,4 +181,9 @@ export class Argv {
     get concurrency (): number | undefined {
         return this.map.get("concurrency");
     }
+
+    get githttp (): boolean {
+        return this.map.get("git-over-http") ?? false;
+    }
+
 }

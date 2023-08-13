@@ -77,13 +77,13 @@ export class Parser {
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles);
         const variables = {...predefinedVariables, ...envMatchedVariables, ...argv.variable};
         const expanded = Utils.expandVariables(variables);
-
+        const useSparseCheckout = argv.githttp;
         let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, 0, {cwd, stateDir, writeStreams, gitData, fetchIncludes, excludedGlobs: [], variables: expanded}));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, 0, {cwd, stateDir, writeStreams, gitData, fetchIncludes, excludedGlobs: [], variables: expanded, useSparseCheckout}));
 
         const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, 0, {cwd, stateDir, writeStreams, gitData, fetchIncludes, excludedGlobs: [], variables: expanded}));
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, 0, {cwd, stateDir, writeStreams, gitData, fetchIncludes, excludedGlobs: [], variables: expanded, useSparseCheckout}));
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
 

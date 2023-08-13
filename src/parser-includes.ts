@@ -14,6 +14,7 @@ type ParserIncludesInitOptions = {
     writeStreams: WriteStreams;
     gitData: GitData;
     fetchIncludes: boolean;
+    useSparseCheckout: boolean
     excludedGlobs: string[];
     variables: {[key: string]: string};
 };
@@ -23,7 +24,7 @@ export class ParserIncludes {
     static async init (gitlabData: any, depth: number, opts: ParserIncludesInitOptions): Promise<any[]> {
         let includeDatas: any[] = [];
         const promises = [];
-        const {stateDir, cwd, fetchIncludes, gitData, excludedGlobs} = opts;
+        const {stateDir, cwd, fetchIncludes, gitData, excludedGlobs, useSparseCheckout} = opts;
 
         assert(depth < 100, chalk`circular dependency detected in \`include\``);
         depth++;
@@ -46,7 +47,7 @@ export class ParserIncludes {
                 }
             } else if (value["file"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
-                    promises.push(this.downloadIncludeProjectFile(cwd, stateDir, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes));
+                    promises.push(this.downloadIncludeProjectFile(cwd, stateDir, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes, useSparseCheckout));
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
@@ -160,14 +161,27 @@ export class ParserIncludes {
         }
     }
 
-    static async downloadIncludeProjectFile (cwd: string, stateDir: string, project: string, ref: string, file: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
+    static async downloadIncludeProjectFile (cwd: string, stateDir: string, project: string, ref: string, file: string, gitData: GitData, fetchIncludes: boolean, useSparseCheckout: boolean): Promise<void> {
         const remote = gitData.remote;
         const normalizedFile = file.replace(/^\/+/, "");
         try {
-            const target = `${stateDir}/includes/${remote.host}/${project}/${ref}/`;
+            const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
+
             if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
-            await fs.mkdirp(`${cwd}/${target}`);
-            await Utils.bash(`git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}`, cwd);
+
+            if (useSparseCheckout) {
+                const ext = "tmp-" + Math.random()
+                await fs.ensureFile(`${cwd}/${target}/${normalizedFile}`)
+                await Utils.bash(`
+                  cd ${cwd}; git clone -n --depth=1 --filter=tree:0 https://${remote.host}/${project}.git ${cwd}/${target}.${ext}  ;\
+                  cd ${cwd}/${target}.${ext} ;\
+                  git sparse-checkout set --no-cone ${normalizedFile}  ;\
+                  git checkout ; cd ..; cp ${cwd}/${target}.${ext}/${normalizedFile} ${cwd}/${target}/${normalizedFile};
+                `, cwd)
+            } else {
+                await fs.mkdirp(`${cwd}/${target}`);
+                await Utils.bash(`git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}`, cwd);
+            }
         } catch (e) {
             throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }\n${e}`});
         }

@@ -220,6 +220,12 @@ process.on("SIGINT", (_: string, code: number) => {
             description: "Limit the number of jobs that run simultaneously",
             requiresArg: false,
         })
+        .option("git-over-http", {
+            type: "boolean",
+            description: "Activate sparse checkouts instead of archive calls to enable git over http",
+            requiresArg: false,
+        })
+
         .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {
             try {
                 if (current.startsWith("-")) {
