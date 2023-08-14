@@ -9,6 +9,7 @@ test.concurrent("parallel-matrix - ensure successful", async () => {
     await handler({
         cwd: "tests/test-cases/parallel-matrix",
         maxJobNameLength: 0,
+        shellIsolation: true,
     }, writeStreams);
 
     const expected = [
@@ -35,6 +36,7 @@ test.concurrent("parallel-matrix <test-job>", async () => {
     await handler({
         cwd: "tests/test-cases/parallel-matrix",
         jobs: ["test-job"],
+        shellIsolation: true,
     }, writeStreams);
 
     const expected = [
@@ -59,6 +61,7 @@ test.concurrent("parallel-matrix 'test-job [beb]'", async () => {
     await handler({
         cwd: "tests/test-cases/parallel-matrix",
         job: ["test-job: [beb]"],
+        shellIsolation: true,
     }, writeStreams);
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
