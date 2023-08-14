@@ -13,6 +13,7 @@ export class GitData {
     };
 
     public readonly remote = {
+        protocol: "git",
         port: "22",
         host: "gitlab.com",
         group: "fallback.group",
@@ -66,11 +67,14 @@ export class GitData {
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
             const {stdout: gitRemote} = await Utils.spawn(["git", "remote", "-v"], cwd);
-            const gitRemoteMatch = /.*(?:\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>[^ .]+)(?:\.git)?.*/.exec(gitRemote);
+            const gitRemoteMatch = /(?:.*?)\s+(?<protocol>.*?)(?::\/\/|@)(?<host>[^:\/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>[^ .]+)(?:\.git)?.*/.exec(gitRemote);
 
             assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
 
-            this.remote.port = gitRemoteMatch.groups.port ?? "22";
+            this.remote.protocol = gitRemoteMatch.groups.protocol
+            this.remote.port = this.remote.protocol == "git" 
+                                    ? gitRemoteMatch.groups.port ?? "22" 
+                                    : gitRemoteMatch.groups.port;
             this.remote.host = gitRemoteMatch.groups.host;
             this.remote.group = gitRemoteMatch.groups.group;
             this.remote.project = gitRemoteMatch.groups.project;

@@ -167,17 +167,21 @@ export class ParserIncludes {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
             if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
 
-            const p = await Utils.bash("git config --get remote.origin.url");
-
-            if (p.stdout.startsWith("http")) {
+            if (remote.protocol.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
                 await fs.ensureFile(`${cwd}/${target}/${normalizedFile}`);
                 await Utils.bash(`
-                  cd ${cwd}; git clone -n --depth=1 --filter=tree:0 https://${remote.host}/${project}.git ${cwd}/${target}.${ext}  ;\
-                  cd ${cwd}/${target}.${ext} ;\
-                  git sparse-checkout set --no-cone ${normalizedFile}  ;\
-                  git checkout ; cd ..; cp ${cwd}/${target}.${ext}/${normalizedFile} ${cwd}/${target}/${normalizedFile};
-                `, cwd);
+                    cd ${cwd}/${stateDir} \
+                        && git clone -n --depth=1 --filter=tree:0 \
+                                ${remote.protocol}://${remote.host}/${project}.git \
+                                ${cwd}/${target}.${ext} \
+                        && cd ${cwd}/${target}.${ext} \
+                        && git sparse-checkout set --no-cone ${normalizedFile} \
+                        && git checkout \
+                        && cd ${cwd}/${stateDir} \
+                        && cp ${cwd}/${target}.${ext}/${normalizedFile}\
+                              ${cwd}/${target}/${normalizedFile}
+                    `, cwd);
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
                 await Utils.bash(`git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}`, cwd);
