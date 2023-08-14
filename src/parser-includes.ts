@@ -169,6 +169,11 @@ export class ParserIncludes {
 
             if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
 
+            if (!useSparseCheckout) {
+                const p = await Utils.bash("git config --get remote.origin.url");
+                useSparseCheckout = p.stdout.startsWith("http");
+            }
+
             if (useSparseCheckout) {
                 const ext = "tmp-" + Math.random();
                 await fs.ensureFile(`${cwd}/${target}/${normalizedFile}`);

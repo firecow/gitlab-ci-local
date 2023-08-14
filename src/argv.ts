@@ -183,7 +183,7 @@ export class Argv {
     }
 
     get githttp (): boolean {
-        return this.map.get("git-over-http") ?? false;
+        return this.map.get("force-git-over-http") ?? false;
     }
 
 }
