@@ -101,6 +101,7 @@ export class Job {
     private _jobNamePad: number | null = null;
 
     private _containersToClean: string[] = [];
+    private _filesToRm: string[] = [];
     private _startTime?: [number, number];
     private _endTime?: [number, number];
 
@@ -534,6 +535,12 @@ export class Job {
             }
         }
 
+        const rmPromises = [];
+        for (const file of this._filesToRm) {
+            rmPromises.push(fs.rm(file, {recursive: true, force: true}));
+        }
+        await Promise.all(rmPromises);
+
         const fileVariablesDir = this.fileVariablesDir;
         try {
             await fs.rm(fileVariablesDir, {recursive: true, force: true});
@@ -650,7 +657,7 @@ export class Job {
                 dockerCmd += `--add-host=${extraHost} `;
             }
 
-            const entrypointFile = `${cwd}/${stateDir}/scripts/image_entry/${safeJobName}`;
+            const entrypointFile = `${cwd}/${stateDir}/scripts/image_entry/${safeJobName}_${this.jobId}`;
             if (this.imageEntrypoint) {
                 if (this.imageEntrypoint[0] == "") {
                     dockerCmd += "--entrypoint '' ";
@@ -660,6 +667,7 @@ export class Job {
                     await fs.chmod(entrypointFile, "0755");
                     dockerCmd += "--entrypoint '/gcl-entry' ";
                     await fs.appendFile(entrypointFile, " \"$@\"\n");
+                    this._filesToRm.push(entrypointFile);
                 }
             }
 
@@ -706,14 +714,16 @@ export class Job {
 
         cmd += "exit 0\n";
 
-        await fs.outputFile(`${cwd}/${stateDir}/scripts/${safeJobName}`, cmd, "utf-8");
-        await fs.chmod(`${cwd}/${stateDir}/scripts/${safeJobName}`, "0755");
+        const jobScriptFile = `${cwd}/${stateDir}/scripts/${safeJobName}_${this.jobId}`;
+        await fs.outputFile(jobScriptFile, cmd, "utf-8");
+        await fs.chmod(jobScriptFile, "0755");
+        this._filesToRm.push(jobScriptFile);
 
         if (this.imageName) {
-            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/${safeJobName}`, `${this._containerId}:/gcl-cmd`], cwd);
+            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-cmd`], cwd);
         }
         if (this.imageEntrypoint && this.imageEntrypoint[0] != "") {
-            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/image_entry/${safeJobName}`, `${this._containerId}:/gcl-entry`], cwd);
+            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/image_entry/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-entry`], cwd);
         }
 
         const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
@@ -744,7 +754,7 @@ export class Job {
             if (this.imageName) {
                 cp.stdin?.end("/gcl-cmd");
             } else {
-                cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}`);
+                cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}_${this.jobId}`);
             }
         });
 
@@ -1042,7 +1052,7 @@ export class Job {
         }
 
         const serviceEntrypoint = service.entrypoint;
-        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${serviceIndex}`;
+        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${serviceIndex}_${this.jobId}`;
         if (serviceEntrypoint) {
             if (serviceEntrypoint[0] == "") {
                 dockerCmd += "--entrypoint '' ";
@@ -1051,6 +1061,7 @@ export class Job {
                 await fs.appendFile(serviceEntrypointFile, `${serviceEntrypoint.join(" ")}`);
                 await fs.appendFile(serviceEntrypointFile, " \"$@\"\n");
                 await fs.chmod(serviceEntrypointFile, "0755");
+                this._filesToRm.push(serviceEntrypointFile);
                 dockerCmd += "--entrypoint '/gcl-entry' ";
             }
         }
