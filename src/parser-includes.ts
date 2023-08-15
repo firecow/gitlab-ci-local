@@ -167,13 +167,13 @@ export class ParserIncludes {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
             if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
 
-            if (remote.protocol.startsWith("http")) {
+            if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
                 await fs.ensureFile(`${cwd}/${target}/${normalizedFile}`);
                 await Utils.bash(`
                     cd ${cwd}/${stateDir} \
                         && git clone -n --depth=1 --filter=tree:0 \
-                                ${remote.protocol}://${remote.host}/${project}.git \
+                                ${remote.schema}://${remote.host}/${project}.git \
                                 ${cwd}/${target}.${ext} \
                         && cd ${cwd}/${target}.${ext} \
                         && git sparse-checkout set --no-cone ${normalizedFile} \
