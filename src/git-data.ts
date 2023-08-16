@@ -75,6 +75,12 @@ export class GitData {
             this.remote.port = this.remote.schema == "git"
                 ? gitRemoteMatch.groups.port ?? "22"
                 : gitRemoteMatch.groups.port;
+            this.remote.port = this.remote.schema == "http"
+                ? gitRemoteMatch.groups.port ?? "80"
+                : gitRemoteMatch.groups.port;
+            this.remote.port = this.remote.schema == "https"
+                ? gitRemoteMatch.groups.port ?? "443"
+                : gitRemoteMatch.groups.port;
             this.remote.host = gitRemoteMatch.groups.host;
             this.remote.group = gitRemoteMatch.groups.group;
             this.remote.project = gitRemoteMatch.groups.project;

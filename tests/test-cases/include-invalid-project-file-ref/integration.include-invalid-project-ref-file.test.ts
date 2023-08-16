@@ -9,7 +9,7 @@ test("include-invalid-project-file-ref", async () => {
 
         const target = ".gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/HEAD/";
         const spyGitArchive = {
-            cmd: `git archive --remote=ssh://git@gitlab.com:22/firecow/gitlab-ci-local-include.git HEAD .gitlab-modue.yml | tee | tar -f - -xC ${target}`,
+            cmd: `git archive --remote=ssh://git@gitlab.com:22/firecow/gitlab-ci-local-includes.git HEAD .gitlab-modue.yml | tar -f - -xC ${target}`,
             rejection: "git archive | tar -f - -xC failed horribly\n  this is a core error\n  read it carefully",
         };
         initBashSpyReject([spyGitArchive]);
@@ -26,11 +26,13 @@ test("include-invalid-project-file-ref", async () => {
         expect(true).toBe(false);
     } catch (e) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
-        const msg = "Project include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: HEAD, file: .gitlab-modue.yml }";
-        const actual = e.message.includes(msg) && (
-            e.message.includes("fatal: the remote end hung up unexpectedly")
-            || e.message.includes("fatal: pathspec '.gitlab-modue.yml' did not match any files")
-        );
-        expect(actual).toBe(true);
+
+        const msg = [
+            "Project include could not be fetched { project: firecow/gitlab-ci-local-includes, ref: HEAD, file: .gitlab-modue.yml }",
+            "Error: git archive | tar -f - -xC failed horribly",
+            "  this is a core error",
+            "  read it carefully",
+        ];
+        expect(e.message).toBe(msg.join("\n"));
     }
 });
