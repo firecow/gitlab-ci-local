@@ -59,6 +59,7 @@
     "jest-when": "3.x.x",
     "pkg": "5.x.x",
     "ts-jest": "29.x.x",
+    "ts-node": "^10.9.1",
     "typescript": "5.x.x"
   },
   "engines": {
