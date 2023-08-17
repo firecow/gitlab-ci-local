@@ -72,15 +72,15 @@ export class GitData {
             assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
 
             this.remote.schema = gitRemoteMatch.groups.schema;
-            this.remote.port = this.remote.schema == "git"
-                ? gitRemoteMatch.groups.port ?? "22"
-                : gitRemoteMatch.groups.port;
-            this.remote.port = this.remote.schema == "http"
-                ? gitRemoteMatch.groups.port ?? "80"
-                : gitRemoteMatch.groups.port;
-            this.remote.port = this.remote.schema == "https"
-                ? gitRemoteMatch.groups.port ?? "443"
-                : gitRemoteMatch.groups.port;
+            if (this.remote.schema === "git") {
+                this.remote.port = gitRemoteMatch.groups.port ?? "22";
+            }
+            if (this.remote.schema === "https") {
+                this.remote.port = gitRemoteMatch.groups.port ?? "443";
+            }
+            if (this.remote.schema === "http") {
+                this.remote.port = gitRemoteMatch.groups.port ?? "80";
+            }
             this.remote.host = gitRemoteMatch.groups.host;
             this.remote.group = gitRemoteMatch.groups.group;
             this.remote.project = gitRemoteMatch.groups.project;
