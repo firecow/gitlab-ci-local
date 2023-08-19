@@ -27,7 +27,7 @@
     "checksum": "1.x.x",
     "deep-extend": "0.6.x",
     "dotenv": "16.x.x",
-    "execa": "5.x.x",
+    "execa": "8.x",
     "fs-extra": "11.x.x",
     "globby": "11.x.x",
     "js-yaml": "4.x.x",
