@@ -16,7 +16,7 @@ test("plain", async () => {
         cwd: "tests/test-cases/plain",
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines.length).toEqual(16);
+    expect(writeStreams.stdoutLines.length).toEqual(20);
     expect(writeStreams.stderrLines.length).toEqual(3);
 
     expect(await fs.pathExists("tests/test-cases/plain/.gitlab-ci-local/builds/test-job")).toBe(false);

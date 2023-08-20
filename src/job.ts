@@ -445,63 +445,57 @@ export class Job {
                     const serviceName = service.name;
                     await this.pullImage(writeStreams, serviceName);
                     const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service, serviceIndex);
-                    const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
-                    await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContanerLogFile);
+                    const serviceContainerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
+                    await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContainerLogFile);
                     const {stdout, stderr} = await Utils.spawn(["docker", "logs", serviceContainerId]);
-                    await fs.ensureFile(serviceContanerLogFile);
-                    await fs.promises.writeFile(serviceContanerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
+                    await fs.ensureFile(serviceContainerLogFile);
+                    await fs.promises.writeFile(serviceContainerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
                 })
             );
         }
 
+        const done = async (exitCode: number, exitMessage: string) => {
+            this.registerEndTime();
+            if (exitCode == 0) {
+                writeStreams.stdout(`${exitMessage}\n`);
+            } else {
+                writeStreams.stderr(`${exitMessage}\n`);
+            }
+            this._running = false;
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright storing artifacts...}\n`);
+            await this.uploadCacheAndArtifacts(writeStreams, expanded, exitCode);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright cleaning up resources...}\n`);
+            await this.cleanupResources();
+        };
+
         const prescripts = this.beforeScripts.concat(this.scripts);
         expanded["CI_JOB_STATUS"] = "running";
         this._prescriptsExitCode = await this.execScripts(prescripts, expanded);
-        if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
-            this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, false)}\n`);
-            this._running = false;
-            await this.cleanupResources();
+        if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0) {
+            await done(this._prescriptsExitCode, this.getExitedString(this._prescriptsExitCode, false || this.allowFailure));
             return;
         }
 
-        if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
+        if (this._prescriptsExitCode > 0) {
             this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, true)}\n`);
-            this._running = false;
-            await this.cleanupResources();
-            return;
-        }
-
-        if (this._prescriptsExitCode > 0 && this.allowFailure) {
-            this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, true)}\n`);
-        }
-
-        if (this._prescriptsExitCode > 0 && !this.allowFailure) {
-            this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, false)}\n`);
+            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, false || this.allowFailure)}\n`);
         }
 
         if (this.afterScripts.length > 0) {
+            writeStreams.stderr(chalk`${this.formattedJobName} {magentaBright running after script...}\n`);
             expanded["CI_JOB_STATUS"] = this._prescriptsExitCode === 0 ? "success" : "failed";
-            this._afterScriptsExitCode = await this.execScripts(this.afterScripts, expanded);
+            if (0 < (this._afterScriptsExitCode = await this.execScripts(this.afterScripts, expanded))) {
+                this.registerEndTime();
+                writeStreams.stderr(`${this.getExitedString(this._afterScriptsExitCode, true, " after_script")}\n`);
+            }
         }
-
-        if (this._afterScriptsExitCode > 0) {
-            this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._afterScriptsExitCode, true, " after_script")}\n`);
-        }
-
-        this.registerEndTime();
-        writeStreams.stdout(`${this.getFinishedString()}\n`);
 
         if (this.jobData["coverage"]) {
             this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobName);
         }
 
-        this._running = false;
-        await this.cleanupResources();
+        await done(this._afterScriptsExitCode, this.getFinishedString());
+        return;
     }
 
     async cleanupResources () {
@@ -758,13 +752,14 @@ export class Job {
             }
         });
 
-        await this.copyCacheOut(writeStreams, expanded, exitCode);
+        return exitCode;
+    }
 
+    private async uploadCacheAndArtifacts (writeStreams: WriteStreams, expanded: {[key: string]: string}, exitCode: number) {
+        await this.copyCacheOut(writeStreams, expanded, exitCode);
         if (exitCode == 0 || this.artifacts?.when === "always") {
             await this.copyArtifactsOut(writeStreams, expanded);
         }
-
-        return exitCode;
     }
 
     private async pullImage (writeStreams: WriteStreams, imageToPull: string) {

@@ -1,0 +1,12 @@
+---
+artifact-job:
+  stage: build
+  artifacts:
+    paths:
+      - logs
+  script:
+    - mkdir -p logs
+    - echo "Heya" > logs/foo.log
+    - echo "Heya" > logs/foo.badlog
+  after_script:
+    - rm logs/*badlog
