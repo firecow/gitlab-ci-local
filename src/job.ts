@@ -495,8 +495,7 @@ export class Job {
             this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobName);
         }
 
-        await done(this._afterScriptsExitCode, this.getFinishedString());
-        return;
+        return await done(this._afterScriptsExitCode, this.getFinishedString());
     }
 
     async cleanupResources () {
