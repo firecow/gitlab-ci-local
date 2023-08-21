@@ -5,8 +5,6 @@ exports[`logs - maxJobNameLength set to 0 1`] = `
 [94mshort-name[39m [32m$ echo "short-name"[39m
 [94mshort-name[39m [92m>[39m short-name
 [94mshort-name[39m [95mfinished[39m in [35m1 ms[39m
-[94mshort-name[39m [95mstoring artifacts...[39m
-[94mshort-name[39m [95mcleaning up resources...[39m
 
 [30m[102m PASS [49m[39m [94mshort-name[39m"
 `;
@@ -16,8 +14,6 @@ exports[`logs - maxJobNameLength set to 30 1`] = `
 [94mshort-name                    [39m [32m$ echo "short-name"[39m
 [94mshort-name                    [39m [92m>[39m short-name
 [94mshort-name                    [39m [95mfinished[39m in [35m1 ms[39m
-[94mshort-name                    [39m [95mstoring artifacts...[39m
-[94mshort-name                    [39m [95mcleaning up resources...[39m
 
 [30m[102m PASS [49m[39m [94mshort-name                    [39m"
 `;
@@ -27,8 +23,6 @@ exports[`logs - maxJobNameLength unset 1`] = `
 [94mshort-name                                 [39m [32m$ echo "short-name"[39m
 [94mshort-name                                 [39m [92m>[39m short-name
 [94mshort-name                                 [39m [95mfinished[39m in [35m1 ms[39m
-[94mshort-name                                 [39m [95mstoring artifacts...[39m
-[94mshort-name                                 [39m [95mcleaning up resources...[39m
 
 [30m[102m PASS [49m[39m [94mshort-name                                 [39m"
 `;

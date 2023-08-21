@@ -462,9 +462,10 @@ export class Job {
                 writeStreams.stderr(`${exitMessage}\n`);
             }
             this._running = false;
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright storing artifacts...}\n`);
-            await this.uploadCacheAndArtifacts(writeStreams, expanded, exitCode);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright cleaning up resources...}\n`);
+            await this.copyCacheOut(writeStreams, expanded, exitCode);
+            if (exitCode == 0 || this.artifacts?.when === "always") {
+                await this.copyArtifactsOut(writeStreams, expanded);
+            }
             await this.cleanupResources();
         };
 
@@ -472,13 +473,13 @@ export class Job {
         expanded["CI_JOB_STATUS"] = "running";
         this._prescriptsExitCode = await this.execScripts(prescripts, expanded);
         if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0) {
-            await done(this._prescriptsExitCode, this.getExitedString(this._prescriptsExitCode, false || this.allowFailure));
+            await done(this._prescriptsExitCode, this.getExitedString(this._prescriptsExitCode, this.allowFailure));
             return;
         }
 
         if (this._prescriptsExitCode > 0) {
             this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, false || this.allowFailure)}\n`);
+            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, this.allowFailure)}\n`);
         }
 
         if (this.afterScripts.length > 0) {
@@ -737,7 +738,8 @@ export class Job {
         };
 
         const quiet = this.argv.quiet;
-        const exitCode = await new Promise<number>((resolve, reject) => {
+
+        return await new Promise<number>((resolve, reject) => {
             if (!quiet) {
                 cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
                 cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
@@ -751,15 +753,6 @@ export class Job {
                 cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}_${this.jobId}`);
             }
         });
-
-        return exitCode;
-    }
-
-    private async uploadCacheAndArtifacts (writeStreams: WriteStreams, expanded: {[key: string]: string}, exitCode: number) {
-        await this.copyCacheOut(writeStreams, expanded, exitCode);
-        if (exitCode == 0 || this.artifacts?.when === "always") {
-            await this.copyArtifactsOut(writeStreams, expanded);
-        }
     }
 
     private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
