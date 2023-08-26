@@ -626,7 +626,7 @@ export class Job {
                 dockerCmd += "--privileged ";
             }
 
-            if (this.argv.ulimit > 0) {
+            if (this.argv.ulimit !== null) {
                 dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
             }
 
@@ -1012,7 +1012,7 @@ export class Job {
             dockerCmd += "--privileged ";
         }
 
-        if (this.argv.ulimit > 0) {
+        if (this.argv.ulimit !== null) {
             dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
         }
 
