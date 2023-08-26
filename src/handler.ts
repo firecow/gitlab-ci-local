@@ -65,7 +65,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         Commander.runCsv(parser, writeStreams, argv.listCsvAll);
     } else if (argv.job.length > 0) {
-        assert(argv.stage == null, "You cannot use --stage when starting individual jobs");
+        assert(argv.stage === null, "You cannot use --stage when starting individual jobs");
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
         if (argv.needs || argv.onlyNeeds) {

@@ -8,15 +8,14 @@ test("parallel-matrix - ensure successful", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel-matrix",
-        maxJobNameLength: 0,
         shellIsolation: true,
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright pre-job}`,
-        chalk`{black.bgGreenBright  PASS } {blueBright build-job: [foo]}`,
-        chalk`{black.bgGreenBright  PASS } {blueBright build-job: [bar]}`,
-        chalk`{black.bgGreenBright  PASS } {blueBright build-job: [beb]}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright pre-job            }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright build-job: [foo]   }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright build-job: [bar]   }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright build-job: [beb]   }`,
 
         chalk`{black.bgGreenBright  PASS } {blueBright test-job: [foo,dev]}`,
         chalk`{black.bgGreenBright  PASS } {blueBright test-job: [foo,dev]}`,
@@ -25,7 +24,7 @@ test("parallel-matrix - ensure successful", async () => {
         chalk`{black.bgGreenBright  PASS } {blueBright test-job: [bar,dev]}`,
         chalk`{black.bgGreenBright  PASS } {blueBright test-job: [bar,sta]}`,
         chalk`{black.bgGreenBright  PASS } {blueBright test-job: [bar,pro]}`,
-        chalk`{black.bgGreenBright  PASS } {blueBright test-job: [beb]}`,
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job: [beb]    }`,
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));

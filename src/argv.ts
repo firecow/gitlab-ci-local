@@ -110,10 +110,10 @@ export class Argv {
         return this.map.get("privileged") ?? false;
     }
 
-    get ulimit (): number | null {
+    get ulimit (): string | null {
         const ulimit = this.map.get("ulimit");
         if (!ulimit) return null;
-        return Number(ulimit);
+        return ulimit;
     }
 
     get needs (): boolean {
@@ -124,8 +124,8 @@ export class Argv {
         return this.map.get("onlyNeeds") ?? false;
     }
 
-    get stage (): string | undefined {
-        return this.map.get("stage");
+    get stage (): string | null {
+        return this.map.get("stage") ?? null;
     }
 
     get completion (): boolean {
@@ -177,9 +177,7 @@ export class Argv {
     }
 
     get maxJobNameLength (): number | null {
-        const maxJobNameLength = this.map.get("maxJobNameLength");
-        if (!maxJobNameLength) return null;
-        return Number(maxJobNameLength);
+        return this.map.get("maxJobNameLength") ?? null;
     }
 
     get concurrency (): number | null {
