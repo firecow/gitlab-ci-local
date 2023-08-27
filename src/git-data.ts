@@ -18,6 +18,7 @@ export class GitData {
         host: "gitlab.com",
         group: "fallback.group",
         project: "fallback.project",
+        defaultBranch: "main",
     };
 
     public readonly commit = {
@@ -84,6 +85,13 @@ export class GitData {
             this.remote.host = gitRemoteMatch.groups.host;
             this.remote.group = gitRemoteMatch.groups.group;
             this.remote.project = gitRemoteMatch.groups.project;
+
+            const {stdout: gitRemoteDefaultBranch} = await Utils.spawn(["git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD"], cwd);
+            const gitRemoteDefaultBranchMatch = /^origin\/(?<defaultBranch>[^/]+)$/.exec(gitRemoteDefaultBranch);
+
+            assert(gitRemoteDefaultBranchMatch?.groups != null, "git symbolic-ref refs/remotes/origin/HEAD didn't provide valid matches");
+
+            this.remote.defaultBranch = gitRemoteDefaultBranchMatch.groups.defaultBranch;
         } catch (e) {
             if (e instanceof AssertionError) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
