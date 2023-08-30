@@ -176,8 +176,8 @@ export class Argv {
         return this.map.get("timestamps") ?? false;
     }
 
-    get maxJobNameLength (): number | null {
-        return this.map.get("maxJobNameLength") ?? null;
+    get maxJobNamePadding (): number | null {
+        return this.map.get("maxJobNamePadding") ?? null;
     }
 
     get concurrency (): number | null {

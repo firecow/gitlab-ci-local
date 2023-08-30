@@ -210,7 +210,7 @@ process.on("SIGINT", (_: string, code: number) => {
             description: "Show timestamps and job duration in the logs",
             requiresArg: false,
         })
-        .option("max-job-name-length", {
+        .option("max-job-name-padding", {
             type: "number",
             description: "Maximum padding for job name (use <= 0 for no padding)",
             requiresArg: false,
