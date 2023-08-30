@@ -755,17 +755,13 @@ export class Job {
     }
 
     private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
-        const time = process.hrtime();
         try {
             await Utils.spawn(["docker", "image", "inspect", imageToPull]);
         } catch (e: any) {
-            if (e.stderr?.includes("No such image") || e.stderr?.includes("failed to find image")) {
-                await Utils.spawn(["docker", "pull", imageToPull]);
-                const endTime = process.hrtime(time);
-                writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
-            } else {
-                throw e;
-            }
+            const time = process.hrtime();
+            await Utils.spawn(["docker", "pull", imageToPull]);
+            const endTime = process.hrtime(time);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
         }
     }
