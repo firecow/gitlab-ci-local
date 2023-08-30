@@ -139,7 +139,7 @@ gitlab-ci-local --completion >> ~/.bashrc
 
 ```shell
 export GCL_TIMESTAMPS=true # or --timestamps: show timestamps in logs
-export GCL_MAX_JOB_NAME_LENGTH=30 # or --maxJobNameLength: limit padding around job name
+export GCL_MAX_JOB_NAME_PADDING=30 # or --maxJobNamePadding: limit padding around job name
 export GCL_QUIET=true # or --quiet: Suppress all job output
 ```
 
