@@ -760,10 +760,10 @@ export class Job {
             await Utils.spawn(["docker", "image", "inspect", imageToPull]);
         } catch (e: any) {
             await Utils.spawn(["docker", "pull", imageToPull]);
-            const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
-            this.refreshLongRunningSilentTimeout(writeStreams);
         }
+        const endTime = process.hrtime(time);
+        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+        this.refreshLongRunningSilentTimeout(writeStreams);
     }
 
     private async initProducerReportsDotenvVariables (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
