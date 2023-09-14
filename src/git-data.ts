@@ -13,6 +13,7 @@ export class GitData {
     };
 
     public readonly remote = {
+        schema: "git",
         port: "22",
         host: "gitlab.com",
         group: "fallback.group",
@@ -66,11 +67,20 @@ export class GitData {
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
             const {stdout: gitRemote} = await Utils.spawn(["git", "remote", "-v"], cwd);
-            const gitRemoteMatch = /.*(?:\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>[^ .]+)(?:\.git)?.*/.exec(gitRemote);
+            const gitRemoteMatch = /(?<schema>git|https?)(?::\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>[^ .]+)(?:\.git)?.*/.exec(gitRemote);
 
             assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
 
-            this.remote.port = gitRemoteMatch.groups.port ?? "22";
+            this.remote.schema = gitRemoteMatch.groups.schema;
+            if (this.remote.schema === "git") {
+                this.remote.port = gitRemoteMatch.groups.port ?? "22";
+            }
+            if (this.remote.schema === "https") {
+                this.remote.port = gitRemoteMatch.groups.port ?? "443";
+            }
+            if (this.remote.schema === "http") {
+                this.remote.port = gitRemoteMatch.groups.port ?? "80";
+            }
             this.remote.host = gitRemoteMatch.groups.host;
             this.remote.group = gitRemoteMatch.groups.group;
             this.remote.project = gitRemoteMatch.groups.project;

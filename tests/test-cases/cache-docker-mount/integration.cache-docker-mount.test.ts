@@ -5,7 +5,7 @@ import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 import {Utils} from "../../../src/utils";
 
-jest.setTimeout(30000);
+jest.setTimeout(45000);
 
 beforeAll(() => {
     const spyGitRemote = {

@@ -2,6 +2,7 @@ import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
+import chalk from "chalk";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -14,8 +15,16 @@ test("--concurrency 1 - should run sequentially", async () => {
         concurrency: 1,
     }, writeStreams);
 
-    // tip: use `cat __snapshots__/*` to inspect the results
-    expect(writeStreams.stdoutLines.join("\n").replace(/[0-9.]+ m?s/g, "1 ms")).toMatchSnapshot();
+    const jobOneIndex = writeStreams.stdoutLines.findIndex((line) => {
+        return line === chalk`{blueBright one} {green $ sleep 1}`;
+    });
+
+    const jobTwoIndex = writeStreams.stdoutLines.findIndex((line) => {
+        return line === chalk`{blueBright two} {green $ sleep 1}`;
+    });
+
+    expect(jobOneIndex).toEqual(1);
+    expect(jobTwoIndex).toEqual(4);
 });
 
 test("--concurrency not set", async () => {

@@ -2,7 +2,7 @@ import chalk from "chalk";
 import {Job} from "./job";
 import assert, {AssertionError} from "assert";
 import {Argv} from "./argv";
-import {PromisePool} from "@supercharge/promise-pool";
+import pMap from "p-map";
 
 export class Executor {
 
@@ -12,12 +12,8 @@ export class Executor {
         do {
             startCandidates = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
             if (startCandidates.length > 0) {
-                await PromisePool
-                    .withConcurrency(argv.concurrency ?? startCandidates.length)
-                    .for(startCandidates)
-                    .process(async (job: Job) => {
-                        return job.start();
-                    });
+                const mapper = async (startCandidate: Job) => startCandidate.start();
+                await pMap(startCandidates, mapper, {concurrency: argv.concurrency ?? startCandidates.length});
             }
         } while (startCandidates.length > 0);
     }

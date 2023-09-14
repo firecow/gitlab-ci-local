@@ -11,6 +11,16 @@ import {handler} from "./handler";
 import {Executor} from "./executor";
 import {Argv} from "./argv";
 import {AssertionError} from "assert";
+import {Job, cleanupJobResources} from "./job.js";
+
+const jobs: Job[] = [];
+
+process.on("exit", (_: string, code: number) => {
+    cleanupJobResources(jobs).finally(process.exit(code));
+});
+process.on("SIGINT", (_: string, code: number) => {
+    cleanupJobResources(jobs).finally(process.exit(code));
+});
 
 (() => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
@@ -22,16 +32,17 @@ import {AssertionError} from "assert";
         .command({
             handler: async (argv) => {
                 try {
-                    const jobs = await handler(argv, new WriteStreamsProcess());
+                    const jobs: Job[] = [];
+                    await handler(argv, new WriteStreamsProcess(), jobs);
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
                 } catch (e: any) {
                     if (e instanceof AssertionError) {
-                        process.stderr.write(chalk`{red ${e.message}}\n`);
-                        process.exit(1);
+                        process.stderr.write(chalk`{red ${e.message.trim()}}\n`);
+                    } else {
+                        process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
                     }
-                    process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
-                    process.exit(1);
+                    cleanupJobResources(jobs).finally(process.exit(1));
                 }
             },
             builder: (y: any) => {
@@ -43,7 +54,7 @@ import {AssertionError} from "assert";
             command: "$0 [job..]",
             describe: "Runs the entire pipeline or job's",
         })
-        .usage("Find more information at https://github.com/firecow/gitlab-ci-local")
+        .usage("Find more information at https://github.com/firecow/gitlab-ci-local.\nNote: To negate an option use '--no-(option)'.")
         .strictOptions()
         .env("GCL")
         .option("manual", {
@@ -150,6 +161,7 @@ import {AssertionError} from "assert";
             type: "boolean",
             description: "Sets docker user to 0:0",
             requiresArg: false,
+            default: true,
         })
         .option("privileged", {
             type: "boolean",
@@ -180,11 +192,13 @@ import {AssertionError} from "assert";
             type: "boolean",
             description: "Copy the generated artifacts into cwd",
             requiresArg: false,
+            default: true,
         })
         .option("cleanup", {
             type: "boolean",
             description: "Remove docker resources after they've been used",
             requiresArg: false,
+            default: true,
         })
         .option("quiet", {
             type: "boolean",
@@ -196,7 +210,7 @@ import {AssertionError} from "assert";
             description: "Show timestamps and job duration in the logs",
             requiresArg: false,
         })
-        .option("max-job-name-length", {
+        .option("max-job-name-padding", {
             type: "number",
             description: "Maximum padding for job name (use <= 0 for no padding)",
             requiresArg: false,
@@ -213,7 +227,7 @@ import {AssertionError} from "assert";
                 } else {
                     const argv = new Argv({...yargsArgv, autoCompleting: true});
                     state.getPipelineIid(argv.cwd, argv.stateDir).then((pipelineIid) => {
-                        Parser.create(argv, new WriteStreamsMock(), pipelineIid).then((parser) => {
+                        Parser.create(argv, new WriteStreamsMock(), pipelineIid, []).then((parser) => {
                             const jobNames = [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
                             done(jobNames);
                         });

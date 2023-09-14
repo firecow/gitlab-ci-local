@@ -139,7 +139,7 @@ gitlab-ci-local --completion >> ~/.bashrc
 
 ```shell
 export GCL_TIMESTAMPS=true # or --timestamps: show timestamps in logs
-export GCL_MAX_JOB_NAME_LENGTH=30 # or --maxJobNameLength: limit padding around job name
+export GCL_MAX_JOB_NAME_PADDING=30 # or --maxJobNamePadding: limit padding around job name
 export GCL_QUIET=true # or --quiet: Suppress all job output
 ```
 
@@ -366,12 +366,12 @@ npm run build
 npm run test
 
 # Run individual test-case
-node src/index.js --cwd tests/test-cases/cache-paths-not-array/ test-job --shell-isolation
+npx jest tests/test-cases/cache-paths-not-array
 ```
 
 ![example](./docs/images/example.png)
 
-It's also possible to run individual `.gitlab-ci.yml`, via `./ts-node --cwd examples/docker-compose-nodejs`
+It's also possible to run individual `.gitlab-ci.yml`, via `node src/index.js --cwd examples/docker-compose-nodejs`
 
 ### Package binaries
 

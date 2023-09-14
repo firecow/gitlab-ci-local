@@ -101,6 +101,7 @@ export class Job {
     private _jobNamePad: number | null = null;
 
     private _containersToClean: string[] = [];
+    private _filesToRm: string[] = [];
     private _startTime?: [number, number];
     private _endTime?: [number, number];
 
@@ -444,63 +445,57 @@ export class Job {
                     const serviceName = service.name;
                     await this.pullImage(writeStreams, serviceName);
                     const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service, serviceIndex);
-                    const serviceContanerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
-                    await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContanerLogFile);
+                    const serviceContainerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
+                    await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContainerLogFile);
                     const {stdout, stderr} = await Utils.spawn(["docker", "logs", serviceContainerId]);
-                    await fs.ensureFile(serviceContanerLogFile);
-                    await fs.promises.writeFile(serviceContanerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
+                    await fs.ensureFile(serviceContainerLogFile);
+                    await fs.promises.writeFile(serviceContainerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
                 })
             );
         }
 
+        const done = async (exitCode: number, exitMessage: string) => {
+            this.registerEndTime();
+            if (exitCode == 0) {
+                writeStreams.stdout(`${exitMessage}\n`);
+            } else {
+                writeStreams.stderr(`${exitMessage}\n`);
+            }
+            this._running = false;
+            await this.copyCacheOut(writeStreams, expanded, exitCode);
+            if (exitCode == 0 || this.artifacts?.when === "always") {
+                await this.copyArtifactsOut(writeStreams, expanded);
+            }
+            await this.cleanupResources();
+        };
+
         const prescripts = this.beforeScripts.concat(this.scripts);
         expanded["CI_JOB_STATUS"] = "running";
         this._prescriptsExitCode = await this.execScripts(prescripts, expanded);
-        if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && !this.allowFailure) {
-            this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, false)}\n`);
-            this._running = false;
-            await this.cleanupResources();
+        if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0) {
+            await done(this._prescriptsExitCode, this.getExitedString(this._prescriptsExitCode, this.allowFailure));
             return;
         }
 
-        if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0 && this.allowFailure) {
+        if (this._prescriptsExitCode > 0) {
             this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, true)}\n`);
-            this._running = false;
-            await this.cleanupResources();
-            return;
-        }
-
-        if (this._prescriptsExitCode > 0 && this.allowFailure) {
-            this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, true)}\n`);
-        }
-
-        if (this._prescriptsExitCode > 0 && !this.allowFailure) {
-            this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, false)}\n`);
+            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, this.allowFailure)}\n`);
         }
 
         if (this.afterScripts.length > 0) {
+            writeStreams.stderr(chalk`${this.formattedJobName} {magentaBright running after script...}\n`);
             expanded["CI_JOB_STATUS"] = this._prescriptsExitCode === 0 ? "success" : "failed";
-            this._afterScriptsExitCode = await this.execScripts(this.afterScripts, expanded);
+            if (0 < (this._afterScriptsExitCode = await this.execScripts(this.afterScripts, expanded))) {
+                this.registerEndTime();
+                writeStreams.stderr(`${this.getExitedString(this._afterScriptsExitCode, true, " after_script")}\n`);
+            }
         }
-
-        if (this._afterScriptsExitCode > 0) {
-            this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._afterScriptsExitCode, true, " after_script")}\n`);
-        }
-
-        this.registerEndTime();
-        writeStreams.stdout(`${this.getFinishedString()}\n`);
 
         if (this.jobData["coverage"]) {
             this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobName);
         }
 
-        this._running = false;
-        await this.cleanupResources();
+        return await done(this._afterScriptsExitCode, this.getFinishedString());
     }
 
     async cleanupResources () {
@@ -533,6 +528,12 @@ export class Job {
                 assert(e instanceof Error, "e is not instanceof Error");
             }
         }
+
+        const rmPromises = [];
+        for (const file of this._filesToRm) {
+            rmPromises.push(fs.rm(file, {recursive: true, force: true}));
+        }
+        await Promise.all(rmPromises);
 
         const fileVariablesDir = this.fileVariablesDir;
         try {
@@ -625,7 +626,7 @@ export class Job {
                 dockerCmd += "--privileged ";
             }
 
-            if (this.argv.ulimit > 0) {
+            if (this.argv.ulimit !== null) {
                 dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
             }
 
@@ -650,7 +651,7 @@ export class Job {
                 dockerCmd += `--add-host=${extraHost} `;
             }
 
-            const entrypointFile = `${cwd}/${stateDir}/scripts/image_entry/${safeJobName}`;
+            const entrypointFile = `${cwd}/${stateDir}/scripts/image_entry/${safeJobName}_${this.jobId}`;
             if (this.imageEntrypoint) {
                 if (this.imageEntrypoint[0] == "") {
                     dockerCmd += "--entrypoint '' ";
@@ -660,6 +661,7 @@ export class Job {
                     await fs.chmod(entrypointFile, "0755");
                     dockerCmd += "--entrypoint '/gcl-entry' ";
                     await fs.appendFile(entrypointFile, " \"$@\"\n");
+                    this._filesToRm.push(entrypointFile);
                 }
             }
 
@@ -706,14 +708,16 @@ export class Job {
 
         cmd += "exit 0\n";
 
-        await fs.outputFile(`${cwd}/${stateDir}/scripts/${safeJobName}`, cmd, "utf-8");
-        await fs.chmod(`${cwd}/${stateDir}/scripts/${safeJobName}`, "0755");
+        const jobScriptFile = `${cwd}/${stateDir}/scripts/${safeJobName}_${this.jobId}`;
+        await fs.outputFile(jobScriptFile, cmd, "utf-8");
+        await fs.chmod(jobScriptFile, "0755");
+        this._filesToRm.push(jobScriptFile);
 
         if (this.imageName) {
-            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/${safeJobName}`, `${this._containerId}:/gcl-cmd`], cwd);
+            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-cmd`], cwd);
         }
         if (this.imageEntrypoint && this.imageEntrypoint[0] != "") {
-            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/image_entry/${safeJobName}`, `${this._containerId}:/gcl-entry`], cwd);
+            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/image_entry/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-entry`], cwd);
         }
 
         const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
@@ -733,7 +737,8 @@ export class Job {
         };
 
         const quiet = this.argv.quiet;
-        const exitCode = await new Promise<number>((resolve, reject) => {
+
+        return await new Promise<number>((resolve, reject) => {
             if (!quiet) {
                 cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
                 cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
@@ -744,31 +749,19 @@ export class Job {
             if (this.imageName) {
                 cp.stdin?.end("/gcl-cmd");
             } else {
-                cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}`);
+                cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}_${this.jobId}`);
             }
         });
-
-        await this.copyCacheOut(writeStreams, expanded, exitCode);
-
-        if (exitCode == 0 || this.artifacts?.when === "always") {
-            await this.copyArtifactsOut(writeStreams, expanded);
-        }
-
-        return exitCode;
     }
 
     private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
-        const time = process.hrtime();
         try {
             await Utils.spawn(["docker", "image", "inspect", imageToPull]);
         } catch (e: any) {
-            if (e.stderr?.includes("No such image") || e.stderr?.includes("failed to find image")) {
-                await Utils.spawn(["docker", "pull", imageToPull]);
-                const endTime = process.hrtime(time);
-                writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
-            } else {
-                throw e;
-            }
+            const time = process.hrtime();
+            await Utils.spawn(["docker", "pull", imageToPull]);
+            const endTime = process.hrtime(time);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
         }
     }
@@ -1015,7 +1008,7 @@ export class Job {
             dockerCmd += "--privileged ";
         }
 
-        if (this.argv.ulimit > 0) {
+        if (this.argv.ulimit !== null) {
             dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
         }
 
@@ -1042,7 +1035,7 @@ export class Job {
         }
 
         const serviceEntrypoint = service.entrypoint;
-        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${serviceIndex}`;
+        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${serviceIndex}_${this.jobId}`;
         if (serviceEntrypoint) {
             if (serviceEntrypoint[0] == "") {
                 dockerCmd += "--entrypoint '' ";
@@ -1051,6 +1044,7 @@ export class Job {
                 await fs.appendFile(serviceEntrypointFile, `${serviceEntrypoint.join(" ")}`);
                 await fs.appendFile(serviceEntrypointFile, " \"$@\"\n");
                 await fs.chmod(serviceEntrypointFile, "0755");
+                this._filesToRm.push(serviceEntrypointFile);
                 dockerCmd += "--entrypoint '/gcl-entry' ";
             }
         }
@@ -1127,4 +1121,13 @@ export class Job {
             }));
         }
     }
+}
+
+export async function cleanupJobResources (jobs?: Iterable<Job>) {
+    if (!jobs) return;
+    const promises = [];
+    for (const job of jobs) {
+        promises.push(job.cleanupResources());
+    }
+    await Promise.all(promises);
 }

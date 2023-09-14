@@ -4,9 +4,9 @@ pre-job:
   script:
     - echo "Pre-job"
 
+# @NoArtifactsToSource
 build-job:
   stage: build
-  image: alpine:edge
   script:
     - echo "NAME:'${NAME}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
     - echo "NAME:'${NAME}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
@@ -21,9 +21,9 @@ build-job:
       - NAME: [foo, bar]
       - NAME: beb
 
+# @NoArtifactsToSource
 test-job:
   stage: test
-  image: alpine:edge
   needs:
     - pre-job
     - job: build-job

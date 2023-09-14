@@ -19,23 +19,20 @@ import {init as initPredefinedVariables} from "./predefined-variables";
 
 export class Parser {
 
-    private _jobs: Job[] = [];
     private _stages: string[] = [];
     private _gitlabData: any;
     private _jobNamePad: number | null = null;
 
+    readonly jobs: Job[];
     readonly argv: Argv;
     readonly writeStreams: WriteStreams;
     readonly pipelineIid: number;
 
-    private constructor (argv: Argv, writeStreams: WriteStreams, pipelineIid: number) {
+    private constructor (argv: Argv, writeStreams: WriteStreams, pipelineIid: number, jobs: Job[]) {
         this.argv = argv;
         this.writeStreams = writeStreams;
         this.pipelineIid = pipelineIid;
-    }
-
-    get jobs (): ReadonlyArray<Job> {
-        return this._jobs;
+        this.jobs = jobs;
     }
 
     get stages (): readonly string[] {
@@ -51,8 +48,8 @@ export class Parser {
         return this._jobNamePad;
     }
 
-    static async create (argv: Argv, writeStreams: WriteStreams, pipelineIid: number) {
-        const parser = new Parser(argv, writeStreams, pipelineIid);
+    static async create (argv: Argv, writeStreams: WriteStreams, pipelineIid: number, jobs: Job[]) {
+        const parser = new Parser(argv, writeStreams, pipelineIid, jobs);
         const time = process.hrtime();
         await parser.init();
         const warnings = await Validator.run(parser.jobs, parser.stages);
@@ -161,21 +158,21 @@ export class Parser {
                 });
                 const foundStage = this.stages.includes(job.stage);
                 assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
-                this._jobs.push(job);
+                this.jobs.push(job);
                 nodeIndex++;
             }
         });
 
         // Add some padding so that job logs are nicely aligned
         // allow users to override this in case they have really long job name (see #840)
-        if (this.argv.maxJobNameLength !== undefined && this.argv.maxJobNameLength <= 0) {
+        if (this.argv.maxJobNamePadding !== null && this.argv.maxJobNamePadding <= 0) {
             this._jobNamePad = 0;
         } else {
             this.jobs.forEach((job) => {
                 this._jobNamePad = Math.max(job.name.length, this._jobNamePad ?? 0);
             });
-            if (this.argv.maxJobNameLength !== undefined) {
-                this._jobNamePad = Math.min(this.argv.maxJobNameLength ?? 0, this._jobNamePad ?? 0);
+            if (this.argv.maxJobNamePadding !== null) {
+                this._jobNamePad = Math.min(this.argv.maxJobNamePadding ?? 0, this._jobNamePad ?? 0);
             }
         }
 
