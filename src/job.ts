@@ -49,6 +49,7 @@ interface Need {
     optional: boolean;
     pipeline: string | null;
     project: string | null;
+    parallel: {[name: string]: string} | null;
 }
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
