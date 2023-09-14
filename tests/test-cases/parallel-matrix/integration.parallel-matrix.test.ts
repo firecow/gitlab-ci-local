@@ -50,7 +50,6 @@ test("parallel-matrix <test-job>", async () => {
         chalk`{blueBright test-job: [bar,sta]} {greenBright >} NAME:'bar' TIER:'sta' 5/7`,
         chalk`{blueBright test-job: [bar,pro]} {greenBright >} NAME:'bar' TIER:'pro' 6/7`,
         chalk`{blueBright test-job: [beb]    } {greenBright >} NAME:'beb' TIER:'' 7/7`,
-
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
