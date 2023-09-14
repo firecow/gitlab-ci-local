@@ -49,7 +49,9 @@ interface Need {
     optional: boolean;
     pipeline: string | null;
     project: string | null;
-    parallel: {[name: string]: string} | null;
+    parallel: {
+        matrix: {[name: string]: string}[];
+    } | null;
 }
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -74,6 +76,7 @@ export class Job {
     readonly baseName: string;
     readonly dependencies: string[] | null;
     readonly environment?: {name: string; url: string | null};
+    readonly matrixVariables: {[key: string]: string} | null;
     readonly jobId: number;
     readonly rules?: {
         if: string;
@@ -135,9 +138,9 @@ export class Job {
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
+        this.matrixVariables = opt.matrixVariables;
 
-        const matrixVariables = opt.matrixVariables ?? {};
-        this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables};
+        this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...opt.matrixVariables ?? {}, ...predefinedVariables, ...argvVariables};
 
         let ciProjectDir = `${cwd}`;
         if (this.jobData["image"]) {
@@ -172,14 +175,14 @@ export class Job {
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
         // Merge and expand after finding env matched variables
-        this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
+        this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...opt.matrixVariables ?? {}, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
             const ruleResult = Utils.getRulesResult({cwd, rules: this.rules, variables: this._variables});
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
-            this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
+            this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...ruleResult.variables, ...opt.matrixVariables ?? {}, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
         }
         // Delete variables the user intentionally wants unset
         for (const unsetVariable of argv.unsetVariables) {

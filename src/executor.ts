@@ -3,6 +3,7 @@ import {Job} from "./job";
 import assert, {AssertionError} from "assert";
 import {Argv} from "./argv";
 import pMap from "p-map";
+import {Utils} from "./utils";
 
 export class Executor {
 
@@ -87,8 +88,26 @@ export class Executor {
         const toWaitFor = [];
         assert(job.needs != null, chalk`${job.name}.needs cannot be null in getNeededToWaitFor`);
         for (const need of job.needs) {
-            const baseJobs = jobs.filter(j => j.baseName === need.job);
-            for (const j of baseJobs) {
+            const potentialNeededToWaitFor = jobs.filter(j => j.baseName === need.job);
+
+            const toRemoveFromPotential = [];
+            const matrix = need.parallel?.matrix;
+            if (matrix) {
+                for (const p of potentialNeededToWaitFor) {
+                    assert(p.matrixVariables, chalk`{blueBright ${job.name}} use needs.parallel.matrix towards {blueBright ${p.baseName}} that doesn't implement it`);
+                    for (const m of matrix) {
+                        if (!Utils.objectShallowEqual(p.matrixVariables, m)) {
+                            toRemoveFromPotential.push(p);
+                        }
+                    }
+
+                }
+                for (const t of toRemoveFromPotential) {
+                    potentialNeededToWaitFor.splice(potentialNeededToWaitFor.indexOf(t), 1);
+                }
+            }
+
+            for (const j of potentialNeededToWaitFor) {
                 if (j.when === "never" && !need.optional) {
                     throw new AssertionError({message: chalk`{blueBright ${j.name}} is when:never, but its needed by {blueBright ${job.name}}`});
                 }

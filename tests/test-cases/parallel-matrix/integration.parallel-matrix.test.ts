@@ -34,14 +34,13 @@ test("parallel-matrix <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel-matrix",
-        jobs: ["test-job"],
+        job: ["test-job"],
+        needs: true,
         shellIsolation: true,
     }, writeStreams);
 
-    const expected = [
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
         chalk`{blueBright build-job: [foo]   } {greenBright >} NAME:'foo' 1/3`,
-        chalk`{blueBright build-job: [bar]   } {greenBright >} NAME:'bar' 2/3`,
-        chalk`{blueBright build-job: [beb]   } {greenBright >} NAME:'beb' 3/3`,
 
         chalk`{blueBright test-job: [foo,dev]} {greenBright >} NAME:'foo' TIER:'dev' 1/7`,
         chalk`{blueBright test-job: [foo,sta]} {greenBright >} NAME:'foo' TIER:'sta' 2/7`,
@@ -50,9 +49,12 @@ test("parallel-matrix <test-job>", async () => {
         chalk`{blueBright test-job: [bar,sta]} {greenBright >} NAME:'bar' TIER:'sta' 5/7`,
         chalk`{blueBright test-job: [bar,pro]} {greenBright >} NAME:'bar' TIER:'pro' 6/7`,
         chalk`{blueBright test-job: [beb]    } {greenBright >} NAME:'beb' TIER:'' 7/7`,
-    ];
+    ]));
 
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stdoutLines).not.toEqual(expect.arrayContaining([
+        chalk`{blueBright build-job: [bar]   } {greenBright >} NAME:'bar' 2/3`,
+        chalk`{blueBright build-job: [beb]   } {greenBright >} NAME:'beb' 3/3`,
+    ]));
 });
 
 test("parallel-matrix 'test-job [beb]'", async () => {
