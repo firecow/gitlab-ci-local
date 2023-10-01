@@ -55,6 +55,11 @@ export class Argv {
         return typeof val == "string" ? val.split(" ") : val;
     }
 
+    get network (): string[] {
+        const val = this.map.get("network") ?? [];
+        return typeof val == "string" ? val.split(" ") : val;
+    }
+
     get extraHost (): string[] {
         const val = this.map.get("extraHost") ?? [];
         return typeof val == "string" ? val.split(" ") : val;
@@ -103,7 +108,7 @@ export class Argv {
     }
 
     get umask (): boolean {
-        return this.map.get("umask") ?? true;
+        return this.map.get("umask") ?? false;
     }
 
     get privileged (): boolean {

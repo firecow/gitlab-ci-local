@@ -639,6 +639,10 @@ export class Job {
                 dockerCmd += "--network-alias=build ";
             }
 
+            for (const network of this.argv.network) {
+                dockerCmd += `--network ${network} `;
+            }
+
             dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;
             dockerCmd += `--volume ${tmpVolumeName}:${this.fileVariablesDir} `;
             dockerCmd += "--workdir /gcl-builds ";

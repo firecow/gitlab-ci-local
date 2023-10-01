@@ -173,6 +173,11 @@ process.on("SIGINT", (_: string, code: number) => {
             description: "Set docker executor ulimit",
             requiresArg: false,
         })
+        .option("network", {
+            type: "array",
+            description: "Add networks to docker executor",
+            requiresArg: false,
+        })
         .option("volume", {
             type: "array",
             description: "Add volumes to docker executor",
