@@ -47,12 +47,6 @@ Get rid of all those dev specific shell scripts and make files.
 
 ## Installation
 
-### NPM
-
-```bash
-npm install -g gitlab-ci-local
-```
-
 ### Linux based on Debian
 
 Users of Debian-based distributions should prefer the [the Deb822 format][deb822], installed with:
@@ -76,6 +70,12 @@ sudo apt-get install gitlab-ci-local
 
 Note that the path `/etc/apt/sources.list.d/gitlab-ci-local.list` is used in the file `gitlab-ci-local.list`.
 If you change it in these commands you must also change it in `/etc/apt/sources.list.d/gitlab-ci-local.list`.
+
+### NPM
+
+```bash
+npm install -g gitlab-ci-local
+```
 
 ### Macos
 
