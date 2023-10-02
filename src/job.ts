@@ -413,8 +413,8 @@ export class Job {
             const fileVariablesDir = this.fileVariablesDir;
 
             const volumePromises = [];
-            volumePromises.push(Utils.spawn(["docker", "volume", "create", `${buildVolumeName}`], argv.cwd));
-            volumePromises.push(Utils.spawn(["docker", "volume", "create", `${tmpVolumeName}`], argv.cwd));
+            volumePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", `${buildVolumeName}`], argv.cwd));
+            volumePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", `${tmpVolumeName}`], argv.cwd));
             this._containerVolumeNames.push(buildVolumeName);
             this._containerVolumeNames.push(tmpVolumeName);
             await Promise.all(volumePromises);
@@ -422,17 +422,17 @@ export class Job {
             const time = process.hrtime();
             this.refreshLongRunningSilentTimeout(writeStreams);
             const {stdout: containerId} = await Utils.spawn([
-                "docker", "create", `--volume=${buildVolumeName}:/gcl-builds`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
+                this.argv.containerExecutable, "create", `--volume=${buildVolumeName}:/gcl-builds`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
                 "bash", "-c", "chown 0:0 -R /gcl-builds/ && chmod a+rw -R /gcl-builds/ && chmod a+rw -R /tmp/",
             ], argv.cwd);
             this._containersToClean.push(containerId);
             if (await fs.pathExists(fileVariablesDir)) {
-                await Utils.spawn(["docker", "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
+                await Utils.spawn([this.argv.containerExecutable, "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
-            await Utils.spawn(["docker", "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:/gcl-builds`], argv.cwd);
-            await Utils.spawn(["docker", "start", "--attach", containerId], argv.cwd);
-            await Utils.spawn(["docker", "rm", "-vf", containerId], argv.cwd);
+            await Utils.spawn([this.argv.containerExecutable, "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:/gcl-builds`], argv.cwd);
+            await Utils.spawn([this.argv.containerExecutable, "start", "--attach", containerId], argv.cwd);
+            await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", containerId], argv.cwd);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
@@ -447,7 +447,7 @@ export class Job {
                     const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service, serviceIndex);
                     const serviceContainerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
                     await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContainerLogFile);
-                    const {stdout, stderr} = await Utils.spawn(["docker", "logs", serviceContainerId]);
+                    const {stdout, stderr} = await Utils.spawn([this.argv.containerExecutable, "logs", serviceContainerId]);
                     await fs.ensureFile(serviceContainerLogFile);
                     await fs.promises.writeFile(serviceContainerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
                 })
@@ -505,7 +505,7 @@ export class Job {
 
         for (const id of this._containersToClean) {
             try {
-                await Utils.spawn(["docker", "rm", "-vf", `${id}`]);
+                await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", `${id}`]);
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
             }
@@ -513,7 +513,7 @@ export class Job {
 
         if (this._serviceNetworkId) {
             try {
-                await Utils.spawn(["docker", "network", "rm", `${this._serviceNetworkId}`]);
+                await Utils.spawn([this.argv.containerExecutable, "network", "rm", `${this._serviceNetworkId}`]);
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
             }
@@ -522,7 +522,7 @@ export class Job {
         if (this._containerVolumeNames.length > 0) {
             try {
                 for (const containerVolume of this._containerVolumeNames) {
-                    await Utils.spawn(["docker", "volume", "rm", `${containerVolume}`]);
+                    await Utils.spawn([this.argv.containerExecutable, "volume", "rm", `${containerVolume}`]);
                 }
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
@@ -718,10 +718,10 @@ export class Job {
         this._filesToRm.push(jobScriptFile);
 
         if (this.imageName) {
-            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-cmd`], cwd);
+            await Utils.spawn([this.argv.containerExecutable, "cp", `${stateDir}/scripts/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-cmd`], cwd);
         }
         if (this.imageEntrypoint && this.imageEntrypoint[0] != "") {
-            await Utils.spawn(["docker", "cp", `${stateDir}/scripts/image_entry/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-entry`], cwd);
+            await Utils.spawn([this.argv.containerExecutable, "cp", `${stateDir}/scripts/image_entry/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-entry`], cwd);
         }
 
         const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
@@ -760,10 +760,10 @@ export class Job {
 
     private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
         try {
-            await Utils.spawn(["docker", "image", "inspect", imageToPull]);
+            await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
         } catch (e: any) {
             const time = process.hrtime();
-            await Utils.spawn(["docker", "pull", imageToPull]);
+            await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull]);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
@@ -852,7 +852,7 @@ export class Job {
         if (!this.imageName && this.argv.shellIsolation) {
             return Utils.spawn(["rsync", "-a", `${source}/.`, `${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`]);
         }
-        return Utils.spawn(["docker", "cp", `${source}/.`, `${this._containerId}:/gcl-builds`]);
+        return Utils.spawn([this.argv.containerExecutable, "cp", `${source}/.`, `${this._containerId}:/gcl-builds`]);
     }
 
     private async copyCacheOut (writeStreams: WriteStreams, expanded: {[key: string]: string}, exitCode: number) {
@@ -957,8 +957,8 @@ export class Job {
         if (this.imageName) {
             const {stdout: containerId} = await Utils.bash(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/gcl-builds/ -w /gcl-builds docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
             this._containersToClean.push(containerId);
-            await Utils.spawn(["docker", "start", containerId, "--attach"]);
-            await Utils.spawn(["docker", "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
+            await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
+            await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
         } else if (this.argv.shellIsolation) {
             await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}/${stateDir}/builds/${safeJobName}`);
         } else if (!this.argv.shellIsolation) {
@@ -993,7 +993,7 @@ export class Job {
     }
 
     private async createDockerNetwork (networkName: string) {
-        const {stdout: networkId} = await Utils.spawn(["docker", "network", "create", `${networkName}`]);
+        const {stdout: networkId} = await Utils.spawn([this.argv.containerExecutable, "network", "create", `${networkName}`]);
         this._serviceNetworkId = networkId;
     }
 
@@ -1065,10 +1065,10 @@ export class Job {
 
         // Copy docker entrypoint if specified for service
         if (serviceEntrypoint && serviceEntrypoint[0] != "") {
-            await Utils.spawn(["docker", "cp", serviceEntrypointFile, `${containerId}:/gcl-entry`]);
+            await Utils.spawn([this.argv.containerExecutable, "cp", serviceEntrypointFile, `${containerId}:/gcl-entry`]);
         }
 
-        await Utils.spawn(["docker", "start", `${containerId}`]);
+        await Utils.spawn([this.argv.containerExecutable, "start", `${containerId}`]);
 
         const endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -1080,7 +1080,7 @@ export class Job {
         const serviceAlias = service.alias;
         const serviceName = service.name;
 
-        const {stdout} = await Utils.spawn(["docker", "image", "inspect", serviceName]);
+        const {stdout} = await Utils.spawn([this.argv.containerExecutable, "image", "inspect", serviceName]);
         const imageInspect = JSON.parse(stdout);
 
         // Copied from the startService block. Important thing is that the aliases match
@@ -1102,7 +1102,7 @@ export class Job {
             await Promise.any(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
-                const spawnCmd = ["docker", "run", "--rm", `--name=gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`, "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${uniqueAlias}:${portNum}`, "-t", "30"];
+                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`, "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${uniqueAlias}:${portNum}`, "-t", "30"];
                 return Utils.spawn(spawnCmd);
             }));
             const endTime = process.hrtime(time);
@@ -1121,7 +1121,7 @@ export class Job {
             await Promise.allSettled(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
-                return Utils.spawn(["docker", "rm", "-vf", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
+                return Utils.spawn([this.argv.containerExecutable, "rm", "-vf", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
             }));
         }
     }
