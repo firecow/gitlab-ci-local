@@ -15,7 +15,7 @@ test("--container-executable some_unexisting_executable", async () => {
             containerExecutable: "some_unexisting_executable",
         }, writeStreams);
         expect(true).toBe(false);
-    } catch (e : unknown) {
+    } catch (e: unknown) {
         expect((e as Error).message).toEqual(expect.stringContaining("Command failed with ENOENT: some_unexisting_executable"));
     }
 });
