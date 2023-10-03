@@ -191,7 +191,7 @@ export class Argv {
         return Number(concurrency);
     }
 
-    get containerExecutable() : string {
+    get containerExecutable (): string {
         return this.map.get("containerExecutable") ?? "docker";
     }
 }
