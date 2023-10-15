@@ -1,10 +1,10 @@
 ---
 default:
   services:
-    - nginx
+    - docker.io/nginx
 
 .service-entry-ref:
-  - name: alpine
+  - name: docker.io/alpine
     command: ["/bin/sh", "-c", "echo 'foo\nhey' > /foo.txt && cat /foo.txt", "/bin/sh"]
 
 .service:
@@ -13,27 +13,27 @@ default:
 pre-job:
   extends: .service
   stage: .pre
-  image: alpine
+image: docker.io/alpine
   script:
     - cat /foo.txt
 
 test-job:
   services:
-    - name: alpine
+    - name: docker.io/alpine
       entrypoint: ["/bin/sh", "-c"]
       command: ["sh"]
-  image: tutum/dnsutils
+image: docker.io/tutum/dnsutils
   script: host nginx
 
 build-job:
   stage: build
-  image: tutum/dnsutils
+image: docker.io/tutum/dnsutils
   script: host nginx
 
 deploy-job:
-  services: [redis]
+  services: [docker.io/redis]
   stage: deploy
-  image: tutum/dnsutils
+image: docker.io/tutum/dnsutils
   script:
     - host nginx && exit 1
     - host redis
@@ -42,20 +42,20 @@ deploy-job:
 
 multiport-job:
   services:
-    - name: mysql:8.0.33
+    - name: docker.io/mysql:8.0.33
       variables:
         MYSQL_ROOT_PASSWORD: secret
   stage: deploy
-  image: tutum/dnsutils
+image: docker.io/tutum/dnsutils
   script:
     - host mysql
 
 alias-job:
   services:
-    - name: redis
+    - name: docker.io/redis
       alias: redis-alias
   stage: deploy
-  image: tutum/dnsutils
+image: docker.io/tutum/dnsutils
   script:
     - host redis
     - host redis-alias
@@ -65,7 +65,7 @@ alias-job-multiple-slashes:
     - name: gcr.io/google-containers/redis
       alias: redis-alias
   stage: deploy
-  image: tutum/dnsutils
+image: docker.io/tutum/dnsutils
   script:
     - host gcr.io-google-containers-redis
     - host gcr.io__google-containers__redis
@@ -73,26 +73,26 @@ alias-job-multiple-slashes:
 
 multie-job:
   services:
-    - name: alpine
+    - name: docker.io/alpine
       entrypoint: ["/bin/sh", "-c", "'echo Service 1'"]
       command: ["sh"]
-    - name: alpine
+    - name: docker.io/alpine
       entrypoint: ["/bin/sh", "-c", "'echo Service 2'"]
       command: ["sh"]
-    - name: alpine
+    - name: docker.io/alpine
       variables:
         ENV_TEST: Service 3
       entrypoint: ["/bin/sh", "-c"]
       command: ["echo $ENV_TEST"]
-  image: tutum/dnsutils
+image: docker.io/tutum/dnsutils
   script:
     - echo "Hello"
 
 no-tmp:
-  image: alpine
+image: docker.io/alpine
   needs: []
   services:
-    - name: greenmaid/basic_listen
+    - name: docker.io/greenmaid/basic_listen
   script:
     - echo "I should run normaly"
 

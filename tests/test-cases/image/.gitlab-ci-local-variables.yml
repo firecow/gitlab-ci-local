@@ -1,2 +1,2 @@
 ---
-DEBIAN_IMAGE_URL: debian:stable-slim
+DEBIAN_IMAGE_URL: docker.io/debian:stable-slim

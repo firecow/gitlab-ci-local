@@ -1102,7 +1102,7 @@ export class Job {
             await Promise.any(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
-                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`, "--network", `gitlab-ci-local-${this.jobId}`, "willwill/wait-for-it", `${uniqueAlias}:${portNum}`, "-t", "30"];
+                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`, "--network", `gitlab-ci-local-${this.jobId}`, "docker.io/willwill/wait-for-it", `${uniqueAlias}:${portNum}`, "-t", "30"];
                 return Utils.spawn(spawnCmd);
             }));
             const endTime = process.hrtime(time);

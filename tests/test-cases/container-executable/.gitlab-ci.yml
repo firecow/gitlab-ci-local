@@ -1,5 +1,5 @@
 ---
 somejob:
-  image: alpine
+image: docker.io/alpine
   script:
     - echo Hello

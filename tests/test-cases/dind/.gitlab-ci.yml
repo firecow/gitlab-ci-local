@@ -1,8 +1,8 @@
 ---
 test-job:
-  services: [docker:dind]
+  services: [docker.io/docker:dind]
   needs: []
-  image: docker:stable
+image: docker.io/docker:stable
   stage: build
   script:
     - docker pull -q alpine 1> /dev/null
