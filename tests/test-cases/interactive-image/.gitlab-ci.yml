@@ -2,7 +2,7 @@
 # @Interactive
 image-job:
   stage: build
-image: docker.io/alpine
+  image: docker.io/alpine
   when: manual
   script:
     - echo "Should fail before this"

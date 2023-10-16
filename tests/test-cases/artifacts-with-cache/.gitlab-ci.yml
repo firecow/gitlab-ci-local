@@ -1,7 +1,7 @@
 ---
 pre-job:
   stage: .pre
-image: docker.io/alpine
+  image: docker.io/alpine
   cache:
     key: cache
     paths: [path]
@@ -11,5 +11,5 @@ image: docker.io/alpine
 
 test-job:
   needs: [pre-job]
-image: docker.io/alpine
+  image: docker.io/alpine
   script: test -f path/log.txt

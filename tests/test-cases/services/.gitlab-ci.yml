@@ -13,7 +13,7 @@ default:
 pre-job:
   extends: .service
   stage: .pre
-image: docker.io/alpine
+  image: docker.io/alpine
   script:
     - cat /foo.txt
 
@@ -22,21 +22,21 @@ test-job:
     - name: docker.io/alpine
       entrypoint: ["/bin/sh", "-c"]
       command: ["sh"]
-image: docker.io/tutum/dnsutils
-  script: host nginx
+  image: docker.io/tutum/dnsutils
+  script: host docker.io-nginx
 
 build-job:
   stage: build
-image: docker.io/tutum/dnsutils
-  script: host nginx
+  image: docker.io/tutum/dnsutils
+  script: host docker.io-nginx
 
 deploy-job:
   services: [docker.io/redis]
   stage: deploy
-image: docker.io/tutum/dnsutils
+  image: docker.io/tutum/dnsutils
   script:
-    - host nginx && exit 1
-    - host redis
+    - host docker.io-nginx && exit 1
+    - host docker.io-redis
   after_script:
     - echo "Deploy something in after_script"
 
@@ -46,18 +46,18 @@ multiport-job:
       variables:
         MYSQL_ROOT_PASSWORD: secret
   stage: deploy
-image: docker.io/tutum/dnsutils
+  image: docker.io/tutum/dnsutils
   script:
-    - host mysql
+    - host docker.io-mysql
 
 alias-job:
   services:
     - name: docker.io/redis
       alias: redis-alias
   stage: deploy
-image: docker.io/tutum/dnsutils
+  image: docker.io/tutum/dnsutils
   script:
-    - host redis
+    - host docker.io-redis
     - host redis-alias
 
 alias-job-multiple-slashes:
@@ -65,7 +65,7 @@ alias-job-multiple-slashes:
     - name: gcr.io/google-containers/redis
       alias: redis-alias
   stage: deploy
-image: docker.io/tutum/dnsutils
+  image: docker.io/tutum/dnsutils
   script:
     - host gcr.io-google-containers-redis
     - host gcr.io__google-containers__redis
@@ -84,12 +84,12 @@ multie-job:
         ENV_TEST: Service 3
       entrypoint: ["/bin/sh", "-c"]
       command: ["echo $ENV_TEST"]
-image: docker.io/tutum/dnsutils
+  image: docker.io/tutum/dnsutils
   script:
     - echo "Hello"
 
 no-tmp:
-image: docker.io/alpine
+  image: docker.io/alpine
   needs: []
   services:
     - name: docker.io/greenmaid/basic_listen

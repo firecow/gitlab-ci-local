@@ -3,7 +3,7 @@
 # Test image
 build-image:
   stage: build
-image: docker.io/alpine
+  image: docker.io/alpine
   needs: []
   script:
     - echo "BUILD_VERSION=Hello" > build.env
@@ -11,7 +11,7 @@ image: docker.io/alpine
     reports: { dotenv: build.env }
 deploy-image:
   stage: deploy
-image: docker.io/alpine
+  image: docker.io/alpine
   needs: [build-image]
   script:
     - if [ -f build.env ]; then exit 1; fi

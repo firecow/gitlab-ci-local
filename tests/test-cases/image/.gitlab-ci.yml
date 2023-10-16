@@ -1,9 +1,9 @@
 ---
 default:
-image: docker.io/firecow/gitlab-ci-local-test-image
+  image: docker.io/firecow/gitlab-ci-local-test-image
 
 .image:
-image: ${DEBIAN_IMAGE_URL}
+  image: ${DEBIAN_IMAGE_URL}
 
 test job:
   extends: .image
@@ -51,7 +51,7 @@ test-from-scratch:
 
 issue-206:
   image:
-    name: klakegg/hugo:0.83.1-busybox
+    name: docker.io/klakegg/hugo:0.83.1-busybox
     entrypoint: ["/bin/sh", "-c"]
   script:
     - hugo -D --source hugo

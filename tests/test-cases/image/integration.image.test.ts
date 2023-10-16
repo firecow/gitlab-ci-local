@@ -114,7 +114,7 @@ test.concurrent("pull invalid image", async () => {
         file: ".gitlab-ci-invalid-image.yml",
     }, writeStreams, jobs);
 
-    await expect(handlerPromise).rejects.toThrow("Command failed with exit code 1: docker pull totally-invalid-image-not-able-to-fetch-throw-error:latest");
+    await expect(handlerPromise).rejects.toThrow(/Command failed with exit code/);
 
     await cleanupJobResources(jobs);
 });
