@@ -1,7 +1,7 @@
 ---
 produce-cache:
   stage: build
-  image: docker.io/alpine
+  image: docker.io/library/alpine
   cache:
     key: maven/  # Make sure to have invalid character for docker volume name
     paths: [.cache]
@@ -9,7 +9,7 @@ produce-cache:
 
 consume-cache:
   stage: test
-  image: docker.io/alpine
+  image: docker.io/library/alpine
   needs: [produce-cache]
   dependencies: [produce-cache]  # testing the absence of artifacts
   cache:

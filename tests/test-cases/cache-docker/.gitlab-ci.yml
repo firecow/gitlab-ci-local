@@ -4,7 +4,7 @@ variables:
 
 produce-cache:
   stage: build
-  image: docker.io/alpine
+  image: docker.io/library/alpine
   cache:
     key: $VALUE
     paths: [.cache]
@@ -12,7 +12,7 @@ produce-cache:
 
 consume-cache:
   stage: test
-  image: docker.io/alpine
+  image: docker.io/library/alpine
   needs: [produce-cache]
   dependencies: [produce-cache]  # testing the absence of artifacts
   cache:
