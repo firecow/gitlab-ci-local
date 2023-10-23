@@ -5,3 +5,8 @@ test-job:
     - echo ${CI_PROJECT_PATH_SLUG}
     - echo ${CI_PROJECT_NAMESPACE}
     - echo ${CI_PROJECT_DIR}
+
+test-job-commit-short-length:
+  script:
+    - echo ${CI_COMMIT_SHORT_SHA}
+    - "[ ${#CI_COMMIT_SHORT_SHA} -eq 8 ] || exit 1"

@@ -12,7 +12,7 @@ export function init ({gitData, argv}: PredefinedVariablesOpts): {[name: string]
         GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
         GITLAB_USER_NAME: gitData.user["GITLAB_USER_NAME"],
         GITLAB_USER_ID: gitData.user["GITLAB_USER_ID"],
-        CI_COMMIT_SHORT_SHA: gitData.commit.SHORT_SHA, // Changes
+        CI_COMMIT_SHORT_SHA: gitData.commit.SHA.slice(0, 8), // Changes
         CI_COMMIT_SHA: gitData.commit.SHA,
         CI_PROJECT_NAME: gitData.remote.project,
         CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
