@@ -1,5 +1,5 @@
 ---
 test-job:
-  image: curlimages/curl:7.69.1
+  image: docker.io/curlimages/curl:7.69.1
   script:
     - curl -I http://fake-google.com

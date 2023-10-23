@@ -1,2 +1,2 @@
 ---
-.other/image: "bash"
+.other/image: "docker.io/library/bash"

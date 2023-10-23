@@ -1,8 +1,8 @@
 ---
 # @Description Run Tests
 test-job:
-  services: [busybox]
-  image: busybox
+  services: [docker.io/library/alpine]
+  image: docker.io/library/alpine
   stage: test
   script:
     - ping build -c 1 2>&1 >/dev/null
@@ -11,8 +11,8 @@ test-job:
     - echo ${CI_JOB_STATUS}  # success
 # @Description Run Tests
 test-job-failure:
-  services: [busybox]
-  image: busybox
+  services: [docker.io/library/alpine]
+  image: docker.io/library/alpine
   stage: test
   script:
     - ping nope -c 1 2>&1 >/dev/null

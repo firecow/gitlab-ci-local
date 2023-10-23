@@ -225,6 +225,11 @@ process.on("SIGINT", (_: string, code: number) => {
             description: "Limit the number of jobs that run simultaneously",
             requiresArg: false,
         })
+        .option("container-executable", {
+            type: "string",
+            description: "Command to start the container engine (docker or podman)",
+            requiresArg: false,
+        })
         .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {
             try {
                 if (current.startsWith("-")) {

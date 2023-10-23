@@ -1,6 +1,6 @@
 ---
 default:
-  image: firecow/gitlab-ci-local-test-image
+  image: docker.io/firecow/gitlab-ci-local-test-image
 
 .image:
   image: ${DEBIAN_IMAGE_URL}
@@ -24,7 +24,7 @@ test-entrypoint:
     - cd folder
     - cat < test-file.txt
 
-.test-entrypoint-override/ci-image: firecow/gitlab-ci-local-test-image:entrypoint-with-exit
+.test-entrypoint-override/ci-image: docker.io/firecow/gitlab-ci-local-test-image:entrypoint-with-exit
 
 issue-890:
   image: !reference [.test-entrypoint-override/ci-image]
@@ -51,7 +51,7 @@ test-from-scratch:
 
 issue-206:
   image:
-    name: klakegg/hugo:0.83.1-busybox
+    name: docker.io/klakegg/hugo:0.83.1-busybox
     entrypoint: ["/bin/sh", "-c"]
   script:
     - hugo -D --source hugo

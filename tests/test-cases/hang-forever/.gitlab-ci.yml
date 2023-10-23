@@ -1,13 +1,13 @@
 ---
 test-debian:
-  image: debian:stable-slim
+  image: docker.io/library/debian:stable-slim
   script:
     - cat
     - cd folder
     - cat < text.txt
 
 test-alpine:
-  image: alpine
+  image: docker.io/library/alpine
   script:
     - cat
     - cd folder
