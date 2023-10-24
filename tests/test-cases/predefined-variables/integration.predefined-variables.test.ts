@@ -17,10 +17,10 @@ test("predefined-variables <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job} {greenBright >} predefined-variables`,
-        chalk`{blueBright test-job} {greenBright >} gcl-predefined-variables`,
-        chalk`{blueBright test-job} {greenBright >} gcl`,
-        chalk`{blueBright test-job} {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables`,
+        chalk`{blueBright test-job                    } {greenBright >} predefined-variables`,
+        chalk`{blueBright test-job                    } {greenBright >} gcl-predefined-variables`,
+        chalk`{blueBright test-job                    } {greenBright >} gcl`,
+        chalk`{blueBright test-job                    } {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -34,7 +34,21 @@ test("predefined-variables <test-job> --shell-isolation", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job} {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables/.gitlab-ci-local/builds/test-job`,
+        chalk`{blueBright test-job                    } {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables/.gitlab-ci-local/builds/test-job`,
     ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test("predefined-variables CI_COMMIT_SHORT_SHA length", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/predefined-variables",
+        job: ["test-job-commit-short-length"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job-commit-short-length}`,
+    ];
+
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
