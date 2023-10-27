@@ -15,7 +15,7 @@ import {Job, cleanupJobResources} from "./job.js";
 
 const jobs: Job[] = [];
 
-process.on("exit", (_: string, code: number) => {
+process.on("exit", (code) => {
     cleanupJobResources(jobs).finally(process.exit(code));
 });
 process.on("SIGINT", (_: string, code: number) => {
