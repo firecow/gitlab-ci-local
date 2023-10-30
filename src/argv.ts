@@ -3,6 +3,7 @@ import * as fs from "fs-extra";
 import * as dotenv from "dotenv";
 import * as path from "path";
 import camelCase from "camelcase";
+import execa from "execa";
 
 export class Argv {
 
@@ -15,6 +16,23 @@ export class Argv {
 
         this.injectDotenv(`${this.home}/.gitlab-ci-local/.env`, argv);
         this.injectDotenv(`${this.cwd}/.gitlab-ci-local-env`, argv);
+
+        if (this.map.get("containerExecutable")) {
+            execa.sync(this.map.get("containerExecutable"), ["version"]);
+        } else {
+            for (const bin of ["docker", "podman"]) {
+                try {
+                    execa.sync(bin, ["version"]);
+                    this.map.set("containerExecutable", bin);
+                    break;
+                } catch {
+                    continue;
+                }
+            }
+            if (!this.map.get("containerExecutable")) {
+                throw Object.assign(new Error(`container executable not found`), { code: 'ENOENT' });
+            }
+        }
     }
 
     private injectDotenv (potentialDotenvFilepath: string, argv: any) {
@@ -192,6 +210,6 @@ export class Argv {
     }
 
     get containerExecutable (): string {
-        return this.map.get("containerExecutable") ?? "docker";
+        return this.map.get("containerExecutable");
     }
 }
