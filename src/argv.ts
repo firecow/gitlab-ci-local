@@ -30,7 +30,7 @@ export class Argv {
                 }
             }
             if (!this.map.get("containerExecutable")) {
-                throw Object.assign(new Error(`container executable not found`), { code: 'ENOENT' });
+                throw Object.assign(new Error("container executable not found"), {code: "ENOENT"});
             }
         }
     }
