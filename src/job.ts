@@ -621,7 +621,7 @@ export class Job {
         if (this.imageName) {
             await this.pullImage(writeStreams, this.imageName);
 
-            let dockerCmd = `docker create --interactive ${this.generateInjectSSHAgentOptions()} `;
+            let dockerCmd = `${this.argv.containerExecutable} create --interactive ${this.generateInjectSSHAgentOptions()} `;
             if (this.argv.privileged) {
                 dockerCmd += "--privileged ";
             }
@@ -724,7 +724,7 @@ export class Job {
             await Utils.spawn([this.argv.containerExecutable, "cp", `${stateDir}/scripts/image_entry/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-entry`], cwd);
         }
 
-        const cp = execa(this._containerId ? `docker start --attach -i ${this._containerId}` : "bash", {
+        const cp = execa(this._containerId ? `${this.argv.containerExecutable} start --attach -i ${this._containerId}` : "bash", {
             cwd,
             shell: "bash",
             env: expanded,
@@ -955,7 +955,7 @@ export class Job {
         await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName) {
-            const {stdout: containerId} = await Utils.bash(`docker create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/gcl-builds/ -w /gcl-builds docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
+            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/gcl-builds/ -w /gcl-builds docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
             await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
@@ -1001,7 +1001,7 @@ export class Job {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
-        let dockerCmd = `docker create --interactive --network gitlab-ci-local-${this.jobId} `;
+        let dockerCmd = `${this.argv.containerExecutable} create --interactive --network gitlab-ci-local-${this.jobId} `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (this.argv.umask) {
