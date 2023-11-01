@@ -16,23 +16,6 @@ export class Argv {
 
         this.injectDotenv(`${this.home}/.gitlab-ci-local/.env`, argv);
         this.injectDotenv(`${this.cwd}/.gitlab-ci-local-env`, argv);
-
-        if (this.map.get("containerExecutable")) {
-            execa.sync(this.map.get("containerExecutable"), ["version"]);
-        } else {
-            for (const bin of ["docker", "podman"]) {
-                try {
-                    execa.sync(bin, ["version"]);
-                    this.map.set("containerExecutable", bin);
-                    break;
-                } catch {
-                    continue;
-                }
-            }
-            if (!this.map.get("containerExecutable")) {
-                throw Object.assign(new Error("container executable not found"), {code: "ENOENT"});
-            }
-        }
     }
 
     private injectDotenv (potentialDotenvFilepath: string, argv: any) {
@@ -210,6 +193,20 @@ export class Argv {
     }
 
     get containerExecutable (): string {
+        if (!this.map.get("containerExecutable")) {
+            for (const bin of ["docker", "podman"]) {
+                try {
+                    execa.sync(bin, ["version"]);
+                    this.map.set("containerExecutable", bin);
+                    break;
+                } catch {
+                    continue;
+                }
+            }
+            if (!this.map.get("containerExecutable")) {
+                throw Object.assign(new Error("container executable not found"), {code: "ENOENT"});
+            }
+        }
         return this.map.get("containerExecutable");
     }
 }
