@@ -39,6 +39,8 @@ process.on("SIGINT", (_: string, code: number) => {
                 } catch (e: any) {
                     if (e instanceof AssertionError) {
                         process.stderr.write(chalk`{red ${e.message.trim()}}\n`);
+                    } else if (e instanceof AggregateError) {
+                        e.errors.forEach((aggE) => process.stderr.write(chalk`{red ${aggE.stack ?? aggE}}\n`));
                     } else {
                         process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
                     }
