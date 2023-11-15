@@ -423,7 +423,7 @@ export class Job {
             this.refreshLongRunningSilentTimeout(writeStreams);
             const {stdout: containerId} = await Utils.spawn([
                 this.argv.containerExecutable, "create", `--volume=${buildVolumeName}:/gcl-builds`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
-                "bash", "-c", "chown 0:0 -R /gcl-builds/ && chmod a+rw -R /gcl-builds/ && chmod a+rw -R /tmp/",
+                "bash", "-c", "chown 0:0 -R /gcl-builds/ && chmod a+rwx -R /gcl-builds/ && chmod a+rwx -R /tmp/",
             ], argv.cwd);
             this._containersToClean.push(containerId);
             if (await fs.pathExists(fileVariablesDir)) {
