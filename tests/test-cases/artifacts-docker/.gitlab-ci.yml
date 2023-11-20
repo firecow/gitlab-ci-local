@@ -1,7 +1,7 @@
 ---
 produce artifacts 📝:
   stage: build
-  image: alpine
+  image: docker.io/library/alpine
   script:
     - echo "CI_PROJECT_DIR=${CI_PROJECT_DIR}"
     - touch file1 file2
@@ -17,7 +17,7 @@ produce artifacts 📝:
 
 consume artifacts 🏗️:
   stage: test
-  image: alpine
+  image: docker.io/library/alpine
   needs: [produce artifacts 📝]
   dependencies: [produce artifacts 📝]
   script:

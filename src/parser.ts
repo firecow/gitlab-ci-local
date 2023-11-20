@@ -165,14 +165,14 @@ export class Parser {
 
         // Add some padding so that job logs are nicely aligned
         // allow users to override this in case they have really long job name (see #840)
-        if (this.argv.maxJobNameLength !== undefined && this.argv.maxJobNameLength <= 0) {
+        if (this.argv.maxJobNamePadding !== null && this.argv.maxJobNamePadding <= 0) {
             this._jobNamePad = 0;
         } else {
             this.jobs.forEach((job) => {
                 this._jobNamePad = Math.max(job.name.length, this._jobNamePad ?? 0);
             });
-            if (this.argv.maxJobNameLength !== undefined) {
-                this._jobNamePad = Math.min(this.argv.maxJobNameLength ?? 0, this._jobNamePad ?? 0);
+            if (this.argv.maxJobNamePadding !== null) {
+                this._jobNamePad = Math.min(this.argv.maxJobNamePadding ?? 0, this._jobNamePad ?? 0);
             }
         }
 

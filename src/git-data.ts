@@ -50,11 +50,6 @@ export class GitData {
             this.commit.SHA = stdout.trimEnd();
         }));
 
-        const shortShaPromise = Utils.spawn(["git", "rev-parse", "--short", "HEAD"], cwd);
-        promises.push(shortShaPromise.then(({stdout}) => {
-            this.commit.SHORT_SHA = stdout.trimEnd();
-        }));
-
         try {
             await Promise.all(promises);
         } catch (e) {

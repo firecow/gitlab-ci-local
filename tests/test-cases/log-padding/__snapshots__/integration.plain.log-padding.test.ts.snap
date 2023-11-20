@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`logs - maxJobNameLength set to 0 1`] = `
+exports[`logs - maxJobNamePadding set to 0 1`] = `
 "[94mshort-name[39m [95mstarting[39m shell ([33m.pre[39m)
 [94mshort-name[39m [32m$ echo "short-name"[39m
 [94mshort-name[39m [92m>[39m short-name
@@ -9,7 +9,7 @@ exports[`logs - maxJobNameLength set to 0 1`] = `
 [30m[102m PASS [49m[39m [94mshort-name[39m"
 `;
 
-exports[`logs - maxJobNameLength set to 30 1`] = `
+exports[`logs - maxJobNamePadding set to 30 1`] = `
 "[94mshort-name                    [39m [95mstarting[39m shell ([33m.pre[39m)
 [94mshort-name                    [39m [32m$ echo "short-name"[39m
 [94mshort-name                    [39m [92m>[39m short-name
@@ -18,7 +18,7 @@ exports[`logs - maxJobNameLength set to 30 1`] = `
 [30m[102m PASS [49m[39m [94mshort-name                    [39m"
 `;
 
-exports[`logs - maxJobNameLength unset 1`] = `
+exports[`logs - maxJobNamePadding unset 1`] = `
 "[94mshort-name                                 [39m [95mstarting[39m shell ([33m.pre[39m)
 [94mshort-name                                 [39m [32m$ echo "short-name"[39m
 [94mshort-name                                 [39m [92m>[39m short-name

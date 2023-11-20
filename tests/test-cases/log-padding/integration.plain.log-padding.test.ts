@@ -9,26 +9,26 @@ beforeAll(() => {
 
 const pipelineDirectory = "tests/test-cases/log-padding";
 
-async function verifyLogs ({maxJobNameLength}: {maxJobNameLength?: number}) {
+async function verifyLogs ({maxJobNamePadding}: {maxJobNamePadding?: number}) {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: pipelineDirectory,
         job: ["short-name"],
-        maxJobNameLength,
+        maxJobNamePadding,
     }, writeStreams);
 
     // tip: use `cat __snapshots__/*` to inspect the results
     expect(writeStreams.stdoutLines.join("\n").replace(/[0-9.]+ ms/g, "1 ms")).toMatchSnapshot();
 }
 
-test("logs - maxJobNameLength set to 0", async () => {
-    await verifyLogs({maxJobNameLength: 0});
+test("logs - maxJobNamePadding set to 0", async () => {
+    await verifyLogs({maxJobNamePadding: 0});
 });
 
-test("logs - maxJobNameLength set to 30", async () => {
-    await verifyLogs({maxJobNameLength: 30});
+test("logs - maxJobNamePadding set to 30", async () => {
+    await verifyLogs({maxJobNamePadding: 30});
 });
 
-test("logs - maxJobNameLength unset", async () => {
-    await verifyLogs({maxJobNameLength: undefined});
+test("logs - maxJobNamePadding unset", async () => {
+    await verifyLogs({maxJobNamePadding: undefined});
 });

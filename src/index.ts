@@ -15,7 +15,7 @@ import {Job, cleanupJobResources} from "./job.js";
 
 const jobs: Job[] = [];
 
-process.on("exit", (_: string, code: number) => {
+process.on("exit", (code) => {
     cleanupJobResources(jobs).finally(process.exit(code));
 });
 process.on("SIGINT", (_: string, code: number) => {
@@ -39,6 +39,8 @@ process.on("SIGINT", (_: string, code: number) => {
                 } catch (e: any) {
                     if (e instanceof AssertionError) {
                         process.stderr.write(chalk`{red ${e.message.trim()}}\n`);
+                    } else if (e instanceof AggregateError) {
+                        e.errors.forEach((aggE) => process.stderr.write(chalk`{red ${aggE.stack ?? aggE}}\n`));
                     } else {
                         process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
                     }
@@ -173,6 +175,11 @@ process.on("SIGINT", (_: string, code: number) => {
             description: "Set docker executor ulimit",
             requiresArg: false,
         })
+        .option("network", {
+            type: "array",
+            description: "Add networks to docker executor",
+            requiresArg: false,
+        })
         .option("volume", {
             type: "array",
             description: "Add volumes to docker executor",
@@ -210,7 +217,7 @@ process.on("SIGINT", (_: string, code: number) => {
             description: "Show timestamps and job duration in the logs",
             requiresArg: false,
         })
-        .option("max-job-name-length", {
+        .option("max-job-name-padding", {
             type: "number",
             description: "Maximum padding for job name (use <= 0 for no padding)",
             requiresArg: false,
@@ -218,6 +225,11 @@ process.on("SIGINT", (_: string, code: number) => {
         .option("concurrency", {
             type: "number",
             description: "Limit the number of jobs that run simultaneously",
+            requiresArg: false,
+        })
+        .option("container-executable", {
+            type: "string",
+            description: "Command to start the container engine (docker or podman)",
             requiresArg: false,
         })
         .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {

@@ -3,7 +3,7 @@
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.43.0",
+  "version": "4.45.1",
   "scripts": {
     "pkg-linux": "pkg src/index.js --public -t node18-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
     "pkg-macos": "pkg src/index.js --public -t node18-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
@@ -16,6 +16,7 @@
     "audit": "npm audit --parseable",
     "lint": "npx eslint .",
     "test": "npm run build && jest --testTimeout 60000",
+    "test-except-dind": "npm run build && jest --testTimeout 60000 --testPathIgnorePatterns=dind",
     "coverage": "jest --coverage --testTimeout 60000",
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
@@ -59,7 +60,7 @@
     "jest-when": "3.x.x",
     "pkg": "5.x.x",
     "ts-jest": "29.x.x",
-    "ts-node": "^10.9.1",
+    "ts-node": "10.x.x",
     "typescript": "5.x.x"
   },
   "engines": {
