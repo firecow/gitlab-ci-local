@@ -21,6 +21,7 @@ test("predefined-variables <test-job>", async () => {
         chalk`{blueBright test-job                    } {greenBright >} gcl-predefined-variables`,
         chalk`{blueBright test-job                    } {greenBright >} gcl`,
         chalk`{blueBright test-job                    } {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables`,
+        chalk`{blueBright test-job                    } {greenBright >} main`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
