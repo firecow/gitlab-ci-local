@@ -2,8 +2,6 @@
   "extends": [
     "config:base",
     ":disableDependencyDashboard",
-    ":automergeAll",
-    ":automergeBranch",
     ":maintainLockFilesWeekly"
   ]
 }
