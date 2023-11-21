@@ -1,0 +1,15 @@
+---
+build-image-ref:
+  stage: build
+  needs: []
+  script:
+    - echo "BUILD_IMAGE_REF=alpine" > build.env
+  artifacts:
+    reports: { dotenv: build.env }
+
+use-image-ref:
+  stage: deploy
+  needs: [build-image-ref]
+  image: ${BUILD_IMAGE_REF}
+  script:
+    - if [ "$BUILD_IMAGE_REF" = "" ]; then exit 1; else cat /etc/os-release; fi
