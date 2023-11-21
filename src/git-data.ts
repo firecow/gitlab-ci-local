@@ -18,6 +18,7 @@ export class GitData {
         host: "gitlab.com",
         group: "fallback.group",
         project: "fallback.project",
+        defaultBranch: "main",
     };
 
     public readonly commit = {
@@ -64,7 +65,11 @@ export class GitData {
             const {stdout: gitRemote} = await Utils.spawn(["git", "remote", "-v"], cwd);
             const gitRemoteMatch = /(?<schema>git|https?)(?::\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>[^ .]+)(?:\.git)?.*/.exec(gitRemote);
 
+            const {stdout: gitRemoteDefaultBranch} = await Utils.spawn(["git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD"], cwd);
+            const gitRemoteDefaultBranchMatch = /^origin\/(?<defaultBranch>[^/]+)$/.exec(gitRemoteDefaultBranch);
+
             assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
+            assert(gitRemoteDefaultBranchMatch?.groups != null, "git symbolic-ref --short refs/remotes/origin/HEAD didn't provide valid matches");
 
             this.remote.schema = gitRemoteMatch.groups.schema;
             if (this.remote.schema === "git") {
@@ -79,6 +84,7 @@ export class GitData {
             this.remote.host = gitRemoteMatch.groups.host;
             this.remote.group = gitRemoteMatch.groups.group;
             this.remote.project = gitRemoteMatch.groups.project;
+            this.remote.defaultBranch = gitRemoteDefaultBranchMatch.groups.defaultBranch;
         } catch (e) {
             if (e instanceof AssertionError) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}\n`);

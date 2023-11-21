@@ -5,6 +5,7 @@ test-job:
     - echo ${CI_PROJECT_PATH_SLUG}
     - echo ${CI_PROJECT_NAMESPACE}
     - echo ${CI_PROJECT_DIR}
+    - echo ${CI_DEFAULT_BRANCH}
 
 test-job-commit-short-length:
   script:
