@@ -85,6 +85,7 @@ export class VariablesFromFiles {
 
         const addVariableFileToVariables = async (fileData: any, filePriority: number) => {
             for (const [globalKey, globalEntry] of Object.entries(fileData?.global ?? {})) {
+                assert(typeof globalEntry === "object", "global entries in variable files must be object");
                 await addToVariables(globalKey, globalEntry, 1 + filePriority);
             }
 
@@ -92,7 +93,7 @@ export class VariablesFromFiles {
             for (const [groupKey, groupEntries] of Object.entries(fileData?.group ?? {})) {
                 if (!groupUrl.includes(this.normalizeProjectKey(groupKey, writeStreams))) continue;
                 assert(groupEntries != null, "groupEntries cannot be null/undefined");
-                assert(typeof groupEntries === "object", "groupEntries in variable files must be object");
+                assert(typeof groupEntries === "object", "group entries in variable files must be object");
                 for (const [k, v] of Object.entries(groupEntries)) {
                     await addToVariables(k, v, 2 + filePriority);
                 }
@@ -102,7 +103,7 @@ export class VariablesFromFiles {
             for (const [projectKey, projectEntries] of Object.entries(fileData?.project ?? [])) {
                 if (!projectUrl.includes(this.normalizeProjectKey(projectKey, writeStreams))) continue;
                 assert(projectEntries != null, "projectEntries cannot be null/undefined");
-                assert(typeof projectEntries === "object", "projectEntries in variable files must be object");
+                assert(typeof projectEntries === "object", "project entries in variable files must be object");
                 for (const [k, v] of Object.entries(projectEntries)) {
                     await addToVariables(k, v, 3 + filePriority);
                 }
