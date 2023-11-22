@@ -1,0 +1,11 @@
+---
+test-job:
+  cache:
+    key: global
+  script: echo "test-job"
+
+test-empty-cache-object:
+  stage: test
+  cache: { }
+  script:
+    - echo "test-job"
