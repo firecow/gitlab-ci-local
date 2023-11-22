@@ -1,0 +1,9 @@
+---
+
+issue-910-empty:
+  stage: build
+  cache:
+    - { key: { files: [] }, paths: [bag_of_nothing] }
+  script:
+    - mkdir -p bag_of_nothing
+    - echo 'asdf' > bag_of_nothing/example.txt

@@ -1,0 +1,9 @@
+---
+
+issue-910-three:
+  stage: build
+  cache:
+    - { key: { files: [fakepackage.json, fakepackage1.json, three-is-a-crowd.txt] }, paths: [bag_of_holding] }
+  script:
+    - mkdir -p bag_of_holding
+    - echo 'unreachable' > bag_of_holding/example.txt
