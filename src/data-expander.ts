@@ -124,7 +124,7 @@ export function cacheEach (jobName: string, gitlabData: any) {
     jobData.cache = jobData.cache.flat(5);
     for (const [i, c] of Object.entries<any>(jobData.cache)) {
         if (c.key?.files instanceof Array) {
-            assert(c.key.files.length === 1 || c.key.files.length === 2, `cache:key:files should be an array of one or two file paths. Got ${c.key.files?.length}`);
+            assert(c.key.files.length === 1 || c.key.files.length === 2, `cache:key:files should be an array of one or two file paths. Got ${c.key.files.length}`);
         }
         jobData.cache[i] = cacheComplex(c);
     }
