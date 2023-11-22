@@ -126,12 +126,8 @@ export function cacheEach (jobName: string, gitlabData: any) {
         jobData.cache[i] = cacheComplex(c);
     }
 
-    // Remove cache elements with empty paths array
-    // gitlab.com works the same way.
-    for (const i of jobData.cache.keys()) {
-        if (jobData.cache[i]?.paths) continue;
-        jobData.cache.splice(i, 1);
-    }
+    // Remove cache elements with empty paths array (gitlab.com works the same way.)
+    jobData.cache = jobData.cache.filter((c: any) => c.paths?.length !== undefined);
 }
 
 export function servicesComplex (data: any) {
