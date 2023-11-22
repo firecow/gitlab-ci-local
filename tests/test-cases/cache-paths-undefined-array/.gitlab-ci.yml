@@ -6,6 +6,6 @@ test-job:
 
 test-empty-cache-object:
   stage: test
-  cache: {}
+  cache: { }
   script:
-  - echo "test-job"
+    - echo "test-job"
