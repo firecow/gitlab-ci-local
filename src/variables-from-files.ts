@@ -117,7 +117,7 @@ export class VariablesFromFiles {
         if (fs.existsSync(projectVariablesFile)) {
             const projectVariablesFileData: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA}) ?? {};
             assert(projectVariablesFileData != null, "projectEntries cannot be null/undefined");
-            assert(typeof projectVariablesFileData === "object", "projectEntries in variable files must be object");
+            assert(typeof projectVariablesFileData === "object", "project entries in variable files must be object");
             for (const [k, v] of Object.entries(projectVariablesFileData)) {
                 await addToVariables(k, v, 24);
             }
