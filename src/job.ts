@@ -198,7 +198,9 @@ export class Job {
         for (const [i, c] of Object.entries<any>(this.cache)) {
             assert(["pull", "push", "pull-push"].includes(c.policy), chalk`{blue ${this.name}} cache[${i}].policy is not 'pull', 'push' or 'pull-push'`);
             assert(["on_success", "on_failure", "always"].includes(c.when), chalk`{blue ${this.name}} cache[${i}].when is not 'on_success', 'on_failure' or 'always'`);
-            assert(Array.isArray(c.paths), chalk`{blue ${this.name}} cache[${i}].paths must be array`);
+            if (c.paths != null) {
+                assert(Array.isArray(c.paths), chalk`{blue ${this.name}} cache[${i}].paths must be array. Got "${c.paths}"`);
+            }
         }
 
         for (const [i, s] of Object.entries<any>(this.services)) {

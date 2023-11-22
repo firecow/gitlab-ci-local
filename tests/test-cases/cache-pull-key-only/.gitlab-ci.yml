@@ -1,0 +1,33 @@
+---
+stages:
+  - test
+
+create-cache:
+  stage: test
+  image: alpine:latest
+  script:
+    - echo "Hello World" > file.txt
+  cache:
+    - key: 'my-cache-key-pull-only'
+      paths: ['file.txt']
+
+use-cache:
+  stage: test
+  image: alpine:latest
+  needs: [create-cache]
+  script:
+    - cat file.txt
+    - rm file.txt
+  cache:
+    - key: 'my-cache-key-pull-only'
+      policy: pull
+
+use-cache-2:
+  stage: test
+  image: alpine:latest
+  needs: [use-cache]
+  script:
+    - cat file.txt
+  cache:
+    - key: 'my-cache-key-pull-only'
+      policy: pull
