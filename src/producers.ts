@@ -1,5 +1,7 @@
 import {Utils} from "./utils";
 import {Job} from "./job";
+import assert from "assert";
+import chalk from "chalk";
 
 export class Producers {
 
@@ -32,6 +34,25 @@ export class Producers {
             if (!producerSet.has(potential.name) && !producerSet.has(potential.baseName)) continue;
             producers.push(potential);
         }
+
+        if (job.needs) {
+            for (const need of job.needs) {
+                const matrix = need.parallel?.matrix;
+                const toRemove = [];
+                for (const p of producers) {
+                    assert(p.matrixVariables, chalk`{blueBright ${job.name}} use needs.parallel.matrix towards {blueBright ${p.baseName}} that doesn't implement it`);
+                    for (const m of matrix ?? []) {
+                        if (!Utils.objectShallowEqual(p.matrixVariables, m)) {
+                            toRemove.push(p);
+                        }
+                    }
+                }
+                for (const t of toRemove) {
+                    producers.splice(producers.indexOf(t), 1);
+                }
+            }
+        }
+
         return producers.map(producer => {
             return {name: producer.name, dotenv: producer?.artifacts?.reports?.dotenv ?? null};
         });

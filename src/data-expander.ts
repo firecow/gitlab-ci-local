@@ -91,6 +91,7 @@ export function needsComplex (data: any) {
         optional: data.optional ?? false,
         pipeline: data.pipeline ?? null,
         project: data.project ?? null,
+        parallel: data.parallel ?? null,
     };
 }
 
