@@ -349,15 +349,18 @@ export class Job {
     }
 
     get beforeScripts (): string[] {
-        return this.jobData["before_script"] || [];
+        const beforeScripts = this.jobData["before_script"] || [];
+        return typeof beforeScripts === "string" ? [beforeScripts] : beforeScripts;
     }
 
     get afterScripts (): string[] {
-        return this.jobData["after_script"] || [];
+        const afterScripts = this.jobData["after_script"] || [];
+        return typeof afterScripts === "string" ? [afterScripts] : afterScripts;
     }
 
     get scripts (): string[] {
-        return this.jobData["script"];
+        const script = this.jobData["script"];
+        return typeof script === "string" ? [script] : script;
     }
 
     get trigger (): any {

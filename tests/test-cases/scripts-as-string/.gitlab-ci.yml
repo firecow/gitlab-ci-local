@@ -1,0 +1,5 @@
+---
+test-job:
+  before_script: echo "Before test"
+  script: echo "Test something"
+  after_script: echo "After test"
