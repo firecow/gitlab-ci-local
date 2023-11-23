@@ -428,7 +428,6 @@ export class Job {
             const chownChmodCmds = this.argv.umask ?
                 ["bash", "-c", "chown 0:0 -R /gcl-builds/ && chmod a+rw -R /gcl-builds/ && chmod a+rw -R /tmp/"] :
                 ["bash", "-c", "chmod g-w -R /gcl-builds/ && chmod g-w -R /tmp/"];
-            console.log(chownChmodCmds);
             const {stdout: containerId} = await Utils.spawn([
                 this.argv.containerExecutable, "create", `--volume=${buildVolumeName}:/gcl-builds`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
                 ...chownChmodCmds,
