@@ -106,7 +106,7 @@ Executing `gitlab-ci-local` with `--variable MSYS_NO_PATHCONV=1` can be useful i
 # Overrides .gitlab-ci.yml as the default git ci/cd file
 export GCL_NEEDS='true' >> ~/.bashrc
 export GCL_FILE='.gitlab-ci-local.yml' >> ~/.bashrc
-export GCL_VARIABLE="IMAGE=someimage SOMEOTHERIMAGE=someotherimage"
+export GCL_VARIABLE="IMAGE=someimage;SOMEOTHERIMAGE=someotherimage" >> ~/.bashrc
 ```
 
 ### DotEnv file
@@ -119,6 +119,9 @@ FILE=doctor-strange.yml # --file
 
 # Always runs needed jobs, when gitlab-ci-local <job-name> is called
 NEEDS=true # --needs
+
+# Separate list/object entries using semi-color
+VOLUME=app:/home/u;/home/username/workdir/something
 ```
 
 All cli options can be assigned default values this way

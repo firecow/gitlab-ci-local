@@ -51,18 +51,15 @@ export class Argv {
     }
 
     get volume (): string[] {
-        const val = this.map.get("volume") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
+        return this.splitArray(this.map.get("volume"));
     }
 
     get network (): string[] {
-        const val = this.map.get("network") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
+        return this.splitArray(this.map.get("network"));
     }
 
     get extraHost (): string[] {
-        const val = this.map.get("extraHost") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
+        return this.splitArray(this.map.get("extraHost"));
     }
 
     get remoteVariables (): string {
@@ -70,29 +67,27 @@ export class Argv {
     }
 
     get variable (): {[key: string]: string} {
-        const val = this.map.get("variable");
+        const val = this.map.get("variable") ?? [];
         const variables: {[key: string]: string} = {};
-        const pairs = typeof val == "string" ? val.split(" ") : val;
-        (pairs ?? []).forEach((variablePair: string) => {
-            const exec = /(?<key>\w*?)(=)(?<value>.*)/.exec(variablePair);
-            if (exec?.groups?.key) {
-                variables[exec.groups.key] = exec?.groups?.value;
+        val.forEach((v: string) => {
+            const pairs = v.split(";").map(e => e.split("="));
+            for (const pair of pairs) {
+                variables[pair[0]] = pair[1];
             }
         });
         return variables;
     }
 
     get unsetVariables (): string[] {
-        return this.map.get("unsetVariable") ?? [];
+        return this.splitArray(this.map.get("unsetVariable") ?? []);
     }
 
     get manual (): string[] {
-        const val = this.map.get("manual") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
+        return this.splitArray(this.map.get("manual") ?? []);
     }
 
     get job (): string[] {
-        return this.map.get("job") ?? [];
+        return this.splitArray(this.map.get("job") ?? []);
     }
 
     get autoCompleting (): boolean {
@@ -193,5 +188,14 @@ export class Argv {
 
     get containerExecutable (): string {
         return this.map.get("containerExecutable") ?? "docker";
+    }
+
+    private splitArray (arr?: string[], separator = ";") {
+        const res: string[] = [];
+        if (!arr) return res;
+        for (const v of arr) {
+            res.push(...v.split(separator));
+        }
+        return res;
     }
 }
