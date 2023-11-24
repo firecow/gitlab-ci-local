@@ -160,7 +160,7 @@ export class Job {
         predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
         predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
-        predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH_SLUG"]}`;
+        predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH"]}`;
 
         // Find environment matched variables
         if (this.environment) {
