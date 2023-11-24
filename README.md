@@ -106,7 +106,7 @@ Executing `gitlab-ci-local` with `--variable MSYS_NO_PATHCONV=1` can be useful i
 # Overrides .gitlab-ci.yml as the default git ci/cd file
 export GCL_NEEDS='true' >> ~/.bashrc
 export GCL_FILE='.gitlab-ci-local.yml' >> ~/.bashrc
-export GLC_VARIABLES="IMAGE=someimage SOMEOTHERIMAGE=someotherimage"
+export GCL_VARIABLE="IMAGE=someimage SOMEOTHERIMAGE=someotherimage"
 ```
 
 ### DotEnv file
