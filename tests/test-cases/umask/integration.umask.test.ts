@@ -36,8 +36,8 @@ test.concurrent("umask <alpine-guest> --no-umask --needs", async () => {
     }, writeStreams);
 
     const expectedStdOut = [
-        chalk`{blueBright alpine-guest} {greenBright >} 644 one.txt 405 100`,
-        chalk`{blueBright alpine-guest} {greenBright >} 755 script.sh 405 100`,
+        chalk`{blueBright alpine-guest} {greenBright >} 666 one.txt 405 100`,
+        chalk`{blueBright alpine-guest} {greenBright >} 777 script.sh 405 100`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
