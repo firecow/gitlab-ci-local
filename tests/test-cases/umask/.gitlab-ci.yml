@@ -1,6 +1,5 @@
 ---
 build-job:
-  tags: [shared-shell-executor]
   script:
     - |
       docker build -q -t debug:ci-${CI_PIPELINE_IID} -f - . <<EOF
@@ -9,7 +8,6 @@ build-job:
       EOF
 
 alpine-guest:
-  tags: [shared-docker-executor]
   needs: [build-job]
   image: debug:ci-${CI_PIPELINE_IID}
   script:
@@ -17,7 +15,6 @@ alpine-guest:
     - stat -c "%a %n %u %g" script.sh
 
 alpine-root:
-  tags: [shared-docker-executor]
   needs: []
   image: alpine
   script:
