@@ -2,7 +2,7 @@ import {WriteStreams} from "./write-streams";
 import {GitData} from "./git-data";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
-import chalk, {yellow} from "chalk";
+import chalk from "chalk";
 import {Argv} from "./argv";
 import assert from "assert";
 import {Utils} from "./utils";
