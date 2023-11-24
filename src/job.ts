@@ -431,7 +431,8 @@ export class Job {
 
             let chownChmodCmds = ["sh", "-c", "chown 0:0 -R /gcl-builds/ && chmod a+rw -R /gcl-builds/ && chown 0:0 -R /tmp/ && chmod a+rw -R /tmp/"];
             if (expanded["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] === "true") {
-                const {stdout: chownOpt} = await Utils.spawn(["docker", "run", "--rm", this.imageName, "echo", "\"$(id -u):$(id -g)\""]);
+                const {stdout: chownOpt} = await Utils.spawn(["docker", "run", "--rm", this.imageName, "sh", "-c", "echo \"$(id -u):$(id -g)\""]);
+                console.log(chownOpt);
                 chownChmodCmds = ["sh", "-c", `chown ${chownOpt} -R /gcl-builds/ && chmod g-w -R /gcl-builds/ && chown ${chownOpt} -R /gcl-builds/ && chmod g-w -R /tmp/`];
             }
             const {stdout: containerId} = await Utils.spawn([
