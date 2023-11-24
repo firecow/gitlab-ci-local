@@ -431,14 +431,11 @@ export class Job {
 
             let chownChmodCmds = ["sh", "-c", "chown 0:0 -R /gcl-builds/ && chmod a+rw -R /gcl-builds/ && chown 0:0 -R /tmp/ && chmod a+rw -R /tmp/"];
             if (expanded["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] === "true") {
-                let {stdout: imageUser} = await Utils.spawn([
-                    "docker", "image", "inspect", "--format", "'{{ .Config.User }}'", this.imageName,
-                ]);
-                imageUser = imageUser === "''" ? "root" : imageUser;
-                chownChmodCmds = ["sh", "-c", `chown $(id -u ${imageUser}):$(id -g ${imageUser}) -R /gcl-builds/ && chmod g-w -R /gcl-builds/ && chown $(id -u ${imageUser}):$(id -g ${imageUser}) -R /gcl-builds/ && chmod g-w -R /tmp/`];
+                const {stdout: chownOpt} = await Utils.spawn(["docker", "run", "--rm", this.imageName, "echo", "\"$(id -u):$(id -g)\""]);
+                chownChmodCmds = ["sh", "-c", `chown ${chownOpt} -R /gcl-builds/ && chmod g-w -R /gcl-builds/ && chown ${chownOpt} -R /gcl-builds/ && chmod g-w -R /tmp/`];
             }
             const {stdout: containerId} = await Utils.spawn([
-                this.argv.containerExecutable, "create", "--user=0:0", `--volume=${buildVolumeName}:/gcl-builds`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, this.imageName,
+                this.argv.containerExecutable, "create", "--user=0:0", `--volume=${buildVolumeName}:/gcl-builds`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
                 ...chownChmodCmds,
             ], argv.cwd);
             this._containersToClean.push(containerId);
