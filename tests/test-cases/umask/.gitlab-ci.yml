@@ -1,8 +1,25 @@
 ---
-stages: [test]
-
-test-job:
-  stage: test
-  image: registry.access.redhat.com/ubi8/openjdk-11:1.14-10
+build-job:
+  tags: [shared-shell-executor]
   script:
-    - echo "Test success! USER-ID=$(id -u)"
+    - |
+      docker build -q -t debug:ci-${CI_PIPELINE_IID} -f - . <<EOF
+      FROM alpine
+      USER guest
+      EOF
+
+alpine-guest:
+  tags: [shared-docker-executor]
+  needs: [build-job]
+  image: debug:ci-${CI_PIPELINE_IID}
+  script:
+    - stat -c "%a %n %u %g" one.txt
+    - stat -c "%a %n %u %g" script.sh
+
+alpine-root:
+  tags: [shared-docker-executor]
+  needs: []
+  image: alpine
+  script:
+    - stat -c "%a %n %u %g" one.txt
+    - stat -c "%a %n %u %g" script.sh
