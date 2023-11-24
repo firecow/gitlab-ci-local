@@ -85,7 +85,6 @@ export class VariablesFromFiles {
 
         const addVariableFileToVariables = async (fileData: any, filePriority: number) => {
             for (const [globalKey, globalEntry] of Object.entries(fileData?.global ?? {})) {
-                assert(typeof globalEntry === "object", "global entries in variable files must be object");
                 await addToVariables(globalKey, globalEntry, 1 + filePriority);
             }
 
