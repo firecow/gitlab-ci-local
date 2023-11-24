@@ -252,4 +252,7 @@ export class Utils {
         return checksum(result.join(""));
     }
 
+    static isObject (v: any) {
+        return Object.getPrototypeOf(v) === Object.prototype;
+    }
 }

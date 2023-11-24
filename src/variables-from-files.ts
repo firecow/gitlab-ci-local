@@ -2,7 +2,7 @@ import {WriteStreams} from "./write-streams";
 import {GitData} from "./git-data";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
-import chalk from "chalk";
+import chalk, {yellow} from "chalk";
 import {Argv} from "./argv";
 import assert from "assert";
 import {Utils} from "./utils";
@@ -92,7 +92,7 @@ export class VariablesFromFiles {
             for (const [groupKey, groupEntries] of Object.entries(fileData?.group ?? {})) {
                 if (!groupUrl.includes(this.normalizeProjectKey(groupKey, writeStreams))) continue;
                 assert(groupEntries != null, "groupEntries cannot be null/undefined");
-                assert(typeof groupEntries === "object", "group entries in variable files must be object");
+                assert(Utils.isObject(groupEntries), "group entries in variable files must be an object");
                 for (const [k, v] of Object.entries(groupEntries)) {
                     await addToVariables(k, v, 2 + filePriority);
                 }
@@ -102,7 +102,7 @@ export class VariablesFromFiles {
             for (const [projectKey, projectEntries] of Object.entries(fileData?.project ?? [])) {
                 if (!projectUrl.includes(this.normalizeProjectKey(projectKey, writeStreams))) continue;
                 assert(projectEntries != null, "projectEntries cannot be null/undefined");
-                assert(typeof projectEntries === "object", "project entries in variable files must be object");
+                assert(Utils.isObject(projectEntries), "project entries in variable files must be an object");
                 for (const [k, v] of Object.entries(projectEntries)) {
                     await addToVariables(k, v, 3 + filePriority);
                 }
@@ -116,7 +116,7 @@ export class VariablesFromFiles {
         if (fs.existsSync(projectVariablesFile)) {
             const projectVariablesFileData: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA}) ?? {};
             assert(projectVariablesFileData != null, "projectEntries cannot be null/undefined");
-            assert(typeof projectVariablesFileData === "object", "project entries in variable files must be object");
+            assert(Utils.isObject(projectVariablesFileData), `${argv.cwd}/.gitlab-ci-local-variables.yml must contain an object`);
             for (const [k, v] of Object.entries(projectVariablesFileData)) {
                 await addToVariables(k, v, 24);
             }

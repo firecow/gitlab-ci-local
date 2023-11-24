@@ -3,6 +3,7 @@ import deepExtend from "deep-extend";
 import assert, {AssertionError} from "assert";
 import {Job} from "./job";
 import {traverse} from "object-traversal";
+import {Utils} from "./utils";
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
@@ -26,14 +27,14 @@ const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents:
 export function jobExtends (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName)) continue;
-        if (Object.getPrototypeOf(jobData) !== Object.prototype) continue;
+        if (!Utils.isObject(jobData)) continue;
         const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
         gitlabData[jobName] = deepExtend({}, ...parentDatas, jobData);
     }
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName)) continue;
-        if (Object.getPrototypeOf(jobData) !== Object.prototype) continue;
+        if (!Utils.isObject(jobData)) continue;
         delete jobData.extends;
     }
 }
@@ -42,7 +43,7 @@ export function reference (gitlabData: any, recurseData: any) {
     for (const [key, value] of Object.entries<any>(recurseData || {})) {
         if (value?.referenceData) {
             recurseData[key] = getSubDataByReference(gitlabData, value.referenceData);
-        } else if (typeof value === "object") {
+        } else if (Utils.isObject(value)) {
             reference(gitlabData, value);
         }
 
@@ -206,7 +207,7 @@ export function defaults (gitlabData: any) {
 
 export function globalVariables (gitlabData: any) {
     for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
-        if (typeof value == "object" && !Array.isArray(value)) {
+        if (Utils.isObject(value)) {
             gitlabData.variables[key] = value["value"];
         }
     }
