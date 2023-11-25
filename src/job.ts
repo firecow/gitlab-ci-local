@@ -111,7 +111,8 @@ export class Job {
     constructor (opt: JobOptions) {
         const jobData = opt.data;
         const gitData = opt.gitData;
-        const globalVariables = opt.globalVariables;
+        const jobVariables = jobData.variables ?? {};
+        const globalVariables = opt.globalVariables ?? {};
         const variablesFromFiles = opt.variablesFromFiles;
         const argv = opt.argv;
         const cwd = argv.cwd;
@@ -135,8 +136,11 @@ export class Job {
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
 
+        // Set FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR
+        globalVariables["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] = argv.umask ? "false" : "true";
+
         const matrixVariables = opt.matrixVariables ?? {};
-        this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...argvVariables};
+        this._variables = {...globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...argvVariables};
 
         let ciProjectDir = `${cwd}`;
         if (this.jobData["image"]) {
@@ -171,14 +175,14 @@ export class Job {
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
         // Merge and expand after finding env matched variables
-        this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
+        this._variables = {...globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
             const ruleResult = Utils.getRulesResult({cwd, rules: this.rules, variables: this._variables});
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
-            this._variables = {...globalVariables || {}, ...jobData.variables || {}, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
+            this._variables = {...globalVariables, ...jobVariables, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
         }
         // Delete variables the user intentionally wants unset
         for (const unsetVariable of argv.unsetVariables) {
@@ -417,12 +421,18 @@ export class Job {
             const time = process.hrtime();
             this.refreshLongRunningSilentTimeout(writeStreams);
 
-            const chownChmodCmds = this.argv.umask ?
-                ["bash", "-c", "chown 0:0 -R /gcl-builds/ && chmod a+rw -R /gcl-builds/ && chmod a+rw -R /tmp/"] :
-                ["bash", "-c", "chmod g-w -R /gcl-builds/ && chmod g-w -R /tmp/"];
+            let chownOpt = "0:0";
+            let chmodOpt = "a+rw";
+            if (expanded["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] === "true") {
+                const {stdout} = await Utils.spawn(["docker", "run", "--rm", this.imageName, "sh", "-c", "echo \"$(id -u):$(id -g)\""]);
+                chownOpt = stdout;
+                if (chownOpt == "0:0") {
+                    chmodOpt = "g-w";
+                }
+            }
             const {stdout: containerId} = await Utils.spawn([
-                this.argv.containerExecutable, "create", `--volume=${buildVolumeName}:/gcl-builds`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
-                ...chownChmodCmds,
+                this.argv.containerExecutable, "create", "--user=0:0", `--volume=${buildVolumeName}:/gcl-builds`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
+                ...["sh", "-c", `chown ${chownOpt} -R /gcl-builds/ && chmod ${chmodOpt} -R /gcl-builds/ && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`],
             ], argv.cwd);
             this._containersToClean.push(containerId);
             if (await fs.pathExists(fileVariablesDir)) {
@@ -630,7 +640,7 @@ export class Job {
                 dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
             }
 
-            if (this.argv.umask) {
+            if (expanded["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] === "false") {
                 dockerCmd += "--user 0:0 ";
             }
 
@@ -1012,7 +1022,7 @@ export class Job {
         let dockerCmd = `${this.argv.containerExecutable} create --interactive --network gitlab-ci-local-${this.jobId} `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
-        if (this.argv.umask) {
+        if (expanded["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] === "false") {
             dockerCmd += "--user 0:0 ";
         }
 
