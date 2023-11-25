@@ -424,7 +424,7 @@ export class Job {
             let chownOpt = "0:0";
             let chmodOpt = "a+rw";
             if (expanded["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] === "true") {
-                const {stdout} = await Utils.spawn(["docker", "run", "--rm", this.imageName, "sh", "-c", "echo \"$(id -u):$(id -g)\""]);
+                const {stdout} = await Utils.spawn(["docker", "run", "--rm", imageName, "sh", "-c", "echo \"$(id -u):$(id -g)\""]);
                 chownOpt = stdout;
                 if (chownOpt == "0:0") {
                     chmodOpt = "g-w";
