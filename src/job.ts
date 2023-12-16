@@ -681,6 +681,7 @@ export class Job {
 
             for (const key of Object.keys(expanded)) {
                 dockerCmd += `-e ${key} `;
+                dockerCmd += `-e DOCKER_ENV_${key} `;
             }
 
             dockerCmd += `${(await this.mountCacheCmd(writeStreams, expanded)).join(" ")} `;
@@ -1052,9 +1053,10 @@ export class Job {
             dockerCmd += `--network-alias=${alias} `;
         }
 
-        // for (const key of Object.keys(expanded)) {
-        //    dockerCmd += `-e ${key} `;
-        // }
+        for (const key of Object.keys(expanded)) {
+            dockerCmd += `-e ${key} `;
+            dockerCmd += `-e DOCKER_ENV_${key} `;
+        }
 
         const serviceEntrypoint = service.entrypoint;
         const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${serviceIndex}_${this.jobId}`;
