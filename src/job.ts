@@ -453,7 +453,7 @@ export class Job {
                 this.services.map(async (service, serviceIndex) => {
                     const serviceName = service.name;
                     await this.pullImage(writeStreams, serviceName);
-                    const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service, serviceIndex);
+                    const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service);
                     const serviceContainerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
                     await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContainerLogFile);
                     const {stdout, stderr} = await Utils.spawn([this.argv.containerExecutable, "logs", serviceContainerId]);
@@ -665,23 +665,16 @@ export class Job {
                 dockerCmd += `--add-host=${extraHost} `;
             }
 
-            const entrypointFile = `${cwd}/${stateDir}/scripts/image_entry/${safeJobName}_${this.jobId}`;
             if (this.imageEntrypoint) {
                 if (this.imageEntrypoint[0] == "") {
                     dockerCmd += "--entrypoint '' ";
                 } else {
-                    await fs.outputFile(entrypointFile, "#!/bin/sh\n");
-                    await fs.appendFile(entrypointFile, `${this.imageEntrypoint.join(" ")}`);
-                    await fs.chmod(entrypointFile, "0755");
-                    dockerCmd += "--entrypoint '/gcl-entry' ";
-                    await fs.appendFile(entrypointFile, " \"$@\"\n");
-                    this._filesToRm.push(entrypointFile);
+                    dockerCmd += `--entrypoint ${this.imageEntrypoint.join(" ")} `;
                 }
             }
 
-            for (const [key, value] of Object.entries(expanded)) {
-                dockerCmd += `-e ${key}='${value}' `;
-                dockerCmd += `-e DOCKER_ENV_${key}='${value}' `;
+            for (const [key, val] of Object.entries(expanded)) {
+                dockerCmd += `-e '${key}=${val}' `;
             }
 
             dockerCmd += `${(await this.mountCacheCmd(writeStreams, expanded)).join(" ")} `;
@@ -1012,14 +1005,12 @@ export class Job {
     }
 
     private async createDockerNetwork (networkName: string) {
-        const {stdout: networkId} = await Utils.spawn([this.argv.containerExecutable, "network", "create", `${networkName}`]);
+        const {stdout: networkId} = await Utils.spawn([this.argv.containerExecutable, "network", "create", "--attachable", "--driver=overlay", `${networkName}`]);
         this._serviceNetworkId = networkId;
     }
 
-    private async startService (writeStreams: WriteStreams, expanded: {[key: string]: string}, service: Service, serviceIndex: number) {
+    private async startService (writeStreams: WriteStreams, expanded: {[key: string]: string}, service: Service) {
         const cwd = this.argv.cwd;
-        const stateDir = this.argv.stateDir;
-        const safeJobName = this.safeJobName;
         let dockerCmd = `${this.argv.containerExecutable} create --interactive --network gitlab-ci-local-${this.jobId} `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
@@ -1053,40 +1044,33 @@ export class Job {
             dockerCmd += `--network-alias=${alias} `;
         }
 
-        for (const [key, value] of Object.entries(expanded)) {
-            dockerCmd += `-e ${key}='${value}' `;
-            dockerCmd += `-e DOCKER_ENV_${key}='${value}' `;
+        for (const [key, val] of Object.entries(expanded)) {
+            dockerCmd += `-e '${key}=${val}' `;
         }
 
         const serviceEntrypoint = service.entrypoint;
-        const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${serviceIndex}_${this.jobId}`;
         if (serviceEntrypoint) {
             if (serviceEntrypoint[0] == "") {
                 dockerCmd += "--entrypoint '' ";
             } else {
-                await fs.outputFile(serviceEntrypointFile, "#!/bin/sh\n");
-                await fs.appendFile(serviceEntrypointFile, `${serviceEntrypoint.join(" ")}`);
-                await fs.appendFile(serviceEntrypointFile, " \"$@\"\n");
-                await fs.chmod(serviceEntrypointFile, "0755");
-                this._filesToRm.push(serviceEntrypointFile);
-                dockerCmd += "--entrypoint '/gcl-entry' ";
+                dockerCmd += `--entrypoint ${serviceEntrypoint[0]} `;
             }
         }
         dockerCmd += `--volume ${this.buildVolumeName}:/gcl-builds `;
         dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
         dockerCmd += `${serviceName} `;
 
-        (service.command ?? []).forEach((e) => dockerCmd += `"${e}" `);
+        if (serviceEntrypoint?.length ?? 0 > 1) {
+            serviceEntrypoint?.slice(1).forEach((e) => {
+                dockerCmd += `"${e}" `;
+            });
+        }
+        (service.command ?? []).forEach((e) => dockerCmd += `"${e.replace(/\$/g, "\\$")}" `);
 
         const time = process.hrtime();
 
         const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
         this._containersToClean.push(containerId);
-
-        // Copy docker entrypoint if specified for service
-        if (serviceEntrypoint && serviceEntrypoint[0] != "") {
-            await Utils.spawn([this.argv.containerExecutable, "cp", serviceEntrypointFile, `${containerId}:/gcl-entry`]);
-        }
 
         await Utils.spawn([this.argv.containerExecutable, "start", `${containerId}`]);
 

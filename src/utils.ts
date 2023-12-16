@@ -26,12 +26,12 @@ type ExpandWith = {
 };
 
 export class Utils {
-    static bash (shellScript: string, cwd = process.cwd(), env = process.env): Promise<{stdout: string; stderr: string; exitCode: number}> {
-        return execa(shellScript, {shell: "bash", cwd, env});
+    static bash (shellScript: string, cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode: number}> {
+        return execa(shellScript, {shell: "bash", cwd});
     }
 
-    static spawn (cmdArgs: string[], cwd = process.cwd(), env = process.env): Promise<{stdout: string; stderr: string}> {
-        return execa(cmdArgs[0], cmdArgs.slice(1), {cwd, env});
+    static spawn (cmdArgs: string[], cwd = process.cwd()): Promise<{stdout: string; stderr: string}> {
+        return execa(cmdArgs[0], cmdArgs.slice(1), {cwd});
     }
 
     static fsUrl (url: string): string {
