@@ -704,7 +704,7 @@ export class Job {
             dockerCmd += "\texit 1\n";
             dockerCmd += "fi\n\"";
 
-            const {stdout: containerId} = await Utils.bash(dockerCmd, cwd, expanded);
+            const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
             this._containerId = containerId;
             this._containersToClean.push(this._containerId);
         }
@@ -1052,9 +1052,9 @@ export class Job {
             dockerCmd += `--network-alias=${alias} `;
         }
 
-        for (const key of Object.keys(expanded)) {
-            dockerCmd += `-e ${key} `;
-        }
+        // for (const key of Object.keys(expanded)) {
+        //    dockerCmd += `-e ${key} `;
+        // }
 
         const serviceEntrypoint = service.entrypoint;
         const serviceEntrypointFile = `${cwd}/${stateDir}/scripts/services_entry/${safeJobName}_${serviceNameWithoutVersion}_${serviceIndex}_${this.jobId}`;
@@ -1078,7 +1078,7 @@ export class Job {
 
         const time = process.hrtime();
 
-        const {stdout: containerId} = await Utils.bash(dockerCmd, cwd, expanded);
+        const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
         this._containersToClean.push(containerId);
 
         // Copy docker entrypoint if specified for service
