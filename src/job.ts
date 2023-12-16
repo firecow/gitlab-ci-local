@@ -679,9 +679,9 @@ export class Job {
                 }
             }
 
-            for (const key of Object.keys(expanded)) {
-                dockerCmd += `-e ${key} `;
-                dockerCmd += `-e DOCKER_ENV_${key} `;
+            for (const [key, value] of Object.entries(expanded)) {
+                dockerCmd += `-e ${key}='${value}' `;
+                dockerCmd += `-e DOCKER_ENV_${key}='${value}' `;
             }
 
             dockerCmd += `${(await this.mountCacheCmd(writeStreams, expanded)).join(" ")} `;
@@ -1053,9 +1053,9 @@ export class Job {
             dockerCmd += `--network-alias=${alias} `;
         }
 
-        for (const key of Object.keys(expanded)) {
-            dockerCmd += `-e ${key} `;
-            dockerCmd += `-e DOCKER_ENV_${key} `;
+        for (const [key, value] of Object.entries(expanded)) {
+            dockerCmd += `-e ${key}='${value}' `;
+            dockerCmd += `-e DOCKER_ENV_${key}='${value}' `;
         }
 
         const serviceEntrypoint = service.entrypoint;
