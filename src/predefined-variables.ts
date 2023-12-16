@@ -36,6 +36,7 @@ export function init ({gitData, argv}: PredefinedVariablesOpts): {[name: string]
         CI_SERVER_PROTOCOL: "https",
         CI_API_V4_URL: `https://${gitData.remote.host}/api/v4`,
         CI_PROJECT_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}`,
+        CI_TEMPLATE_REGISTRY_HOST: "registry.gitlab.com",
         GITLAB_CI: "false",
     };
 
