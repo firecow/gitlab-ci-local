@@ -1005,7 +1005,7 @@ export class Job {
     }
 
     private async createDockerNetwork (networkName: string) {
-        const {stdout: networkId} = await Utils.spawn([this.argv.containerExecutable, "network", "create", "--attachable", "--driver=overlay", `${networkName}`]);
+        const {stdout: networkId} = await Utils.spawn([this.argv.containerExecutable, "network", "create", `${networkName}`]);
         this._serviceNetworkId = networkId;
     }
 
