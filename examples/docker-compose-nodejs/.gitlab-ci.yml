@@ -29,7 +29,7 @@ docker-compose-up:
     url: http://localhost:8891
     name: local
   script:
-    - docker-compose up -d
+    - docker compose up -d
 
 # @Description Down docker-compose services
 docker-compose-down:
@@ -40,4 +40,4 @@ docker-compose-down:
   environment:
     name: local
   script:
-    - docker-compose down
+    - docker compose down
