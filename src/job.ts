@@ -11,6 +11,7 @@ import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
 import {CICDVariable} from "./variables-from-files";
+import timers from "timers/promises";
 
 interface JobOptions {
     argv: Argv;
@@ -731,7 +732,7 @@ export class Job {
         const cp = execa(this._containerId ? `${this.argv.containerExecutable} start --attach -i ${this._containerId}` : "bash", {
             cwd,
             shell: "bash",
-            env: expanded,
+            env: imageName ? process.env : expanded,
         });
 
         const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {

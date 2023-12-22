@@ -1,18 +1,10 @@
 ---
-test-job:
-  services:
-    - name: docker.io/library/docker:dind
-      alias: docker
-  needs: []
+job:
   image: docker.io/library/docker:stable
-  stage: build
+  services:
+    - docker.io/library/docker:stable-dind
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
   script:
-    - docker pull -q alpine 1> /dev/null
-    - docker run --name ${CI_JOB_ID} --volume ${CI_PROJECT_DIR}/:/data/ --interactive -t -d alpine:latest 1> /dev/null
-    - docker exec ${CI_JOB_ID} cat /data/catme.txt
-    - docker exec ${CI_JOB_ID} sh -c "echo 'Touchme' > /data/touchme.txt"
-  after_script:
-    - docker rm -f ${CI_JOB_ID} 1> /dev/null || true
+    - docker info
