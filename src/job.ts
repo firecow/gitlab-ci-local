@@ -11,7 +11,6 @@ import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
 import {CICDVariable} from "./variables-from-files";
-import timers from "timers/promises";
 
 interface JobOptions {
     argv: Argv;
