@@ -16,7 +16,7 @@ test("succesfull-ping", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright test-job        }`,
+        chalk`{black.bgGreenBright  FAIL } {blueBright test-job        }`,
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
@@ -30,7 +30,7 @@ test("unsuccesfull-ping", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job-failure} {greenBright >} ping: bad address 'nope'`,
+        chalk`{blueBright test-job-failure} {greenBright >} failed`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

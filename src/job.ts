@@ -714,7 +714,8 @@ export class Job {
         await this.copyCacheIn(writeStreams, expanded);
         await this.copyArtifactsIn(writeStreams);
 
-        let cmd = "exec 0< /dev/null\n";
+        let cmd = "set -eo pipefail\n";
+        cmd += "exec 0< /dev/null\n";
 
         if (!imageName && this.argv.shellIsolation) {
             cmd += `cd ${stateDir}/builds/${safeJobName}/\n`;
