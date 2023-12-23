@@ -13,15 +13,19 @@ beforeAll(() => {
 test("dind-no-tls <test-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
-        cwd: "tests/test-cases/dind-tls",
+        cwd: "tests/test-cases/dind-no-tls",
         job: ["test-job"],
         needs: true,
         privileged: true,
     }, writeStreams);
 
-    const expected = [
-        chalk`{blueBright test-job} {greenBright >} TestJobDIND`,
-        chalk`{blueBright test-job} {greenBright >} Touchme`,
+    const expectedStdout = [
+        chalk`{blueBright test-job} {greenBright >}  Product License: Community Engine`,
     ];
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdout));
+
+    const expectedStderr = [
+        chalk`{blueBright test-job} {redBright >} WARNING: API is accessible on http://0.0.0.0:2375 without encryption.`,
+    ];
+    expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStderr));
 });
