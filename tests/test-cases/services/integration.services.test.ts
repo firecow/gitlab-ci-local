@@ -33,7 +33,8 @@ test.concurrent("services <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgRed  FAIL } {blueBright test-job                  }`,
+        chalk`{blueBright test-job                  } {greenBright >} Host docker.io-library-nginx not found: 3(NXDOMAIN)`,
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job                  }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 
