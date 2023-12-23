@@ -666,20 +666,28 @@ export class Job {
                 dockerCmd += `--add-host=${extraHost} `;
             }
 
-            if (this.imageEntrypoint) {
-                if (this.imageEntrypoint[0] == "") {
-                    dockerCmd += "--entrypoint '' ";
-                } else {
-                    dockerCmd += `--entrypoint ${this.imageEntrypoint.join(" ")} `;
-                }
-            }
-
             for (const [key, val] of Object.entries(expanded)) {
                 dockerCmd += `-e '${key}=${val}' `;
             }
 
+            if (this.imageEntrypoint) {
+                if (this.imageEntrypoint[0] == "") {
+                    dockerCmd += "--entrypoint '' ";
+                } else {
+                    dockerCmd += `--entrypoint ${this.imageEntrypoint[0]} `;
+                }
+            }
+
             dockerCmd += `${(await this.mountCacheCmd(writeStreams, expanded)).join(" ")} `;
-            dockerCmd += `${imageName} sh -c "\n`;
+            dockerCmd += `${imageName} `;
+
+            if (this.imageEntrypoint?.length ?? 0 > 1) {
+                this.imageEntrypoint?.slice(1).forEach((e) => {
+                    dockerCmd += `"${e}" `;
+                });
+            }
+
+            dockerCmd += "sh -c \"\n";
             dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
             dockerCmd += "\texec /usr/local/bin/bash \n";
             dockerCmd += "elif [ -x /usr/bin/bash ]; then\n";
@@ -724,9 +732,6 @@ export class Job {
 
         if (imageName) {
             await Utils.spawn([this.argv.containerExecutable, "cp", `${stateDir}/scripts/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-cmd`], cwd);
-        }
-        if (this.imageEntrypoint && this.imageEntrypoint[0] != "") {
-            await Utils.spawn([this.argv.containerExecutable, "cp", `${stateDir}/scripts/image_entry/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-entry`], cwd);
         }
 
         const cp = execa(this._containerId ? `${this.argv.containerExecutable} start --attach -i ${this._containerId}` : "bash", {
