@@ -10,10 +10,10 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("dind <test-job> --needs", async () => {
+test("dind-tls <test-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
-        cwd: "tests/test-cases/dind",
+        cwd: "tests/test-cases/dind-tls",
         job: ["test-job"],
         needs: true,
     }, writeStreams);

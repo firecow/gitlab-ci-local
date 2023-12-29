@@ -33,6 +33,7 @@ test.concurrent("services <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
+        chalk`{blueBright test-job                  } {greenBright >} Host docker.io-library-nginx not found: 3(NXDOMAIN)`,
         chalk`{black.bgRed  FAIL } {blueBright test-job                  }`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
@@ -123,6 +124,7 @@ test.concurrent("services <multie-job>", async () => {
     expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-0.log")).toEqual(true);
     expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-1.log")).toEqual(true);
     expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-2.log")).toEqual(true);
+    expect(await fs.readFile("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-0.log", "utf-8")).toMatch(/sh: line 0: echo Service 1: not found/);
     expect(await fs.readFile("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-2.log", "utf-8")).toMatch(/Service 3/);
 });
 
