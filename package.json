@@ -21,7 +21,7 @@
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
   },
   "dependencies": {
-    "axios": "0.27.x",
+    "axios": "1.6.4",
     "base64url": "3.x.x",
     "camelcase": "6.x.x",
     "chalk": "4.x.x",
