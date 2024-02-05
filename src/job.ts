@@ -1035,6 +1035,10 @@ export class Job {
             dockerCmd += `--volume ${volume} `;
         }
 
+        for (const extraHost of this.argv.extraHost) {
+            dockerCmd += `--add-host=${extraHost} `;
+        }
+
         const serviceAlias = service.alias;
         const serviceName = service.name;
         const serviceNameWithoutVersion = serviceName.replace(/(.*)(:.*)/, "$1");
