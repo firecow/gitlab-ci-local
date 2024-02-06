@@ -18,7 +18,8 @@ test("predefined-variables <test-job>", async () => {
 
     const expected = [
         chalk`{blueBright test-job                    } {greenBright >} predefined-variables`,
-        chalk`{blueBright test-job                    } {greenBright >} GCL-predefined-variables`,
+        chalk`{blueBright test-job                    } {greenBright >} GCL/predefined-variables`,
+        chalk`{blueBright test-job                    } {greenBright >} gcl-predefined-variables`,
         chalk`{blueBright test-job                    } {greenBright >} GCL`,
         chalk`{blueBright test-job                    } {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables`,
         chalk`{blueBright test-job                    } {greenBright >} main`,
