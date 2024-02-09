@@ -8,7 +8,7 @@ test("predefined-variables <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     const spyGitRemote = {
         cmdArgs: ["git", "remote", "-v"],
-        returnValue: {stdout: "origin\tgit@gitlab.com:gcl/predefined-variables.git (fetch)\norigin\tgit@gitlab.com:gcl/predefined-variables.git (push)\n"},
+        returnValue: {stdout: "origin\tgit@gitlab.com:GCL/predefined-variables.git (fetch)\norigin\tgit@gitlab.com:GCL/predefined-variables.git (push)\n"},
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
     await handler({
@@ -18,10 +18,12 @@ test("predefined-variables <test-job>", async () => {
 
     const expected = [
         chalk`{blueBright test-job                    } {greenBright >} predefined-variables`,
+        chalk`{blueBright test-job                    } {greenBright >} GCL/predefined-variables`,
         chalk`{blueBright test-job                    } {greenBright >} gcl-predefined-variables`,
-        chalk`{blueBright test-job                    } {greenBright >} gcl`,
+        chalk`{blueBright test-job                    } {greenBright >} GCL`,
         chalk`{blueBright test-job                    } {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables`,
         chalk`{blueBright test-job                    } {greenBright >} main`,
+        chalk`{blueBright test-job                    } {greenBright >} local-registry.gitlab.com/gcl/predefined-variables`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

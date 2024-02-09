@@ -2,10 +2,12 @@
 test-job:
   script:
     - echo ${CI_PROJECT_NAME}
+    - echo ${CI_PROJECT_PATH}
     - echo ${CI_PROJECT_PATH_SLUG}
     - echo ${CI_PROJECT_NAMESPACE}
     - echo ${CI_PROJECT_DIR}
     - echo ${CI_DEFAULT_BRANCH}
+    - echo ${CI_REGISTRY_IMAGE}
 
 test-job-commit-short-length:
   script:

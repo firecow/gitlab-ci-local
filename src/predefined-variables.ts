@@ -17,7 +17,7 @@ export function init ({gitData, argv}: PredefinedVariablesOpts): {[name: string]
         CI_PROJECT_NAME: gitData.remote.project,
         CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
         CI_PROJECT_PATH: `${gitData.remote.group}/${gitData.remote.project}`,
-        CI_PROJECT_PATH_SLUG: `${gitData.remote.group.replace(/\//g, "-")}-${gitData.remote.project}`,
+        CI_PROJECT_PATH_SLUG: `${gitData.remote.group.replace(/\//g, "-")}-${gitData.remote.project}`.toLowerCase(),
         CI_PROJECT_NAMESPACE: `${gitData.remote.group}`,
         CI_PROJECT_VISIBILITY: "internal",
         CI_PROJECT_ID: "1217",
