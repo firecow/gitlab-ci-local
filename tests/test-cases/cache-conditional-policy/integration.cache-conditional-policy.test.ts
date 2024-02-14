@@ -11,7 +11,7 @@ beforeAll(() => {
 test("cache-conditional-policy <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
-        cwd: "tests/test-cases/test-cases/cache-conditional-policy",
+        cwd: "tests/test-cases/cache-conditional-policy",
         job: ["test-job"],
         maxJobNamePadding: 0,
     }, writeStreams);
