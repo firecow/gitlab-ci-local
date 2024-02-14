@@ -1,0 +1,15 @@
+---
+
+test-job:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      variables:
+        POLICY: pull-push
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+      variables:
+        POLICY: pull
+  script:
+    - echo "Build something"
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    policy: $POLICY
