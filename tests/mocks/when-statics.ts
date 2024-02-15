@@ -33,7 +33,7 @@ export class WhenStatics {
         returnValue: {stdout: "0261898"},
     };
 
-    public static all = [
+    public static readonly all = [
         WhenStatics.mockGitConfigEmail,
         WhenStatics.mockGitConfigName,
         WhenStatics.mockUID,
