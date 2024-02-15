@@ -106,7 +106,9 @@ export class Parser {
 
         // Check job variables for invalid hash of key value pairs, and cast numbers to strings
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
-            for (const [key, value] of Object.entries(jobData.variables || {})) {
+            for (const [key, _value] of Object.entries(jobData.variables || {})) {
+                let value = _value;
+                if (value === null) value = ""; // variable's values are nullable
                 assert(
                     typeof value === "string" || typeof value === "number",
                     chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${value}`
