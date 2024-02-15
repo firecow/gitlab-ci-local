@@ -3,3 +3,12 @@ test-job:
   image: docker.io/curlimages/curl:7.69.1
   script:
     - curl -I http://fake-google.com
+
+service-job:
+  image: docker.io/curlimages/curl:7.69.1
+  services:
+    - name: docker.io/alpine:latest
+      entrypoint: ["/bin/sh", "-c"]
+      command: ["getent hosts fake-google.com"]
+  script:
+    - "true"
