@@ -1,39 +1,39 @@
 export class WhenStatics {
 
-    public static mockGitConfigEmail = {
+    public static readonly mockGitConfigEmail = {
         cmdArgs: ["git", "config", "user.email"],
         returnValue: {stdout: "test@test.com\n"},
     };
-    public static mockGitConfigName = {
+    public static readonly mockGitConfigName = {
         cmdArgs: ["git", "config", "user.name"],
         returnValue: {stdout: "Testersen\n"},
     };
-    public static mockUID = {
+    public static readonly mockUID = {
         cmdArgs: ["id", "-u"],
         returnValue: {stdout: "990\n"},
     };
-    public static mockGitRemote = {
+    public static readonly mockGitRemote = {
         cmdArgs: ["git", "remote", "-v"],
         returnValue: {stdout: "origin\tgit@gitlab.com:gcl/test-project.git (fetch)\norigin\tgit@gitlab.com:gcl/test-project.git (push)\n"},
     };
-    public static mockGitDefaultBranch = {
+    public static readonly mockGitDefaultBranch = {
         cmdArgs: ["git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD"],
         returnValue: {stdout: "origin/main"},
     };
-    public static mockGitBranchName = {
+    public static readonly mockGitBranchName = {
         cmdArgs: ["git", "rev-parse", "--abbrev-ref", "HEAD"],
         returnValue: {stdout: "master"},
     };
-    public static mockGitCommitSha = {
+    public static readonly mockGitCommitSha = {
         cmdArgs: ["git", "rev-parse", "HEAD"],
         returnValue: {stdout: "02618988a1864b3d06cfee3bd79f8baa2dd21407"},
     };
-    public static mockGitCommitShaShort = {
+    public static readonly mockGitCommitShaShort = {
         cmdArgs: ["git", "rev-parse", "--short", "HEAD"],
         returnValue: {stdout: "0261898"},
     };
 
-    public static all = [
+    public static readonly all = [
         WhenStatics.mockGitConfigEmail,
         WhenStatics.mockGitConfigName,
         WhenStatics.mockUID,
