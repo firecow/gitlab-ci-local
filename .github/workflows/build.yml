@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           cache: 'npm'
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ${{ env.PKG_CACHE_PATH }}
           key: pkg-cache-${{ matrix.node-version }}
