@@ -199,7 +199,9 @@ export class Job {
             throw new AssertionError({message: `${this.formattedJobName} @InjectSSHAgent can only be used with image:`});
         }
 
+        const expanded = Utils.expandVariables(this._variables);
         for (const [i, c] of Object.entries<any>(this.cache)) {
+            c.policy = Utils.expandText(c.policy, expanded);
             assert(["pull", "push", "pull-push"].includes(c.policy), chalk`{blue ${this.name}} cache[${i}].policy is not 'pull', 'push' or 'pull-push'`);
             assert(["on_success", "on_failure", "always"].includes(c.when), chalk`{blue ${this.name}} cache[${i}].when is not 'on_success', 'on_failure' or 'always'`);
             assert(Array.isArray(c.paths), chalk`{blue ${this.name}} cache[${i}].paths must be array`);
@@ -214,7 +216,6 @@ export class Job {
         assert(!this.artifacts?.paths || Array.isArray(this.artifacts.paths), chalk`{blue ${this.name}} artifacts.paths must be an array`);
 
         if (this.imageName(this._variables) && argv.mountCache) {
-            const expanded = Utils.expandVariables(this._variables);
             for (const c of this.cache) {
                 c.paths.forEach((p) => {
                     const path = Utils.expandText(p, expanded);
