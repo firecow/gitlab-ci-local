@@ -395,7 +395,7 @@ export class Job {
         this._startTime = process.hrtime();
         const writeStreams = this.writeStreams;
         const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
-        const expanded = Utils.expandVariables({...this._variables, ...reportsDotenvVariables});
+        const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...reportsDotenvVariables}));
         const imageName = this.imageName(expanded);
         const safeJobName = this.safeJobName;
 
