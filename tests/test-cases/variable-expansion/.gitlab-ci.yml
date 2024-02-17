@@ -1,0 +1,20 @@
+---
+variables:
+  DEV_URL: dev-url
+  URL_DEV: url-dev
+
+.script:
+  script:
+    - echo $URL
+
+test ${URL_${ENV}}:
+  extends: .script
+  variables:
+    URL: ${URL_${ENV}}
+    ENV: DEV
+
+test ${${ENV}_URL}:
+  extends: .script
+  variables:
+    URL: ${${ENV}_URL}
+    ENV: DEV
