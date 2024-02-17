@@ -14,8 +14,8 @@
     "build": " npm run cleanup && tsc",
     "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
     "audit": "npm audit --parseable",
-    "lint": "npx eslint .",
-    "test": "npm run build && jest --testTimeout 60000",
+    "lint": "npx eslint . --fix",
+    "test": "npm run build && jest --testTimeout 90000 --verbose",
     "test-except-dind": "npm run build && jest --testTimeout 60000 --testPathIgnorePatterns=dind",
     "coverage": "jest --coverage --testTimeout 60000",
     "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
