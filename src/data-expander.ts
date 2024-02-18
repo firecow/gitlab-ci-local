@@ -221,7 +221,8 @@ export function globalVariables (gitlabData: any) {
 
 export function flattenLists (gitlabData: any) {
     traverse(gitlabData, ({parent, key, value}) => {
-        if (!Array.isArray(value) || parent == null || typeof key != "string") return;
-        parent[key] = value.flat(5);
-    });
+        if (parent != null && key != null && Array.isArray(value)) {
+            parent[key] = value.flat(5);
+        }
+    }, {cycleHandling: false});
 }

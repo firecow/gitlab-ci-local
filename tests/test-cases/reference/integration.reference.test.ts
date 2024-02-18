@@ -83,3 +83,30 @@ job:
     - echo "works"`;
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
+
+test("reference --file .gitlab-ci-issue-954.yml", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/reference",
+        file: ".gitlab-ci-issue-954.yml",
+        preview: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+normal_job:
+  image:
+    name: alpine
+  before_script:
+    - echo Hello from \${CI_JOB_NAME}
+  script:
+    - echo Hello from \${CI_JOB_NAME}
+  after_script:
+    - echo Hello from \${CI_JOB_NAME}`;
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
