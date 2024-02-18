@@ -1,6 +1,5 @@
 import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
-import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 
@@ -13,17 +12,30 @@ test("reference <test-job>", async () => {
     await handler({
         cwd: "tests/test-cases/reference",
         job: ["test-job"],
+        preview: true,
     }, writeStreams);
 
+    const expected = `---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+test-job:
+  variables:
+    MYVAR: Yoyo
+  script:
+    - echo "Ancient"
+    - echo "Base"
+    - echo "Setting something general up"
+    - echo "array root"
+    - echo \${MYVAR}
+issue-909:
+  script:
+    - echo TEST`;
 
-    const expected = [
-        chalk`{blueBright test-job } {greenBright >} Ancient`,
-        chalk`{blueBright test-job } {greenBright >} Base`,
-        chalk`{blueBright test-job } {greenBright >} Setting something general up`,
-        chalk`{blueBright test-job } {greenBright >} array root`,
-        chalk`{blueBright test-job } {greenBright >} Yoyo`,
-    ];
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
 test("reference --file .gitlab-ci-complex.yml (issue 644)", async () => {
@@ -31,12 +43,22 @@ test("reference --file .gitlab-ci-complex.yml (issue 644)", async () => {
     await handler({
         cwd: "tests/test-cases/reference",
         file: ".gitlab-ci-complex.yml",
+        preview: true,
     }, writeStreams);
 
-    const expected = [
-        chalk`{blueBright job} {greenBright >} foo`,
-    ];
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    const expected = `---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+job:
+  variables:
+    FOO: foo
+  script:
+    - echo $FOO`;
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
 test("reference --file .gitlab-ci-issue-899.yml", async () => {
@@ -44,10 +66,20 @@ test("reference --file .gitlab-ci-issue-899.yml", async () => {
     await handler({
         cwd: "tests/test-cases/reference",
         file: ".gitlab-ci-issue-899.yml",
+        preview: true,
     }, writeStreams);
 
-    const expected = [
-        chalk`{blueBright job} {greenBright >} works`,
-    ];
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    const expected = `---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+job:
+  image:
+    name: docker.io/library/bash
+  script:
+    - echo "works"`;
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
