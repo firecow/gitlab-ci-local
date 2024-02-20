@@ -1,0 +1,14 @@
+---
+.hidden:
+  script:
+    - echo Hello from ${CI_JOB_NAME}
+
+normal_job:
+  image: alpine
+  before_script:
+    - !reference [.hidden, script]  # before_script and after_script under a job work
+  script:
+    - !reference [.hidden, script]  # This also works
+
+after_script:
+  - !reference [.hidden, script]  # before_script and after_script in root of YAML document fail
