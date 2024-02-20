@@ -1,0 +1,7 @@
+---
+test $ character in CI/CD variable:
+  variables:
+    FLAGS: '-al'
+    LS_CMD: 'ls "$FLAGS" $$TMP_DIR'
+  script:
+    - echo "$LS_CMD"

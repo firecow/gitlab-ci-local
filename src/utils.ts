@@ -138,7 +138,10 @@ export class Utils {
             i++;
         } while (expandedAnyVariables);
 
-        // Now that recursive expansion has taken place, unescape $$'s.
+        return variables;
+    }
+
+    static unscape$$Variables (variables: {[key: string]: string}) {
         for (const [k, v] of Object.entries(variables)) {
             variables[k] = Utils.expandText(v, {});
         }
