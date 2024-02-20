@@ -30,7 +30,7 @@
     "dotenv": "16.x.x",
     "execa": "5.x.x",
     "fs-extra": "11.x.x",
-    "globby": "11.x.x",
+    "globby": "14.x",
     "js-yaml": "4.x.x",
     "object-traversal": "1.x.x",
     "p-map": "4.x.x",
