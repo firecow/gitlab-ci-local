@@ -92,7 +92,7 @@ export class Utils {
         }
 
         return text.replace(
-            /(\$\$)|\$\{([a-zA-Z_]\w*)}?|\$([a-zA-Z_]\w*)/g,
+            /(\$\$)|\$\{([a-zA-Z_]\w*)}|\$([a-zA-Z_]\w*)/g, // https://regexr.com/7s4ka
             (_match, escape, var1, var2) => {
                 if (typeof escape !== "undefined") {
                     return expandWith.unescape;
