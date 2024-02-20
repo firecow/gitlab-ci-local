@@ -1,0 +1,9 @@
+---
+variables:
+  EMPTY_GLOBAL_VAR:
+test-job:
+  variables:
+    EMPTY_JOB_VAR:
+  script:
+    - echo "EMPTY_GLOBAL_VAR:${EMPTY_GLOBAL_VAR}"
+    - echo "EMPTY_JOB_VAR:${EMPTY_JOB_VAR}"

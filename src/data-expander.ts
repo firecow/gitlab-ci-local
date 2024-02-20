@@ -213,7 +213,9 @@ export function defaults (gitlabData: any) {
 
 export function globalVariables (gitlabData: any) {
     for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
-        if (Utils.isObject(value)) {
+        if (value === null) {
+            gitlabData.variables[key] = ""; // variable's values are nullable
+        } else if (Utils.isObject(value)) {
             gitlabData.variables[key] = value["value"];
         }
     }
