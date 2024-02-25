@@ -1,0 +1,19 @@
+spec:
+  inputs:
+    default_input_string:
+      default: string
+    default_input_number:
+      default: 1
+      type: number
+    default_input_boolean:
+      default: true
+      type: boolean
+    default_can_be_overwritten:
+      default: default
+---
+scan-website:
+  script:
+    - echo $[[ inputs.default_input_string ]]
+    - echo $[[ inputs.default_input_number ]]
+    - echo $[[ inputs.default_input_boolean ]]
+    - echo $[[ inputs.default_can_be_overwritten ]]

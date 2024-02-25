@@ -1,0 +1,7 @@
+spec:
+  inputs:
+    required_inputs:
+---
+scan-website:
+  script:
+    - echo $[[ inputs.required_inputs ]]

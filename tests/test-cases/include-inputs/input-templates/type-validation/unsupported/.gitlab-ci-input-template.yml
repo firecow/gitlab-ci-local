@@ -1,0 +1,8 @@
+spec:
+  inputs:
+    unsupported_type_input:
+      type: foo
+---
+scan-website:
+  script:
+    - echo $[[ inputs.unsupported_type_input]]

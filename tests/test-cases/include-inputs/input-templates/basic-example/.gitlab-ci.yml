@@ -1,0 +1,8 @@
+include:
+  - local: './.gitlab-ci-input-template.yml'
+    inputs:
+      message: hello world
+      options_input: website
+
+stages:
+  - test
