@@ -49,11 +49,30 @@ test("include-inputs required inputs", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-inputs unknown interpolation key", async () => {
+test("include-inputs unknown interpolation key (TypeError)", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
-            cwd: "tests/test-cases/include-inputs/input-templates/unknown-interpolation-key",
+            cwd: "tests/test-cases/include-inputs/input-templates/unknown-interpolation-key-1",
+            preview: true,
+        }, writeStreams);
+    } catch (e: any) {
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
+        expect(e.message).toContain("This GitLab CI configuration is invalid:");
+        expect(e.message).toContain(
+            chalk`unknown interpolation key: \`foo\`.`
+        );
+        return;
+    }
+
+    throw new Error("Error is expected but not thrown/caught");
+});
+
+test("include-inputs unknown interpolation key (AssertionError)", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/include-inputs/input-templates/unknown-interpolation-key-2",
             preview: true,
         }, writeStreams);
     } catch (e: any) {
