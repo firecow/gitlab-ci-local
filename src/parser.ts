@@ -255,7 +255,7 @@ export class Parser {
             const inputsSpecification: any = fileData[0];
             const uninterpolatedConfigurations: any = fileData[1];
 
-            const result = JSON.stringify(uninterpolatedConfigurations)
+            const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
                 .replace(
                     /\$\[\[\s*inputs.(?<interpolationKey>\w+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\]/g // regexr.com/7sh15
                     , (_: string, interpolationKey: string, interpolationFunctions: string) => {
@@ -275,7 +275,7 @@ export class Parser {
 
                         return inputValue;
                     });
-            return JSON.parse(result);
+            return JSON.parse(interpolatedConfigurations);
         }
         return fileData[0];
     }
