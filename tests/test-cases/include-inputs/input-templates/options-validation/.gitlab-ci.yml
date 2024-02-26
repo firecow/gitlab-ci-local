@@ -1,3 +1,4 @@
+---
 include:
   - local: './.gitlab-ci-input-template.yml'
     inputs:

@@ -1,4 +1,5 @@
-spec: {}
+---
+spec: { }
 ---
 scan-website:
   script:

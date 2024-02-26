@@ -1,6 +1,7 @@
+---
 spec:
   inputs:
-    foo: {}
+    foo: { }
 ---
 scan-website:
   script:
