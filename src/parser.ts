@@ -7,7 +7,7 @@ import prettyHrtime from "pretty-hrtime";
 import {Job} from "./job";
 import * as DataExpander from "./data-expander";
 import {Utils} from "./utils";
-import assert, {AssertionError} from "assert";
+import assert from "assert";
 import {Validator} from "./validator";
 import * as parallel from "./parallel";
 import {GitData} from "./git-data";
@@ -303,13 +303,7 @@ function getInputValue (ctx: any) {
 function validateInterpolationKey (ctx: any): any {
     const {configFilePath, interpolationKey, inputsSpecification} = ctx;
     const invalidInterpolationKeyErr = chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: unknown interpolation key: \`${interpolationKey}\`.`;
-    try {
-        assert(inputsSpecification.spec.inputs[interpolationKey] !== undefined, "");
-    } catch (e: any) {
-        assert(!(e instanceof TypeError), invalidInterpolationKeyErr);
-        assert(!(e instanceof AssertionError), invalidInterpolationKeyErr);
-        throw new Error(e.message);
-    }
+    assert(inputsSpecification.spec.inputs?.[interpolationKey] !== undefined, invalidInterpolationKeyErr);
 }
 
 function validateInput (inputValue: any, ctx: any): any {
