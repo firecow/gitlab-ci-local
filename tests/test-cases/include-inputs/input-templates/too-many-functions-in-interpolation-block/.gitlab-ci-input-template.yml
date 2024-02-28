@@ -1,0 +1,8 @@
+---
+spec:
+  inputs:
+    foo: { }
+---
+scan-website:
+  script:
+    - echo $[[ inputs.foo | expand_var | expand_var | expand_var | expand_var ]]

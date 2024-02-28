@@ -1,0 +1,9 @@
+---
+spec:
+  inputs:
+    boolean_input:
+      type: boolean
+---
+scan-website:
+  script:
+    - echo $[[ inputs.boolean_input]]

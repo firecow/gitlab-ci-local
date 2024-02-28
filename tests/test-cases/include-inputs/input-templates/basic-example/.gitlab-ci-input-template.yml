@@ -1,0 +1,15 @@
+---
+spec:
+  inputs:
+    message:
+    options_input:
+      options:
+        - website
+        - db
+        - server
+---
+scan-$[[ inputs.options_input ]]:
+  script:
+    - echo $[[ inputs.message]]
+    - echo $[[inputs.message ]]
+    - echo $[[     inputs.message ]]

@@ -1,0 +1,6 @@
+---
+spec: { }
+---
+scan-website:
+  script:
+    - echo $[[ inputs.foo ]]

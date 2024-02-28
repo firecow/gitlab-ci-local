@@ -1,0 +1,12 @@
+---
+spec:
+  inputs:
+    options_input:
+      options:
+        - foo
+        - bar
+        - baz
+---
+scan-website:
+  script:
+    - echo $[[ inputs.options_input ]]

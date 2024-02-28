@@ -1,0 +1,9 @@
+---
+spec:
+  inputs:
+    number_input:
+      type: number
+---
+scan-website:
+  script:
+    - echo $[[ inputs.number_input]]

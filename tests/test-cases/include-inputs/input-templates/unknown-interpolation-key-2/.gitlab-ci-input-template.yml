@@ -1,0 +1,10 @@
+---
+spec:
+  inputs:
+    baz:
+      default: bar
+---
+scan-website:
+  script:
+    - echo $[[ inputs.foo ]]
+    - echo $[[ inputs.baz ]]
