@@ -15,11 +15,9 @@ import {Job, cleanupJobResources} from "./job.js";
 
 const jobs: Job[] = [];
 
-process.on("exit", (code) => {
-    cleanupJobResources(jobs).finally(process.exit(code));
-});
-process.on("SIGINT", (_: string, code: number) => {
-    cleanupJobResources(jobs).finally(process.exit(code));
+process.on("SIGINT", async (_: string, code: number) => {
+    await cleanupJobResources(jobs);
+    process.exit(code);
 });
 
 (() => {
@@ -32,7 +30,6 @@ process.on("SIGINT", (_: string, code: number) => {
         .command({
             handler: async (argv) => {
                 try {
-                    const jobs: Job[] = [];
                     await handler(argv, new WriteStreamsProcess(), jobs);
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
@@ -252,4 +249,3 @@ process.on("SIGINT", (_: string, code: number) => {
         })
         .parse();
 })();
-
