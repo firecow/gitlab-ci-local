@@ -72,7 +72,11 @@ export class ParserIncludes {
                 const files = await globby([value["local"].replace(/^\//, ""), ...excludedGlobs], {dot: true, cwd});
                 for (const localFile of files) {
                     const content = await Parser.loadYaml(`${cwd}/${localFile}`, {inputs: value.inputs || {}});
-                    excludedGlobs.push(`!${localFile}`);
+                    // If the file is included with `inputs:` set, the user might want to include it
+                    // again with different values, so we cannot exclude it.
+                    if(!value["inputs"]) {
+                        excludedGlobs.push(`!${localFile}`);
+                    }
                     includeDatas = includeDatas.concat(await this.init(content, depth, opts));
                 }
             } else if (value["project"]) {
