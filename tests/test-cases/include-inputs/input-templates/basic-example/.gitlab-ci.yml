@@ -2,8 +2,12 @@
 include:
   - local: '/.gitlab-ci-input-template.yml'
     inputs:
-      message: hello world
+      message: hello website
       options_input: website
+  - local: './.gitlab-ci-input-template.yml'
+    inputs:
+      message: hello db
+      options_input: db
 
 stages:
   - test
