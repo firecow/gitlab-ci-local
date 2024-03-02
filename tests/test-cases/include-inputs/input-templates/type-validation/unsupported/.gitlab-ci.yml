@@ -1,6 +1,6 @@
 ---
 include:
-  - local: './.gitlab-ci-input-template.yml'
+  - local: '/.gitlab-ci-input-template.yml'
     inputs:
       unsupported_type_input: "true"
 stages:
