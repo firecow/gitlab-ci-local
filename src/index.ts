@@ -252,4 +252,3 @@ process.on("SIGINT", (_: string, code: number) => {
         })
         .parse();
 })();
-
