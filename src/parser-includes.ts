@@ -15,7 +15,6 @@ type ParserIncludesInitOptions = {
     gitData: GitData;
     fetchIncludes: boolean;
     variables: {[key: string]: string};
-    isGitlabCiFile: boolean;
 };
 
 const MAXIMUM_INCLUDE = 150; // https://docs.gitlab.com/ee/administration/settings/continuous_integration.html#maximum-includes
@@ -28,13 +27,11 @@ export class ParserIncludes {
     }
 
     static async init (gitlabData: any, opts: ParserIncludesInitOptions): Promise<any[]> {
-        if (opts.isGitlabCiFile) {
-            this.count++;
-            assert(
-                this.count <= MAXIMUM_INCLUDE + 1, // 1st call from parser.ts is not counted
-                chalk`This GitLab CI configuration is invalid: Maximum of {blueBright ${MAXIMUM_INCLUDE}} nested includes are allowed!.`
-            );
-        }
+        this.count++;
+        assert(
+            this.count <= MAXIMUM_INCLUDE + 1, // 1st init call is not counted
+            chalk`This GitLab CI configuration is invalid: Maximum of {blueBright ${MAXIMUM_INCLUDE}} nested includes are allowed!.`
+        );
         let includeDatas: any[] = [];
         const promises = [];
         const {stateDir, cwd, fetchIncludes, gitData} = opts;
