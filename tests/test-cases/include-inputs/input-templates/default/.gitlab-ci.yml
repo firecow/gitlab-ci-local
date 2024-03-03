@@ -1,6 +1,6 @@
 ---
 include:
-  - local: './.gitlab-ci-input-template.yml'
+  - local: '/.gitlab-ci-input-template.yml'
     inputs:
       default_can_be_overwritten: "overwrite default value"
 stages:

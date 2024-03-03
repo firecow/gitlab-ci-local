@@ -1,6 +1,6 @@
 ---
 include:
-  - local: './.gitlab-ci-input-template.yml'
+  - local: '/.gitlab-ci-input-template.yml'
     inputs:
       boolean_input: "true"
 stages:
