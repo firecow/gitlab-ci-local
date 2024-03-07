@@ -4,7 +4,7 @@ include:
     inputs:
       message: hello website
       options_input: website
-  - local: './.gitlab-ci-input-template.yml'
+  - local: '/.gitlab-ci-input-template.yml'
     inputs:
       message: hello db
       options_input: db
