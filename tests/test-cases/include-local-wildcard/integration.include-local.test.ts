@@ -13,7 +13,6 @@ test("include-local-wildcard <build-job>", async () => {
         cwd: "tests/test-cases/include-local-wildcard",
         file: ".gitlab-ci.yml",
     }, writeStreams);
-
     const output = writeStreams.stdoutLines.join();
     expect(output).toContain("build-images executed!");
     expect(output).toContain("cache-repo executed!");

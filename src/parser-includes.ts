@@ -14,19 +14,27 @@ type ParserIncludesInitOptions = {
     writeStreams: WriteStreams;
     gitData: GitData;
     fetchIncludes: boolean;
-    excludedGlobs: string[];
     variables: {[key: string]: string};
 };
 
-export class ParserIncludes {
+const MAXIMUM_INCLUDE = 150; // https://docs.gitlab.com/ee/administration/settings/continuous_integration.html#maximum-includes
 
-    static async init (gitlabData: any, depth: number, opts: ParserIncludesInitOptions): Promise<any[]> {
+export class ParserIncludes {
+    private static count: number = 0;
+
+    static resetCount (): void {
+        this.count = 0;
+    }
+
+    static async init (gitlabData: any, opts: ParserIncludesInitOptions): Promise<any[]> {
+        this.count++;
+        assert(
+            this.count <= MAXIMUM_INCLUDE + 1, // 1st init call is not counted
+            chalk`This GitLab CI configuration is invalid: Maximum of {blueBright ${MAXIMUM_INCLUDE}} nested includes are allowed!.`
+        );
         let includeDatas: any[] = [];
         const promises = [];
-        const {stateDir, cwd, fetchIncludes, gitData, excludedGlobs} = opts;
-
-        assert(depth < 100, chalk`circular dependency detected in \`include\``);
-        depth++;
+        const {stateDir, cwd, fetchIncludes, gitData} = opts;
 
         const include = this.expandInclude(gitlabData["include"], opts.variables);
 
@@ -70,11 +78,10 @@ export class ParserIncludes {
                 }
             }
             if (value["local"]) {
-                const files = await globby([value["local"].replace(/^\//, ""), ...excludedGlobs], {dot: true, cwd});
+                const files = await globby([value["local"].replace(/^\//, "")], {dot: true, cwd});
                 for (const localFile of files) {
                     const content = await Parser.loadYaml(`${cwd}/${localFile}`, {inputs: value.inputs || {}});
-                    excludedGlobs.push(`!${localFile}`);
-                    includeDatas = includeDatas.concat(await this.init(content, depth, opts));
+                    includeDatas = includeDatas.concat(await this.init(content, opts));
                 }
             } else if (value["project"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
@@ -92,7 +99,7 @@ export class ParserIncludes {
                         };
                     });
 
-                    includeDatas = includeDatas.concat(await this.init(fileDoc, depth, opts));
+                    includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
@@ -100,13 +107,13 @@ export class ParserIncludes {
                 const fileDoc = await Parser.loadYaml(
                     `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}
                 );
-                includeDatas = includeDatas.concat(await this.init(fileDoc, depth, opts));
+                includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
                 const fileDoc = await Parser.loadYaml(
                     `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}
                 );
-                includeDatas = includeDatas.concat(await this.init(fileDoc, depth, opts));
+                includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else {
                 throw new AssertionError({message: `Didn't understand include ${JSON.stringify(value)}`});
             }

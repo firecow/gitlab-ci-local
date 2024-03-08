@@ -23,9 +23,14 @@ stages:
   - .post
 scan-website:
   script:
-    - echo hello world
-    - echo hello world
-    - echo hello world`;
+    - echo hello website
+    - echo hello website
+    - echo hello website
+scan-db:
+  script:
+    - echo hello db
+    - echo hello db
+    - echo hello db`;
 
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });

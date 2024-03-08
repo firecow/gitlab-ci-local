@@ -1,0 +1,68 @@
+import {WriteStreamsMock} from "../../../src/write-streams";
+import {handler} from "../../../src/handler";
+import {initSpawnSpy} from "../../mocks/utils.mock";
+import assert, {AssertionError} from "assert";
+import {WhenStatics} from "../../mocks/when-statics";
+import chalk from "chalk";
+import {ParserIncludes} from "../../../src/parser-includes";
+
+beforeAll(() => {
+    initSpawnSpy(WhenStatics.all);
+});
+
+beforeEach(() => {
+    ParserIncludes.resetCount();
+});
+
+test("include-nested 150 nested include", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-nested",
+        file: ".150-nested-include-gitlab-ci.yml",
+        preview: true,
+    }, writeStreams);
+
+});
+
+test("include-nested 151 nested include", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/include-nested",
+            file: ".151-nested-include-gitlab-ci.yml",
+            preview: true,
+        }, writeStreams);
+    } catch (e: any) {
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
+        expect(e.message).toEqual(chalk`This GitLab CI configuration is invalid: Maximum of {blueBright 150} nested includes are allowed!.`);
+        return;
+    }
+
+    throw new Error("Error is expected but not thrown/caught");
+});
+
+test("include-nested 150 complex nested include", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-nested",
+        file: ".150-complex-nested-include-gitlab-ci.yml",
+        preview: true,
+    }, writeStreams);
+});
+
+test("include-nested 151 complex nested include", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/include-nested",
+            file: ".151-complex-nested-include-gitlab-ci.yml",
+            preview: true,
+        }, writeStreams);
+    } catch (e: any) {
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
+        expect(e.message).toEqual(chalk`This GitLab CI configuration is invalid: Maximum of {blueBright 150} nested includes are allowed!.`);
+        return;
+    }
+
+    throw new Error("Error is expected but not thrown/caught");
+});
