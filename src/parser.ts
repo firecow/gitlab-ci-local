@@ -174,8 +174,18 @@ export class Parser {
         if (this.argv.maxJobNamePadding !== null && this.argv.maxJobNamePadding <= 0) {
             this._jobNamePad = 0;
         } else {
-            this.jobs.forEach((job) => {
-                this._jobNamePad = Math.max(job.name.length, this._jobNamePad ?? 0);
+            const jobs = this.argv.job.length !== 0 ? this.argv.job : this.jobs;
+            jobs.forEach((job) => {
+                let jobNeedsLength: number[] = [];
+
+                if (this.argv.needs && this.argv.job.length > 0) {
+                    const found = this.jobs.find(j => j.baseName === job);
+                    if (found !== undefined && found.needs !== null) {
+                        jobNeedsLength = found.needs.map(f => f.job.length);
+                    }
+                }
+                const jobLength = typeof job == "string" ? job.length : job.name.length;
+                this._jobNamePad = Math.max(jobLength, this._jobNamePad ?? 0, ...jobNeedsLength);
             });
             if (this.argv.maxJobNamePadding !== null) {
                 this._jobNamePad = Math.min(this.argv.maxJobNamePadding ?? 0, this._jobNamePad ?? 0);

@@ -26,6 +26,6 @@ test("coverage <jest>", async () => {
         job: ["jest"],
     }, writeStreams);
 
-    const expected = [chalk`{black.bgGreenBright  PASS } {blueBright jest    } 97.91% {gray coverage}`];
+    const expected = [chalk`{black.bgGreenBright  PASS } {blueBright jest} 97.91% {gray coverage}`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

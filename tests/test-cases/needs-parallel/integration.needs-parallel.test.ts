@@ -17,8 +17,8 @@ test("needs-parallel <build-job> --needs", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright pre-job   } {greenBright >} Pre something`,
-        chalk`{blueBright build-job } {greenBright >} Build something`,
+        chalk`{blueBright pre-job  } {greenBright >} Pre something`,
+        chalk`{blueBright build-job} {greenBright >} Build something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

@@ -16,7 +16,7 @@ test("succesfull-ping", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgGreenBright  PASS } {blueBright test-job        }`,
+        chalk`{black.bgGreenBright  PASS } {blueBright test-job}`,
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));

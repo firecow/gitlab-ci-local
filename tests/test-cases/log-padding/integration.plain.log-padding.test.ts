@@ -1,5 +1,6 @@
 import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
+import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 
@@ -9,26 +10,59 @@ beforeAll(() => {
 
 const pipelineDirectory = "tests/test-cases/log-padding";
 
-async function verifyLogs ({maxJobNamePadding}: {maxJobNamePadding?: number}) {
+async function verifyLogs ({maxJobNamePadding, expectedJobNamePadding}: {maxJobNamePadding?: number; expectedJobNamePadding: number}) {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: pipelineDirectory,
-        job: ["short-name"],
         maxJobNamePadding,
     }, writeStreams);
 
-    // tip: use `cat __snapshots__/*` to inspect the results
-    expect(writeStreams.stdoutLines.join("\n").replace(/[0-9.]+ ms/g, "1 ms")).toMatchSnapshot();
+    expect(writeStreams.stdoutLines.join("\n")).toContain(
+        chalk`{blueBright short-name${" ".repeat(expectedJobNamePadding)}} {greenBright >} short-name\n`
+    );
+    expect(writeStreams.stdoutLines.join("\n")).toContain(
+        chalk`{blueBright my-job-with-a-very-long-long-long-long-name} {greenBright >} long-name\n`
+    );
 }
 
 test("logs - maxJobNamePadding set to 0", async () => {
-    await verifyLogs({maxJobNamePadding: 0});
+    await verifyLogs({maxJobNamePadding: 0, expectedJobNamePadding: 0});
 });
 
 test("logs - maxJobNamePadding set to 30", async () => {
-    await verifyLogs({maxJobNamePadding: 30});
+    await verifyLogs({maxJobNamePadding: 30, expectedJobNamePadding: 20});
 });
 
 test("logs - maxJobNamePadding unset", async () => {
-    await verifyLogs({maxJobNamePadding: undefined});
+    await verifyLogs({maxJobNamePadding: undefined, expectedJobNamePadding: 33});
+});
+
+test("logs - maxJobNamePadding set to 100", async () => {
+    await verifyLogs({maxJobNamePadding: 100, expectedJobNamePadding: 33});
+});
+
+test("logs - log padding should only take needs and targeted jobs into account", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: pipelineDirectory,
+        needs: true,
+        job: ["short-name with needs"],
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines.join("\n")).toContain(
+        chalk`{blueBright short-name with needs         } {greenBright >} short-name with needs\n`
+    );
+});
+
+test("logs - log padding should only take targeted jobs into account", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: pipelineDirectory,
+        needs: true,
+        job: ["short-name"],
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines.join("\n")).toContain(
+        chalk`{blueBright short-name} {greenBright >} short-name\n`
+    );
 });

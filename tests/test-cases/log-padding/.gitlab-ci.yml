@@ -8,3 +8,15 @@ short-name:
   stage: .pre
   script:
     - echo "short-name"
+
+short-name with needs:
+  needs:
+    - my-job-with-a-not-so-long-name
+  stage: .pre
+  script:
+    - echo "short-name with needs"
+
+my-job-with-a-not-so-long-name:
+  stage: .pre
+  script:
+    - echo "short-name"

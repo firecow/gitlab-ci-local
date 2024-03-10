@@ -16,7 +16,7 @@ test("needs-sequence <deploy-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright deploy-job  } {greenBright >} Deploy something`,
+        chalk`{blueBright deploy-job} {greenBright >} Deploy something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 
@@ -35,10 +35,10 @@ test("needs-sequence <deploy-job> --needs", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright pre-job     } {greenBright >} Pre something`,
-        chalk`{blueBright build-job   } {greenBright >} Build something`,
-        chalk`{blueBright test-job    } {greenBright >} Test something`,
-        chalk`{blueBright deploy-job  } {greenBright >} Deploy something`,
+        chalk`{blueBright pre-job   } {greenBright >} Pre something`,
+        chalk`{blueBright build-job } {greenBright >} Build something`,
+        chalk`{blueBright test-job  } {greenBright >} Test something`,
+        chalk`{blueBright deploy-job} {greenBright >} Deploy something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining([
