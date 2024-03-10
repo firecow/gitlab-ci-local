@@ -265,16 +265,6 @@ export class Job {
         return `gcl-${this.safeJobName}-${this.jobId}-tmp`;
     }
 
-    get imageEntrypoint (): string[] | null {
-        const image = this.jobData["image"];
-
-        if (!image?.entrypoint) {
-            return null;
-        }
-        assert(Array.isArray(image.entrypoint), "image:entrypoint must be an array");
-        return image.entrypoint;
-    }
-
     get services (): Service[] {
         const services: Service[] = [];
         if (!this.jobData["services"]) return [];
@@ -645,6 +635,11 @@ export class Job {
                 dockerCmd += "--user 0:0 ";
             }
 
+            const imageUser = this.imageUser(expanded);
+            if (imageUser) {
+                dockerCmd += `--user ${imageUser} `;
+            }
+
             if (this.services?.length) {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
                 dockerCmd += "--network-alias=build ";
@@ -774,6 +769,23 @@ export class Job {
         const expanded = Utils.expandVariables(vars);
         const imageName = Utils.expandText(image.name, expanded);
         return imageName.includes(":") ? imageName : `${imageName}:latest`;
+    }
+
+    private imageUser (vars: {[key: string]: string} = {}): string | null {
+        const image = this.jobData["image"];
+        if (!image) return null;
+        if (!image["docker"]) return null;
+        return Utils.expandText(image["docker"]["user"], vars);
+    }
+
+    get imageEntrypoint (): string[] | null {
+        const image = this.jobData["image"];
+
+        if (!image?.entrypoint) {
+            return null;
+        }
+        assert(Array.isArray(image.entrypoint), "image:entrypoint must be an array");
+        return image.entrypoint;
     }
 
     private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
