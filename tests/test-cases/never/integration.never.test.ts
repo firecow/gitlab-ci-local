@@ -28,7 +28,7 @@ test("never <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job } {greenBright >} Test something`,
+        chalk`{blueBright test-job} {greenBright >} Test something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 
@@ -47,7 +47,7 @@ test("never <test-job> --needs", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job } {greenBright >} Test something`,
+        chalk`{blueBright test-job} {greenBright >} Test something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 

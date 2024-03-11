@@ -16,7 +16,7 @@ test("script-failures <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgRed  FAIL } {blueBright test-job                  }`,
+        chalk`{black.bgRed  FAIL } {blueBright test-job}`,
         chalk`  {red >} Test something`,
         chalk`  {red >} That fails`,
         chalk`  {red >} Something in the log`,
@@ -32,8 +32,8 @@ test("script-failures <test-job-after-script>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgYellowBright  WARN } {blueBright test-job-after-script     }  after_script`,
-        chalk`{black.bgRed  FAIL } {blueBright test-job-after-script     }`,
+        chalk`{black.bgYellowBright  WARN } {blueBright test-job-after-script}  after_script`,
+        chalk`{black.bgRed  FAIL } {blueBright test-job-after-script}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -46,7 +46,7 @@ test("script-failures <allow-failure-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{black.bgYellowBright  WARN } {blueBright allow-failure-job         }  pre_script`,
+        chalk`{black.bgYellowBright  WARN } {blueBright allow-failure-job}  pre_script`,
         chalk`  {yellow >} This is printed right before the failure`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
@@ -75,7 +75,7 @@ test("script-failures <deploy-job> --needs", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job                  } {greenBright >} Test something`,
+        chalk`{blueBright test-job  } {greenBright >} Test something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 

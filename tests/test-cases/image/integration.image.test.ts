@@ -18,7 +18,7 @@ test.concurrent("image <test job>", async () => {
         cwd: "tests/test-cases/image",
         job: ["test job"],
     }, writeStreams);
-    const expected = [chalk`{blueBright test job                } {greenBright >} Test something`];
+    const expected = [chalk`{blueBright test job} {greenBright >} Test something`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
@@ -31,11 +31,11 @@ test.concurrent("image <test-entrypoint>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-entrypoint         } {greenBright >} Hello from 'firecow/gitlab-ci-local-test-image' image entrypoint`,
-        chalk`{blueBright test-entrypoint         } {greenBright >} I am epic multiline value`,
-        chalk`{blueBright test-entrypoint         } {greenBright >} /gcl-builds`,
-        chalk`{blueBright test-entrypoint         } {greenBright >} Test Entrypoint`,
-        chalk`{blueBright test-entrypoint         } {greenBright >} I'm a test file`,
+        chalk`{blueBright test-entrypoint} {greenBright >} Hello from 'firecow/gitlab-ci-local-test-image' image entrypoint`,
+        chalk`{blueBright test-entrypoint} {greenBright >} I am epic multiline value`,
+        chalk`{blueBright test-entrypoint} {greenBright >} /gcl-builds`,
+        chalk`{blueBright test-entrypoint} {greenBright >} Test Entrypoint`,
+        chalk`{blueBright test-entrypoint} {greenBright >} I'm a test file`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -61,10 +61,10 @@ test.concurrent("image <test-from-scratch>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-from-scratch       } {greenBright >} 0:0 .gitlab-ci.yml`,
-        chalk`{blueBright test-from-scratch       } {greenBright >} 666 .gitlab-ci.yml`,
-        chalk`{blueBright test-from-scratch       } {greenBright >} 777 folder/`,
-        chalk`{blueBright test-from-scratch       } {greenBright >} 777 executable.sh`,
+        chalk`{blueBright test-from-scratch} {greenBright >} 0:0 .gitlab-ci.yml`,
+        chalk`{blueBright test-from-scratch} {greenBright >} 666 .gitlab-ci.yml`,
+        chalk`{blueBright test-from-scratch} {greenBright >} 777 folder/`,
+        chalk`{blueBright test-from-scratch} {greenBright >} 777 executable.sh`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -87,7 +87,7 @@ test.concurrent("image <test-ignore-regression>", async () => {
     }
 
     const expected = [
-        chalk`{blueBright test-entrypoint         } {greenBright >} I'm a test file`,
+        chalk`{blueBright test-entrypoint} {greenBright >} I'm a test file`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -101,7 +101,7 @@ test.concurrent("image <issue-206>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright issue-206               } {redBright >} Error: open /gcl-builds/hugo: no such file or directory`,
+        chalk`{blueBright issue-206} {redBright >} Error: open /gcl-builds/hugo: no such file or directory`,
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 });

@@ -21,13 +21,13 @@ test("custom-home <test-staging>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-staging             } {greenBright >} group-global-var-override-value`,
-        chalk`{blueBright test-staging             } {greenBright >} staging-project-group-var-override-value`,
-        chalk`{blueBright test-staging             } {greenBright >} project-var-value`,
-        chalk`{blueBright test-staging             } {greenBright >} warn: INVALID_DIR_VAR is pointing to invalid path`,
-        chalk`{blueBright test-staging             } {greenBright >} Im content of a file variable`,
-        chalk`{blueBright test-staging             } {greenBright >} "This is crazy"`,
-        chalk`{blueBright test-staging             } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
+        chalk`{blueBright test-staging} {greenBright >} group-global-var-override-value`,
+        chalk`{blueBright test-staging} {greenBright >} staging-project-group-var-override-value`,
+        chalk`{blueBright test-staging} {greenBright >} project-var-value`,
+        chalk`{blueBright test-staging} {greenBright >} warn: INVALID_DIR_VAR is pointing to invalid path`,
+        chalk`{blueBright test-staging} {greenBright >} Im content of a file variable`,
+        chalk`{blueBright test-staging} {greenBright >} "This is crazy"`,
+        chalk`{blueBright test-staging} {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -41,9 +41,9 @@ test("custom-home <test-production>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-production          } {greenBright >} production-project-group-var-override-value`,
-        chalk`{blueBright test-production          } {greenBright >} I'm the content of a file variable`,
-        chalk`{blueBright test-production          } {greenBright >} I'm the 2nd line of file variable`,
+        chalk`{blueBright test-production} {greenBright >} production-project-group-var-override-value`,
+        chalk`{blueBright test-production} {greenBright >} I'm the content of a file variable`,
+        chalk`{blueBright test-production} {greenBright >} I'm the 2nd line of file variable`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -57,9 +57,9 @@ test("custom-home <test-image>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-image               } {greenBright >} Im content of a file variable`,
-        chalk`{blueBright test-image               } {greenBright >} "This is crazy"`,
-        chalk`{blueBright test-image               } {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
+        chalk`{blueBright test-image} {greenBright >} Im content of a file variable`,
+        chalk`{blueBright test-image} {greenBright >} "This is crazy"`,
+        chalk`{blueBright test-image} {greenBright >} \{ "private_key": "-----BEGIN PRIVATE KEY-----\\n" \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
