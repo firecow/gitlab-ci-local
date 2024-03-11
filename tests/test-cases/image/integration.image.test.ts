@@ -106,6 +106,20 @@ test.concurrent("image <issue-206>", async () => {
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 });
 
+test.concurrent("image <image-user>", async () => {
+    const writeStreams = new WriteStreamsMock();
+
+    await handler({
+        cwd: "tests/test-cases/image",
+        job: ["image-user"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright image-user              } {greenBright >} 65534`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
 test.concurrent("pull invalid image", async () => {
     const jobs: Job[] = [];
     const writeStreams = new WriteStreamsMock();

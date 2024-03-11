@@ -55,3 +55,11 @@ issue-206:
     entrypoint: ["/bin/sh", "-c"]
   script:
     - hugo -D --source hugo
+
+image-user:
+  image:
+    name: alpine
+    docker:
+      user: nobody
+  script:
+    - id -u
