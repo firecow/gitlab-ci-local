@@ -115,7 +115,7 @@ test.concurrent("image <image-user>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright image-user              } {greenBright >} 65534`,
+        chalk`{blueBright image-user} {greenBright >} 65534`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
