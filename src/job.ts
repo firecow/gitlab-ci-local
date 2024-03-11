@@ -225,6 +225,12 @@ export class Job {
         }
     }
 
+    get jobStatus () {
+        if (this.preScriptsExitCode == null) return "pending";
+        if (this.preScriptsExitCode == 0) return "success";
+        return this.allowFailure ? "warning" : "failed";
+    }
+
     get artifactsToSource () {
         if (this.jobData["artifactsToSource"] != null) return this.jobData["artifactsToSource"];
         return this.argv.artifactsToSource;
@@ -464,48 +470,23 @@ export class Job {
             );
         }
 
-        const done = async (exitCode: number, exitMessage: string) => {
-            this.registerEndTime();
-            if (exitCode == 0) {
-                writeStreams.stdout(`${exitMessage}\n`);
-            } else {
-                writeStreams.stderr(`${exitMessage}\n`);
-            }
-            this._running = false;
-            await this.copyCacheOut(writeStreams, expanded, exitCode);
-            if (exitCode == 0 || this.artifacts?.when === "always") {
-                await this.copyArtifactsOut(writeStreams, expanded);
-            }
-            await this.cleanupResources();
-        };
+        await this.execPreScripts(expanded);
+        if (this._prescriptsExitCode == null) throw Error("this._prescriptsExitCode must be defined!");
 
-        const prescripts = this.beforeScripts.concat(this.scripts);
-        expanded["CI_JOB_STATUS"] = "running";
-        this._prescriptsExitCode = await this.execScripts(prescripts, expanded);
-        if (this.afterScripts.length === 0 && this._prescriptsExitCode > 0) {
-            await done(this._prescriptsExitCode, this.getExitedString(this._prescriptsExitCode, this.allowFailure));
-            return;
-        }
+        await this.execAfterScripts(expanded);
 
-        if (this._prescriptsExitCode > 0) {
-            this.registerEndTime();
-            writeStreams.stderr(`${this.getExitedString(this._prescriptsExitCode, this.allowFailure)}\n`);
-        }
+        this._running = false;
+        this._endTime = this._endTime ?? process.hrtime(this._startTime);
+        this.printFinishedString();
 
-        if (this.afterScripts.length > 0) {
-            writeStreams.stderr(chalk`${this.formattedJobName} {magentaBright running after script...}\n`);
-            expanded["CI_JOB_STATUS"] = this._prescriptsExitCode === 0 ? "success" : "failed";
-            if (0 < (this._afterScriptsExitCode = await this.execScripts(this.afterScripts, expanded))) {
-                this.registerEndTime();
-                writeStreams.stderr(`${this.getExitedString(this._afterScriptsExitCode, true, " after_script")}\n`);
-            }
-        }
+        await this.copyCacheOut(this.writeStreams, expanded);
+        await this.copyArtifactsOut(this.writeStreams, expanded);
 
         if (this.jobData["coverage"]) {
             this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobName);
         }
 
-        return await done(this._afterScriptsExitCode, this.getFinishedString());
+        this.cleanupResources();
     }
 
     async cleanupResources () {
@@ -594,7 +575,24 @@ export class Job {
         return cmd;
     }
 
-    private async execScripts (scripts: string[], expanded: {[key: string]: string}): Promise<number> {
+    private async execPreScripts (expanded: {[key: string]: string}): Promise<void> {
+        const prescripts = this.beforeScripts.concat(this.scripts);
+        expanded["CI_JOB_STATUS"] = "running";
+
+        this._prescriptsExitCode = await this.execScripts(prescripts, expanded, "");
+        expanded["CI_JOB_STATUS"] = this._prescriptsExitCode === 0 ? "success" : "failed";
+
+        this.printExitedString(this._prescriptsExitCode);
+    }
+
+    private async execAfterScripts (expanded: {[key: string]: string}): Promise<void> {
+        const message = "Running after script...";
+        this._afterScriptsExitCode = await this.execScripts(this.afterScripts, expanded, message);
+
+        this.printAfterScriptExitedString(this._afterScriptsExitCode);
+    }
+
+    private async execScripts (scripts: string[], expanded: {[key: string]: string}, message: string): Promise<number> {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
@@ -604,9 +602,9 @@ export class Job {
         const imageName = this.imageName(expanded);
         const writeStreams = this.writeStreams;
 
-        if (scripts.length === 0 || scripts[0] == null) {
-            return 0;
-        }
+        if (scripts.length === 0 || scripts[0] == null) return 0;
+
+        if (message.length > 0) writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright ${message}}\n`);
 
         // Copy git tracked files to build folder if shell isolation enabled.
         if (!imageName && this.argv.shellIsolation) {
@@ -873,7 +871,7 @@ export class Job {
         return Utils.spawn([this.argv.containerExecutable, "cp", `${source}/.`, `${this._containerId}:/gcl-builds`]);
     }
 
-    private async copyCacheOut (writeStreams: WriteStreams, expanded: {[key: string]: string}, exitCode: number) {
+    private async copyCacheOut (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
         if (this.argv.mountCache && this.imageName(expanded)) return;
         if ((!this.imageName(expanded) && !this.argv.shellIsolation) || this.cache.length === 0) return;
 
@@ -883,8 +881,8 @@ export class Job {
         let time, endTime;
         for (const c of this.cache) {
             if (!["push", "pull-push"].includes(c.policy)) return;
-            if ("on_success" === c.when && exitCode != 0) return;
-            if ("on_failure" === c.when && exitCode === 0) return;
+            if ("on_success" === c.when && this.jobStatus !== "success") return;
+            if ("on_failure" === c.when && this.jobStatus === "success") return;
             const cacheName = await this.getUniqueCacheName(cwd, expanded, c.key);
             for (const path of c.paths) {
                 time = process.hrtime();
@@ -909,13 +907,15 @@ export class Job {
     }
 
     private async copyArtifactsOut (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
+        // TODO: update the condition to support when:on_success / when:on_failure
+        if (this.jobStatus !== "success" && this.artifacts?.when !== "always") return;
+        if (!this.artifacts) return;
+        if ((this.artifacts.paths?.length ?? 0) === 0 && this.artifacts.reports?.dotenv == null) return;
+
         const safeJobName = this.safeJobName;
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const artifactsPath = !this.argv.shellIsolation && !this.imageName(expanded) ? `${stateDir}/artifacts` : "../../artifacts";
-
-        if (!this.artifacts) return;
-        if ((this.artifacts.paths?.length ?? 0) === 0 && this.artifacts.reports?.dotenv == null) return;
 
         let time, endTime;
         let cpCmd = "shopt -s globstar nullglob dotglob\n";
@@ -992,22 +992,40 @@ export class Job {
         }, 10000);
     }
 
-    private getExitedString (code: number, warning = false, prependString = "") {
-        const finishedStr = this.getFinishedString();
-        if (warning) {
-            return chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }${prependString}`;
-        }
-
-        return chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} } ${prependString}`;
-    }
-
-    private registerEndTime () {
-        this._endTime = this._endTime ?? process.hrtime(this._startTime);
-    }
-
     private getFinishedString () {
-        this._endTime = this._endTime ?? process.hrtime(this._startTime);
         return chalk`${this.formattedJobName} {magentaBright finished} in {magenta ${this.prettyDuration}}`;
+    }
+
+    private printFinishedString () {
+        if (this.jobStatus !== "success") return;
+        this.writeStreams.stdout(`${this.getFinishedString()}\n`);
+    }
+
+    private printExitedString (code: number) {
+        const writeStreams = this.writeStreams;
+        const finishedStr = this.getFinishedString();
+
+        // Won't print if jobStatus is "success" because that will be printed via the `printFinishedString()`
+        if (this.jobStatus === "warning") {
+            writeStreams.stderr(
+                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }\n`
+            );
+        } else if (this.jobStatus === "failed") {
+            writeStreams.stderr(
+                chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} }\n`
+            );
+        }
+    }
+
+    private printAfterScriptExitedString (code: number) {
+        const writeStreams = this.writeStreams;
+        const finishedStr = this.getFinishedString();
+
+        if (code !== 0) {
+            writeStreams.stderr(
+                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} } after_script\n`
+            );
+        }
     }
 
     private async createDockerNetwork (networkName: string) {
