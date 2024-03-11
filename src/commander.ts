@@ -122,9 +122,9 @@ export class Commander {
                 continue;
             }
 
-            if (job.preScriptsExitCode === 0) {
+            if (job.jobStatus === "success") {
                 preScripts.successful.push(job);
-            } else if (job.allowFailure) {
+            } else if (job.jobStatus === "warning") {
                 preScripts.warned.push(job);
             } else {
                 preScripts.failed.push(job);

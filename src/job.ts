@@ -82,7 +82,9 @@ export class Job {
         variables: {[key: string]: string};
     }[];
 
-    readonly allowFailure: boolean;
+    readonly allowFailure: boolean | {
+        exit_codes: number | number[];
+    };
     readonly when: string;
     readonly exists: string[];
     readonly pipelineIid: number;
@@ -228,7 +230,27 @@ export class Job {
     get jobStatus () {
         if (this.preScriptsExitCode == null) return "pending";
         if (this.preScriptsExitCode == 0) return "success";
-        return this.allowFailure ? "warning" : "failed";
+
+        let allowedExitCodes = [0];
+        const allowFailure = this.allowFailure;
+        switch (typeof allowFailure) {
+            case "boolean":
+                if (allowFailure) {
+                    allowedExitCodes = [this.preScriptsExitCode];
+                }
+                break;
+            case "object":
+                if (! Array.isArray(allowFailure.exit_codes)) {
+                    allowedExitCodes = [allowFailure.exit_codes];
+                } else {
+                    allowedExitCodes = allowFailure.exit_codes;
+                }
+                break;
+            default:
+                throw new Error(`Unexpected type:  ${typeof allowFailure}`);
+        }
+
+        return allowedExitCodes.includes(this.preScriptsExitCode) ? "warning" : "failed";
     }
 
     get artifactsToSource () {

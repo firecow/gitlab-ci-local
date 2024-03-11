@@ -31,3 +31,40 @@ deploy-job:
   needs: [test-job]
   script:
     echo "Deploy something"
+
+exit_code[number] allowed:
+  allow_failure:
+    exit_codes: 1
+  script:
+    - exit 1
+
+exit_code[number] not allowed:
+  allow_failure:
+    exit_codes: 1
+  script:
+    - exit 2
+
+exit_code[number[]] allowed:
+  allow_failure:
+    exit_codes:
+      - 1
+      - 3
+  script:
+    - exit 3
+
+exit_code[number[]] not allowed:
+  allow_failure:
+    exit_codes:
+      - 1
+      - 2
+  script:
+    - exit 3
+
+rules:allow_failure precedence:
+  image: nginx:alpine
+  allow_failure: false
+  rules:
+    - if: $CI_DEFAULT_BRANCH == "main"
+      allow_failure: true
+  script:
+    - exit 1

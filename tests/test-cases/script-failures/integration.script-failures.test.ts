@@ -84,3 +84,63 @@ test("script-failures <deploy-job> --needs", async () => {
     });
     expect(found).toEqual(undefined);
 });
+
+test("script-failures <exit_code[number] allowed>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/script-failures",
+        job: ["exit_code[number] allowed"],
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines.join("\n")).toContain(
+        chalk`{black.bgYellowBright  WARN } {blueBright exit_code[number] allowed}  pre_script`,
+    );
+});
+
+test("script-failures <exit_code[number[]] allowed>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/script-failures",
+        job: ["exit_code[number[]] allowed"],
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines.join("\n")).toContain(
+        chalk`{black.bgYellowBright  WARN } {blueBright exit_code[number[]] allowed}  pre_script`,
+    );
+});
+
+test("script-failures <exit_code[number] not allowed>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/script-failures",
+        job: ["exit_code[number] not allowed"],
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines.join("\n")).toContain(
+        chalk`{black.bgRed  FAIL } {blueBright exit_code[number] not allowed}`,
+    );
+});
+
+test("script-failures <exit_code[number[]] not allowed>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/script-failures",
+        job: ["exit_code[number[]] not allowed"],
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines.join("\n")).toContain(
+        chalk`{black.bgRed  FAIL } {blueBright exit_code[number[]] not allowed}`,
+    );
+});
+
+test("script-failures <rules:allow_failure precedence>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/script-failures",
+        job: ["rules:allow_failure precedence"],
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines.join("\n")).toContain(
+        chalk`{black.bgYellowBright  WARN } {blueBright rules:allow_failure precedence}`,
+    );
+});
