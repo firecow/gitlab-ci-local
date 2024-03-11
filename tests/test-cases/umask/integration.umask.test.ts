@@ -52,8 +52,8 @@ test.concurrent("umask <alpine-root> --umask --needs", async () => {
     }, writeStreams);
 
     const expectedStdOut = [
-        chalk`{blueBright alpine-root } {greenBright >} 666 one.txt 0 0`,
-        chalk`{blueBright alpine-root } {greenBright >} 777 script.sh 0 0`,
+        chalk`{blueBright alpine-root} {greenBright >} 666 one.txt 0 0`,
+        chalk`{blueBright alpine-root} {greenBright >} 777 script.sh 0 0`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
@@ -68,8 +68,8 @@ test.concurrent("umask <alpine-root> --no-umask --needs", async () => {
     }, writeStreams);
 
     const expectedStdOut = [
-        chalk`{blueBright alpine-root } {greenBright >} 644 one.txt 0 0`,
-        chalk`{blueBright alpine-root } {greenBright >} 755 script.sh 0 0`,
+        chalk`{blueBright alpine-root} {greenBright >} 644 one.txt 0 0`,
+        chalk`{blueBright alpine-root} {greenBright >} 755 script.sh 0 0`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });

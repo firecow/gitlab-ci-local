@@ -44,7 +44,7 @@ test("hang-forever <test-shell>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-shell } {greenBright >} File content`,
+        chalk`{blueBright test-shell} {greenBright >} File content`,
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));

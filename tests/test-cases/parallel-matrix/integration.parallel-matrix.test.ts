@@ -64,7 +64,7 @@ test("parallel-matrix 'test-job [beb]'", async () => {
     }, writeStreams);
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
-        chalk`{blueBright test-job: [beb]    } {greenBright >} NAME:'beb' TIER:'' 7/7`,
+        chalk`{blueBright test-job: [beb]} {greenBright >} NAME:'beb' TIER:'' 7/7`,
     ]));
 
     expect(writeStreams.stdoutLines).not.toEqual(expect.arrayContaining([

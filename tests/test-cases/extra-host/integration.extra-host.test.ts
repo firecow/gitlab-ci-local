@@ -18,7 +18,7 @@ test("add-host <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job   } {greenBright >} HTTP/1.1 404 Not Found`,
+        chalk`{blueBright test-job} {greenBright >} HTTP/1.1 404 Not Found`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

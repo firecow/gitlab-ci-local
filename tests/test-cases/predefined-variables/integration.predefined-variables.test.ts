@@ -17,13 +17,13 @@ test("predefined-variables <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job                    } {greenBright >} predefined-variables`,
-        chalk`{blueBright test-job                    } {greenBright >} GCL/predefined-variables`,
-        chalk`{blueBright test-job                    } {greenBright >} gcl-predefined-variables`,
-        chalk`{blueBright test-job                    } {greenBright >} GCL`,
-        chalk`{blueBright test-job                    } {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables`,
-        chalk`{blueBright test-job                    } {greenBright >} main`,
-        chalk`{blueBright test-job                    } {greenBright >} local-registry.gitlab.com/gcl/predefined-variables`,
+        chalk`{blueBright test-job} {greenBright >} predefined-variables`,
+        chalk`{blueBright test-job} {greenBright >} GCL/predefined-variables`,
+        chalk`{blueBright test-job} {greenBright >} gcl-predefined-variables`,
+        chalk`{blueBright test-job} {greenBright >} GCL`,
+        chalk`{blueBright test-job} {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables`,
+        chalk`{blueBright test-job} {greenBright >} main`,
+        chalk`{blueBright test-job} {greenBright >} local-registry.gitlab.com/gcl/predefined-variables`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -37,7 +37,7 @@ test("predefined-variables <test-job> --shell-isolation", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job                    } {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables/.gitlab-ci-local/builds/test-job`,
+        chalk`{blueBright test-job} {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables/.gitlab-ci-local/builds/test-job`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

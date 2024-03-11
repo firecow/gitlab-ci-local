@@ -97,7 +97,7 @@ test("manual <build-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright build-job } {greenBright >} Hello, build job manual!`,
+        chalk`{blueBright build-job} {greenBright >} Hello, build job manual!`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -112,8 +112,8 @@ test("manual <test-job> --needs --manual <pre-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright pre-job   } {greenBright >} Hello, pre job manual!`,
-        chalk`{blueBright test-job  } {greenBright >} Test something`,
+        chalk`{blueBright pre-job } {greenBright >} Hello, pre job manual!`,
+        chalk`{blueBright test-job} {greenBright >} Test something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
