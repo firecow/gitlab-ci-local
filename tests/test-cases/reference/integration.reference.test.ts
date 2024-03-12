@@ -79,8 +79,6 @@ stages:
 job:
   image:
     name: docker.io/library/bash
-    docker:
-      user: null
   script:
     - echo "works"`;
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
@@ -104,8 +102,6 @@ stages:
 normal_job:
   image:
     name: alpine
-    docker:
-      user: null
   before_script:
     - echo Hello from \${CI_JOB_NAME}
   script:
