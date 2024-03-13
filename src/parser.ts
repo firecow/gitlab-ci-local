@@ -85,12 +85,13 @@ export class Parser {
         const expanded = Utils.expandVariables(variables);
 
         let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
-        const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, {cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded}));
+        const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`, {}, this.expandVariables);
+
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, {cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables}));
         ParserIncludes.resetCount();
 
-        const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`);
-        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, {cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded}));
+        const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`, {}, this.expandVariables);
+        yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, {cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables}));
         ParserIncludes.resetCount();
 
         const gitlabData: any = deepExtend({}, ...yamlDataList);
@@ -208,7 +209,7 @@ export class Parser {
         });
     }
 
-    static async loadYaml (filePath: string, ctx: any = {}): Promise<any> {
+    static async loadYaml (filePath: string, ctx: any = {}, expandVariables : boolean = true): Promise<any> {
         const ymlPath = `${filePath}`;
         if (!fs.existsSync(ymlPath)) {
             return {};
@@ -223,36 +224,38 @@ export class Parser {
         let injectSSHAgent = null;
         let noArtifactsToSourceMatch = null;
         let index = 0;
-        for (const line of fileSplit) {
-            interactiveMatch = !interactiveMatch ? /#\s?@\s?[Ii]nteractive/.exec(line) : interactiveMatch;
-            injectSSHAgent = !injectSSHAgent ? /#\s?@\s?[Ii]njectSSHAgent/.exec(line) : injectSSHAgent;
-            noArtifactsToSourceMatch = !noArtifactsToSourceMatch ? /#\s?@\s?NoArtifactsToSource/i.exec(line) : noArtifactsToSourceMatch;
-            descriptionMatch = !descriptionMatch ? /#\s?@\s?[Dd]escription (?<description>.*)/.exec(line) : descriptionMatch;
+        if (expandVariables) {
+            for (const line of fileSplit) {
+                interactiveMatch = !interactiveMatch ? /#\s?@\s?[Ii]nteractive/.exec(line) : interactiveMatch;
+                injectSSHAgent = !injectSSHAgent ? /#\s?@\s?[Ii]njectSSHAgent/.exec(line) : injectSSHAgent;
+                noArtifactsToSourceMatch = !noArtifactsToSourceMatch ? /#\s?@\s?NoArtifactsToSource/i.exec(line) : noArtifactsToSourceMatch;
+                descriptionMatch = !descriptionMatch ? /#\s?@\s?[Dd]escription (?<description>.*)/.exec(line) : descriptionMatch;
 
-            const jobMatch = /\w:/.exec(line);
-            if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
-                if (interactiveMatch) {
-                    fileSplitClone.splice(index + 1, 0, "  interactive: true");
-                    index++;
+                const jobMatch = /\w:/.exec(line);
+                if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
+                    if (interactiveMatch) {
+                        fileSplitClone.splice(index + 1, 0, "  interactive: true");
+                        index++;
+                    }
+                    if (injectSSHAgent) {
+                        fileSplitClone.splice(index + 1, 0, "  injectSSHAgent: true");
+                        index++;
+                    }
+                    if (noArtifactsToSourceMatch) {
+                        fileSplitClone.splice(index + 1, 0, "  artifactsToSource: false");
+                        index++;
+                    }
+                    if (descriptionMatch) {
+                        fileSplitClone.splice(index + 1, 0, `  description: ${descriptionMatch?.groups?.description ?? ""}`);
+                        index++;
+                    }
+                    interactiveMatch = null;
+                    descriptionMatch = null;
+                    injectSSHAgent = null;
+                    noArtifactsToSourceMatch = null;
                 }
-                if (injectSSHAgent) {
-                    fileSplitClone.splice(index + 1, 0, "  injectSSHAgent: true");
-                    index++;
-                }
-                if (noArtifactsToSourceMatch) {
-                    fileSplitClone.splice(index + 1, 0, "  artifactsToSource: false");
-                    index++;
-                }
-                if (descriptionMatch) {
-                    fileSplitClone.splice(index + 1, 0, `  description: ${descriptionMatch?.groups?.description ?? ""}`);
-                    index++;
-                }
-                interactiveMatch = null;
-                descriptionMatch = null;
-                injectSSHAgent = null;
-                noArtifactsToSourceMatch = null;
+                index++;
             }
-            index++;
         }
 
         const referenceType = new yaml.Type("!reference", {

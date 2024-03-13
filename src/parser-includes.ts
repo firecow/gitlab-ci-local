@@ -15,6 +15,7 @@ type ParserIncludesInitOptions = {
     gitData: GitData;
     fetchIncludes: boolean;
     variables: {[key: string]: string};
+    expandVariables: boolean;
 };
 
 const MAXIMUM_INCLUDE = 150; // https://docs.gitlab.com/ee/administration/settings/continuous_integration.html#maximum-includes
@@ -34,7 +35,7 @@ export class ParserIncludes {
         );
         let includeDatas: any[] = [];
         const promises = [];
-        const {stateDir, cwd, fetchIncludes, gitData} = opts;
+        const {stateDir, cwd, fetchIncludes, gitData, expandVariables} = opts;
 
         const include = this.expandInclude(gitlabData["include"], opts.variables);
 
@@ -80,14 +81,15 @@ export class ParserIncludes {
             if (value["local"]) {
                 const files = await globby([value["local"].replace(/^\//, "")], {dot: true, cwd});
                 for (const localFile of files) {
-                    const content = await Parser.loadYaml(`${cwd}/${localFile}`, {inputs: value.inputs || {}});
+                    const content = await Parser.loadYaml(`${cwd}/${localFile}`, {inputs: value.inputs || {}}, expandVariables);
                     includeDatas = includeDatas.concat(await this.init(content, opts));
                 }
             } else if (value["project"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
                     const fileDoc = await Parser.loadYaml(
                         `${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`
-                        , {inputs: value.inputs || {}});
+                        , {inputs: value.inputs || {}}
+                        , expandVariables);
                     // Expand local includes inside a "project"-like include
                     fileDoc["include"] = this.expandInclude(fileDoc["include"], opts.variables);
                     fileDoc["include"].forEach((inner: any, i: number) => {
@@ -105,13 +107,13 @@ export class ParserIncludes {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
                 const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}
+                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
                 const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}
+                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else {
