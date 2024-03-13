@@ -1,0 +1,25 @@
+---
+variables: &foo
+  FOO: "1"
+
+variables: &bar  # yamllint disable-line rule:key-duplicates
+  BAR: "2"
+
+duplicated-keys:
+  script:
+    - echo "$FOO"
+    - echo "$BAR"
+  variables:
+    <<: *bar
+
+duplicated-keys anchor tag can still be referenced:
+  script:
+    - echo "$FOO"
+    - echo "$BAR"
+  variables:
+    <<: *foo
+
+duplicated-keys variables overwritten:
+  script:
+    - echo "$FOO"
+    - echo "$BAR"
