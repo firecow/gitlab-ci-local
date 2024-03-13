@@ -1,0 +1,15 @@
+---
+variables:
+  MY_VAR: my value
+
+include:
+  - { local: .gitlab-ci-base.yml }
+
+default:
+  before_script:
+    - echo "Default before script"
+
+child-job:
+  extends: [.included-job]
+  environment:
+    name: $MY_VAR

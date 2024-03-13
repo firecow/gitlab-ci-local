@@ -91,6 +91,11 @@ process.on("SIGINT", async (_: string, code: number) => {
             description: "Print YML with defaults, includes, extends and reference's expanded",
             requiresArg: false,
         })
+        .option("merge", {
+            type: "boolean",
+            description: "Print YML merged result (no variables expand)",
+            requiresArg: false,
+        })
         .option("cwd", {
             type: "string",
             description: "Path to a current working directory",

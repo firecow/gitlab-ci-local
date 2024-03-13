@@ -39,9 +39,9 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         return [];
     }
 
-    if (argv.preview) {
+    if (argv.preview || argv.merge) {
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
-        parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
+        parser = await Parser.create(argv, writeStreams, pipelineIid, jobs, !argv.merge);
         const gitlabData = parser.gitlabData;
         for (const jobName of Object.keys(gitlabData)) {
             if (jobName === "stages") {

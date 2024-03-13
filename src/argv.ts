@@ -162,6 +162,10 @@ export class Argv {
         return this.map.get("preview") ?? false;
     }
 
+    get merge (): boolean {
+        return this.map.get("merge") ?? false;
+    }
+
     get shellIsolation (): boolean {
         return this.map.get("shellIsolation") ?? false;
     }

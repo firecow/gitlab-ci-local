@@ -26,6 +26,7 @@ interface JobOptions {
     matrixVariables: {[key: string]: string} | null;
     nodeIndex: number | null;
     nodesTotal: number;
+    expandVariables: boolean;
 }
 
 interface Cache {
@@ -121,6 +122,7 @@ export class Job {
         const stateDir = argv.stateDir;
         const argvVariables = argv.variable;
         const predefinedVariables = opt.predefinedVariables;
+        const expandVariables = opt.expandVariables ?? true;
 
         this.argv = argv;
         this.writeStreams = opt.writeStreams;
@@ -169,7 +171,7 @@ export class Job {
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH"].toLowerCase()}`;
 
         // Find environment matched variables
-        if (this.environment) {
+        if (this.environment && expandVariables) {
             const expanded = Utils.expandVariables(this._variables);
             this.environment.name = Utils.expandText(this.environment.name, expanded);
             this.environment.url = Utils.expandText(this.environment.url, expanded);

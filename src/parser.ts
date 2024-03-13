@@ -31,12 +31,14 @@ export class Parser {
     readonly argv: Argv;
     readonly writeStreams: WriteStreams;
     readonly pipelineIid: number;
+    readonly expandVariables: boolean;
 
-    private constructor (argv: Argv, writeStreams: WriteStreams, pipelineIid: number, jobs: Job[]) {
+    private constructor (argv: Argv, writeStreams: WriteStreams, pipelineIid: number, jobs: Job[], expandVariables: boolean) {
         this.argv = argv;
         this.writeStreams = writeStreams;
         this.pipelineIid = pipelineIid;
         this.jobs = jobs;
+        this.expandVariables = expandVariables;
     }
 
     get stages (): readonly string[] {
@@ -52,8 +54,8 @@ export class Parser {
         return this._jobNamePad;
     }
 
-    static async create (argv: Argv, writeStreams: WriteStreams, pipelineIid: number, jobs: Job[]) {
-        const parser = new Parser(argv, writeStreams, pipelineIid, jobs);
+    static async create (argv: Argv, writeStreams: WriteStreams, pipelineIid: number, jobs: Job[], expandVariables: boolean = true) {
+        const parser = new Parser(argv, writeStreams, pipelineIid, jobs, expandVariables);
         const time = process.hrtime();
         await parser.init();
         const warnings = await Validator.run(parser.jobs, parser.stages);
@@ -163,6 +165,7 @@ export class Parser {
                     matrixVariables: parallelMatrixVariables,
                     nodeIndex: parallelMatrixVariables !== null ? nodeIndex : null,
                     nodesTotal: parallelMatrixVariablesList.length,
+                    expandVariables: this.expandVariables,
                 });
                 const foundStage = this.stages.includes(job.stage);
                 assert(foundStage, chalk`{yellow stage:${job.stage}} not found for {blueBright ${job.name}}`);
