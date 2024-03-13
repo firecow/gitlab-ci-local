@@ -11,7 +11,7 @@ import {handler} from "./handler";
 import {Executor} from "./executor";
 import {Argv} from "./argv";
 import {AssertionError} from "assert";
-import {Job, cleanupJobResources} from "./job.js";
+import {Job, cleanupJobResources} from "./job";
 
 const jobs: Job[] = [];
 

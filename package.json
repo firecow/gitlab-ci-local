@@ -18,7 +18,8 @@
     "test": "npm run build && jest --testTimeout 60000",
     "test-except-dind": "npm run build && jest --testTimeout 60000 --testPathIgnorePatterns=dind",
     "coverage": "jest --coverage --testTimeout 60000",
-    "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs"
+    "start": "ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs",
+    "dev": "touch .gitlab-ci.yml && nodemon -e ts --watch src --watch .gitlab-ci.yml --exec ts-node src/index.ts"
   },
   "dependencies": {
     "axios": "0.28.x",
@@ -58,6 +59,7 @@
     "eslint": "8.x.x",
     "jest": "29.x.x",
     "jest-when": "3.x.x",
+    "nodemon": "^3.1.0",
     "pkg": "5.x.x",
     "ts-jest": "29.x.x",
     "ts-node": "10.x.x",
