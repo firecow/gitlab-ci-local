@@ -209,7 +209,7 @@ export class Parser {
         });
     }
 
-    static async loadYaml (filePath: string, ctx: any = {}, expandVariables : boolean = true): Promise<any> {
+    static async loadYaml (filePath: string, ctx: any = {}, expandVariables: boolean = true): Promise<any> {
         const ymlPath = `${filePath}`;
         if (!fs.existsSync(ymlPath)) {
             return {};
