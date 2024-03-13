@@ -90,8 +90,8 @@ export function needsComplex (data: any) {
         job: data.job ?? data,
         artifacts: data.artifacts ?? true,
         optional: data.optional ?? false,
-        ...(data.pipeline ? { pipeline: data.pipeline } : {}),
-        ...(data.project ? { project: data.project } : {}),
+        ...(data.pipeline ? {pipeline: data.pipeline} : {}),
+        ...(data.project ? {project: data.project} : {}),
     };
 }
 
