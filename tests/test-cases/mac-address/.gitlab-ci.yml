@@ -1,0 +1,5 @@
+---
+job:
+  image: bash
+  script:
+    - ip -o link show eth0 | awk '{print $12}'
