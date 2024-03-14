@@ -259,7 +259,18 @@ export class Parser {
             },
         });
         const schema = yaml.DEFAULT_SCHEMA.extend([referenceType]);
-        const fileData = yaml.loadAll(fileSplitClone.join("\n"), null, {schema}) as any[];
+        let fileData;
+
+        try {
+            fileData = yaml.loadAll(fileSplitClone.join("\n"), null, {schema}) as any[];
+        } catch (e: any) {
+            if (e instanceof yaml.YAMLException && e.reason === "duplicated mapping key") {
+                console.log(chalk`{black.bgYellowBright  WARN } duplicated mapping key detected! Values will be overwritten!`);
+                fileData = yaml.loadAll(fileSplitClone.join("\n"), null, {schema, json: true}) as any[];
+            } else {
+                throw e;
+            }
+        }
 
         if (fileData.length == 1) return fileData[0];
 
