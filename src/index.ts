@@ -229,6 +229,11 @@ process.on("SIGINT", async (_: string, code: number) => {
             description: "Command to start the container engine (docker or podman)",
             requiresArg: false,
         })
+        .option("container-mac-address", {
+            type: "string",
+            description: "Container MAC address (e.g., aa:bb:cc:dd:ee:ff)",
+            requiresArg: false,
+        })
         .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {
             try {
                 if (current.startsWith("-")) {

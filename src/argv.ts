@@ -186,6 +186,10 @@ export class Argv {
         return this.map.get("maxJobNamePadding") ?? null;
     }
 
+    get containerMacAddress (): string | null {
+        return this.map.get("containerMacAddress") ?? null;
+    }
+
     get concurrency (): number | null {
         const concurrency = this.map.get("concurrency");
         if (!concurrency) return null;

@@ -655,6 +655,10 @@ export class Job {
                 dockerCmd += "--user 0:0 ";
             }
 
+            if (this.argv.containerMacAddress) {
+                dockerCmd += `--mac-address "${this.argv.containerMacAddress}" `;
+            }
+
             const imageUser = this.imageUser(expanded);
             if (imageUser) {
                 dockerCmd += `--user ${imageUser} `;
