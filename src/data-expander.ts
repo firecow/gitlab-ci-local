@@ -163,7 +163,7 @@ export function imageComplex (data: any) {
     return {
         name: typeof data === "string" ? data : data.name,
         entrypoint: data.entrypoint,
-        docker: {user: data.docker?.user ?? null},
+        ...(data.docker?.user ? {docker: {user: data.docker?.user}} : {}),
     };
 }
 
