@@ -16,7 +16,7 @@ test("preview", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`---\nstages:\n  - .pre\n  - build\n  - test\n  - deploy\n  - .post\nchild-job:\n  script:\n    - echo \"Irrelevant\"\n  before_script:\n    - echo \"Default before script\"`,
+        chalk`---\nstages:\n  - .pre\n  - build\n  - test\n  - deploy\n  - .post\nchild-job:\n  script:\n    - echo \"Irrelevant\"\n  environment:\n    name: $MY_VAR\n  before_script:\n    - echo \"Default before script\"`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
