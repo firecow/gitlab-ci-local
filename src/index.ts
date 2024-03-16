@@ -41,7 +41,8 @@ process.on("SIGINT", async (_: string, code: number) => {
                     } else {
                         process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
                     }
-                    cleanupJobResources(jobs).finally(process.exit(1));
+                    await cleanupJobResources(jobs);
+                    process.exit(1);
                 }
             },
             builder: (y: any) => {
