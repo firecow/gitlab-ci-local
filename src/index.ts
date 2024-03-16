@@ -20,6 +20,9 @@ process.on("SIGINT", async (_: string, code: number) => {
     process.exit(code);
 });
 
+// Graceful shutdown for nodemon
+process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
+
 (() => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
     yargs(process.argv.slice(2))
@@ -41,7 +44,8 @@ process.on("SIGINT", async (_: string, code: number) => {
                     } else {
                         process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
                     }
-                    cleanupJobResources(jobs).finally(process.exit(1));
+                    await cleanupJobResources(jobs);
+                    process.exit(1);
                 }
             },
             builder: (y: any) => {

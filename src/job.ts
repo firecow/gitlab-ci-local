@@ -508,12 +508,10 @@ export class Job {
 
         if (!this.argv.cleanup) return;
 
-        for (const id of this._containersToClean) {
-            try {
-                await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", `${id}`]);
-            } catch (e) {
-                assert(e instanceof Error, "e is not instanceof Error");
-            }
+        try {
+            await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", ...this._containersToClean]);
+        } catch (e) {
+            assert(e instanceof Error, "e is not instanceof Error");
         }
 
         if (this._serviceNetworkId) {
@@ -524,14 +522,10 @@ export class Job {
             }
         }
 
-        if (this._containerVolumeNames.length > 0) {
-            try {
-                for (const containerVolume of this._containerVolumeNames) {
-                    await Utils.spawn([this.argv.containerExecutable, "volume", "rm", `${containerVolume}`]);
-                }
-            } catch (e) {
-                assert(e instanceof Error, "e is not instanceof Error");
-            }
+        try {
+            await Utils.spawn([this.argv.containerExecutable, "volume", "rm", ...this._containerVolumeNames]);
+        } catch (e) {
+            assert(e instanceof Error, "e is not instanceof Error");
         }
 
         const rmPromises = [];
