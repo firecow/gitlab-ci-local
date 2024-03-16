@@ -20,6 +20,9 @@ process.on("SIGINT", async (_: string, code: number) => {
     process.exit(code);
 });
 
+// Graceful shutdown for nodemon
+process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
+
 (() => {
     const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
     yargs(process.argv.slice(2))
