@@ -20,3 +20,15 @@ consume-cache:
   script:
     - test -f key-files/file1
     - test -f global/file1
+
+cache-key-file referencing $CI_PROJECT_DIR:
+  stage: test
+  image: bash
+  cache:
+    key:
+      files:
+        - ${CI_PROJECT_DIR}/fakepackage.json
+    paths:
+      - fakepackage.json
+  script:
+    - echo 1
