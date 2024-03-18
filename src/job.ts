@@ -12,6 +12,7 @@ import {Argv} from "./argv";
 import execa from "execa";
 import {CICDVariable} from "./variables-from-files";
 
+const CI_PROJECT_DIR = "/gcl-builds";
 interface JobOptions {
     argv: Argv;
     writeStreams: WriteStreams;
@@ -148,7 +149,7 @@ export class Job {
 
         let ciProjectDir = `${cwd}`;
         if (this.jobData["image"]) {
-            ciProjectDir = "/gcl-builds";
+            ciProjectDir = CI_PROJECT_DIR;
         } else if (argv.shellIsolation) {
             ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
         }
@@ -360,9 +361,16 @@ export class Job {
         if (typeof key === "string" || key == null) {
             return Utils.expandText(key ?? "default", expanded);
         }
-        return "md-" + await Utils.checksumFiles(key["files"].map((f: any) => {
-            return `${cwd}/${Utils.expandText(f, expanded)}`;
-        }));
+
+        const files = key["files"].map((f: string) => {
+            let path = Utils.expandText(f, expanded);
+            if (path.startsWith(`${CI_PROJECT_DIR}/`)) {
+                path = path.slice(`${CI_PROJECT_DIR}/`.length);
+            }
+            return `${cwd}/${path}`;
+        });
+
+        return "md-" + await Utils.checksumFiles(files);
     }
 
     get beforeScripts (): string[] {
