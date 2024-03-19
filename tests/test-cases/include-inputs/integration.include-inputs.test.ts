@@ -114,6 +114,25 @@ scan-website:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
+test("include-inputs interpolation key containing hyphen", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-inputs/input-templates/interpolation-key-hyphen",
+        preview: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+scan-website:
+  script:
+    - echo baz`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
 test("include-inputs inputs validation for string", async () => {
     try {
         const writeStreams = new WriteStreamsMock();

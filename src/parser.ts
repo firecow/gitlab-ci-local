@@ -286,7 +286,7 @@ export class Parser {
 
             const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
                 .replace(
-                    /\$\[\[\s*inputs.(?<interpolationKey>\w+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\]/g // regexr.com/7sh15
+                    /\$\[\[\s*inputs.(?<interpolationKey>[\w-]+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\]/g // regexr.com/7sh15
                     , (_: string, interpolationKey: string, interpolationFunctions: string) => {
                         const configFilePath = path.relative(process.cwd(), filePath);
                         const context = {
