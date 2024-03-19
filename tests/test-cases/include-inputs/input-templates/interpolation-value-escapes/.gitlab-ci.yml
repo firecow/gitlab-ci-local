@@ -1,0 +1,7 @@
+---
+include:
+  - local: '/.gitlab-ci-input-template.yml'
+    inputs:
+      foo: ^v?(?P<major>[0-9]+)\.(?P<minor>[0-9]+)\.(?P<patch>[0-9]+)(?P<suffix>(?P<prerelease>-[0-9A-Za-z-\.]+)?(?P<build>\+[0-9A-Za-z-\.]+)?)$
+stages:
+  - test
