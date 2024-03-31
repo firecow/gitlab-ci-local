@@ -45,12 +45,13 @@ interface Service {
     variables: {[name: string]: string};
 }
 
-interface Need {
+export interface Need {
     job: string;
     artifacts: boolean;
-    optional: boolean;
-    pipeline: string | null;
-    project: string | null;
+    optional?: boolean;
+    ref?: string;
+    pipeline?: string;
+    project?: string;
 }
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {

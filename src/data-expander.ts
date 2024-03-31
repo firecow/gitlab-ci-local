@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import deepExtend from "deep-extend";
 import assert, {AssertionError} from "assert";
-import {Job} from "./job";
+import {Job, Need} from "./job";
 import {traverse} from "object-traversal";
 import {Utils} from "./utils";
 
@@ -86,13 +86,20 @@ export function complexObjects (gitlabData: any) {
 }
 
 export function needsComplex (data: any) {
-    return {
+    const needs: Need = {
         job: data.job ?? data,
         artifacts: data.artifacts ?? true,
-        optional: data.optional ?? false,
         ...(data.pipeline ? {pipeline: data.pipeline} : {}),
         ...(data.project ? {project: data.project} : {}),
+        ...(data.ref ? {ref: data.ref} : {}),
+        ...(data.optional ? {optional: data.optional} : {}),
     };
+
+    // In needs:project/needs:pipeline, `optional` is not an allowed property
+    if (!data.project && !data.pipeline && data.optional === undefined) {
+        needs.optional = false;
+    }
+    return needs;
 }
 
 export function needsEach (jobName: string, gitlabData: any) {
