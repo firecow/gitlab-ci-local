@@ -22,6 +22,19 @@ import {init as initPredefinedVariables} from "./predefined-variables";
 
 const schema = require("./schema.json");
 
+schema.definitions.job_template.properties.gclArtifactsToSource = {
+    "type": "boolean",
+};
+schema.definitions.job_template.properties.gclInteractive = {
+    "type": "boolean",
+};
+schema.definitions.job_template.properties.gclInjectSSHAgent = {
+    "type": "boolean",
+};
+schema.definitions.job_template.properties.gclDescription = {
+    "type": "string",
+};
+
 const MAX_FUNCTIONS = 3;
 const INCLUDE_INPUTS_SUPPORTED_TYPES = ["string", "boolean", "number"];
 
