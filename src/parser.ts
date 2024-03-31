@@ -250,19 +250,19 @@ export class Parser {
                 const jobMatch = /\w:/.exec(line);
                 if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
                     if (interactiveMatch) {
-                        fileSplitClone.splice(index + 1, 0, "  interactive: true");
+                        fileSplitClone.splice(index + 1, 0, "  gclInteractive: true");
                         index++;
                     }
                     if (injectSSHAgent) {
-                        fileSplitClone.splice(index + 1, 0, "  injectSSHAgent: true");
+                        fileSplitClone.splice(index + 1, 0, "  gclInjectSSHAgent: true");
                         index++;
                     }
                     if (noArtifactsToSourceMatch) {
-                        fileSplitClone.splice(index + 1, 0, "  artifactsToSource: false");
+                        fileSplitClone.splice(index + 1, 0, "  gclArtifactsToSource: false");
                         index++;
                     }
                     if (descriptionMatch) {
-                        fileSplitClone.splice(index + 1, 0, `  description: ${descriptionMatch?.groups?.description ?? ""}`);
+                        fileSplitClone.splice(index + 1, 0, `  gclDescription: ${descriptionMatch?.groups?.description ?? ""}`);
                         index++;
                     }
                     interactiveMatch = null;

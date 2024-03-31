@@ -258,7 +258,7 @@ export class Job {
     }
 
     get artifactsToSource () {
-        if (this.jobData["artifactsToSource"] != null) return this.jobData["artifactsToSource"];
+        if (this.jobData["gclArtifactsToSource"] != null) return this.jobData["gclArtifactsToSource"];
         return this.argv.artifactsToSource;
     }
 
@@ -339,15 +339,15 @@ export class Job {
     }
 
     get interactive (): boolean {
-        return this.jobData["interactive"] || false;
+        return this.jobData["gclInteractive"] || false;
     }
 
     get injectSSHAgent (): boolean {
-        return this.jobData["injectSSHAgent"] || false;
+        return this.jobData["gclInjectSSHAgent"] || false;
     }
 
     get description (): string {
-        return this.jobData["description"] ?? "";
+        return this.jobData["gclDescription"] ?? "";
     }
 
     get artifacts (): {paths: string[]; exclude?: string[]; reports?: {dotenv?: string}; when?: string} | null {
