@@ -14,5 +14,6 @@ test("script-blank <test-job>", async () => {
     await expect(handler({
         cwd: "tests/test-cases/script-blank",
         job: ["test-job"],
+        enableJsonSchemaValidation: false,
     }, writeStreams)).rejects.toThrow(chalk`{blue test-job} has empty script`);
 });

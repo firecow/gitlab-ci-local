@@ -199,4 +199,8 @@ export class Argv {
     get containerExecutable (): string {
         return this.map.get("containerExecutable") ?? "docker";
     }
+
+    get enableJsonSchemaValidation (): boolean {
+        return this.map.get("enableJsonSchemaValidation") ?? true;
+    }
 }

@@ -225,17 +225,24 @@ export class Parser {
             job.producers = Producers.init(this.jobs, this.stages, job);
         });
 
-        const ajv = new Ajv({
-            verbose: true,
-            allErrors: true,
-            allowUnionTypes: true,
-            strictTypes: false, // to suppress the missing types defined in the gitlab-ci json schema
-        });
-        ajv.addKeyword("markdownDescription");
-        addFormats(ajv);
-        const validate = ajv.compile(schema);
-        const valid = validate(gitlabData);
-        assert(valid, `Invalid gitlab-ci configuration! Dump the following to the pipeline editor to debug:\n${yaml.dump(gitlabData)}`);
+        if (this.argv.enableJsonSchemaValidation) {
+            const ajv = new Ajv({
+                verbose: true,
+                allErrors: true,
+                allowUnionTypes: true,
+                strictTypes: false, // to suppress the missing types defined in the gitlab-ci json schema
+            });
+            ajv.addKeyword("markdownDescription");
+            addFormats(ajv);
+            const validate = ajv.compile(schema);
+            const valid = validate(gitlabData);
+            assert(valid,
+                chalk`
+Invalid gitlab-ci configuration! It have failed the json schema validation. Dump the following to the pipeline editor to debug:
+${yaml.dump(gitlabData)}
+{yellow NOTE: This is beta feature, which can be disabled with \`{magentaBright gitlab-ci-local --enable-json-schema-validation=false}\`}
+`);
+        }
     }
 
     static async loadYaml (filePath: string, ctx: any = {}, expandVariables: boolean = true): Promise<any> {
