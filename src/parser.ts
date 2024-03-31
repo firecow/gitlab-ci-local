@@ -1,5 +1,7 @@
 import chalk from "chalk";
 import path from "path";
+import Ajv from "ajv";
+import addFormats from "ajv-formats";
 import deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
@@ -17,6 +19,8 @@ import {VariablesFromFiles} from "./variables-from-files";
 import {Argv} from "./argv";
 import {WriteStreams} from "./write-streams";
 import {init as initPredefinedVariables} from "./predefined-variables";
+
+const schema = require("./schema.json");
 
 const MAX_FUNCTIONS = 3;
 const INCLUDE_INPUTS_SUPPORTED_TYPES = ["string", "boolean", "number"];
@@ -207,6 +211,18 @@ export class Parser {
         this.jobs.forEach((job) => {
             job.producers = Producers.init(this.jobs, this.stages, job);
         });
+
+        const ajv = new Ajv({
+            verbose: true,
+            allErrors: true,
+            allowUnionTypes: true,
+            strictTypes: false, // to suppress the missing types defined in the gitlab-ci json schema
+        });
+        ajv.addKeyword("markdownDescription");
+        addFormats(ajv);
+        const validate = ajv.compile(schema);
+        const valid = validate(gitlabData);
+        assert(valid, `Invalid gitlab-ci configuration! Dump the following to the pipeline editor to debug:\n${yaml.dump(gitlabData)}`);
     }
 
     static async loadYaml (filePath: string, ctx: any = {}, expandVariables: boolean = true): Promise<any> {
