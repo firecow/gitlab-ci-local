@@ -3,5 +3,11 @@
     "config:base",
     ":disableDependencyDashboard",
     ":maintainLockFilesWeekly"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "lockFileMaintenance"],
+      "groupName": "All non-major"
+    }
   ]
 }
