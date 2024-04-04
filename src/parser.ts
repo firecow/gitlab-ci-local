@@ -1,7 +1,5 @@
 import chalk from "chalk";
 import path from "path";
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
 import deepExtend from "deep-extend";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
@@ -19,7 +17,6 @@ import {VariablesFromFiles} from "./variables-from-files";
 import {Argv} from "./argv";
 import {WriteStreams} from "./write-streams";
 import {init as initPredefinedVariables} from "./predefined-variables";
-import schema from "./schema";
 
 const MAX_FUNCTIONS = 3;
 const INCLUDE_INPUTS_SUPPORTED_TYPES = ["string", "boolean", "number"];
@@ -63,12 +60,18 @@ export class Parser {
         await parser.init();
         const warnings = await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
-
         writeStreams.stderr(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
+
         for (const warning of warnings) {
             writeStreams.stderr(chalk`{yellow ${warning}}\n`);
         }
 
+        // # Second layer of check for errors that are not caught in Validator.run
+        if (parser.argv.enableJsonSchemaValidation) {
+            const time = process.hrtime();
+            Validator.jsonSchemaValidation(parser.gitlabData);
+            writeStreams.stderr(chalk`{grey json schema validated} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+        }
         return parser;
     }
 
@@ -210,25 +213,6 @@ export class Parser {
         this.jobs.forEach((job) => {
             job.producers = Producers.init(this.jobs, this.stages, job);
         });
-
-        if (this.argv.enableJsonSchemaValidation) {
-            const ajv = new Ajv({
-                verbose: true,
-                allErrors: true,
-                allowUnionTypes: true,
-                strictTypes: false, // to suppress the missing types defined in the gitlab-ci json schema
-            });
-            ajv.addKeyword("markdownDescription");
-            addFormats(ajv);
-            const validate = ajv.compile(schema);
-            const valid = validate(gitlabData);
-            assert(valid,
-                chalk`
-Invalid gitlab-ci configuration! It have failed the json schema validation. Dump the following to the pipeline editor to debug:
-${yaml.dump(gitlabData)}
-{yellow NOTE: This is beta feature, which can be disabled with \`{magentaBright gitlab-ci-local --enable-json-schema-validation=false}\`}
-`);
-        }
     }
 
     static async loadYaml (filePath: string, ctx: any = {}, expandVariables: boolean = true): Promise<any> {
