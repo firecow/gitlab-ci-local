@@ -33,7 +33,7 @@ test("add-host <service-job>", async () => {
         extraHost: ["fake-google.com:142.250.185.206"],
     }, writeStreams);
 
-    expect(writeStreams.stderrLines.length).toEqual(2);
+    expect(writeStreams.stderrLines.length).toEqual(3);
     expect(await fs.pathExists("tests/test-cases/extra-host/.gitlab-ci-local/services-output/service-job/docker.io/alpine:latest-0.log")).toEqual(true);
     expect(await fs.readFile("tests/test-cases/extra-host/.gitlab-ci-local/services-output/service-job/docker.io/alpine:latest-0.log", "utf-8")).toMatch(/142.250.185.206/);
 });
