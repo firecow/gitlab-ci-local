@@ -50,8 +50,7 @@ export class Parser {
     }
 
     get jobNamePad (): number {
-        assert(this._jobNamePad != null, "jobNamePad is uninitialized");
-        return this._jobNamePad;
+        return this._jobNamePad ?? 0;
     }
 
     static async create (argv: Argv, writeStreams: WriteStreams, pipelineIid: number, jobs: Job[], expandVariables: boolean = true) {
@@ -278,7 +277,7 @@ export class Parser {
             }
         }
 
-        if (fileData.length == 1) return fileData[0];
+        if (fileData.length <= 1) return fileData[0];
 
         if (isGitlabSpecFile(fileData[0])) {
             const inputsSpecification: any = fileData[0];
