@@ -185,7 +185,7 @@ export class Utils {
                 ruleVariable = rule.variables;
                 ruleExists = rule.exists;
 
-                if (ruleExists && !Utils.evaludateRuleExist(opt.cwd, ruleExists)) {
+                if (ruleExists && !Utils.evaluateRuleExist(opt.cwd, ruleExists)) {
                     when = "never";
                 }
 
@@ -220,7 +220,7 @@ export class Utils {
         return Boolean(eval(evalStr));
     }
 
-    static evaludateRuleExist (cwd: string, ruleExists: string[]): boolean {
+    static evaluateRuleExist (cwd: string, ruleExists: string[]): boolean {
         for (const pattern of ruleExists) {
             if (globby.sync(pattern, {dot: true, cwd}).length > 0) {
                 return true;
