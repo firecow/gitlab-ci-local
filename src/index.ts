@@ -243,13 +243,13 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                 if (current.startsWith("-")) {
                     completionFilter();
                 } else {
-                    const argv = new Argv({...yargsArgv, autoCompleting: true});
-                    state.getPipelineIid(argv.cwd, argv.stateDir).then((pipelineIid) => {
-                        Parser.create(argv, new WriteStreamsMock(), pipelineIid, []).then((parser) => {
+                    Argv.build({...yargsArgv, autoCompleting: true})
+                        .then(argv => state.getPipelineIid(argv.cwd, argv.stateDir).then(pipelineIid => ({argv, pipelineIid})))
+                        .then(({argv, pipelineIid}) => Parser.create(argv, new WriteStreamsMock(), pipelineIid, []))
+                        .then((parser) => {
                             const jobNames = [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
                             done(jobNames);
                         });
-                    });
                 }
             } catch (e) {
                 return ["Parser-Failed!"];

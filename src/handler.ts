@@ -1,5 +1,6 @@
 import * as yaml from "js-yaml";
 import chalk from "chalk";
+import path from "path";
 import * as fs from "fs-extra";
 import * as yargs from "yargs";
 import {Commander} from "./commander";
@@ -21,7 +22,7 @@ const generateGitIgnore = (cwd: string, stateDir: string) => {
 };
 
 export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[] = []) {
-    const argv = new Argv(args);
+    const argv = await Argv.build(args, writeStreams);
     const cwd = argv.cwd;
     const stateDir = argv.stateDir;
     const file = argv.file;
@@ -32,7 +33,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         return [];
     }
 
-    assert(fs.existsSync(`${cwd}/${file}`), `${cwd}/${file} could not be found`);
+    assert(fs.existsSync(`${cwd}/${file}`), `${path.resolve(cwd)}/${file} could not be found`);
 
     if (argv.fetchIncludes) {
         await Parser.create(argv, writeStreams, 0, jobs);
@@ -102,4 +103,3 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
 
     return cleanupJobResources(jobs);
 }
-

@@ -3,12 +3,54 @@ import * as fs from "fs-extra";
 import * as dotenv from "dotenv";
 import * as path from "path";
 import camelCase from "camelcase";
+import {Utils} from "./utils";
+import {WriteStreams} from "./write-streams";
+import chalk from "chalk";
+
+
+async function isInGitRepository () {
+    try {
+        const {exitCode} = await Utils.bash("git rev-parse --is-inside-work-tree");
+        return exitCode === 0;
+    } catch (err: any) {
+        if (err.stderr === "fatal: not a git repository (or any of the parent directories): .git") {
+            return false;
+        }
+        throw err;
+    }
+}
+
+async function gitRootPath () {
+    const {stdout} = await Utils.bash("git rev-parse --show-toplevel");
+    return stdout;
+}
 
 export class Argv {
 
     private map: Map<string, any> = new Map<string, any>();
+    private writeStreams: WriteStreams | undefined;
 
-    constructor (argv: any) {
+    private async fallbackCwd (args: any) {
+        if (args.cwd !== undefined || args.file !== undefined) return;
+        if (fs.existsSync(`${process.cwd()}/.gitlab-ci.yml`)) return;
+        if (!(await isInGitRepository())) return;
+
+        this.writeStreams?.stderr(chalk`{yellow .gitlab-ci.yml not found in cwd, falling back to git root directory}\n`);
+        this.map.set("cwd", path.relative(process.cwd(), await gitRootPath()));
+    }
+
+    static async build (args: any, writeStreams?: WriteStreams) {
+        const argv = new Argv(args, writeStreams);
+        await argv.init(args);
+        return argv;
+    }
+
+    async init (args: any) {
+        await this.fallbackCwd(args);
+    }
+
+    private constructor (argv: any, writeStreams?: WriteStreams) {
+        this.writeStreams = writeStreams;
         for (const [key, value] of Object.entries(argv)) {
             this.map.set(key, value);
         }
