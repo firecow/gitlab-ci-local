@@ -217,8 +217,7 @@ export class Utils {
         evalStr = evalStr.replace(/null.match\(.+?\) != null/g, "false");
         evalStr = evalStr.replace(/null.match\(.+?\) == null/g, "false");
 
-        // noinspection BadExpressionStatementJS
-        return eval(`if (${evalStr}) { true } else { false }`);
+        return Boolean(eval(evalStr));
     }
 
     static evaludateRuleExist (cwd: string, ruleExists: string[]): boolean {
