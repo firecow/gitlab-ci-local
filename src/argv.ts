@@ -32,7 +32,7 @@ export class Argv {
     get cwd (): string {
         let cwd = this.map.get("cwd") ?? ".";
         assert(typeof cwd != "object", "--cwd option cannot be an array");
-        assert(!cwd.startsWith("/") && !cwd.startsWith("~"), "Please use relative path for the --cwd option");
+        assert(!path.isAbsolute(cwd), "Please use relative path for the --cwd option");
         cwd = path.normalize(`${process.cwd()}/${cwd}`);
         cwd = cwd.replace(/\/$/, "");
         assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
