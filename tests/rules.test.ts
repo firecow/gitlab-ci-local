@@ -278,3 +278,13 @@ test("https://github.com/firecow/gitlab-ci-local/issues/609", () => {
     const rulesResult = Utils.getRulesResult({cwd: "", rules, variables});
     expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
 });
+
+test("optional manual job", () => {
+    const jobWhen = "manual";
+    const rules = [
+        {if: "$GITLAB_CI == 'false'"},
+    ];
+    const variables = {GITLAB_CI: "false"};
+    const rulesResult = Utils.getRulesResult({cwd: "", rules, variables}, jobWhen);
+    expect(rulesResult).toEqual({when: "manual", allowFailure: true, variables: undefined});
+});
