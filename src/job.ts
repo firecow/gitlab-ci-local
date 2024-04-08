@@ -184,7 +184,7 @@ export class Job {
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
-            const ruleResult = Utils.getRulesResult({cwd, rules: this.rules, variables: this._variables});
+            const ruleResult = Utils.getRulesResult({cwd, rules: this.rules, variables: this._variables}, this.when);
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
             this._variables = {...globalVariables, ...jobVariables, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};

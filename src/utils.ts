@@ -172,20 +172,22 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult (opt: RuleResultOpt): {when: string; allowFailure: boolean; variables?: {[name: string]: string}} {
+    static getRulesResult (opt: RuleResultOpt, jobWhen: string = "on_success"): {when: string; allowFailure: boolean; variables?: {[name: string]: string}} {
         let when = "never";
-        let allowFailure = false;
+
+        // optional manual jobs allowFailure defaults to true https://docs.gitlab.com/ee/ci/jobs/job_control.html#types-of-manual-jobs
+        let allowFailure = jobWhen === "manual";
         let ruleVariable: {[name: string]: string} | undefined;
         let ruleExists;
 
         for (const rule of opt.rules) {
             if (Utils.evaluateRuleIf(rule.if || "true", opt.variables)) {
-                when = rule.when ? rule.when : "on_success";
-                allowFailure = rule.allow_failure ?? false;
+                when = rule.when ? rule.when : jobWhen;
+                allowFailure = rule.allow_failure ?? allowFailure;
                 ruleVariable = rule.variables;
                 ruleExists = rule.exists;
 
-                if (ruleExists && !Utils.evaludateRuleExist(opt.cwd, ruleExists)) {
+                if (ruleExists && !Utils.evaluateRuleExist(opt.cwd, ruleExists)) {
                     when = "never";
                 }
 
@@ -217,11 +219,10 @@ export class Utils {
         evalStr = evalStr.replace(/null.match\(.+?\) != null/g, "false");
         evalStr = evalStr.replace(/null.match\(.+?\) == null/g, "false");
 
-        // noinspection BadExpressionStatementJS
-        return eval(`if (${evalStr}) { true } else { false }`);
+        return Boolean(eval(evalStr));
     }
 
-    static evaludateRuleExist (cwd: string, ruleExists: string[]): boolean {
+    static evaluateRuleExist (cwd: string, ruleExists: string[]): boolean {
         for (const pattern of ruleExists) {
             if (globby.sync(pattern, {dot: true, cwd}).length > 0) {
                 return true;
