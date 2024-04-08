@@ -3,6 +3,16 @@ import chalk from "chalk";
 import {handler} from "../src/handler";
 import assert from "assert";
 import {AssertionError} from "assert";
+import fs from "fs-extra";
+
+const dummyGitlabCiYmlPath = "tests/test-cases/.empty-gitlab-ci.yml";
+beforeAll(() => {
+    fs.createFileSync(dummyGitlabCiYmlPath);
+});
+
+afterAll(() => {
+    fs.removeSync(dummyGitlabCiYmlPath);
+});
 
 test("--completion", async () => {
     const spy = jest.spyOn(console, "log").mockImplementation();
@@ -38,4 +48,11 @@ test("docs (no .gitlab-ci.yml)", async () => {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`${process.cwd()}/docs/.gitlab-ci.yml could not be found`);
     }
+});
+
+test("empty .gitlab-ci.yml", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        file: dummyGitlabCiYmlPath,
+    }, writeStreams);
 });

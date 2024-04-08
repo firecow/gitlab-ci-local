@@ -37,7 +37,7 @@ export class ParserIncludes {
         const promises = [];
         const {stateDir, cwd, fetchIncludes, gitData, expandVariables} = opts;
 
-        const include = this.expandInclude(gitlabData["include"], opts.variables);
+        const include = this.expandInclude(gitlabData?.include, opts.variables);
 
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
