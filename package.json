@@ -22,6 +22,8 @@
     "dev": "touch .gitlab-ci.yml && nodemon -e ts --watch src --watch .gitlab-ci.yml --exec ts-node src/index.ts"
   },
   "dependencies": {
+    "ajv": "^8.12.0",
+    "ajv-formats": "^3.0.1",
     "axios": "0.28.x",
     "base64url": "3.x.x",
     "camelcase": "6.x.x",

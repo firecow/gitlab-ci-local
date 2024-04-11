@@ -33,5 +33,5 @@ test("--concurrency not set", async () => {
         cwd: "tests/test-cases/concurrency",
     }, writeStreams);
 
-    expect(writeStreams.stderrLines.length).toEqual(2);
+    expect(writeStreams.stderrLines.length).toEqual(3);
 });

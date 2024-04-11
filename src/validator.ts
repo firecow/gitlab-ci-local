@@ -1,8 +1,29 @@
+import Ajv from "ajv";
 import {Job} from "./job";
 import assert from "assert";
 import chalk from "chalk";
+import * as yaml from "js-yaml";
+import addFormats from "ajv-formats";
+import schema from "./schema";
 
 export class Validator {
+    static jsonSchemaValidation (data: any) {
+        const ajv = new Ajv({
+            verbose: true,
+            allErrors: true,
+            allowUnionTypes: true,
+            strictTypes: false, // to suppress the missing types defined in the gitlab-ci json schema
+        });
+        ajv.addKeyword("markdownDescription");
+        addFormats(ajv);
+        const validate = ajv.compile(schema);
+        const valid = validate(data);
+        assert(valid,
+            chalk`
+    Invalid gitlab-ci configuration! It have failed the json schema validation. Dump the following to the pipeline editor to debug:
+    ${yaml.dump(data)}
+    `);
+    }
 
     private static needs (jobs: ReadonlyArray<Job>, stages: readonly string[]): string[] {
         const warnings: string[] = [];

@@ -59,12 +59,18 @@ export class Parser {
         await parser.init();
         const warnings = await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
-
         writeStreams.stderr(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
+
         for (const warning of warnings) {
             writeStreams.stderr(chalk`{yellow ${warning}}\n`);
         }
 
+        // # Second layer of check for errors that are not caught in Validator.run
+        if (parser.argv.enableJsonSchemaValidation) {
+            const time = process.hrtime();
+            Validator.jsonSchemaValidation(parser.gitlabData);
+            writeStreams.stderr(chalk`{grey json schema validated} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+        }
         return parser;
     }
 
@@ -233,19 +239,19 @@ export class Parser {
                 const jobMatch = /\w:/.exec(line);
                 if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
                     if (interactiveMatch) {
-                        fileSplitClone.splice(index + 1, 0, "  interactive: true");
+                        fileSplitClone.splice(index + 1, 0, "  gclInteractive: true");
                         index++;
                     }
                     if (injectSSHAgent) {
-                        fileSplitClone.splice(index + 1, 0, "  injectSSHAgent: true");
+                        fileSplitClone.splice(index + 1, 0, "  gclInjectSSHAgent: true");
                         index++;
                     }
                     if (noArtifactsToSourceMatch) {
-                        fileSplitClone.splice(index + 1, 0, "  artifactsToSource: false");
+                        fileSplitClone.splice(index + 1, 0, "  gclArtifactsToSource: false");
                         index++;
                     }
                     if (descriptionMatch) {
-                        fileSplitClone.splice(index + 1, 0, `  description: ${descriptionMatch?.groups?.description ?? ""}`);
+                        fileSplitClone.splice(index + 1, 0, `  gclDescription: ${descriptionMatch?.groups?.description ?? ""}`);
                         index++;
                     }
                     interactiveMatch = null;

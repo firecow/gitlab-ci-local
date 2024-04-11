@@ -223,6 +223,12 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Maximum padding for job name (use <= 0 for no padding)",
             requiresArg: false,
         })
+        .option("enable-json-schema-validation", {
+            type: "boolean",
+            description: "Whether to enable json schema validation",
+            requiresArg: false,
+            default: false,
+        })
         .option("concurrency", {
             type: "number",
             description: "Limit the number of jobs that run simultaneously",
