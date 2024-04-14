@@ -10,12 +10,11 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("umask <alpine-guest> --umask --needs", async () => {
+test.concurrent("umask <alpine-guest> --umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
         umask: true,
-        needs: true,
         job: ["alpine-guest"],
     }, writeStreams);
 
@@ -26,27 +25,25 @@ test.concurrent("umask <alpine-guest> --umask --needs", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test.concurrent("umask <alpine-guest> --no-umask --needs", async () => {
+test.concurrent("umask <alpine-guest> --no-umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
         umask: false,
-        needs: true,
         job: ["alpine-guest"],
     }, writeStreams);
 
     const expectedStdOut = [
-        chalk`{blueBright alpine-guest} {greenBright >} 666 one.txt 405 100`,
-        chalk`{blueBright alpine-guest} {greenBright >} 777 script.sh 405 100`,
+        chalk`{blueBright alpine-guest} {greenBright >} 666 one.txt 101 101`,
+        chalk`{blueBright alpine-guest} {greenBright >} 777 script.sh 101 101`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test.concurrent("umask <alpine-root> --umask --needs", async () => {
+test.concurrent("umask <alpine-root> --umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
-        needs: true,
         umask: true,
         job: ["alpine-root"],
     }, writeStreams);
@@ -58,11 +55,10 @@ test.concurrent("umask <alpine-root> --umask --needs", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test.concurrent("umask <alpine-root> --no-umask --needs", async () => {
+test.concurrent("umask <alpine-root> --no-umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
-        needs: true,
         umask: false,
         job: ["alpine-root"],
     }, writeStreams);

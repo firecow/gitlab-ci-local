@@ -1,22 +1,13 @@
 ---
-build-job:
-  script:
-    - |
-      docker build -q -t debug:ci-${CI_PIPELINE_IID} -f - . <<EOF
-      FROM alpine
-      USER guest
-      EOF
-
 alpine-guest:
-  needs: [build-job]
-  image: debug:ci-${CI_PIPELINE_IID}
+  image: nginxinc/nginx-unprivileged:alpine3.18
   script:
     - stat -c "%a %n %u %g" one.txt
     - stat -c "%a %n %u %g" script.sh
 
 alpine-root:
   needs: []
-  image: alpine
+  image: nginx:alpine3.18
   script:
     - stat -c "%a %n %u %g" one.txt
     - stat -c "%a %n %u %g" script.sh
