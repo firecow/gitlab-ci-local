@@ -692,7 +692,7 @@ export class Job {
 
             for (const [key, val] of Object.entries(expanded)) {
                 // Replacing `'` with `'\''` to correctly handle single quotes(if `val` contains `'`) in shell commands
-                dockerCmd += `-e '${key}=${val.replace(/'/g, "'\\''")}' `;
+                dockerCmd += `  -e '${key}=${val.replace(/'/g, "'\\''")}' \\\n`;
             }
 
             if (this.imageEntrypoint) {
@@ -1118,7 +1118,7 @@ export class Job {
 
         for (const [key, val] of Object.entries(expanded)) {
             // Replacing `'` with `'\''` to correctly handle single quotes(if `val` contains `'`) in shell commands
-            dockerCmd += `-e '${key}=${val.replace(/'/g, "'\\''")}' `;
+            dockerCmd += `  -e '${key}=${val.replace(/'/g, "'\\''")}' \\\n`;
         }
 
         const serviceEntrypoint = service.entrypoint;
