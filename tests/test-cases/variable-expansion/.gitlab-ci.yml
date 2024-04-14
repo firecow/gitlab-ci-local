@@ -18,3 +18,15 @@ test ${${ENV}_URL}:
   variables:
     URL: ${${ENV}_URL}
     ENV: DEV
+
+docker-executor variables with ':
+  image: alpine
+  script:
+    - echo $CI_JOB_NAME
+
+docker-executor services variables with ':
+  services:
+    - nginx
+  image: alpine
+  script:
+    - echo $CI_JOB_NAME

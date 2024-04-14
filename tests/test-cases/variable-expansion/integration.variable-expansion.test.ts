@@ -16,12 +16,10 @@ test(`variable-expansion <${test_job_1}>`, async () => {
         job: [test_job_1],
     }, writeStreams);
 
-    const expected = [
-        chalk`{blueBright ${test_job_1}} {green $ echo $URL}`,
-        chalk`{blueBright ${test_job_1}} {greenBright >} url-dev`,
-    ];
+    const expected = chalk`{blueBright ${test_job_1}} {green $ echo $URL}
+{blueBright ${test_job_1}} {greenBright >} url-dev`;
 
-    expect(writeStreams.stdoutLines.slice(1, -3)).toEqual(expected);
+    expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
 });
 
 const test_job_2 = "test ${${ENV}_URL}";
@@ -32,10 +30,36 @@ test(`variable-expansion <${test_job_2}>`, async () => {
         job: [test_job_2],
     }, writeStreams);
 
-    const expected = [
-        chalk`{blueBright ${test_job_2}} {green $ echo $URL}`,
-        chalk`{blueBright ${test_job_2}} {greenBright >} dev-url`,
-    ];
+    const expected = chalk`{blueBright ${test_job_2}} {green $ echo $URL}
+{blueBright ${test_job_2}} {greenBright >} dev-url`;
 
-    expect(writeStreams.stdoutLines.slice(1, -3)).toEqual(expected);
+    expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
+});
+
+const test_job_3 = "docker-executor services variables with '";
+test(`variable-expansion <${test_job_3}>`, async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/variable-expansion",
+        job: [test_job_3],
+    }, writeStreams);
+
+    const expected = chalk`{blueBright ${test_job_3}} {green $ echo $CI_JOB_NAME}
+{blueBright ${test_job_3}} {greenBright >} ${test_job_3}`;
+
+    expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
+});
+
+const test_job_4 = "docker-executor variables with '";
+test(`variable-expansion <${test_job_4}>`, async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/variable-expansion",
+        job: [test_job_4],
+    }, writeStreams);
+
+    const expected = chalk`{blueBright ${test_job_4}} {green $ echo $CI_JOB_NAME}
+{blueBright ${test_job_4}} {greenBright >} ${test_job_4}`;
+
+    expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
 });
