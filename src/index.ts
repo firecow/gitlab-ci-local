@@ -155,6 +155,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Enable artifact isolation for shell-executor jobs",
             requiresArg: false,
         })
+        .option("shell-executor-no-image", {
+            type: "boolean",
+            description: "Whether to use shell executor when no image is specified.",
+            default: true,
+        })
         .option("mount-cache", {
             type: "boolean",
             description: "Enable docker mount based caching",
