@@ -3,6 +3,7 @@ import {handler} from "../../../src/handler";
 import fs from "fs-extra";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
+import chalk from "chalk";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -15,6 +16,7 @@ test.concurrent("artifacts-shell <consume> --needs --shell-isolation", async () 
         job: ["consume"],
         needs: true,
         shellIsolation: true,
+        shellExecutorNoImage: true,
     }, writeStreams);
 
     // Make sure pwd is changed to builds folder.
@@ -35,4 +37,19 @@ test.concurrent("artifacts-shell --file .gitlab-ci-when-never.yml --shell-isolat
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
+});
+
+test.concurrent("artifacts-shell <deploy> --file .gitlab-ci-when-never.yml --shell-isolation --no-shell-executor-no-image", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/artifacts-shell",
+        job: ["deploy"],
+        file: ".gitlab-ci-when-never.yml",
+        shellIsolation: true,
+        shellExecutorNoImage: false,
+    }, writeStreams);
+
+    const expected = chalk`{black.bgYellowBright  WARN } --shell-isolation does not work with --no-shell-executor-no-image\n`;
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
+    expect(writeStreams.stderrLines.join("\n")).toContain(expected);
 });

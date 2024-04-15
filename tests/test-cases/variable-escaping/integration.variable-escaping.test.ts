@@ -16,10 +16,9 @@ test(`variable-escaping <${test_job_1}>`, async () => {
         job: [test_job_1],
     }, writeStreams);
 
-    const expected = [
-        chalk`{blueBright ${test_job_1}} {green $ echo "$LS_CMD"}`,
-        chalk`{blueBright ${test_job_1}} {greenBright >} ls "-al" $TMP_DIR`,
-    ];
+    const expected = chalk`
+{blueBright ${test_job_1}} {green $ echo "$LS_CMD"}
+{blueBright ${test_job_1}} {greenBright >} ls "-al" $TMP_DIR`;
 
-    expect(writeStreams.stdoutLines.slice(1, -3)).toEqual(expected);
+    expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
 });

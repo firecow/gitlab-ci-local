@@ -57,6 +57,10 @@ export class Argv {
 
         this.injectDotenv(`${this.home}/.gitlab-ci-local/.env`, argv);
         this.injectDotenv(`${this.cwd}/.gitlab-ci-local-env`, argv);
+
+        if (!this.shellExecutorNoImage && this.shellIsolation) {
+            this.writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --shell-isolation does not work with --no-shell-executor-no-image\n`);
+        }
     }
 
     private injectDotenv (potentialDotenvFilepath: string, argv: any) {
@@ -244,5 +248,10 @@ export class Argv {
 
     get enableJsonSchemaValidation (): boolean {
         return this.map.get("enableJsonSchemaValidation") ?? true;
+    }
+
+    get shellExecutorNoImage (): boolean {
+        // TODO: default to false in 5.x.x
+        return this.map.get("shellExecutorNoImage") ?? true;
     }
 }

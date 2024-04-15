@@ -197,6 +197,8 @@ export class Job {
 
         assert(this.scripts || this.trigger, chalk`{blueBright ${this.name}} must have script specified`);
 
+        assert(!(this.interactive && !this.argv.shellExecutorNoImage), chalk`${this.formattedJobName} @Interactive decorator cannot be used with --no-shell-executor-no-image`);
+
         if (this.interactive && (this.when !== "manual" || this.imageName(this._variables) !== null)) {
             throw new AssertionError({message: `${this.formattedJobName} @Interactive decorator cannot have image: and must be when:manual`});
         }
@@ -795,7 +797,14 @@ export class Job {
 
     private imageName (vars: {[key: string]: string} = {}): string | null {
         const image = this.jobData["image"];
-        if (!image) return null;
+        if (!image) {
+            if (this.argv.shellExecutorNoImage) {
+                return null;
+            } else {
+                // https://docs.gitlab.com/ee/ci/runners/hosted_runners/linux.html#container-images
+                return "docker.io/ruby:3.1";
+            }
+        }
         const expanded = Utils.expandVariables(vars);
         const imageName = Utils.expandText(image.name, expanded);
         return imageName.includes(":") ? imageName : `${imageName}:latest`;

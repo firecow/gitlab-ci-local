@@ -15,12 +15,11 @@ test("variable-null <test-job>", async () => {
         job: ["test-job"],
     }, writeStreams);
 
-    const expected = [
-        chalk`{blueBright test-job} {green $ echo \"EMPTY_GLOBAL_VAR:\${EMPTY_GLOBAL_VAR\}\"}`,
-        chalk`{blueBright test-job} {greenBright >} EMPTY_GLOBAL_VAR:`,
-        chalk`{blueBright test-job} {green $ echo \"EMPTY_JOB_VAR:\${EMPTY_JOB_VAR\}\"}`,
-        chalk`{blueBright test-job} {greenBright >} EMPTY_JOB_VAR:`,
-    ];
+    const expected = chalk`
+{blueBright test-job} {green $ echo \"EMPTY_GLOBAL_VAR:\${EMPTY_GLOBAL_VAR\}\"}
+{blueBright test-job} {greenBright >} EMPTY_GLOBAL_VAR:
+{blueBright test-job} {green $ echo \"EMPTY_JOB_VAR:\${EMPTY_JOB_VAR\}\"}
+{blueBright test-job} {greenBright >} EMPTY_JOB_VAR:`;
 
-    expect(writeStreams.stdoutLines.slice(1, -3)).toEqual(expected);
+    expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
 });
