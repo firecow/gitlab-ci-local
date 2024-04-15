@@ -251,6 +251,7 @@ export class Argv {
     }
 
     get shellExecutorNoImage (): boolean {
+        // TODO: default to false in 5.x.x
         return this.map.get("shellExecutorNoImage") ?? true;
     }
 }
