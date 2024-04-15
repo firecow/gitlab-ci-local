@@ -1,11 +1,13 @@
 ---
 pipe-gen-job:
+  image: alpine
   stage: build
   variables:
     VAR_FROM_ANOTHER_MOTHER: "echo me i'm generated"
   artifacts:
     paths: [.gitlab-ci-child.yml]
   script:
+    - apk add --no-cache envsubst
     - cat .gitlab-ci.tmpl | envsubst > .gitlab-ci-child.yml
 
 include-trigger:
