@@ -224,7 +224,9 @@ export function globalVariables (gitlabData: any) {
         if (value === null) {
             gitlabData.variables[key] = ""; // variable's values are nullable
         } else if (Utils.isObject(value)) {
-            gitlabData.variables[key] = value["value"];
+            gitlabData.variables[key] = String(value["value"]);
+        } else {
+            gitlabData.variables[key] = String(value);
         }
     }
 }
