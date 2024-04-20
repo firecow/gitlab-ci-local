@@ -7,6 +7,7 @@ import chalk from "chalk";
 import {Parser} from "./parser";
 import axios from "axios";
 import globby from "globby";
+import path from "path";
 
 type ParserIncludesInitOptions = {
     cwd: string;
@@ -184,7 +185,7 @@ export class ParserIncludes {
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
-                await fs.ensureFile(`${cwd}/${target}/${normalizedFile}`);
+                await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
                 await Utils.bash(`
                     cd ${cwd}/${stateDir} \
                         && git clone -n --depth=1 --filter=tree:0 \
