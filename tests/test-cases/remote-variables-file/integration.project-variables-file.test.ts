@@ -6,7 +6,7 @@ import {WhenStatics} from "../../mocks/when-statics";
 
 beforeAll(() => {
     const spyGitArchive = {
-        cmd: "git archive --remote=git@gitlab.com:example/firecow.git main variables.yml | tar -xO variables.yml",
+        cmd: "set -eou pipefail; git archive --remote=git@gitlab.com:example/firecow.git main variables.yml | tar -xO variables.yml",
         returnValue: {stdout: "---\nglobal:\n  SOMEVARIABLE: very-special-value"},
     };
     initSpawnSpy([...WhenStatics.all]);

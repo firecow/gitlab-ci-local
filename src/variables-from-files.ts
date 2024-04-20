@@ -37,7 +37,7 @@ export class VariablesFromFiles {
             const url = match.groups?.url;
             const file = match.groups?.file;
             const ref = match.groups?.ref;
-            const res = await Utils.bash(`git archive --remote=${url} ${ref} ${file} | tar -xO ${file}`, cwd);
+            const res = await Utils.bash(`set -eou pipefail; git archive --remote=${url} ${ref} ${file} | tar -xO ${file}`, cwd);
             remoteFileData = yaml.load(`${res.stdout}`);
         }
 
