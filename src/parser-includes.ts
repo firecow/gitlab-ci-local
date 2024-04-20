@@ -187,15 +187,15 @@ export class ParserIncludes {
                 const ext = "tmp-" + Math.random();
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
                 await Utils.bash(`
-                    cd ${cwd}/${stateDir} \
-                        && git clone -n --depth=1 --filter=tree:0 \
-                                ${remote.schema}://${remote.host}/${project}.git \
-                                ${cwd}/${target}.${ext} \
-                        && cd ${cwd}/${target}.${ext} \
-                        && git sparse-checkout set --no-cone ${normalizedFile} \
-                        && git checkout \
-                        && cd ${cwd}/${stateDir} \
-                        && cp ${cwd}/${target}.${ext}/${normalizedFile}\
+                    cd ${cwd}/${stateDir} \\
+                        && git clone -n --depth=1 --filter=tree:0 \\
+                                ${remote.schema}://${remote.host}/${project}.git \\
+                                ${cwd}/${target}.${ext} \\
+                        && cd ${cwd}/${target}.${ext} \\
+                        && git sparse-checkout set --no-cone ${normalizedFile} \\
+                        && git checkout \\
+                        && cd ${cwd}/${stateDir} \\
+                        && cp ${cwd}/${target}.${ext}/${normalizedFile} \\
                               ${cwd}/${target}/${normalizedFile}
                     `, cwd);
             } else {
