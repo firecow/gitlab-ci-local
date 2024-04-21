@@ -268,7 +268,7 @@ export class Utils {
                     await Utils.bash(`git archive --remote=ssh://git@${domain}/${projectPath}.git ${ref} ${file} > /dev/null`);
                     return true;
                 } catch (e: any) {
-                    if (!e.stderr.includes(`remote: fatal: pathspec '${file}' did not match any files`)) throw e;
+                    if (!e.stderr.includes(`remote: fatal: pathspec '${file}' did not match any files`)) throw new Error(e);
                     return false;
                 }
 
