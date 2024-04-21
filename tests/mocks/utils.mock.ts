@@ -6,6 +6,7 @@ export function initBashSpyReject (spyMocks: {cmd: string; rejection: string}[])
 
     for (const spyMock of spyMocks) {
         when(spyOn).calledWith(spyMock.cmd, expect.any(String)).mockRejectedValue(new Error(spyMock.rejection));
+        when(spyOn).calledWith(spyMock.cmd).mockRejectedValue(new Error(spyMock.rejection));
     }
 }
 
@@ -14,6 +15,7 @@ export function initBashSpy (spyMocks: {cmd: string; returnValue: any}[]) {
 
     for (const spyMock of spyMocks) {
         when(spyOn).calledWith(spyMock.cmd, expect.any(String)).mockResolvedValue(spyMock.returnValue);
+        when(spyOn).calledWith(spyMock.cmd).mockResolvedValue(spyMock.returnValue);
     }
 }
 
@@ -22,5 +24,6 @@ export function initSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[])
 
     for (const spyMock of spyMocks) {
         when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockResolvedValue(spyMock.returnValue);
+        when(spyOn).calledWith(spyMock.cmdArgs).mockResolvedValue(spyMock.returnValue);
     }
 }
