@@ -1,12 +1,12 @@
 import {when} from "jest-when";
 import {Utils} from "../../src/utils";
 
-export function initBashSpyReject (spyMocks: {cmd: string; rejection: string}[]) {
+export function initBashSpyReject (spyMocks: {cmd: string; rejection: any}[]) {
     const spyOn = jest.spyOn(Utils, "bash");
 
     for (const spyMock of spyMocks) {
-        when(spyOn).calledWith(spyMock.cmd, expect.any(String)).mockRejectedValue(new Error(spyMock.rejection));
-        when(spyOn).calledWith(spyMock.cmd).mockRejectedValue(new Error(spyMock.rejection));
+        when(spyOn).calledWith(spyMock.cmd, expect.any(String)).mockRejectedValue(spyMock.rejection);
+        when(spyOn).calledWith(spyMock.cmd).mockRejectedValue(spyMock.rejection);
     }
 }
 
