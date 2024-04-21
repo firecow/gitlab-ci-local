@@ -7,6 +7,7 @@ import chalk from "chalk";
 import {Parser} from "./parser";
 import axios from "axios";
 import globby from "globby";
+import path from "path";
 
 type ParserIncludesInitOptions = {
     cwd: string;
@@ -184,22 +185,22 @@ export class ParserIncludes {
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
-                await fs.ensureFile(`${cwd}/${target}/${normalizedFile}`);
+                await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
                 await Utils.bash(`
-                    cd ${cwd}/${stateDir} \
-                        && git clone -n --depth=1 --filter=tree:0 \
-                                ${remote.schema}://${remote.host}/${project}.git \
-                                ${cwd}/${target}.${ext} \
-                        && cd ${cwd}/${target}.${ext} \
-                        && git sparse-checkout set --no-cone ${normalizedFile} \
-                        && git checkout \
-                        && cd ${cwd}/${stateDir} \
-                        && cp ${cwd}/${target}.${ext}/${normalizedFile}\
+                    cd ${cwd}/${stateDir} \\
+                        && git clone -n --depth=1 --filter=tree:0 \\
+                                ${remote.schema}://${remote.host}/${project}.git \\
+                                ${cwd}/${target}.${ext} \\
+                        && cd ${cwd}/${target}.${ext} \\
+                        && git sparse-checkout set --no-cone ${normalizedFile} \\
+                        && git checkout \\
+                        && cd ${cwd}/${stateDir} \\
+                        && cp ${cwd}/${target}.${ext}/${normalizedFile} \\
                               ${cwd}/${target}/${normalizedFile}
                     `, cwd);
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
-                await Utils.bash(`git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}/`, cwd);
+                await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}/`, cwd);
             }
         } catch (e) {
             throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }\n${e}`});
