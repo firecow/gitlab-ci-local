@@ -162,5 +162,9 @@
     "untracked",
     "uncomitted",
     "gitlab-ci"
+  ],
+  "files":[
+    "src/**/*.js",
+    "src/**/*.json"
   ]
 }
