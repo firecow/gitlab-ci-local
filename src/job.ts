@@ -215,7 +215,7 @@ export class Job {
             assert(Array.isArray(c.paths), chalk`{blue ${this.name}} cache[${i}].paths must be array`);
         }
 
-        for (const [i, s] of Object.entries<any>(this.services)) {
+        for (const [i, s] of Object.entries<any>(this.getServices({}))) {
             assert(s.name, chalk`{blue ${this.name}} services[${i}].name is undefined`);
             assert(!s.command || Array.isArray(s.command), chalk`{blue ${this.name}} services[${i}].command must be an array`);
             assert(!s.entrypoint || Array.isArray(s.entrypoint), chalk`{blue ${this.name}} services[${i}].entrypoint must be an array`);
@@ -299,12 +299,19 @@ export class Job {
         return `gcl-${this.safeJobName}-${this.jobId}-tmp`;
     }
 
-    get services (): Service[] {
+    get hasServices(): boolean {
+        if (this.jobData["services"]) {
+            return true;
+        }
+        return false;
+    }
+
+    public getServices (dotenvVariables: {}): Service[] {
         const services: Service[] = [];
         if (!this.jobData["services"]) return [];
 
         for (const service of Object.values<any>(this.jobData["services"])) {
-            const expanded = Utils.expandVariables({...this._variables, ...service["variables"]});
+            const expanded = Utils.expandVariables({...this._variables, ...dotenvVariables, ...service["variables"]});
             let serviceName = Utils.expandText(service["name"], expanded);
             serviceName = serviceName.includes(":") ? serviceName : `${serviceName}:latest`;
             services.push({
@@ -478,11 +485,11 @@ export class Job {
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
-        if (this.services?.length) {
+        if (this.hasServices) {
             await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
 
             await Promise.all(
-                this.services.map(async (service, serviceIndex) => {
+                this.getServices(reportsDotenvVariables).map(async (service, serviceIndex) => {
                     const serviceName = service.name;
                     await this.pullImage(writeStreams, serviceName);
                     const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service);
@@ -671,7 +678,7 @@ export class Job {
                 dockerCmd += `--user ${imageUser} `;
             }
 
-            if (this.services?.length) {
+            if (this.hasServices) {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
                 dockerCmd += "--network-alias=build ";
             }
