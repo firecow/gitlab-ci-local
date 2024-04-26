@@ -94,6 +94,7 @@ export class Job {
     readonly gitData: GitData;
 
     private readonly _variables: {[key: string]: string} = {};
+    private _dotenvVariables: {[key: string]: string} = {};
     private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
     private _coveragePercent: string | null = null;
@@ -304,7 +305,7 @@ export class Job {
         if (!this.jobData["services"]) return [];
 
         for (const service of Object.values<any>(this.jobData["services"])) {
-            const expanded = Utils.expandVariables({...this._variables, ...service["variables"]});
+            const expanded = Utils.expandVariables({...this._variables, ...this._dotenvVariables, ...service["variables"]});
             let serviceName = Utils.expandText(service["name"], expanded);
             serviceName = serviceName.includes(":") ? serviceName : `${serviceName}:latest`;
             services.push({
@@ -425,8 +426,8 @@ export class Job {
         const argv = this.argv;
         this._startTime = process.hrtime();
         const writeStreams = this.writeStreams;
-        const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
-        const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...reportsDotenvVariables}));
+        this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
+        const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));
         const imageName = this.imageName(expanded);
         const safeJobName = this.safeJobName;
 

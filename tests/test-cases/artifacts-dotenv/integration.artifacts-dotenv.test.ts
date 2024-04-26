@@ -17,3 +17,14 @@ test("artifacts-dotenv <use-image-ref> --needs", async () => {
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
+
+test("artifacts-dotenv <use-service-ref> --needs", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/artifacts-dotenv",
+        job: ["use-service-ref"],
+        needs: true,
+    }, writeStreams);
+
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
+});

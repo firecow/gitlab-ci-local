@@ -4,6 +4,8 @@ build-image-ref:
   needs: []
   script:
     - echo "BUILD_IMAGE_REF=alpine" > build.env
+    - echo "SERVICE_IMAGE_REF=docker.io/library/redis" >> build.env
+    - echo "SERVICE_IMAGE_ALIAS=redis" >> build.env
   artifacts:
     reports: { dotenv: build.env }
 
@@ -13,3 +15,13 @@ use-image-ref:
   image: ${BUILD_IMAGE_REF}
   script:
     - if [ "$BUILD_IMAGE_REF" = "" ]; then exit 1; else cat /etc/os-release; fi
+
+use-service-ref:
+  stage: deploy
+  needs: [build-image-ref]
+  services:
+    - name: $SERVICE_IMAGE_REF
+      alias: $SERVICE_IMAGE_ALIAS
+  image: docker.io/tutum/dnsutils
+  script:
+    - host $SERVICE_IMAGE_ALIAS
