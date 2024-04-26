@@ -19,10 +19,10 @@ export class Validator {
         const validate = ajv.compile(schema);
         const valid = validate(data);
         assert(valid,
-            chalk`
-    Invalid gitlab-ci configuration! It have failed the json schema validation. Dump the following to the pipeline editor to debug:
-    ${yaml.dump(data)}
-    `);
+            chalk`Invalid gitlab-ci configuration! It have failed the json schema validation. Dump the following to the pipeline editor to debug:
+
+${yaml.dump(data)}
+`);
     }
 
     private static needs (jobs: ReadonlyArray<Job>, stages: readonly string[]): string[] {
