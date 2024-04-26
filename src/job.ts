@@ -94,6 +94,7 @@ export class Job {
     readonly gitData: GitData;
 
     private readonly _variables: {[key: string]: string} = {};
+    private _dotenvVariables: {[key: string]: string} = {};
     private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
     private _coveragePercent: string | null = null;
@@ -215,7 +216,7 @@ export class Job {
             assert(Array.isArray(c.paths), chalk`{blue ${this.name}} cache[${i}].paths must be array`);
         }
 
-        for (const [i, s] of Object.entries<any>(this.getServices({}))) {
+        for (const [i, s] of Object.entries<any>(this.services)) {
             assert(s.name, chalk`{blue ${this.name}} services[${i}].name is undefined`);
             assert(!s.command || Array.isArray(s.command), chalk`{blue ${this.name}} services[${i}].command must be an array`);
             assert(!s.entrypoint || Array.isArray(s.entrypoint), chalk`{blue ${this.name}} services[${i}].entrypoint must be an array`);
@@ -299,19 +300,12 @@ export class Job {
         return `gcl-${this.safeJobName}-${this.jobId}-tmp`;
     }
 
-    get hasServices(): boolean {
-        if (this.jobData["services"]) {
-            return true;
-        }
-        return false;
-    }
-
-    public getServices (dotenvVariables: {}): Service[] {
+    get services (): Service[] {
         const services: Service[] = [];
         if (!this.jobData["services"]) return [];
 
         for (const service of Object.values<any>(this.jobData["services"])) {
-            const expanded = Utils.expandVariables({...this._variables, ...dotenvVariables, ...service["variables"]});
+            const expanded = Utils.expandVariables({...this._variables, ...this._dotenvVariables, ...service["variables"]});
             let serviceName = Utils.expandText(service["name"], expanded);
             serviceName = serviceName.includes(":") ? serviceName : `${serviceName}:latest`;
             services.push({
@@ -432,8 +426,8 @@ export class Job {
         const argv = this.argv;
         this._startTime = process.hrtime();
         const writeStreams = this.writeStreams;
-        const reportsDotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
-        const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...reportsDotenvVariables}));
+        this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
+        const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));
         const imageName = this.imageName(expanded);
         const safeJobName = this.safeJobName;
 
@@ -485,11 +479,11 @@ export class Job {
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
-        if (this.hasServices) {
+        if (this.services?.length) {
             await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
 
             await Promise.all(
-                this.getServices(reportsDotenvVariables).map(async (service, serviceIndex) => {
+                this.services.map(async (service, serviceIndex) => {
                     const serviceName = service.name;
                     await this.pullImage(writeStreams, serviceName);
                     const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service);
@@ -678,7 +672,7 @@ export class Job {
                 dockerCmd += `--user ${imageUser} `;
             }
 
-            if (this.hasServices) {
+            if (this.services?.length) {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
                 dockerCmd += "--network-alias=build ";
             }
