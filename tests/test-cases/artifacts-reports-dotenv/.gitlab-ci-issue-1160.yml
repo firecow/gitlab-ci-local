@@ -1,0 +1,35 @@
+---
+multi-dotenv:
+  script:
+    - echo "TEST_MULTI_1=true" > multi1.env
+    - echo "TEST_MULTI_2=true" > multi2.env
+  artifacts:
+    reports:
+      dotenv:
+        - multi1.env
+        - multi2.env
+test-multi-dotenv:
+  needs:
+    - multi-dotenv
+  script:
+    - set -u
+    - echo $TEST_MULTI_1
+    - echo $TEST_MULTI_2
+
+
+multi-dotenv-with-missing-file:
+  script:
+    - echo "TEST_MULTI_1=123" > multi3.env
+  artifacts:
+    reports:
+      dotenv:
+        - multi3.env
+        - multi4.env
+
+test-multi-dotenv-with-missing-file:
+  needs:
+    - multi-dotenv-with-missing-file
+  script:
+    - set -u
+    - echo $TEST_MULTI_1
+    - echo $TEST_MULTI_2

@@ -41,3 +41,28 @@ test("artifacts-reports-dotenv <deploy-shell-noiso> --needs", async () => {
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
+
+test("artifacts-reports-dotenv <test-multi-dotenv> --needs", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/artifacts-reports-dotenv",
+        job: ["test-multi-dotenv"],
+        needs: true,
+        file: ".gitlab-ci-issue-1160.yml",
+    }, writeStreams);
+
+    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
+});
+
+test("artifacts-reports-dotenv <test-multi-dotenv-with-missing-file> --needs", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/artifacts-reports-dotenv",
+        job: ["test-multi-dotenv-with-missing-file"],
+        needs: true,
+        file: ".gitlab-ci-issue-1160.yml",
+    }, writeStreams);
+
+    expect(writeStreams.stderrLines.join("\n")).toContain("artifact reports dotenv 'multi4.env' could not be found");
+    expect(writeStreams.stderrLines.join("\n")).toContain("TEST_MULTI_2: unbound variable");
+});

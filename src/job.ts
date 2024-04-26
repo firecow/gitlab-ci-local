@@ -984,11 +984,16 @@ export class Job {
         }
         cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
         const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, expanded);
-        if (reportDotenv != null) {
-            cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
-            cpCmd += `if [ -f ${reportDotenv} ]; then\n`;
-            cpCmd += `  rsync -Ra ${reportDotenv} ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
-            cpCmd += "fi\n";
+        const reportDotenvs: string[] | null = (typeof reportDotenv === "string") // normalize to string[] for easier handling
+            ? [reportDotenv]
+            : reportDotenv;
+        if (reportDotenvs != null) {
+            reportDotenvs.forEach((reportDotenv) => {
+                cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
+                cpCmd += `if [ -f ${reportDotenv} ]; then\n`;
+                cpCmd += `  rsync -Ra ${reportDotenv} ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
+                cpCmd += "fi\n";
+            });
         }
 
         time = process.hrtime();
@@ -996,8 +1001,12 @@ export class Job {
         await this.copyOut(cpCmd, stateDir, "artifacts", dockerCmdExtras);
         endTime = process.hrtime(time);
 
-        if (reportDotenv != null && !await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) {
-            writeStreams.stderr(chalk`${this.formattedJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
+        if (reportDotenvs != null) {
+            reportDotenvs.forEach(async (reportDotenv) => {
+                if (!await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) {
+                    writeStreams.stderr(chalk`${this.formattedJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
+                }
+            });
         }
 
         const readdir = await fs.readdir(`${cwd}/${stateDir}/artifacts/${safeJobName}`);
