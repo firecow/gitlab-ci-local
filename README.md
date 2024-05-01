@@ -25,6 +25,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [docker-compose-nodejs](./examples/docker-compose-nodejs)
     * [docker-swarm-php](./examples/docker-swarm-php)
     * [docker-in-docker-build](./examples/docker-in-docker-build)
+    * [docker-in-docker with a local registry](./examples/docker-in-docker-build-with-local-registry)
 * [Installation](#installation)
 * [Convenience](#convenience)
     * [CLI options via shell](#cli-options-via-shell)
