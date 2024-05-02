@@ -82,24 +82,37 @@ export class GitData {
 
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
-            const {stdout: gitRemote} = await Utils.spawn(["git", "remote", "-v"], cwd);
-            const gitRemoteMatch = /(?<schema>git|https?)(?::\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>[^ .]+)(?:\.git)?.*/.exec(gitRemote);
+            let gitRemoteMatch;
+            const {stdout: gitRemote} = await Utils.spawn(["bash", "-c", "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin"], cwd);
 
-            assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
+            if (gitRemote.startsWith("http")) {
+                gitRemoteMatch = /(?<schema>https?):\/\/(?:(?<username>\w+):(?<password>[\w-]+)@)?(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7ve8l
+                assert(gitRemoteMatch?.groups != null, "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin");
 
-            this.remote.schema = gitRemoteMatch.groups.schema;
-            if (this.remote.schema === "git") {
-                this.remote.port = gitRemoteMatch.groups.port ?? "22";
+                if (gitRemoteMatch.groups.schema === "https") {
+                    gitRemoteMatch.groups.port = gitRemoteMatch.groups.port ?? "443";
+                } else if (gitRemoteMatch.groups.schema === "http") {
+                    gitRemoteMatch.groups.port = gitRemoteMatch.groups.port ?? "80";
+                }
+            } else if (gitRemote.startsWith("ssh://")) {
+                gitRemoteMatch = /(?<schema>ssh):\/\/(?<username>\w+)@(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7vjq4
+                assert(gitRemoteMatch?.groups != null, "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin");
+
+                gitRemoteMatch.groups.port = gitRemoteMatch.groups.port ?? "22";
+            } else {
+                gitRemoteMatch = /(?<username>\S+)@(?<host>[^:]+):(?<group>\S+)\/(?<project>[^ .]+)\.git/.exec(gitRemote); // regexr.com/7vjoq
+                assert(gitRemoteMatch?.groups != null, "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin");
+
+                gitRemoteMatch.groups.schema = "git";
+                const {stdout: port} = await Utils.bash(`ssh -G ${gitRemoteMatch.groups.username}@${gitRemoteMatch.groups.host} | grep '^port' | awk '{print $2}'`);
+                gitRemoteMatch.groups.port = port;
             }
-            if (this.remote.schema === "https") {
-                this.remote.port = gitRemoteMatch.groups.port ?? "443";
-            }
-            if (this.remote.schema === "http") {
-                this.remote.port = gitRemoteMatch.groups.port ?? "80";
-            }
+
             this.remote.host = gitRemoteMatch.groups.host;
             this.remote.group = gitRemoteMatch.groups.group;
             this.remote.project = gitRemoteMatch.groups.project;
+            this.remote.schema = gitRemoteMatch.groups.schema;
+            this.remote.port = gitRemoteMatch.groups.port;
         } catch (e) {
             if (e instanceof AssertionError) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}\n`);

@@ -7,8 +7,8 @@ import {WhenStatics} from "../../mocks/when-statics";
 test("include-invalid-project-file-ref", async () => {
     try {
         const spyGitRemote = {
-            cmdArgs: ["git", "remote", "-v"],
-            returnValue: {stdout: "origin\tgit@gitlab.com:gcl/test-hest.git (fetch)\norigin\tgit@gitlab.com:gcl/test-hest.git (push)\n"},
+            cmdArgs: ["bash", "-c", "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin"],
+            returnValue: {stdout: "git@gitlab.com:gcl/test-hest.git"},
         };
 
         initSpawnSpy([...WhenStatics.all, spyGitRemote]);
