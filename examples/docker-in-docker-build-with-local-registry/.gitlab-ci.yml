@@ -1,0 +1,19 @@
+---
+# @Description Build alpine
+alpine-image:
+  services:
+    - name: docker:dind
+      command:
+        - --insecure-registry=10.11.22.33:5000
+  needs: []
+  image: docker:latest
+  stage: build
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build
+      --cache-from $CI_REGISTRY_IMAGE:latest
+      --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+      --tag $CI_REGISTRY_IMAGE:latest
+      .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
