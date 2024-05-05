@@ -199,6 +199,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Add extra docker host entries",
             requiresArg: false,
         })
+        .option("pull-policy", {
+            type: "string",
+            description: "Set image pull-policy (always or if-not-present)",
+            requiresArg: false,
+        })
         .option("fetch-includes", {
             type: "boolean",
             description: "Fetch all external includes one more time",

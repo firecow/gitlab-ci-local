@@ -829,14 +829,22 @@ export class Job {
     }
 
     private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
-        try {
-            await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
-        } catch (e: any) {
+        const pullPolicy = this.argv.pullPolicy;
+        const actualPull = async () => {
             const time = process.hrtime();
             await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull]);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
+        };
+
+        if (pullPolicy === "always") {
+            return actualPull();
+        }
+        try {
+            await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
+        } catch (e: any) {
+            await actualPull();
         }
     }
 

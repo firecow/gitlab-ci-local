@@ -112,6 +112,10 @@ export class Argv {
         return typeof val == "string" ? val.split(" ") : val;
     }
 
+    get pullPolicy (): string {
+        return this.map.get("pullPolicy") ?? "if-not-present";
+    }
+
     get remoteVariables (): string {
         return this.map.get("remoteVariables");
     }
