@@ -89,16 +89,17 @@ export class GitData {
                 gitRemoteMatch = /(?<schema>https?):\/\/(?:(\w+):([\w-]+)@)?(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7ve8l
                 assert(gitRemoteMatch?.groups != null, "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin");
 
+                let port = "443";
                 if (gitRemoteMatch.groups.schema === "https") {
-                    this.remote.port = gitRemoteMatch.groups.port ?? "443";
+                    port = gitRemoteMatch.groups.port ?? "443";
                 } else if (gitRemoteMatch.groups.schema === "http") {
-                    this.remote.port = gitRemoteMatch.groups.port ?? "80";
+                    port = gitRemoteMatch.groups.port ?? "80";
                 }
                 this.remote.host = gitRemoteMatch.groups.host;
                 this.remote.group = gitRemoteMatch.groups.group;
                 this.remote.project = gitRemoteMatch.groups.project;
                 this.remote.schema = gitRemoteMatch.groups.schema;
-
+                this.remote.port = port;
             } else if (gitRemote.startsWith("ssh://")) {
                 gitRemoteMatch = /(?<schema>ssh):\/\/(\w+)@(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7vjq4
                 assert(gitRemoteMatch?.groups != null, "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin");
