@@ -113,7 +113,8 @@ export class GitData {
                 gitRemoteMatch = /(?<username>\S+)@(?<host>[^:]+):(?<group>\S+)\/(?<project>[^ .]+)\.git/.exec(gitRemote); // regexr.com/7vjoq
                 assert(gitRemoteMatch?.groups != null, "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin");
 
-                const {stdout: port} = await Utils.bash(`ssh -G ${gitRemoteMatch.groups.username}@${gitRemoteMatch.groups.host} | grep '^port' | awk '{print $2}'`);
+                const {stdout} = await Utils.spawn(["ssh", "-G", `${gitRemoteMatch.groups.username}@${gitRemoteMatch.groups.host}`]);
+                const port = stdout.split("\n").filter((line) => line.startsWith("port "))[0].split(" ")[1];
                 this.remote.host = gitRemoteMatch.groups.host;
                 this.remote.group = gitRemoteMatch.groups.group;
                 this.remote.project = gitRemoteMatch.groups.project;
