@@ -6,7 +6,7 @@ import {WhenStatics} from "../../mocks/when-statics";
 
 beforeAll(() => {
     const spyGitRemote = {
-        cmdArgs: ["bash", "-c", "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin"],
+        cmdArgs: ["git", "remote", "get-url", "origin"],
         returnValue: {stdout: "git@gitlab.com:gcl/custom-home.git"},
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);

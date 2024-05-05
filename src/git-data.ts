@@ -83,11 +83,19 @@ export class GitData {
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
             let gitRemoteMatch;
-            const {stdout: gitRemote} = await Utils.spawn(["bash", "-c", "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin"], cwd);
+            let gitRemote;
+            try {
+                // NOTE: For power user that wishes to customize the remote url
+                const res = await Utils.spawn(["git", "remote", "get-url", "gcl-origin"], cwd);
+                gitRemote = res.stdout;
+            } catch {
+                const res = await Utils.spawn(["git", "remote", "get-url", "origin"], cwd);
+                gitRemote = res.stdout;
+            }
 
             if (gitRemote.startsWith("http")) {
                 gitRemoteMatch = /(?<schema>https?):\/\/(?:(\w+):([\w-]+)@)?(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7ve8l
-                assert(gitRemoteMatch?.groups != null, "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin");
+                assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
 
                 let port = "443";
                 if (gitRemoteMatch.groups.schema === "https") {
@@ -102,7 +110,7 @@ export class GitData {
                 this.remote.port = port;
             } else if (gitRemote.startsWith("ssh://")) {
                 gitRemoteMatch = /(?<schema>ssh):\/\/(\w+)@(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7vjq4
-                assert(gitRemoteMatch?.groups != null, "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin");
+                assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
 
                 this.remote.host = gitRemoteMatch.groups.host;
                 this.remote.group = gitRemoteMatch.groups.group;
@@ -111,7 +119,7 @@ export class GitData {
                 this.remote.port = gitRemoteMatch.groups.port ?? "22";
             } else {
                 gitRemoteMatch = /(?<username>\S+)@(?<host>[^:]+):(?<group>\S+)\/(?<project>[^ .]+)\.git/.exec(gitRemote); // regexr.com/7vjoq
-                assert(gitRemoteMatch?.groups != null, "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin");
+                assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
 
                 const {stdout} = await Utils.spawn(["ssh", "-G", `${gitRemoteMatch.groups.username}@${gitRemoteMatch.groups.host}`]);
                 const port = stdout.split("\n").filter((line) => line.startsWith("port "))[0].split(" ")[1];

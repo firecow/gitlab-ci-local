@@ -27,3 +27,11 @@ export function initSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[])
         when(spyOn).calledWith(spyMock.cmdArgs).mockResolvedValue(spyMock.returnValue);
     }
 }
+
+export function initSpawnSpyReject (spyMocks: {cmdArgs: string[]; rejection: any}[]) {
+    const spyOn = jest.spyOn(Utils, "spawn");
+
+    for (const spyMock of spyMocks) {
+        when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockRejectedValue(spyMock.rejection);
+    }
+}

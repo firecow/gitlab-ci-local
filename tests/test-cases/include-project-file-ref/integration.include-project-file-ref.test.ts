@@ -9,7 +9,7 @@ test("include-project-file-ref <deploy-job>", async () => {
     await fs.rm("tests/test-cases/include-project-file-ref/.gitlab-ci-local", {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
     const spyGitRemote = {
-        cmdArgs: ["bash", "-c", "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin"],
+        cmdArgs: ["git", "remote", "get-url", "origin"],
         returnValue: {stdout: "git@gitlab.com:gcl/test-hest.git"},
     };
     const target = ".gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/HEAD/";

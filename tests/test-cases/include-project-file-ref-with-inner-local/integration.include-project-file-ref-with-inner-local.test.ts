@@ -10,7 +10,7 @@ test("include-project-file-ref-with-inner-local", async () => {
     await fs.rm(`${cwd}/.gitlab-ci-local/`, {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
     const spyGitRemote = {
-        cmdArgs: ["bash", "-c", "git remote get-url gcl-origin 2> /dev/null || git remote get-url origin"],
+        cmdArgs: ["git", "remote", "get-url", "origin"],
         returnValue: {stdout: "git@gitlab.com:gcl/test-hest.git"},
     };
     const target = ".gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/include-string-list/";
