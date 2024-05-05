@@ -1,0 +1,5 @@
+---
+alpine:
+  image: alpine
+  script:
+    - echo "Hey hey"
