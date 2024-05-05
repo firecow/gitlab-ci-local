@@ -677,10 +677,6 @@ export class Job {
                 dockerCmd += "--network-alias=build ";
             }
 
-            for (const network of this.argv.network) {
-                dockerCmd += `--network ${network} `;
-            }
-
             dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;
             dockerCmd += `--volume ${tmpVolumeName}:${this.fileVariablesDir} `;
             dockerCmd += "--workdir /gcl-builds ";
@@ -736,6 +732,11 @@ export class Job {
             dockerCmd += "fi\n\"";
 
             const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
+
+            for (const network of this.argv.network) {
+                await Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`]);
+            }
+
             this._containerId = containerId;
             this._containersToClean.push(this._containerId);
         }
@@ -1163,6 +1164,10 @@ export class Job {
 
         const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
         this._containersToClean.push(containerId);
+
+        for (const network of this.argv.network) {
+            await Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`]);
+        }
 
         await Utils.spawn([this.argv.containerExecutable, "start", `${containerId}`]);
 
