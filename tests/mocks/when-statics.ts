@@ -44,4 +44,11 @@ export class WhenStatics {
         WhenStatics.mockGitCommitShaShort,
     ];
 
+    public static readonly mockGitRemoteHttp = {
+        cmdArgs: ["git", "remote", "-v"],
+        returnValue: {
+            stdout: `origin https://gitlab.com/gcl/test-project.git (fetch)
+origin https://gitlab.com/gcl/test-project.git (push)`,
+        },
+    };
 }

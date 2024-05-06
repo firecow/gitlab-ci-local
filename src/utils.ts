@@ -7,6 +7,7 @@ import execa from "execa";
 import assert from "assert";
 import {CICDVariable} from "./variables-from-files";
 import globby from "globby";
+import axios from "axios";
 
 type RuleResultOpt = {
     cwd: string;
@@ -258,5 +259,30 @@ export class Utils {
 
     static isObject (v: any) {
         return Object.getPrototypeOf(v) === Object.prototype;
+    }
+
+    static async remoteFileExist (file: string, ref: string, domain: string, projectPath: string, protocol: string) {
+        switch (protocol) {
+            case "git":
+                try {
+                    await Utils.bash(`git archive --remote=ssh://git@${domain}/${projectPath}.git ${ref} ${file} > /dev/null`);
+                    return true;
+                } catch (e: any) {
+                    if (!e.stderr.includes(`remote: fatal: pathspec '${file}' did not match any files`)) throw new Error(e);
+                    return false;
+                }
+
+            case "http":
+            case "https": {
+                try {
+                    const {status} = await axios.get(`${protocol}://${domain}/${projectPath}/-/raw/${ref}/${file}`);
+                    return (status === 200);
+                } catch (e) {
+                    return false;
+                }
+            }
+            default:
+                throw new Error(`${protocol} not supported!`);
+        }
     }
 }
