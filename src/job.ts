@@ -839,7 +839,8 @@ export class Job {
         };
 
         if (pullPolicy === "always") {
-            return actualPull();
+            await actualPull();
+            return 
         }
         try {
             await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
