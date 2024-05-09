@@ -53,7 +53,7 @@
     "@types/pretty-hrtime": "1.x.x",
     "@types/source-map-support": "0.5.x",
     "@types/split2": "4.x.x",
-    "@types/node": "18.x.x",
+    "@types/node": "20.x",
     "@types/yargs": "17.x.x",
     "@typescript-eslint/eslint-plugin": "7.x.x",
     "@typescript-eslint/parser": "7.x.x",
