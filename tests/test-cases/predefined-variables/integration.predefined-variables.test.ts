@@ -7,8 +7,8 @@ import {WhenStatics} from "../../mocks/when-statics";
 test("predefined-variables <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     const spyGitRemote = {
-        cmdArgs: ["git", "remote", "-v"],
-        returnValue: {stdout: "origin\tgit@gitlab.com:GCL/predefined-variables.git (fetch)\norigin\tgit@gitlab.com:GCL/predefined-variables.git (push)\n"},
+        cmdArgs: ["git", "remote", "get-url", "origin"],
+        returnValue: {stdout: "git@gitlab.com:GCL/predefined-variables.git"},
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
     await handler({

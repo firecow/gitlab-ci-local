@@ -82,24 +82,53 @@ export class GitData {
 
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
-            const {stdout: gitRemote} = await Utils.spawn(["git", "remote", "-v"], cwd);
-            const gitRemoteMatch = /(?<schema>git|https?)(?::\/\/|@)(?<host>[^:/]*)(:(?<port>\d+)\/|:|\/)(?<group>.*)\/(?<project>[^ .]+)(?:\.git)?.*/.exec(gitRemote);
+            let gitRemoteMatch;
+            let gitRemote;
+            try {
+                // NOTE: For power user that wishes to customize the remote url
+                const res = await Utils.spawn(["git", "remote", "get-url", "gcl-origin"], cwd);
+                gitRemote = res.stdout;
+            } catch {
+                const res = await Utils.spawn(["git", "remote", "get-url", "origin"], cwd);
+                gitRemote = res.stdout;
+            }
 
-            assert(gitRemoteMatch?.groups != null, "git remote -v didn't provide valid matches");
+            if (gitRemote.startsWith("http")) {
+                gitRemoteMatch = /(?<schema>https?):\/\/(?:(\w+):([\w-]+)@)?(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7ve8l
+                assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
 
-            this.remote.schema = gitRemoteMatch.groups.schema;
-            if (this.remote.schema === "git") {
+                let port = "443";
+                if (gitRemoteMatch.groups.schema === "https") {
+                    port = gitRemoteMatch.groups.port ?? "443";
+                } else if (gitRemoteMatch.groups.schema === "http") {
+                    port = gitRemoteMatch.groups.port ?? "80";
+                }
+                this.remote.host = gitRemoteMatch.groups.host;
+                this.remote.group = gitRemoteMatch.groups.group;
+                this.remote.project = gitRemoteMatch.groups.project;
+                this.remote.schema = gitRemoteMatch.groups.schema;
+                this.remote.port = port;
+            } else if (gitRemote.startsWith("ssh://")) {
+                gitRemoteMatch = /(?<schema>ssh):\/\/(\w+)@(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7vjq4
+                assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
+
+                this.remote.host = gitRemoteMatch.groups.host;
+                this.remote.group = gitRemoteMatch.groups.group;
+                this.remote.project = gitRemoteMatch.groups.project;
+                this.remote.schema = gitRemoteMatch.groups.schema;
                 this.remote.port = gitRemoteMatch.groups.port ?? "22";
+            } else {
+                gitRemoteMatch = /(?<username>\S+)@(?<host>[^:]+):(?<group>\S+)\/(?<project>[^ .]+)\.git/.exec(gitRemote); // regexr.com/7vjoq
+                assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
+
+                const {stdout} = await Utils.spawn(["ssh", "-G", `${gitRemoteMatch.groups.username}@${gitRemoteMatch.groups.host}`]);
+                const port = stdout.split("\n").filter((line) => line.startsWith("port "))[0].split(" ")[1];
+                this.remote.host = gitRemoteMatch.groups.host;
+                this.remote.group = gitRemoteMatch.groups.group;
+                this.remote.project = gitRemoteMatch.groups.project;
+                this.remote.schema = "git";
+                this.remote.port = port;
             }
-            if (this.remote.schema === "https") {
-                this.remote.port = gitRemoteMatch.groups.port ?? "443";
-            }
-            if (this.remote.schema === "http") {
-                this.remote.port = gitRemoteMatch.groups.port ?? "80";
-            }
-            this.remote.host = gitRemoteMatch.groups.host;
-            this.remote.group = gitRemoteMatch.groups.group;
-            this.remote.project = gitRemoteMatch.groups.project;
         } catch (e) {
             if (e instanceof AssertionError) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
