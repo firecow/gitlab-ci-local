@@ -220,7 +220,7 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
                 await Utils.bash(`
                     cd ${cwd}/${stateDir} \\
-                        && git clone -n --depth=1 --filter=tree:0 \\
+                        && git clone --branch "${ref}" -n --depth=1 --filter=tree:0 \\
                                 ${remote.schema}://${remote.host}/${project}.git \\
                                 ${cwd}/${target}.${ext} \\
                         && cd ${cwd}/${target}.${ext} \\
