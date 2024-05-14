@@ -11,6 +11,7 @@ import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
 import {CICDVariable} from "./variables-from-files";
+import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues} from "./gitlab-preset";
 
 const CI_PROJECT_DIR = "/gcl-builds";
 interface JobOptions {
@@ -675,6 +676,21 @@ export class Job {
             if (this.services?.length) {
                 dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
                 dockerCmd += "--network-alias=build ";
+            }
+
+            if (this.argv.emulate) {
+                const runnerName: string = this.argv.emulate;
+
+                if (!GitlabRunnerPresetValues.includes(runnerName)) {
+                    throw new Error("Invalid gitlab runner to emulate.");
+                }
+
+                const memoryConfig = GitlabRunnerMemoryPresetValue[runnerName];
+                const cpuConfig = GitlabRunnerCPUsPresetValue[runnerName];
+
+                dockerCmd += `--memory=${memoryConfig}m `;
+                dockerCmd += `--kernel-memory=${memoryConfig}m `;
+                dockerCmd += `--cpus=${cpuConfig} `;
             }
 
             dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;

@@ -12,6 +12,7 @@ import {Executor} from "./executor";
 import {Argv} from "./argv";
 import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job";
+import {GitlabRunnerPresetValues} from "./gitlab-preset";
 
 const jobs: Job[] = [];
 
@@ -256,6 +257,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             type: "string",
             description: "Container MAC address (e.g., aa:bb:cc:dd:ee:ff)",
             requiresArg: false,
+        })
+        .option("emulate", {
+            type: "string",
+            description: "The name of a gitlab hosted runner to emulate",
+            choices: GitlabRunnerPresetValues,
         })
         .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {
             try {
