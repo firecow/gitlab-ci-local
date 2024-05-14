@@ -67,16 +67,15 @@ export class GitData {
     private async initBranchData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
             const {stdout: gitRemoteDefaultBranch} = await Utils.spawn(["git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD"], cwd);
-            const gitRemoteDefaultBranchMatch = /^origin\/(?<default>[^/]+)$/.exec(gitRemoteDefaultBranch);
-
-            assert(gitRemoteDefaultBranchMatch?.groups != null, "git symbolic-ref --short refs/remotes/origin/HEAD didn't provide valid matches");
-            this.branches.default = gitRemoteDefaultBranchMatch.groups.default;
-        } catch (e) {
-            if (e instanceof AssertionError) {
-                writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
-                return;
+            this.branches.default = gitRemoteDefaultBranch.replace("origin/", "");
+        } catch (e: any) {
+            if (e.stderr === "fatal: ref refs/remotes/origin/HEAD is not a symbolic ref") {
+                writeStreams.stderr(chalk`{yellow Unable to retrieve default remote branch, falling back to \`${this.branches.default}\`.
+  The default remote branch can be set via \`git remote set-head origin <default_branch>\`}
+`);
+            } else {
+                throw e;
             }
-            writeStreams.stderr(chalk`{yellow Using fallback branch data}\n`);
         }
     }
 
