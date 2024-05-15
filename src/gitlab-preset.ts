@@ -9,11 +9,11 @@ export enum GitlabRunnerPreset {
 export const GitlabRunnerPresetValues: string[] = Object.values(GitlabRunnerPreset);
 
 export const GitlabRunnerMemoryPresetValue: Record<string, number> = {
-    [GitlabRunnerPreset.AMD_64_SMALL]: 8096,
-    [GitlabRunnerPreset.AMD_64_MEDIUM]: 16384,
-    [GitlabRunnerPreset.AMD_64_LARGE]: 32768,
-    [GitlabRunnerPreset.AMD_64_XLARGE]: 65536,
-    [GitlabRunnerPreset.AMD_64_2XLARGE]: 131072,
+    [GitlabRunnerPreset.AMD_64_SMALL]: 8 * 1024,
+    [GitlabRunnerPreset.AMD_64_MEDIUM]: 16 * 1024,
+    [GitlabRunnerPreset.AMD_64_LARGE]: 32 * 1024,
+    [GitlabRunnerPreset.AMD_64_XLARGE]: 64 * 1024,
+    [GitlabRunnerPreset.AMD_64_2XLARGE]: 128 * 1024,
 };
 
 export const GitlabRunnerCPUsPresetValue: Record<string, number> = {

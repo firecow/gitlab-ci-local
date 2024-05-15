@@ -1,8 +1,7 @@
 import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
-import {initSpawnSpy} from "../../mocks/utils.mock";
+import {initBashSpy, initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
-import {Utils} from "../../../src/utils";
 import {
     GitlabRunnerCPUsPresetValue,
     GitlabRunnerMemoryPresetValue,
@@ -32,7 +31,7 @@ test("--emulate some_unexisting_runner", async () => {
 
 test("should contains memory config when emulating valid runner", async () => {
     // given a spy of the bash utils
-    const bashSpy = jest.spyOn(Utils, "bash").mockResolvedValue({stdout: "abcde12345", stderr: "", exitCode: 0});
+    const bashSpy = initBashSpy([{cmd: expect.any(String), returnValue: {stdout: "abcde12345", stderr: "", exitCode: 0}}]);
 
     // and a WriteStreamsMock
     const writeStreams = new WriteStreamsMock();
@@ -49,7 +48,7 @@ test("should contains memory config when emulating valid runner", async () => {
 
 test("should contains kernel memory config when emulating valid runner", async () => {
     // given a spy of the bash utils
-    const bashSpy = jest.spyOn(Utils, "bash").mockResolvedValue({stdout: "abcde12345", stderr: "", exitCode: 0});
+    const bashSpy = initBashSpy([{cmd: expect.any(String), returnValue: {stdout: "abcde12345", stderr: "", exitCode: 0}}]);
 
     // and a WriteStreamsMock
     const writeStreams = new WriteStreamsMock();
@@ -66,7 +65,7 @@ test("should contains kernel memory config when emulating valid runner", async (
 
 test("should contains cpus config when emulating valid runner", async () => {
     // given a spy of the bash utils
-    const bashSpy = jest.spyOn(Utils, "bash").mockResolvedValue({stdout: "abcde12345", stderr: "", exitCode: 0});
+    const bashSpy = initBashSpy([{cmd: expect.any(String), returnValue: {stdout: "abcde12345", stderr: "", exitCode: 0}}]);
 
     // and a WriteStreamsMock
     const writeStreams = new WriteStreamsMock();
@@ -90,7 +89,7 @@ const gitlabRunnerDataProvider = GitlabRunnerPresetValues.map(name => ({
 describe.each(gitlabRunnerDataProvider)("gitlab runner configuration", (data) => {
     test(`should set the proper values when emulating ${data.name}`, async () => {
         // given a spy of the bash utils
-        const bashSpy = jest.spyOn(Utils, "bash").mockResolvedValue({stdout: "abcde12345", stderr: "", exitCode: 0});
+        const bashSpy = initBashSpy([{cmd: expect.any(String), returnValue: {stdout: "abcde12345", stderr: "", exitCode: 0}}]);
 
         // and a WriteStreamsMock
         const writeStreams = new WriteStreamsMock();
