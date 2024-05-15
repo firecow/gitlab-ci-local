@@ -258,7 +258,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Container MAC address (e.g., aa:bb:cc:dd:ee:ff)",
             requiresArg: false,
         })
-        .option("emulate", {
+        .option("container-emulate", {
             type: "string",
             description: "The name of a gitlab hosted runner to emulate",
             choices: GitlabRunnerPresetValues,

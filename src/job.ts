@@ -678,8 +678,8 @@ export class Job {
                 dockerCmd += "--network-alias=build ";
             }
 
-            if (this.argv.emulate) {
-                const runnerName: string = this.argv.emulate;
+            if (this.argv.containerEmulate) {
+                const runnerName: string = this.argv.containerEmulate;
 
                 if (!GitlabRunnerPresetValues.includes(runnerName)) {
                     throw new Error("Invalid gitlab runner to emulate.");

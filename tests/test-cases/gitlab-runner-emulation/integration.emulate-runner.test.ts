@@ -15,12 +15,12 @@ beforeAll(() => {
     }]);
 });
 
-test("--emulate some_unexisting_runner", async () => {
+test("--container-emulate some_unexisting_runner", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/container-executable",
-            emulate: "some_unexisting_runner",
+            "container-emulate": "some_unexisting_runner",
         }, writeStreams);
 
         expect(true).toBe(false);
@@ -39,7 +39,7 @@ test("should contains memory config when emulating valid runner", async () => {
     // when calling the handler with a valid emulate value
     await handler({
         cwd: "tests/test-cases/container-executable",
-        emulate: "saas-linux-small-amd64",
+        "container-emulate": "saas-linux-small-amd64",
     }, writeStreams);
 
     // then the bash spy should have been called with the memory option
@@ -56,7 +56,7 @@ test("should contains kernel memory config when emulating valid runner", async (
     // when calling the handler with a valid emulate value
     await handler({
         cwd: "tests/test-cases/container-executable",
-        emulate: "saas-linux-small-amd64",
+        "container-emulate": "saas-linux-small-amd64",
     }, writeStreams);
 
     // then the bash spy should have been called with the kernel option
@@ -73,7 +73,7 @@ test("should contains cpus config when emulating valid runner", async () => {
     // when calling the handler with a valid emulate value
     await handler({
         cwd: "tests/test-cases/container-executable",
-        emulate: "saas-linux-small-amd64",
+        "container-emulate": "saas-linux-small-amd64",
     }, writeStreams);
 
     // then the bash spy should have been called with the cpus option
@@ -97,7 +97,7 @@ describe.each(gitlabRunnerDataProvider)("gitlab runner configuration", (data) =>
         // when calling the handler with the given emulated runner
         await handler({
             cwd: "tests/test-cases/container-executable",
-            emulate: data.name,
+            "container-emulate": data.name,
         }, writeStreams);
 
         // then the bash spy should have been called with the memory option
