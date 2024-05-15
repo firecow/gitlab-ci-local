@@ -241,7 +241,7 @@ export class Argv {
     }
 
     get containerEmulate (): string | null {
-        return this.map.get("container-emulate") ?? null;
+        return this.map.get("containerEmulate") ?? null;
     }
 
     get concurrency (): number | null {

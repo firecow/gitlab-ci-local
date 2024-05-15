@@ -260,7 +260,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         })
         .option("container-emulate", {
             type: "string",
-            description: "The name of a gitlab hosted runner to emulate",
+            description: "The name of a gitlab hosted runner to emulate. See here: https://docs.gitlab.com/ee/ci/runners/hosted_runners/linux.html#machine-types-available-for-linux---x86-64",
             choices: GitlabRunnerPresetValues,
         })
         .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {
