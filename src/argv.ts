@@ -240,6 +240,10 @@ export class Argv {
         return this.map.get("containerMacAddress") ?? null;
     }
 
+    get containerEmulate (): string | null {
+        return this.map.get("containerEmulate") ?? null;
+    }
+
     get concurrency (): number | null {
         const concurrency = this.map.get("concurrency");
         if (!concurrency) return null;

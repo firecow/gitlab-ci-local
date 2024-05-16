@@ -17,6 +17,8 @@ export function initBashSpy (spyMocks: {cmd: string; returnValue: any}[]) {
         when(spyOn).calledWith(spyMock.cmd, expect.any(String)).mockResolvedValue(spyMock.returnValue);
         when(spyOn).calledWith(spyMock.cmd).mockResolvedValue(spyMock.returnValue);
     }
+
+    return spyOn;
 }
 
 export function initSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[]) {

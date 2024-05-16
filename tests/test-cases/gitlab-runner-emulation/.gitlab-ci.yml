@@ -1,0 +1,5 @@
+---
+somejob:
+  image: docker.io/library/alpine
+  script:
+    - echo Hello
