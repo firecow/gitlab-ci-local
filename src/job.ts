@@ -749,6 +749,10 @@ export class Job {
         if (!imageName && this.argv.shellIsolation) {
             cmd += `cd ${stateDir}/builds/${safeJobName}/\n`;
         }
+
+        if (imageName) {
+            cmd += "cd /gcl-builds \n";
+        }
         cmd += this.generateScriptCommands(scripts);
 
         cmd += "exit 0\n";
