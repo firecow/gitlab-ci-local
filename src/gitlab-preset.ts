@@ -1,9 +1,9 @@
 export enum GitlabRunnerPreset {
-    AMD_64_SMALL = "saas-linux-small-amd64",
-    AMD_64_MEDIUM = "saas-linux-medium-amd64",
-    AMD_64_LARGE = "saas-linux-large-amd64",
-    AMD_64_XLARGE = "saas-linux-xlarge-amd64",
-    AMD_64_2XLARGE = "saas-linux-2xlarge-amd64",
+    AMD_64_SMALL = "saas-linux-small",
+    AMD_64_MEDIUM = "saas-linux-medium",
+    AMD_64_LARGE = "saas-linux-large",
+    AMD_64_XLARGE = "saas-linux-xlarge",
+    AMD_64_2XLARGE = "saas-linux-2xlarge",
 }
 
 export const GitlabRunnerPresetValues: string[] = Object.values(GitlabRunnerPreset);

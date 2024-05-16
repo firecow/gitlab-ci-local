@@ -39,7 +39,7 @@ test("should contains memory config when emulating valid runner", async () => {
     // when calling the handler with a valid emulate value
     await handler({
         cwd: "tests/test-cases/container-executable",
-        containerEmulate: "saas-linux-small-amd64",
+        containerEmulate: "saas-linux-small",
     }, writeStreams);
 
     // then the bash spy should have been called with the memory option
@@ -56,7 +56,7 @@ test("should contains kernel memory config when emulating valid runner", async (
     // when calling the handler with a valid emulate value
     await handler({
         cwd: "tests/test-cases/container-executable",
-        containerEmulate: "saas-linux-small-amd64",
+        containerEmulate: "saas-linux-small",
     }, writeStreams);
 
     // then the bash spy should have been called with the kernel option
@@ -73,7 +73,7 @@ test("should contains cpus config when emulating valid runner", async () => {
     // when calling the handler with a valid emulate value
     await handler({
         cwd: "tests/test-cases/container-executable",
-        containerEmulate: "saas-linux-small-amd64",
+        containerEmulate: "saas-linux-small",
     }, writeStreams);
 
     // then the bash spy should have been called with the cpus option
