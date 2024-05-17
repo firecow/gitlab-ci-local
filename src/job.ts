@@ -693,6 +693,14 @@ export class Job {
                 dockerCmd += `--cpus=${cpuConfig} `;
             }
 
+            // host and none networks have to be specified using --network,
+            // since they cannot be used with `docker network connect`.
+            for (const network of this.argv.network) {
+                if (["host", "none"].includes(network)) {
+                    dockerCmd += `--network ${network} `;
+                }
+            }
+
             dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;
             dockerCmd += `--volume ${tmpVolumeName}:${this.fileVariablesDir} `;
             dockerCmd += "--workdir /gcl-builds ";
@@ -750,6 +758,10 @@ export class Job {
             const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
 
             for (const network of this.argv.network) {
+                // Special network names that do not work with `docker network connect`
+                if (["host", "none"].includes(network)) {
+                    continue;
+                }
                 await Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`]);
             }
 
@@ -1195,6 +1207,16 @@ export class Job {
         this._containersToClean.push(containerId);
 
         for (const network of this.argv.network) {
+            // Special network names that do not work with `docker network connect`.
+            //
+            // Note that we do not add --network={host,none} to the dockerCmd,
+            // because the service is already part of the gitlab-ci-local-${this.jobId}
+            // network, and at the time of writing docker cannot use both a
+            // user defined and a non-user defined network when creating a
+            // container.
+            if (["host", "none"].includes(network)) {
+                continue;
+            }
             await Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`]);
         }
 
