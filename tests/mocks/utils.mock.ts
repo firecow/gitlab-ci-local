@@ -28,6 +28,8 @@ export function initSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[])
         when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockResolvedValue(spyMock.returnValue);
         when(spyOn).calledWith(spyMock.cmdArgs).mockResolvedValue(spyMock.returnValue);
     }
+
+    return spyOn;
 }
 
 export function initSpawnSpyReject (spyMocks: {cmdArgs: string[]; rejection: any}[]) {

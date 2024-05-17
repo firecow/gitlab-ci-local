@@ -1,0 +1,5 @@
+---
+test-job:
+  image: docker.io/alpine
+  script:
+    - ip r
