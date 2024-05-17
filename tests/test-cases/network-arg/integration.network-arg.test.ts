@@ -64,3 +64,24 @@ test("network-custom", async () => {
     expect(networkSpy).toHaveBeenCalledWith(expect.arrayContaining(["docker", "network", "connect", "custom-network1"]));
     expect(networkSpy).toHaveBeenCalledWith(expect.arrayContaining(["docker", "network", "connect", "custom-network2"]));
 });
+
+test("network-custom-with-service", async () => {
+    const bashSpy = initBashSpy([]);
+
+    const networkSpy = initSpawnSpy([{
+        cmdArgs: expect.arrayContaining(["docker", "network", "connect"]),
+        returnValue: {stdout: "", stderr: "", exitCode: 0},
+    }]);
+
+    const writeStreams = new WriteStreamsMock();
+
+    await handler({
+        cwd: "tests/test-cases/network-arg",
+        job: ["service-job"],
+        network: ["host", "custom-network1", "custom-network2"],
+    }, writeStreams);
+
+    expect(bashSpy).toHaveBeenCalledWith(expect.stringMatching(/--network host/), expect.any(String));
+    expect(networkSpy).toHaveBeenCalledWith(expect.arrayContaining(["docker", "network", "connect", "custom-network1"]));
+    expect(networkSpy).toHaveBeenCalledWith(expect.arrayContaining(["docker", "network", "connect", "custom-network2"]));
+});

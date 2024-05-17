@@ -3,3 +3,9 @@ test-job:
   image: docker.io/alpine
   script:
     - ip r
+
+service-job:
+  image: docker.io/alpine
+  services: [docker.io/redis]
+  script:
+    - ip r
