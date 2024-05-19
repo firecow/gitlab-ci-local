@@ -44,7 +44,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables});
+                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables}, gitData);
                 if (rulesResult.when === "never") {
                     continue;
                 }
@@ -74,7 +74,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables});
+                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables}, gitData);
                 if (rulesResult.when === "never") {
                     continue;
                 }

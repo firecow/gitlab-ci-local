@@ -79,6 +79,10 @@ export class GitData {
         }
     }
 
+    static changedFiles (defaultBranch: string) {
+        return Utils.syncSpawn(["git", "diff", "--name-only", defaultBranch]).stdout.split("\n");
+    }
+
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
             let gitRemoteMatch;
