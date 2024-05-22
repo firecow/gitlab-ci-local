@@ -1,0 +1,8 @@
+---
+alpine:
+  image: alpine
+  rules:
+    - changes:
+        - "foo"
+  script:
+    - echo "Job is running"

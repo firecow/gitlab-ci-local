@@ -11,6 +11,7 @@ import {Mutex} from "./mutex";
 import {Argv} from "./argv";
 import execa from "execa";
 import {CICDVariable} from "./variables-from-files";
+import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues} from "./gitlab-preset";
 
 const CI_PROJECT_DIR = "/gcl-builds";
 interface JobOptions {
@@ -186,7 +187,7 @@ export class Job {
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
-            const ruleResult = Utils.getRulesResult({cwd, rules: this.rules, variables: this._variables}, this.when);
+            const ruleResult = Utils.getRulesResult({cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when);
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
             this._variables = {...globalVariables, ...jobVariables, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
@@ -672,13 +673,27 @@ export class Job {
                 dockerCmd += `--user ${imageUser} `;
             }
 
-            if (this.services?.length) {
-                dockerCmd += `--network gitlab-ci-local-${this.jobId} `;
-                dockerCmd += "--network-alias=build ";
+            if (this.argv.containerEmulate) {
+                const runnerName: string = this.argv.containerEmulate;
+
+                if (!GitlabRunnerPresetValues.includes(runnerName)) {
+                    throw new Error("Invalid gitlab runner to emulate.");
+                }
+
+                const memoryConfig = GitlabRunnerMemoryPresetValue[runnerName];
+                const cpuConfig = GitlabRunnerCPUsPresetValue[runnerName];
+
+                dockerCmd += `--memory=${memoryConfig}m `;
+                dockerCmd += `--kernel-memory=${memoryConfig}m `;
+                dockerCmd += `--cpus=${cpuConfig} `;
             }
 
+            // host and none networks have to be specified using --network,
+            // since they cannot be used with `docker network connect`.
             for (const network of this.argv.network) {
-                dockerCmd += `--network ${network} `;
+                if (["host", "none"].includes(network)) {
+                    dockerCmd += `--network ${network} `;
+                }
             }
 
             dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;
@@ -736,6 +751,18 @@ export class Job {
             dockerCmd += "fi\n\"";
 
             const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
+
+            if (this.services?.length) {
+                await Utils.spawn([this.argv.containerExecutable, "network", "connect", "--alias", "build", `gitlab-ci-local-${this.jobId}`, `${containerId}`]);
+            }
+            for (const network of this.argv.network) {
+                // Special network names that do not work with `docker network connect`
+                if (["host", "none"].includes(network)) {
+                    continue;
+                }
+                await Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`]);
+            }
+
             this._containerId = containerId;
             this._containersToClean.push(this._containerId);
         }
@@ -748,6 +775,10 @@ export class Job {
 
         if (!imageName && this.argv.shellIsolation) {
             cmd += `cd ${stateDir}/builds/${safeJobName}/\n`;
+        }
+
+        if (imageName) {
+            cmd += "cd /gcl-builds \n";
         }
         cmd += this.generateScriptCommands(scripts);
 
@@ -829,14 +860,23 @@ export class Job {
     }
 
     private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
-        try {
-            await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
-        } catch (e: any) {
+        const pullPolicy = this.argv.pullPolicy;
+        const actualPull = async () => {
             const time = process.hrtime();
             await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull]);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
+        };
+
+        if (pullPolicy === "always") {
+            await actualPull();
+            return;
+        }
+        try {
+            await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
+        } catch (e: any) {
+            await actualPull();
         }
     }
 
@@ -1098,7 +1138,7 @@ export class Job {
 
     private async startService (writeStreams: WriteStreams, expanded: {[key: string]: string}, service: Service) {
         const cwd = this.argv.cwd;
-        let dockerCmd = `${this.argv.containerExecutable} create --interactive --network gitlab-ci-local-${this.jobId} `;
+        let dockerCmd = `${this.argv.containerExecutable} create --interactive `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (expanded["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] === "false") {
@@ -1131,10 +1171,6 @@ export class Job {
             aliases.add(serviceAlias);
         }
 
-        for (const alias of aliases) {
-            dockerCmd += `--network-alias=${alias} `;
-        }
-
         for (const [key, val] of Object.entries(expanded)) {
             // Replacing `'` with `'\''` to correctly handle single quotes(if `val` contains `'`) in shell commands
             dockerCmd += `  -e '${key}=${val.replace(/'/g, "'\\''")}' \\\n`;
@@ -1152,6 +1188,14 @@ export class Job {
         dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
         dockerCmd += `${serviceName} `;
 
+        // host and none networks have to be specified using --network,
+        // since they cannot be used with `docker network connect`.
+        for (const network of this.argv.network) {
+            if (["host", "none"].includes(network)) {
+                dockerCmd += `--network ${network} `;
+            }
+        }
+
         if (serviceEntrypoint?.length ?? 0 > 1) {
             serviceEntrypoint?.slice(1).forEach((e) => {
                 dockerCmd += `"${e}" `;
@@ -1163,6 +1207,16 @@ export class Job {
 
         const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
         this._containersToClean.push(containerId);
+
+        const aliasArgs = Array.from(aliases.values()).flatMap((alias) => ["--alias", alias]);
+        await Utils.spawn([this.argv.containerExecutable, "network", "connect", ...aliasArgs, `gitlab-ci-local-${this.jobId}`, `${containerId}`]);
+        for (const network of this.argv.network) {
+            // Special network names that do not work with `docker network connect`.
+            if (["host", "none"].includes(network)) {
+                continue;
+            }
+            await Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`]);
+        }
 
         await Utils.spawn([this.argv.containerExecutable, "start", `${containerId}`]);
 

@@ -3,7 +3,7 @@
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.48.2",
+  "version": "4.49.0",
   "scripts": {
     "pkg-linux": "pkg src/index.js --public -t node18-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
     "pkg-macos": "pkg src/index.js --public -t node18-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
@@ -35,6 +35,7 @@
     "fs-extra": "11.x.x",
     "globby": "11.x.x",
     "js-yaml": "4.x.x",
+    "micromatch": "^4.0.5",
     "object-traversal": "1.x.x",
     "p-map": "4.x.x",
     "pretty-hrtime": "1.x.x",
@@ -50,6 +51,8 @@
     "@types/fs-extra": "11.x.x",
     "@types/jest-when": "3.x.x",
     "@types/js-yaml": "4.x.x",
+    "@types/micromatch": "^4.0.7",
+    "@types/node": "18.x.x",
     "@types/pretty-hrtime": "1.x.x",
     "@types/source-map-support": "0.5.x",
     "@types/split2": "4.x.x",
@@ -163,7 +166,7 @@
     "uncomitted",
     "gitlab-ci"
   ],
-  "files":[
+  "files": [
     "src/**/*.js",
     "src/**/*.json"
   ]

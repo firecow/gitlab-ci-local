@@ -44,7 +44,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables});
+                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables}, gitData);
                 if (rulesResult.when === "never") {
                     continue;
                 }
@@ -74,7 +74,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables});
+                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables}, gitData);
                 if (rulesResult.when === "never") {
                     continue;
                 }
@@ -103,6 +103,23 @@ export class ParserIncludes {
                     });
 
                     includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
+                }
+            } else if (value["component"]) {
+                const {domain, projectPath, componentName, ref} = this.parseIncludeComponent(value["component"]);
+                // converts component to project
+                const files = [`${componentName}.yml`, `${componentName}/template.yml`, null];
+                for (const f of files) {
+                    assert(f !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the file [${files}] must exists in \`${domain}/${projectPath}\``);
+                    if (!(await Utils.remoteFileExist(f, ref, domain, projectPath, gitData.remote.schema))) continue;
+                    const fileDoc = {
+                        include: {
+                            project: projectPath,
+                            file: f,
+                            ref: ref,
+                        },
+                    };
+                    includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
+                    break;
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
@@ -164,6 +181,21 @@ export class ParserIncludes {
         };
     }
 
+    static parseIncludeComponent (component: string): {domain: string; projectPath: string; componentName: string; ref: string} {
+        assert(!component.includes("://"), `This GitLab CI configuration is invalid: component: \`${component}\` should not contain protocol`);
+        // eslint-disable-next-line no-useless-escape
+        const pattern = /(?<domain>[^/\s]+)\/(?<projectPath>.+)\/(?<componentName>[^@]+)@(?<ref>.+)/; // regexr.com/7v7hm
+        const gitRemoteMatch = pattern.exec(component);
+
+        if (gitRemoteMatch?.groups == null) throw new Error(`This is a bug, please create a github issue if this is something you're expecting to work. input: ${component}`);
+        return {
+            domain: gitRemoteMatch.groups["domain"],
+            projectPath: gitRemoteMatch.groups["projectPath"],
+            componentName: `templates/${gitRemoteMatch.groups["componentName"]}`,
+            ref: gitRemoteMatch.groups["ref"],
+        };
+    }
+
     static async downloadIncludeRemote (cwd: string, stateDir: string, url: string, fetchIncludes: boolean): Promise<void> {
         const fsUrl = Utils.fsUrl(url);
         try {
@@ -188,7 +220,7 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
                 await Utils.bash(`
                     cd ${cwd}/${stateDir} \\
-                        && git clone -n --depth=1 --filter=tree:0 \\
+                        && git clone --branch "${ref}" -n --depth=1 --filter=tree:0 \\
                                 ${remote.schema}://${remote.host}/${project}.git \\
                                 ${cwd}/${target}.${ext} \\
                         && cd ${cwd}/${target}.${ext} \\

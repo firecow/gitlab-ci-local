@@ -6,13 +6,17 @@ import base64url from "base64url";
 import execa from "execa";
 import assert from "assert";
 import {CICDVariable} from "./variables-from-files";
+import {GitData} from "./git-data";
 import globby from "globby";
+import micromatch from "micromatch";
+import axios from "axios";
 
 type RuleResultOpt = {
     cwd: string;
     rules: {
         if?: string;
         when?: string;
+        changes?: string[] | {paths: string[]};
         exists?: string[];
         allow_failure?: boolean;
         variables?: {[name: string]: string};
@@ -32,6 +36,10 @@ export class Utils {
 
     static spawn (cmdArgs: string[], cwd = process.cwd()): Promise<{stdout: string; stderr: string}> {
         return execa(cmdArgs[0], cmdArgs.slice(1), {cwd});
+    }
+
+    static syncSpawn (cmdArgs: string[], cwd = process.cwd()): {stdout: string; stderr: string} {
+        return execa.sync(cmdArgs[0], cmdArgs.slice(1), {cwd});
     }
 
     static fsUrl (url: string): string {
@@ -172,33 +180,30 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult (opt: RuleResultOpt, jobWhen: string = "on_success"): {when: string; allowFailure: boolean; variables?: {[name: string]: string}} {
+    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success"): {when: string; allowFailure: boolean; variables?: {[name: string]: string}} {
         let when = "never";
 
         // optional manual jobs allowFailure defaults to true https://docs.gitlab.com/ee/ci/jobs/job_control.html#types-of-manual-jobs
         let allowFailure = jobWhen === "manual";
         let ruleVariable: {[name: string]: string} | undefined;
-        let ruleExists;
 
         for (const rule of opt.rules) {
-            if (Utils.evaluateRuleIf(rule.if || "true", opt.variables)) {
-                when = rule.when ? rule.when : jobWhen;
-                allowFailure = rule.allow_failure ?? allowFailure;
-                ruleVariable = rule.variables;
-                ruleExists = rule.exists;
+            if (!Utils.evaluateRuleIf(rule.if, opt.variables)) continue;
+            if (!Utils.evaluateRuleExist(opt.cwd, rule.exists)) continue;
+            if (!Utils.evaluateRuleChanges(gitData.branches.default, rule.changes)) continue;
 
-                if (ruleExists && !Utils.evaluateRuleExist(opt.cwd, ruleExists)) {
-                    when = "never";
-                }
+            when = rule.when ? rule.when : jobWhen;
+            allowFailure = rule.allow_failure ?? allowFailure;
+            ruleVariable = rule.variables;
 
-                break;
-            }
+            if (when === "never") break; // Early return, will not evaluate the remaining rules
         }
 
         return {when, allowFailure, variables: ruleVariable};
     }
 
-    static evaluateRuleIf (ruleIf: string, envs: {[key: string]: string}) {
+    static evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]: string}): boolean {
+        if (ruleIf === undefined) return true;
         let evalStr = ruleIf;
 
         // Expand all variables
@@ -222,13 +227,31 @@ export class Utils {
         return Boolean(eval(evalStr));
     }
 
-    static evaluateRuleExist (cwd: string, ruleExists: string[]): boolean {
+    static evaluateRuleExist (cwd: string, ruleExists: string[] | undefined): boolean {
+        if (ruleExists === undefined) return true;
         for (const pattern of ruleExists) {
             if (globby.sync(pattern, {dot: true, cwd}).length > 0) {
                 return true;
             }
         }
         return false;
+    }
+
+    static evaluateRuleChanges (defaultBranch: string, ruleChanges: string[] | {paths: string[]} | undefined): boolean {
+        if (ruleChanges === undefined) return true;
+
+        // Normalize rules:changes:paths to rules:changes
+        if (!Array.isArray(ruleChanges)) ruleChanges = ruleChanges.paths;
+
+        // NOTE: https://docs.gitlab.com/ee/ci/yaml/#ruleschanges
+        //       Glob patterns are interpreted with Ruby's [File.fnmatch](https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch)
+        //       with the flags File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB.
+        return micromatch.some(GitData.changedFiles(`origin/${defaultBranch}`), ruleChanges, {
+            nonegate: true,
+            noextglob: true,
+            posix: false,
+            dot: true,
+        });
     }
 
     static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
@@ -258,5 +281,30 @@ export class Utils {
 
     static isObject (v: any) {
         return Object.getPrototypeOf(v) === Object.prototype;
+    }
+
+    static async remoteFileExist (file: string, ref: string, domain: string, projectPath: string, protocol: string) {
+        switch (protocol) {
+            case "git":
+                try {
+                    await Utils.bash(`git archive --remote=ssh://git@${domain}/${projectPath}.git ${ref} ${file} > /dev/null`);
+                    return true;
+                } catch (e: any) {
+                    if (!e.stderr.includes(`remote: fatal: pathspec '${file}' did not match any files`)) throw new Error(e);
+                    return false;
+                }
+
+            case "http":
+            case "https": {
+                try {
+                    const {status} = await axios.get(`${protocol}://${domain}/${projectPath}/-/raw/${ref}/${file}`);
+                    return (status === 200);
+                } catch (e) {
+                    return false;
+                }
+            }
+            default:
+                throw new Error(`${protocol} not supported!`);
+        }
     }
 }

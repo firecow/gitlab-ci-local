@@ -111,6 +111,10 @@ export class Argv {
         return typeof val == "string" ? val.split(" ") : val;
     }
 
+    get pullPolicy (): string {
+        return this.map.get("pullPolicy") ?? "if-not-present";
+    }
+
     get remoteVariables (): string {
         return this.map.get("remoteVariables");
     }
@@ -233,6 +237,10 @@ export class Argv {
 
     get containerMacAddress (): string | null {
         return this.map.get("containerMacAddress") ?? null;
+    }
+
+    get containerEmulate (): string | null {
+        return this.map.get("containerEmulate") ?? null;
     }
 
     get concurrency (): number | null {

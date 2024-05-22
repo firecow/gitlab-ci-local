@@ -13,8 +13,8 @@ export class WhenStatics {
         returnValue: {stdout: "990\n"},
     };
     public static readonly mockGitRemote = {
-        cmdArgs: ["git", "remote", "-v"],
-        returnValue: {stdout: "origin\tgit@gitlab.com:gcl/test-project.git (fetch)\norigin\tgit@gitlab.com:gcl/test-project.git (push)\n"},
+        cmdArgs: ["git", "remote", "get-url", "origin"],
+        returnValue: {stdout: "git@gitlab.com:gcl/test-project.git"},
     };
     public static readonly mockGitDefaultBranch = {
         cmdArgs: ["git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD"],
@@ -44,4 +44,10 @@ export class WhenStatics {
         WhenStatics.mockGitCommitShaShort,
     ];
 
+    public static readonly mockGitRemoteHttp = {
+        cmdArgs: ["git", "remote", "get-url", "origin"],
+        returnValue: {
+            stdout: "https://gitlab.com/gcl/test-project.git",
+        },
+    };
 }

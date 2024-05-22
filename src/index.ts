@@ -12,6 +12,7 @@ import {Executor} from "./executor";
 import {Argv} from "./argv";
 import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job";
+import {GitlabRunnerPresetValues} from "./gitlab-preset";
 
 const jobs: Job[] = [];
 
@@ -199,6 +200,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Add extra docker host entries",
             requiresArg: false,
         })
+        .option("pull-policy", {
+            type: "string",
+            description: "Set image pull-policy (always or if-not-present)",
+            requiresArg: false,
+        })
         .option("fetch-includes", {
             type: "boolean",
             description: "Fetch all external includes one more time",
@@ -251,6 +257,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             type: "string",
             description: "Container MAC address (e.g., aa:bb:cc:dd:ee:ff)",
             requiresArg: false,
+        })
+        .option("container-emulate", {
+            type: "string",
+            description: "The name, without the architecture, of a gitlab hosted runner to emulate. See here: https://docs.gitlab.com/ee/ci/runners/hosted_runners/linux.html#machine-types-available-for-linux---x86-64",
+            choices: GitlabRunnerPresetValues,
         })
         .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {
             try {
