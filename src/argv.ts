@@ -10,8 +10,8 @@ import chalk from "chalk";
 
 async function isInGitRepository () {
     try {
-        const {exitCode} = await Utils.bash("git rev-parse --is-inside-work-tree");
-        return exitCode === 0;
+        await Utils.spawn(["git", "rev-parse", "--is-inside-work-tree"]);
+        return true;
     } catch (err: any) {
         if (err.stderr === "fatal: not a git repository (or any of the parent directories): .git") {
             return false;
@@ -21,7 +21,7 @@ async function isInGitRepository () {
 }
 
 async function gitRootPath () {
-    const {stdout} = await Utils.bash("git rev-parse --show-toplevel");
+    const {stdout} = await Utils.spawn(["git", "rev-parse", "--show-toplevel"]);
     return stdout;
 }
 
