@@ -32,3 +32,16 @@ test("parallel 'test-job [1/2]'", async () => {
         chalk`{blueBright test-job: [2/2]} {greenBright >} 2/2`,
     ]));
 });
+
+test("parallel 'single-job'", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/parallel",
+        job: ["single-job"],
+        shellIsolation: true,
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
+        chalk`{blueBright single-job: [1/1]} {greenBright >} 1/1`,
+    ]));
+});

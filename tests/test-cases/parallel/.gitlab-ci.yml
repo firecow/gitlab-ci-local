@@ -4,3 +4,9 @@ test-job:
   script:
     - echo "$CI_NODE_INDEX/$CI_NODE_TOTAL"
   parallel: 2
+
+single-job:
+  stage: build
+  script:
+    - echo "$CI_NODE_INDEX/$CI_NODE_TOTAL"
+  parallel: 1
