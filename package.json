@@ -35,7 +35,7 @@
     "fs-extra": "11.x.x",
     "globby": "11.x.x",
     "js-yaml": "4.x.x",
-    "micromatch": "^4.0.5",
+    "micromatch": "^4.0.6",
     "object-traversal": "1.x.x",
     "p-map": "4.x.x",
     "pretty-hrtime": "1.x.x",
