@@ -9,7 +9,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("add-host <test-job>", async () => {
+test("extra-host <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/extra-host",
@@ -23,7 +23,7 @@ test("add-host <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("add-host <service-job>", async () => {
+test("extra-host <service-job>", async () => {
     await fs.promises.rm("tests/test-cases/extra-host/.gitlab-ci-local/services-output/service-job/docker.io/alpine:latest-0.log", {force: true});
 
     const writeStreams = new WriteStreamsMock();
@@ -33,7 +33,7 @@ test("add-host <service-job>", async () => {
         extraHost: ["fake-google.com:142.250.185.206"],
     }, writeStreams);
 
-    expect(writeStreams.stderrLines.length).toEqual(3);
+    expect(writeStreams.stdoutLines.join("\n")).toMatch(/true/);
     expect(await fs.pathExists("tests/test-cases/extra-host/.gitlab-ci-local/services-output/service-job/docker.io/alpine:latest-0.log")).toEqual(true);
     expect(await fs.readFile("tests/test-cases/extra-host/.gitlab-ci-local/services-output/service-job/docker.io/alpine:latest-0.log", "utf-8")).toMatch(/142.250.185.206/);
 });

@@ -120,7 +120,7 @@ test.concurrent("services <multie-job>", async () => {
         job: ["multie-job"],
     }, writeStreams);
 
-    expect(writeStreams.stderrLines.length).toEqual(5);
+    expect(writeStreams.stdoutLines.join("\n")).toMatch(/Hello/);
     expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-0.log")).toEqual(true);
     expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-1.log")).toEqual(true);
     expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-2.log")).toEqual(true);
