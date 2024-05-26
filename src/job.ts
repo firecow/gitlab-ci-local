@@ -169,7 +169,9 @@ export class Job {
         predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
         predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 23).replace(/-$/, "").toLowerCase() ?? "";
         predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
-        predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
+        if (opt.nodeIndex !== null) {
+            predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
+        }
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
         predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH"].toLowerCase()}`;

@@ -150,11 +150,13 @@ export class Parser {
             assert(variablesFromFiles != null, "homeVariables must be set");
 
             let nodeIndex = 1;
-            const parallelMatrixVariablesList = parallel.matrixVariablesList(jobData, jobName) ?? [null];
+            const parallelMatrixVariablesList = parallel.matrixVariablesList(jobData, jobName);
             for (const parallelMatrixVariables of parallelMatrixVariablesList) {
                 let matrixJobName = jobName;
                 if (parallelMatrixVariables) {
                     matrixJobName = `${jobName}: [${Object.values(parallelMatrixVariables ?? []).join(",")}]`;
+                } else if (parallel.isPlainParallel(jobData)) {
+                    matrixJobName = `${jobName}: [${nodeIndex}/${parallelMatrixVariablesList.length}]`;
                 }
 
                 const job = new Job({
@@ -169,7 +171,7 @@ export class Parser {
                     gitData,
                     variablesFromFiles,
                     matrixVariables: parallelMatrixVariables,
-                    nodeIndex: parallelMatrixVariables !== null ? nodeIndex : null,
+                    nodeIndex: (jobData.parallel != null) ? nodeIndex : null,
                     nodesTotal: parallelMatrixVariablesList.length,
                     expandVariables: this.expandVariables,
                 });
