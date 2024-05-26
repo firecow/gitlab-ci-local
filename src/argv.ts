@@ -255,7 +255,7 @@ export class Argv {
     }
 
     get enableJsonSchemaValidation (): boolean {
-        return this.map.get("enableJsonSchemaValidation") ?? true;
+        return this.map.get("enableJsonSchemaValidation") ?? false;
     }
 
     get shellExecutorNoImage (): boolean {
