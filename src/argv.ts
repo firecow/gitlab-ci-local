@@ -213,6 +213,7 @@ export class Argv {
     }
 
     get shellIsolation (): boolean {
+        // TODO: default to true in 5.x.x
         return this.map.get("shellIsolation") ?? false;
     }
 
@@ -225,6 +226,7 @@ export class Argv {
     }
 
     get artifactsToSource (): boolean {
+        // TODO: default to false in 5.x.x
         return this.map.get("artifactsToSource") ?? true;
     }
 
@@ -255,6 +257,7 @@ export class Argv {
     }
 
     get jsonSchemaValidation (): boolean {
+        // TODO: default to true in 5.x.x
         return this.map.get("jsonSchemaValidation") ?? false;
     }
 
