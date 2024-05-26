@@ -241,7 +241,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             type: "boolean",
             description: "Whether to enable json schema validation",
             requiresArg: false,
-            default: false,
+            default: true,
         })
         .option("concurrency", {
             type: "number",
