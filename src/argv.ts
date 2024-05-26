@@ -254,8 +254,8 @@ export class Argv {
         return this.map.get("containerExecutable") ?? "docker";
     }
 
-    get enableJsonSchemaValidation (): boolean {
-        return this.map.get("enableJsonSchemaValidation") ?? false;
+    get jsonSchemaValidation (): boolean {
+        return this.map.get("jsonSchemaValidation") ?? false;
     }
 
     get shellExecutorNoImage (): boolean {

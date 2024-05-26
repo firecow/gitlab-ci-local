@@ -66,7 +66,7 @@ export class Parser {
         }
 
         // # Second layer of check for errors that are not caught in Validator.run
-        if (parser.argv.enableJsonSchemaValidation) {
+        if (parser.argv.jsonSchemaValidation) {
             const time = process.hrtime();
             Validator.jsonSchemaValidation(parser.gitlabData);
             writeStreams.stderr(chalk`{grey json schema validated} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
