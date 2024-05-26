@@ -151,11 +151,11 @@ export class Parser {
 
             let nodeIndex = 1;
             const parallelMatrixVariablesList = parallel.matrixVariablesList(jobData, jobName);
-            for (const parallelMatrixVariables of (parallelMatrixVariablesList ?? [null])) {
+            for (const parallelMatrixVariables of parallelMatrixVariablesList) {
                 let matrixJobName = jobName;
                 if (parallelMatrixVariables) {
                     matrixJobName = `${jobName}: [${Object.values(parallelMatrixVariables ?? []).join(",")}]`;
-                } else if (parallelMatrixVariablesList) {
+                } else if (parallel.isPlainParallel(jobData)) {
                     matrixJobName = `${jobName}: [${nodeIndex}/${parallelMatrixVariablesList.length}]`;
                 }
 
@@ -171,8 +171,8 @@ export class Parser {
                     gitData,
                     variablesFromFiles,
                     matrixVariables: parallelMatrixVariables,
-                    nodeIndex: (parallelMatrixVariablesList) ? nodeIndex : null,
-                    nodesTotal: parallelMatrixVariablesList?.length ?? 1,
+                    nodeIndex: (jobData.parallel != null) ? nodeIndex : null,
+                    nodesTotal: parallelMatrixVariablesList.length,
                     expandVariables: this.expandVariables,
                 });
                 const foundStage = this.stages.includes(job.stage);
