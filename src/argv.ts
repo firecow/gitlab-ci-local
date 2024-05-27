@@ -159,6 +159,7 @@ export class Argv {
     }
 
     get umask (): boolean {
+        // TODO: default to false in 5.x.x
         return this.map.get("umask") ?? true;
     }
 
