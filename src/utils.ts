@@ -6,7 +6,7 @@ import base64url from "base64url";
 import execa from "execa";
 import assert from "assert";
 import {CICDVariable} from "./variables-from-files";
-import {GitData} from "./git-data";
+import {GitData, GitSchema} from "./git-data";
 import globby from "globby";
 import micromatch from "micromatch";
 import axios from "axios";
@@ -283,7 +283,7 @@ export class Utils {
         return Object.getPrototypeOf(v) === Object.prototype;
     }
 
-    static async remoteFileExist (file: string, ref: string, domain: string, projectPath: string, protocol: string) {
+    static async remoteFileExist (file: string, ref: string, domain: string, projectPath: string, protocol: GitSchema) {
         switch (protocol) {
             case "ssh":
             case "git":
