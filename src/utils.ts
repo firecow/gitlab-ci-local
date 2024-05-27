@@ -285,6 +285,7 @@ export class Utils {
 
     static async remoteFileExist (file: string, ref: string, domain: string, projectPath: string, protocol: string) {
         switch (protocol) {
+            case "ssh":
             case "git":
                 try {
                     await Utils.bash(`git archive --remote=ssh://git@${domain}/${projectPath}.git ${ref} ${file} > /dev/null`);
