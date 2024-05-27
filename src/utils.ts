@@ -304,8 +304,10 @@ export class Utils {
                     return false;
                 }
             }
-            default:
-                throw new Error(`${protocol} not supported!`);
+            default: {
+                const _exhaustiveCheck: never = protocol;
+                throw new Error(`${_exhaustiveCheck} not supported!`);
+            }
         }
     }
 }
