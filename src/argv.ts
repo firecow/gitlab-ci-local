@@ -7,7 +7,6 @@ import {Utils} from "./utils";
 import {WriteStreams} from "./write-streams";
 import chalk from "chalk";
 
-
 async function isInGitRepository () {
     try {
         await Utils.spawn(["git", "rev-parse", "--is-inside-work-tree"]);
@@ -41,25 +40,21 @@ export class Argv {
 
     static async build (args: any, writeStreams?: WriteStreams) {
         const argv = new Argv(args, writeStreams);
-        await argv.init(args);
-        return argv;
-    }
+        await argv.fallbackCwd(args);
 
-    async init (args: any) {
-        await this.fallbackCwd(args);
+        argv.injectDotenv(`${argv.home}/.gitlab-ci-local/.env`, args);
+        argv.injectDotenv(`${argv.cwd}/.gitlab-ci-local-env`, args);
+
+        if (!argv.shellExecutorNoImage && argv.shellIsolation) {
+            writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --shell-isolation does not work with --no-shell-executor-no-image\n`);
+        }
+        return argv;
     }
 
     private constructor (argv: any, writeStreams?: WriteStreams) {
         this.writeStreams = writeStreams;
         for (const [key, value] of Object.entries(argv)) {
             this.map.set(key, value);
-        }
-
-        this.injectDotenv(`${this.home}/.gitlab-ci-local/.env`, argv);
-        this.injectDotenv(`${this.cwd}/.gitlab-ci-local-env`, argv);
-
-        if (!this.shellExecutorNoImage && this.shellIsolation) {
-            this.writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --shell-isolation does not work with --no-shell-executor-no-image\n`);
         }
     }
 
