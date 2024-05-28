@@ -6,7 +6,9 @@ import base64url from "base64url";
 import execa from "execa";
 import assert from "assert";
 import {CICDVariable} from "./variables-from-files";
+import {GitData, GitSchema} from "./git-data";
 import globby from "globby";
+import micromatch from "micromatch";
 import axios from "axios";
 
 type RuleResultOpt = {
@@ -14,6 +16,7 @@ type RuleResultOpt = {
     rules: {
         if?: string;
         when?: string;
+        changes?: string[] | {paths: string[]};
         exists?: string[];
         allow_failure?: boolean;
         variables?: {[name: string]: string};
@@ -33,6 +36,10 @@ export class Utils {
 
     static spawn (cmdArgs: string[], cwd = process.cwd()): Promise<{stdout: string; stderr: string}> {
         return execa(cmdArgs[0], cmdArgs.slice(1), {cwd});
+    }
+
+    static syncSpawn (cmdArgs: string[], cwd = process.cwd()): {stdout: string; stderr: string} {
+        return execa.sync(cmdArgs[0], cmdArgs.slice(1), {cwd});
     }
 
     static fsUrl (url: string): string {
@@ -173,7 +180,7 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult (opt: RuleResultOpt, jobWhen: string = "on_success"): {when: string; allowFailure: boolean; variables?: {[name: string]: string}} {
+    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success"): {when: string; allowFailure: boolean; variables?: {[name: string]: string}} {
         let when = "never";
 
         // optional manual jobs allowFailure defaults to true https://docs.gitlab.com/ee/ci/jobs/job_control.html#types-of-manual-jobs
@@ -183,6 +190,7 @@ export class Utils {
         for (const rule of opt.rules) {
             if (!Utils.evaluateRuleIf(rule.if, opt.variables)) continue;
             if (!Utils.evaluateRuleExist(opt.cwd, rule.exists)) continue;
+            if (!Utils.evaluateRuleChanges(gitData.branches.default, rule.changes)) continue;
 
             when = rule.when ? rule.when : jobWhen;
             allowFailure = rule.allow_failure ?? allowFailure;
@@ -229,6 +237,23 @@ export class Utils {
         return false;
     }
 
+    static evaluateRuleChanges (defaultBranch: string, ruleChanges: string[] | {paths: string[]} | undefined): boolean {
+        if (ruleChanges === undefined) return true;
+
+        // Normalize rules:changes:paths to rules:changes
+        if (!Array.isArray(ruleChanges)) ruleChanges = ruleChanges.paths;
+
+        // NOTE: https://docs.gitlab.com/ee/ci/yaml/#ruleschanges
+        //       Glob patterns are interpreted with Ruby's [File.fnmatch](https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch)
+        //       with the flags File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB.
+        return micromatch.some(GitData.changedFiles(`origin/${defaultBranch}`), ruleChanges, {
+            nonegate: true,
+            noextglob: true,
+            posix: false,
+            dot: true,
+        });
+    }
+
     static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
         await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
@@ -258,8 +283,9 @@ export class Utils {
         return Object.getPrototypeOf(v) === Object.prototype;
     }
 
-    static async remoteFileExist (file: string, ref: string, domain: string, projectPath: string, protocol: string) {
+    static async remoteFileExist (file: string, ref: string, domain: string, projectPath: string, protocol: GitSchema) {
         switch (protocol) {
+            case "ssh":
             case "git":
                 try {
                     await Utils.bash(`git archive --remote=ssh://git@${domain}/${projectPath}.git ${ref} ${file} > /dev/null`);
@@ -278,8 +304,10 @@ export class Utils {
                     return false;
                 }
             }
-            default:
-                throw new Error(`${protocol} not supported!`);
+            default: {
+                const _exhaustiveCheck: never = protocol;
+                throw new Error(`${_exhaustiveCheck} not supported!`);
+            }
         }
     }
 }

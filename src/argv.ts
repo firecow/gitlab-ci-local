@@ -7,11 +7,10 @@ import {Utils} from "./utils";
 import {WriteStreams} from "./write-streams";
 import chalk from "chalk";
 
-
 async function isInGitRepository () {
     try {
-        const {exitCode} = await Utils.bash("git rev-parse --is-inside-work-tree");
-        return exitCode === 0;
+        await Utils.spawn(["git", "rev-parse", "--is-inside-work-tree"]);
+        return true;
     } catch (err: any) {
         if (err.stderr === "fatal: not a git repository (or any of the parent directories): .git") {
             return false;
@@ -21,7 +20,7 @@ async function isInGitRepository () {
 }
 
 async function gitRootPath () {
-    const {stdout} = await Utils.bash("git rev-parse --show-toplevel");
+    const {stdout} = await Utils.spawn(["git", "rev-parse", "--show-toplevel"]);
     return stdout;
 }
 
@@ -41,25 +40,21 @@ export class Argv {
 
     static async build (args: any, writeStreams?: WriteStreams) {
         const argv = new Argv(args, writeStreams);
-        await argv.init(args);
-        return argv;
-    }
+        await argv.fallbackCwd(args);
 
-    async init (args: any) {
-        await this.fallbackCwd(args);
+        argv.injectDotenv(`${argv.home}/.gitlab-ci-local/.env`, args);
+        argv.injectDotenv(`${argv.cwd}/.gitlab-ci-local-env`, args);
+
+        if (!argv.shellExecutorNoImage && argv.shellIsolation) {
+            writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --shell-isolation does not work with --no-shell-executor-no-image\n`);
+        }
+        return argv;
     }
 
     private constructor (argv: any, writeStreams?: WriteStreams) {
         this.writeStreams = writeStreams;
         for (const [key, value] of Object.entries(argv)) {
             this.map.set(key, value);
-        }
-
-        this.injectDotenv(`${this.home}/.gitlab-ci-local/.env`, argv);
-        this.injectDotenv(`${this.cwd}/.gitlab-ci-local-env`, argv);
-
-        if (!this.shellExecutorNoImage && this.shellIsolation) {
-            this.writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --shell-isolation does not work with --no-shell-executor-no-image\n`);
         }
     }
 
@@ -159,6 +154,7 @@ export class Argv {
     }
 
     get umask (): boolean {
+        // TODO: default to false in 5.x.x
         return this.map.get("umask") ?? true;
     }
 
@@ -213,6 +209,7 @@ export class Argv {
     }
 
     get shellIsolation (): boolean {
+        // TODO: default to true in 5.x.x
         return this.map.get("shellIsolation") ?? false;
     }
 
@@ -225,6 +222,7 @@ export class Argv {
     }
 
     get artifactsToSource (): boolean {
+        // TODO: default to false in 5.x.x
         return this.map.get("artifactsToSource") ?? true;
     }
 
@@ -254,8 +252,9 @@ export class Argv {
         return this.map.get("containerExecutable") ?? "docker";
     }
 
-    get enableJsonSchemaValidation (): boolean {
-        return this.map.get("enableJsonSchemaValidation") ?? true;
+    get jsonSchemaValidation (): boolean {
+        // TODO: default to true in 5.x.x
+        return this.map.get("jsonSchemaValidation") ?? false;
     }
 
     get shellExecutorNoImage (): boolean {
