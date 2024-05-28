@@ -3,6 +3,8 @@ import assert, {AssertionError} from "assert";
 import {WriteStreams} from "./write-streams";
 import chalk from "chalk";
 
+export type GitSchema = "git" | "http" | "https" | "ssh";
+
 export class GitData {
 
     public readonly user = {
@@ -17,7 +19,7 @@ export class GitData {
     };
 
     public readonly remote = {
-        schema: "git",
+        schema: "git" as GitSchema,
         port: "22",
         host: "gitlab.com",
         group: "fallback.group",
@@ -109,7 +111,7 @@ export class GitData {
                 this.remote.host = gitRemoteMatch.groups.host;
                 this.remote.group = gitRemoteMatch.groups.group;
                 this.remote.project = gitRemoteMatch.groups.project;
-                this.remote.schema = gitRemoteMatch.groups.schema;
+                this.remote.schema = gitRemoteMatch.groups.schema as GitSchema;
                 this.remote.port = port;
             } else if (gitRemote.startsWith("ssh://")) {
                 gitRemoteMatch = /(?<schema>ssh):\/\/(\w+)@(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7vjq4
@@ -118,7 +120,7 @@ export class GitData {
                 this.remote.host = gitRemoteMatch.groups.host;
                 this.remote.group = gitRemoteMatch.groups.group;
                 this.remote.project = gitRemoteMatch.groups.project;
-                this.remote.schema = gitRemoteMatch.groups.schema;
+                this.remote.schema = gitRemoteMatch.groups.schema as GitSchema;
                 this.remote.port = gitRemoteMatch.groups.port ?? "22";
             } else {
                 gitRemoteMatch = /(?<username>\S+)@(?<host>[^:]+):(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7vjoq
