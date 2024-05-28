@@ -22,6 +22,6 @@ use-service-ref:
   services:
     - name: $SERVICE_IMAGE_REF
       alias: $SERVICE_IMAGE_ALIAS
-  image: docker.io/tutum/dnsutils
+  image: docker.io/massenz/dnsutils:2.4.0
   script:
     - host $SERVICE_IMAGE_ALIAS

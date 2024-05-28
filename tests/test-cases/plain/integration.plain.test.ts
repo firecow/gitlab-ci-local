@@ -14,6 +14,7 @@ test("plain", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/plain",
+        jsonSchemaValidation: true,
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.length).toEqual(16);

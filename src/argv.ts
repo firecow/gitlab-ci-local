@@ -154,6 +154,7 @@ export class Argv {
     }
 
     get umask (): boolean {
+        // TODO: default to false in 5.x.x
         return this.map.get("umask") ?? true;
     }
 
@@ -208,6 +209,7 @@ export class Argv {
     }
 
     get shellIsolation (): boolean {
+        // TODO: default to true in 5.x.x
         return this.map.get("shellIsolation") ?? false;
     }
 
@@ -220,6 +222,7 @@ export class Argv {
     }
 
     get artifactsToSource (): boolean {
+        // TODO: default to false in 5.x.x
         return this.map.get("artifactsToSource") ?? true;
     }
 
@@ -249,8 +252,9 @@ export class Argv {
         return this.map.get("containerExecutable") ?? "docker";
     }
 
-    get enableJsonSchemaValidation (): boolean {
-        return this.map.get("enableJsonSchemaValidation") ?? true;
+    get jsonSchemaValidation (): boolean {
+        // TODO: default to true in 5.x.x
+        return this.map.get("jsonSchemaValidation") ?? false;
     }
 
     get shellExecutorNoImage (): boolean {

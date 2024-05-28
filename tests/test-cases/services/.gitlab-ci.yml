@@ -22,18 +22,18 @@ test-job:
     - name: docker.io/library/alpine
       entrypoint: ["/bin/sh", "-c"]
       command: ["sh"]
-  image: docker.io/tutum/dnsutils
+  image: docker.io/massenz/dnsutils:2.4.0
   script: host docker.io-library-nginx
 
 build-job:
   stage: build
-  image: docker.io/tutum/dnsutils
+  image: docker.io/massenz/dnsutils:2.4.0
   script: host docker.io-library-nginx
 
 deploy-job:
   services: [docker.io/library/redis]
   stage: deploy
-  image: docker.io/tutum/dnsutils
+  image: docker.io/massenz/dnsutils:2.4.0
   script:
     - host docker.io-library-nginx && exit 1
     - host docker.io-library-redis
@@ -46,7 +46,7 @@ multiport-job:
       variables:
         MYSQL_ROOT_PASSWORD: secret
   stage: deploy
-  image: docker.io/tutum/dnsutils
+  image: docker.io/massenz/dnsutils:2.4.0
   script:
     - host docker.io-library-mysql
 
@@ -55,7 +55,7 @@ alias-job:
     - name: docker.io/library/redis
       alias: redis-alias
   stage: deploy
-  image: docker.io/tutum/dnsutils
+  image: docker.io/massenz/dnsutils:2.4.0
   script:
     - host docker.io-library-redis
     - host redis-alias
@@ -65,7 +65,7 @@ alias-job-multiple-slashes:
     - name: gcr.io/google-containers/redis
       alias: redis-alias
   stage: deploy
-  image: docker.io/tutum/dnsutils
+  image: docker.io/massenz/dnsutils:2.4.0
   script:
     - host gcr.io-google-containers-redis
     - host gcr.io__google-containers__redis
@@ -84,7 +84,7 @@ multie-job:
         ENV_TEST: Service 3
       entrypoint: ["/bin/sh", "-c"]
       command: ["echo $ENV_TEST"]
-  image: docker.io/tutum/dnsutils
+  image: docker.io/massenz/dnsutils:2.4.0
   script:
     - echo "Hello"
 

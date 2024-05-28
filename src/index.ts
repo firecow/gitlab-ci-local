@@ -160,8 +160,6 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             type: "boolean",
             description: "Whether to use shell executor when no image is specified.",
             requiresArg: false,
-            // TODO: default to false in 5.x.x
-            default: true,
         })
         .option("mount-cache", {
             type: "boolean",
@@ -172,8 +170,6 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             type: "boolean",
             description: "Sets docker user to 0:0",
             requiresArg: false,
-            // TODO: default to false in 5.x.x
-            default: true,
         })
         .option("privileged", {
             type: "boolean",
@@ -214,13 +210,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             type: "boolean",
             description: "Copy the generated artifacts into cwd",
             requiresArg: false,
-            default: true,
         })
         .option("cleanup", {
             type: "boolean",
             description: "Remove docker resources after they've been used",
             requiresArg: false,
-            default: true,
         })
         .option("quiet", {
             type: "boolean",
@@ -241,7 +235,6 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             type: "boolean",
             description: "Whether to enable json schema validation",
             requiresArg: false,
-            default: false,
         })
         .option("concurrency", {
             type: "number",
