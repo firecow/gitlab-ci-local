@@ -193,7 +193,7 @@ export class Parser {
 
                 if (this.argv.needs && this.argv.job.length > 0) {
                     const found = this.jobs.find(j => j.baseName === job);
-                    if (found !== undefined && found.needs !== null) {
+                    if (found?.needs) {
                         jobNeedsLength = found.needs.map(f => f.job.length);
                     }
                 }
