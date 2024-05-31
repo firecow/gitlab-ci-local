@@ -4,7 +4,7 @@ alpine-image:
   services:
     - name: docker:dind
       command:
-        - --insecure-registry=10.11.22.33:5000
+        - --insecure-registry=gitlab-ci-local-registry:5000
   needs: []
   image: docker:latest
   stage: build

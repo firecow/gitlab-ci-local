@@ -1,2 +1,2 @@
 ---
-CI_REGISTRY_IMAGE: "10.11.22.33:5000/docker-in-docker-build-with-local-registry"
+CI_REGISTRY: "gitlab-ci-local-registry:5000"
