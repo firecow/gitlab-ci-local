@@ -21,29 +21,6 @@ jobs:
         with:
           strict: true
 
-  pkg-linux-amd64:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          architecture: amd64
-          cache: 'npm'
-      - uses: actions/cache@v4
-        with:
-          path: ${{ env.PKG_CACHE_PATH }}
-          key: pkg-cache-${{ matrix.node-version }}
-      - run: npm ci
-      - run: npm run build
-      - run: npm run pkg-linux
-      - run: node src/index.js --version
-      - run: bin/linux/gitlab-ci-local --version
-      - run: bin/linux/gitlab-ci-local --help
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-amd64-binary
-          path: bin/linux.gz
-
   pkg-all:
     runs-on: ubuntu-latest
     strategy:
@@ -59,6 +36,16 @@ jobs:
           - win
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          architecture: ${{ matrix.node-version }}-${{ matrix.arch }}
+          cache: 'npm'
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PKG_CACHE_PATH }}
+          key: pkg-cache-${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm run build
       - name: Package into node binary
         uses: lando/pkg-action@v2
         with:
