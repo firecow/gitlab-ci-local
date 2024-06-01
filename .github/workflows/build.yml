@@ -21,12 +21,13 @@ jobs:
         with:
           strict: true
 
-  pkg:
+  pkg-linux-amd64:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
+          architecture: amd64
           cache: 'npm'
       - uses: actions/cache@v4
         with:
@@ -38,6 +39,34 @@ jobs:
       - run: node src/index.js --version
       - run: bin/linux/gitlab-ci-local --version
       - run: bin/linux/gitlab-ci-local --help
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-amd64-binary
+          path: bin/linux.gz
+
+
+  pkg-macos-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          architecture: arm64
+          cache: 'npm'
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PKG_CACHE_PATH }}
+          key: pkg-cache-${{ matrix.node-version }}
+      - run: npm ci
+      - run: npm run build
+      - run: npm run pkg-macos
+      - run: node src/index.js --version
+      - run: bin/macos/gitlab-ci-local --version
+      - run: bin/macos/gitlab-ci-local --help
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-arm64-binary
+          path: bin/macos.gz
 
   eslint:
     runs-on: ubuntu-latest
