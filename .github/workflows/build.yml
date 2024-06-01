@@ -44,27 +44,27 @@ jobs:
           name: linux-amd64-binary
           path: bin/linux.gz
 
-
-  pkg-macos-arm64:
+  pkg-all:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch:
+          - x64
+          - arm64
+        node-version:
+          - 18
+        os:
+          - linux
+          - macos
+          - win
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Package into node binary
+        uses: lando/pkg-action@v2
         with:
-          architecture: arm64
-          cache: 'npm'
-      - uses: actions/cache@v4
-        with:
-          path: ${{ env.PKG_CACHE_PATH }}
-          key: pkg-cache-${{ matrix.node-version }}
-      - run: npm ci
-      - run: npm run build
-      - run: npm run pkg-macos-arm64
-      - run: node src/index.js --version
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mac-arm64-binary
-          path: bin/macos.gz
+          entrypoint: src/index.js
+          arch: ${{ matrix.arch }}
+          node-version: ${{ matrix.node-version }}
+          os: ${{ matrix.os }}
 
   eslint:
     runs-on: ubuntu-latest
