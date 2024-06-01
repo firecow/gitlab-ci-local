@@ -40,11 +40,6 @@ jobs:
         with:
           architecture: ${{ matrix.arch }}
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      - uses: actions/cache@v4
-        with:
-          path: ${{ env.PKG_CACHE_PATH }}
-          key: pkg-cache-${{ matrix.node-version }}
       - run: npm ci
       - run: npm run build
       - name: Package into node binary
