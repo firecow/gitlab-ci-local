@@ -29,7 +29,7 @@ jobs:
           - x64
           - arm64
         node-version:
-          - 18
+          - node18
         os:
           - linux
           - macos
@@ -38,7 +38,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          architecture: ${{ matrix.node-version }}-${{ matrix.arch }}
+          architecture: ${{ matrix.arch }}
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - uses: actions/cache@v4
         with:
@@ -51,7 +52,7 @@ jobs:
         with:
           entrypoint: src/index.js
           arch: ${{ matrix.arch }}
-          node-version: ${{ matrix.node-version }}
+          node-version: node${{ matrix.node-version }}
           os: ${{ matrix.os }}
 
   eslint:
