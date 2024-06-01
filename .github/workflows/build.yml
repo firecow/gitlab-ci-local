@@ -58,6 +58,7 @@ jobs:
           - macos
           - win
     steps:
+      - uses: actions/checkout@v4
       - name: Package into node binary
         uses: lando/pkg-action@v2
         with:
