@@ -110,7 +110,7 @@ export class ParserIncludes {
                 const files = [`${componentName}.yml`, `${componentName}/template.yml`, null];
                 for (const f of files) {
                     assert(f !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the file [${files}] must exists in \`${domain}/${projectPath}\``);
-                    if (!(await Utils.remoteFileExist(f, ref, domain, projectPath, gitData.remote.schema))) continue;
+                    if (!(await Utils.remoteFileExist(cwd, f, ref, domain, projectPath, gitData.remote.schema, gitData.remote.port))) continue;
                     const fileDoc = {
                         include: {
                             project: projectPath,
