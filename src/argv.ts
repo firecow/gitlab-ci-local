@@ -253,7 +253,8 @@ export class Argv {
     }
 
     get jsonSchemaValidation (): boolean {
-        return this.map.get("jsonSchemaValidation") ?? true;
+        // TODO: defaults to true in 5.x.x
+        return this.map.get("jsonSchemaValidation") ?? false;
     }
 
     get shellExecutorNoImage (): boolean {
