@@ -396,8 +396,7 @@
             "local": {
               "description": "Relative path from local repository root (`/`) to the `yaml`/`yml` file template. The file must be on the same branch, and does not work across git submodules.",
               "type": "string",
-              "format": "uri-reference",
-              "pattern": "\\.ya?ml$"
+              "format": "uri-reference"
             },
             "rules": {
               "$ref": "#/definitions/includeRules"
@@ -416,8 +415,7 @@
           "properties": {
             "project": {
               "description": "Path to the project, e.g. `group/project`, or `group/sub-group/project` [Learn more](https://docs.gitlab.com/ee/ci/yaml/index.html#includefile).",
-              "type": "string",
-              "pattern": "(?:\\S/\\S|\\$\\S+)"
+              "type": "string"
             },
             "ref": {
               "description": "Branch/Tag/Commit-hash for the target project.",
@@ -427,15 +425,13 @@
               "oneOf": [
                 {
                   "description": "Relative path from project root (`/`) to the `yaml`/`yml` file template.",
-                  "type": "string",
-                  "pattern": "\\.ya?ml$"
+                  "type": "string"
                 },
                 {
                   "description": "List of files by relative path from project root (`/`) to the `yaml`/`yml` file template.",
                   "type": "array",
                   "items": {
-                    "type": "string",
-                    "pattern": "\\.ya?ml$"
+                    "type": "string"
                   }
                 }
               ]
@@ -459,8 +455,7 @@
             "template": {
               "description": "Use a `.gitlab-ci.yml` template as a base, e.g. `Nodejs.gitlab-ci.yml`.",
               "type": "string",
-              "format": "uri-reference",
-              "pattern": "\\.ya?ml$"
+              "format": "uri-reference"
             },
             "rules": {
               "$ref": "#/definitions/includeRules"
@@ -500,8 +495,7 @@
             "remote": {
               "description": "URL to a `yaml`/`yml` template file using HTTP/HTTPS.",
               "type": "string",
-              "format": "uri-reference",
-              "pattern": "^https?://.+\\.ya?ml$"
+              "format": "uri-reference"
             },
             "rules": {
               "$ref": "#/definitions/includeRules"
@@ -1352,8 +1346,7 @@
           "markdownDescription": "Use the `cache:key` keyword to give each cache a unique identifying key. All jobs that use the same cache key use the same cache, including in different pipelines. Must be used with `cache:path`, or nothing is cached. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cachekey).",
           "oneOf": [
             {
-              "type": "string",
-              "pattern": "^(?!.*\\/)^(.*[^.]+.*)$"
+              "type": "string"
             },
             {
               "type": "object",
@@ -1385,8 +1378,7 @@
         "policy": {
           "type": "string",
           "markdownDescription": "Determines the strategy for downloading and updating the cache. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cachepolicy)",
-          "default": "pull-push",
-          "pattern": "pull-push|pull|push|\\$\\w{1,255}"
+          "default": "pull-push"
         },
         "unprotect": {
           "type": "boolean",
@@ -1861,8 +1853,7 @@
                 "url": {
                   "type": "string",
                   "description": "When set, this will expose buttons in various places for the current environment in Gitlab, that will take you to the defined URL.",
-                  "format": "uri",
-                  "pattern": "^(https?://.+|\\$[A-Za-z]+)"
+                  "format": "uri"
                 },
                 "on_stop": {
                   "type": "string",
@@ -1949,8 +1940,7 @@
             "released_at": {
               "type": "string",
               "description": "The date and time when the release is ready. Defaults to the current date and time if not defined. Should be enclosed in quotes and expressed in ISO 8601 format.",
-              "format": "date-time",
-              "pattern": "^(?:[1-9]\\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:Z|[+-][01]\\d:[0-5]\\d)$"
+              "format": "date-time"
             },
             "assets": {
               "type": "object",
@@ -2009,8 +1999,7 @@
         "coverage": {
           "type": "string",
           "description": "Must be a regular expression, optionally but recommended to be quoted, and must be surrounded with '/'. Example: '/Code coverage: \\d+\\.\\d+/'",
-          "format": "regex",
-          "pattern": "^/.+/$"
+          "format": "regex"
         },
         "retry": {
           "$ref": "#/definitions/retry"
@@ -2035,8 +2024,7 @@
               "properties": {
                 "project": {
                   "description": "Path to the project, e.g. `group/project`, or `group/sub-group/project`.",
-                  "type": "string",
-                  "pattern": "(?:\\S/\\S|\\$\\S+)"
+                  "type": "string"
                 },
                 "branch": {
                   "description": "The branch name that a downstream pipeline will use",
@@ -2086,8 +2074,7 @@
                     {
                       "description": "Relative path from local repository root (`/`) to the local YAML file to define the pipeline configuration.",
                       "type": "string",
-                      "format": "uri-reference",
-                      "pattern": "\\.ya?ml$"
+                      "format": "uri-reference"
                     },
                     {
                       "type": "array",
@@ -2102,8 +2089,7 @@
                               "local": {
                                 "description": "Relative path from local repository root (`/`) to the local YAML file to define the pipeline configuration.",
                                 "type": "string",
-                                "format": "uri-reference",
-                                "pattern": "\\.ya?ml$"
+                                "format": "uri-reference"
                               }
                             }
                           },
@@ -2114,8 +2100,7 @@
                               "template": {
                                 "description": "Name of the template YAML file to use in the pipeline configuration.",
                                 "type": "string",
-                                "format": "uri-reference",
-                                "pattern": "\\.ya?ml$"
+                                "format": "uri-reference"
                               }
                             }
                           },
@@ -2126,8 +2111,7 @@
                               "artifact": {
                                 "description": "Relative path to the generated YAML file which is extracted from the artifacts and used as the configuration for triggering the child pipeline.",
                                 "type": "string",
-                                "format": "uri-reference",
-                                "pattern": "\\.ya?ml$"
+                                "format": "uri-reference"
                               },
                               "job": {
                                 "description": "Job name which generates the artifact",
@@ -2145,8 +2129,7 @@
                             "properties": {
                               "project": {
                                 "description": "Path to another private project under the same GitLab instance, like `group/project` or `group/sub-group/project`.",
-                                "type": "string",
-                                "pattern": "(?:\\S/\\S|\\$\\S+)"
+                                "type": "string"
                               },
                               "ref": {
                                 "description": "Branch/Tag/Commit hash for the target project.",
@@ -2156,8 +2139,7 @@
                               "file": {
                                 "description": "Relative path from repository root (`/`) to the pipeline configuration YAML file.",
                                 "type": "string",
-                                "format": "uri-reference",
-                                "pattern": "\\.ya?ml$"
+                                "format": "uri-reference"
                               }
                             },
                             "required": [
@@ -2198,8 +2180,7 @@
             },
             {
               "markdownDescription": "Path to the project, e.g. `group/project`, or `group/sub-group/project`. [Learn More](https://docs.gitlab.com/ee/ci/yaml/index.html#trigger).",
-              "type": "string",
-              "pattern": "(?:\\S/\\S|\\$\\S+)"
+              "type": "string"
             }
           ]
         },
