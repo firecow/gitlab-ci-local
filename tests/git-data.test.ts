@@ -35,6 +35,26 @@ const tests = [
         },
     },
     {
+        input: "git@github.com:firecow/gitlab-ci.local.git", // project can contain .
+        expected: {
+            schema: "git",
+            port: "22",
+            host: "github.com",
+            group: "firecow",
+            project: "gitlab-ci.local",
+        },
+    },
+    {
+        input: "git@github.com:firecow/gitlab-ci-local", // does not need to end with .git
+        expected: {
+            schema: "git",
+            port: "22",
+            host: "github.com",
+            group: "firecow",
+            project: "gitlab-ci-local",
+        },
+    },
+    {
         input: "https://oauth2:glpat-qwerty12345@somegitlab.com/vendor/package.git",
         expected: {
             schema: "https",
