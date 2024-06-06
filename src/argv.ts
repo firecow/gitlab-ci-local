@@ -260,4 +260,8 @@ export class Argv {
         // TODO: default to false in 5.x.x
         return this.map.get("shellExecutorNoImage") ?? true;
     }
+
+    get maximumIncludes (): number {
+        return this.map.get("maximumIncludes") ?? 150; // https://docs.gitlab.com/ee/administration/settings/continuous_integration.html#maximum-includes
+    }
 }
