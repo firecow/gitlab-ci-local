@@ -2,13 +2,12 @@
 include:
   - component: gitlab.com/components/go/full-pipeline@0.3.1
     inputs:
-      stage_format: format
-      stage_build: build
-      stage_test: test
+      stage_format: format-override
+      stage_build: build-override
+      stage_test: test-override
       go_version: latest
 
 stages:
-  - format
-  - build
-  - test
-  - latest
+  - format-override
+  - build-override
+  - test-override

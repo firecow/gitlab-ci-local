@@ -37,22 +37,21 @@ test.concurrent("include-component component (protocol: https)", async () => {
     const expected = `---
 stages:
   - .pre
-  - format
-  - build
-  - test
-  - latest
+  - format-override
+  - build-override
+  - test-override
   - .post
 format-latest:
   image:
     name: golang:latest
-  stage: format
+  stage: format-override
   script:
     - go fmt $(go list ./... | grep -v /vendor/)
     - go vet $(go list ./... | grep -v /vendor/)
 build-latest:
   image:
     name: golang:latest
-  stage: build
+  stage: build-override
   script:
     - mkdir -p mybinaries
     - go build -o mybinaries ./...
@@ -62,7 +61,7 @@ build-latest:
 test-latest:
   image:
     name: golang:latest
-  stage: test
+  stage: test-override
   script:
     - go test -race $(go list ./... | grep -v /vendor/)`;
 

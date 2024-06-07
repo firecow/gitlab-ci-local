@@ -99,6 +99,7 @@ export class ParserIncludes {
                             project: value["project"],
                             file: inner["local"].replace(/^\//, ""),
                             ref: value["ref"],
+                            inputs: inner.inputs || {},
                         };
                     });
 
@@ -116,6 +117,7 @@ export class ParserIncludes {
                             project: projectPath,
                             file: f,
                             ref: ref,
+                            inputs: value.inputs || {},
                         },
                     };
                     includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
