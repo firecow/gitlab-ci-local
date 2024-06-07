@@ -1,6 +1,6 @@
 {
   "require": {
-    "ua-parser/uap-php": "v3.7.0",
+    "ua-parser/uap-php": "v3.8.0",
     "ext-json": "*"
   },
   "require-dev": {
