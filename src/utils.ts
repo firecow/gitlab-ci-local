@@ -196,7 +196,7 @@ export class Utils {
             allowFailure = rule.allow_failure ?? allowFailure;
             ruleVariable = rule.variables;
 
-            if (when === "never") break; // Early return, will not evaluate the remaining rules
+            break; // Early return, will not evaluate the remaining rules
         }
 
         return {when, allowFailure, variables: ruleVariable};
