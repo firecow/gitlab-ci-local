@@ -12,10 +12,7 @@ async function isInGitRepository () {
         await Utils.spawn(["git", "rev-parse", "--is-inside-work-tree"]);
         return true;
     } catch (err: any) {
-        if (err.stderr === "fatal: not a git repository (or any of the parent directories): .git") {
-            return false;
-        }
-        throw err;
+        return false;
     }
 }
 
