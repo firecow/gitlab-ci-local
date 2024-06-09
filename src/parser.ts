@@ -341,13 +341,13 @@ function getInputValue (ctx: any) {
     return inputValue;
 }
 
-function validateInterpolationKey (ctx: any): any {
+function validateInterpolationKey (ctx: any) {
     const {configFilePath, interpolationKey, inputsSpecification} = ctx;
     const invalidInterpolationKeyErr = chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: unknown interpolation key: \`${interpolationKey}\`.`;
     assert(inputsSpecification.spec.inputs?.[interpolationKey] !== undefined, invalidInterpolationKeyErr);
 }
 
-function validateInput (inputValue: any, ctx: any): any {
+function validateInput (inputValue: any, ctx: any) {
     const {configFilePath, interpolationKey, inputsSpecification} = ctx;
 
     const options = inputsSpecification.spec.inputs[interpolationKey]?.options;
