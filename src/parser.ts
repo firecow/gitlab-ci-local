@@ -309,12 +309,11 @@ export class Parser {
                         const inputValue = getInputValue(context);
                         validateInput(inputValue, context);
 
-                        const jsonValue = JSON.stringify(inputValue);
-                        // Unquote string if necessary
-                        if (typeof(jsonValue) == "string" && jsonValue.startsWith("\"") && jsonValue.endsWith("\"")) {
-                            return jsonValue.slice(1, -1);
+                        if (typeof inputValue === "string") {
+                            return JSON.stringify(inputValue) // ensure a valid json string
+                                .slice(1, -1); // remove the surrounding "
                         }
-                        return jsonValue;
+                        return inputValue;
                     });
             return JSON.parse(interpolatedConfigurations);
         }
