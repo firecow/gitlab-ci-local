@@ -19,7 +19,8 @@ import {WriteStreams} from "./write-streams";
 import {init as initPredefinedVariables} from "./predefined-variables";
 
 const MAX_FUNCTIONS = 3;
-const INCLUDE_INPUTS_SUPPORTED_TYPES = ["string", "boolean", "number"];
+const INCLUDE_INPUTS_SUPPORTED_TYPES = ["string", "boolean", "number"] as const;
+export type InputType = typeof INCLUDE_INPUTS_SUPPORTED_TYPES[number];
 
 export class Parser {
 
@@ -357,7 +358,7 @@ function validateInput (ctx: any) {
     }
 }
 
-function parseIncludeInputs (ctx: any): {inputValue: any; inputType: any} {
+function parseIncludeInputs (ctx: any): {inputValue: any; inputType: InputType} {
     validateInterpolationKey(ctx);
     validateInterpolationFunctions(ctx);
     validateInput(ctx);
@@ -371,7 +372,7 @@ function getInputValue (ctx: any) {
     return inputValue;
 }
 
-function getExpectedInputType (ctx: any) {
+function getExpectedInputType (ctx: any): InputType {
     const {interpolationKey, inputsSpecification} = ctx;
     return inputsSpecification.spec.inputs[interpolationKey]?.type || "string";
 }
