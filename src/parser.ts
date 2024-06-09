@@ -19,7 +19,7 @@ import {WriteStreams} from "./write-streams";
 import {init as initPredefinedVariables} from "./predefined-variables";
 
 const MAX_FUNCTIONS = 3;
-const INCLUDE_INPUTS_SUPPORTED_TYPES = ["string", "boolean", "number"] as const;
+const INCLUDE_INPUTS_SUPPORTED_TYPES = ["string", "boolean", "number", "array"] as const;
 export type InputType = typeof INCLUDE_INPUTS_SUPPORTED_TYPES[number];
 
 export class Parser {
@@ -294,8 +294,8 @@ export class Parser {
 
             const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
                 .replace(
-                    /\$\[\[\s*inputs.(?<interpolationKey>[\w-]+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\]/g // regexr.com/7sh15
-                    , (_: string, interpolationKey: string, interpolationFunctions: string) => {
+                    /(?<firstChar>.)(?<secondChar>.)\$\[\[\s*inputs.(?<interpolationKey>[\w-]+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\](?<lastChar>.)/g // https://regexr.com/81c16
+                    , (_: string, firstChar: string, secondChar: string, interpolationKey: string, interpolationFunctions: string, lastChar: string) => {
                         const configFilePath = path.relative(process.cwd(), filePath);
                         const context = {
                             interpolationKey,
@@ -306,11 +306,28 @@ export class Parser {
                         };
 
                         const {inputValue, inputType} = parseIncludeInputs(context);
-                        if (inputType === "string") {
-                            return JSON.stringify(inputValue) // ensure a valid json string
-                                .slice(1, -1); // remove the surrounding "
+                        const firstTwoChar = firstChar + secondChar;
+                        switch (inputType) {
+                            case "array":
+                                if ((secondChar == "\"" && lastChar == "\"") && firstChar != "\\") {
+                                    return firstChar + JSON.stringify(inputValue);
+                                }
+
+                                // NOTE: This behaves slightly differently from gitlab.com. I can't come up with practical use case so i don't think it's worth the effort to mimic this
+                                return firstTwoChar + JSON.stringify(JSON.stringify(inputValue)).slice(1, -1) + lastChar;
+                            case "string":
+                                return firstTwoChar
+                                    + JSON.stringify(inputValue) // ensure a valid json string
+                                        .slice(1, -1) // remove the surrounding "
+                                    + lastChar;
+
+                            case "number":
+                            case "boolean":
+                                return firstTwoChar + inputValue + lastChar;
+
+                            default:
+                                Utils.switchStatementExhaustiveCheck(inputType);
                         }
-                        return inputValue;
                     });
             return JSON.parse(interpolatedConfigurations);
         }
@@ -346,11 +363,13 @@ function validateInput (ctx: any) {
             chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: \`{blueBright ${inputValue}}\` cannot be used because it is not in the list of allowed options.`);
     }
 
-    const type = inputsSpecification.spec.inputs[interpolationKey]?.type || "string";
-    assert(INCLUDE_INPUTS_SUPPORTED_TYPES.includes(type),
-        chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: header:spec:inputs:{blueBright ${interpolationKey}} input type unknown value: {blueBright ${type}}.`);
-    assert(typeof inputValue == type,
-        chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: provided value is not a {blueBright ${type}}.`);
+    const expectedInputType = getExpectedInputType(ctx);
+    assert(INCLUDE_INPUTS_SUPPORTED_TYPES.includes(expectedInputType),
+        chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: header:spec:inputs:{blueBright ${interpolationKey}} input type unknown value: {blueBright ${expectedInputType}}.`);
+
+    const inputType = Array.isArray(inputValue) ? "array" : typeof inputValue;
+    assert(inputType === expectedInputType,
+        chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: provided value is not a {blueBright ${expectedInputType}}.`);
 
     const regex = inputsSpecification.spec.inputs[interpolationKey]?.regex;
     if (regex) {

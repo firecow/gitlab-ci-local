@@ -11,6 +11,11 @@ spec:
       type: boolean
     default_can_be_overwritten:
       default: default
+    default_input_array:
+      type: array
+      default:
+        - alice
+        - bob
 ---
 scan-website:
   script:
@@ -18,3 +23,4 @@ scan-website:
     - echo $[[ inputs.default_input_number ]]
     - echo $[[ inputs.default_input_boolean ]]
     - echo $[[ inputs.default_can_be_overwritten ]]
+    - $[[ inputs.default_input_array ]]
