@@ -206,6 +206,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Fetch all external includes one more time",
             requiresArg: false,
         })
+        .option("maximum-includes", {
+            type: "number",
+            description: "The maximum number of includes",
+            requiresArg: false,
+        })
         .option("artifacts-to-source", {
             type: "boolean",
             description: "Copy the generated artifacts into cwd",
