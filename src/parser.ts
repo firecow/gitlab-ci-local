@@ -59,7 +59,10 @@ export class Parser {
         await parser.init();
         const warnings = await Validator.run(parser.jobs, parser.stages);
         const parsingTime = process.hrtime(time);
-        writeStreams.stderr(chalk`{grey parsing and downloads finished} in {grey ${prettyHrtime(parsingTime)}}\n`);
+        const pathToExpandedGitLabCi = path.join(argv.cwd, argv.stateDir, "expanded-gitlab-ci.yml");
+        fs.mkdirpSync(path.join(argv.cwd, argv.stateDir));
+        fs.writeFileSync(pathToExpandedGitLabCi, yaml.dump(parser.gitlabData));
+        writeStreams.stderr(chalk`{grey parsing and downloads finished in ${prettyHrtime(parsingTime)}. Expanded gitlab-ci written to ${pathToExpandedGitLabCi}}\n`);
 
         for (const warning of warnings) {
             writeStreams.stderr(chalk`{yellow ${warning}}\n`);
@@ -68,8 +71,8 @@ export class Parser {
         // # Second layer of check for errors that are not caught in Validator.run
         if (parser.argv.jsonSchemaValidation) {
             const time = process.hrtime();
-            Validator.jsonSchemaValidation(parser.gitlabData);
-            writeStreams.stderr(chalk`{grey json schema validated} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+            Validator.jsonSchemaValidation(pathToExpandedGitLabCi, parser.gitlabData);
+            writeStreams.stderr(chalk`{grey json schema validated in ${prettyHrtime(process.hrtime(time))}}\n`);
         }
         return parser;
     }

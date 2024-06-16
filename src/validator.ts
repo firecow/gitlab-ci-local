@@ -2,11 +2,10 @@ import Ajv from "ajv";
 import {Job} from "./job";
 import assert from "assert";
 import chalk from "chalk";
-import * as yaml from "js-yaml";
 import schema from "./schema";
 
 export class Validator {
-    static jsonSchemaValidation (data: any) {
+    static jsonSchemaValidation (pathToExpandedGitLabCi: string, data: object) {
         const ajv = new Ajv({
             verbose: true,
             allErrors: true,
@@ -17,7 +16,23 @@ export class Validator {
         });
         const validate = ajv.compile(schema);
         const valid = validate(data);
-        assert(valid, chalk`Invalid gitlab-ci configuration! It have failed the json schema validation. Dump the following to the pipeline editor to debug: ${yaml.dump(data)}`);
+        if (!valid) {
+            console.error(`Invalid .gitlab-ci.yml configuration.
+\t* Dump the content of this to the GitLab pipeline editor to debug: ${pathToExpandedGitLabCi}
+\t* Use --json-schema-validation=false to disable schema validation
+`);
+            console.error("Validation errors:");
+            const MAX_ERRORS = 5;
+            const errors = ajv.errorsText(validate.errors, {
+                separator: "\n",
+                dataVar: "",
+            }).split("\n").map((line: string) => `\t${line.startsWith("/") ? line.slice(1) : line}`);
+            console.error(errors.splice(0, MAX_ERRORS).join("\n"));
+            if (errors.length > MAX_ERRORS) {
+                console.error(`\t... and ${errors.length - 5} more`);
+            }
+            process.exit(1);
+        }
     }
 
     private static needs (jobs: ReadonlyArray<Job>, stages: readonly string[]): string[] {
@@ -79,6 +94,22 @@ export class Validator {
         }
     }
 
+    /**
+     * These jobs named are reserved keywords in GitLab CI but does not prevent the pipeline from running
+     * https://github.com/firecow/gitlab-ci-local/issues/1263
+     * @param jobsNames
+     * @private
+     */
+    private static potentialIllegalJobName (jobsNames: string[]) {
+        const warnings = [];
+        for (const jobName of jobsNames) {
+            if (new Set(["types", "true", "false", "nil"]).has(jobName)) {
+                warnings.push(`Job name "${jobName}" is a reserved keyword. (https://docs.gitlab.com/ee/ci/jobs/#job-name-limitations)`);
+            }
+        }
+        return warnings;
+    }
+
     private static scriptBlank (jobs: ReadonlyArray<Job>) {
         for (const job of jobs) {
             if (job.trigger) continue; // Jobs with trigger are allowed to have empty script
@@ -102,6 +133,7 @@ export class Validator {
         warnings.push(...this.needs(jobs, stages));
         this.dependencies(jobs, stages);
         this.dependenciesContainment(jobs);
+        warnings.push(...this.potentialIllegalJobName(jobs.map(j => j.baseName)));
         return warnings;
     }
 }
