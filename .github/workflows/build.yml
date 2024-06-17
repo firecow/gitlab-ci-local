@@ -71,7 +71,7 @@ jobs:
       - run: npm ci
       - name: Run Tests
         run: FORCE_COLOR=1 npx jest --coverage --testTimeout 90000 --verbose
-      - uses: sonarsource/sonarcloud-github-action@v2.2
+      - uses: sonarsource/sonarcloud-github-action@v2.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
