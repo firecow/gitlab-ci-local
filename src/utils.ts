@@ -305,12 +305,17 @@ export class Utils {
                 }
             }
             default: {
-                const _exhaustiveCheck: never = protocol;
-                throw new Error(`${_exhaustiveCheck} not supported!`);
+                Utils.switchStatementExhaustiveCheck(protocol);
             }
         }
     }
+
     static trimSuffix (str: string, suffix: string) {
         return str.endsWith(suffix) ? str.slice(0, -suffix.length) : str;
+    }
+
+    static switchStatementExhaustiveCheck (param: never): never {
+        // https://dev.to/babak/exhaustive-type-checking-with-typescript-4l3f
+        throw new Error(`Unhandled case ${param}`);
     }
 }

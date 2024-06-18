@@ -109,7 +109,9 @@ scan-website:
     - echo string
     - echo 1
     - echo true
-    - echo overwrite default value`;
+    - echo overwrite default value
+    - alice
+    - bob`;
 
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
@@ -131,6 +133,21 @@ scan-website:
     - echo baz`;
 
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
+test("include-inputs inputs validation for array", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/include-inputs/input-templates/type-validation/array",
+            preview: true,
+        }, writeStreams);
+        expect(true).toBe(false);
+    } catch (e) {
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
+        expect(e.message).toContain("This GitLab CI configuration is invalid:");
+        expect(e.message).toContain(chalk`\`{blueBright array_input}\` input: provided value is not a {blueBright array}.`);
+    }
 });
 
 test("include-inputs inputs validation for string", async () => {
@@ -163,6 +180,29 @@ test("include-inputs inputs validation for number", async () => {
     }
 
     throw new Error("Error is expected but not thrown/caught");
+});
+
+test("include-inputs for type array", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-inputs/input-templates/types/array",
+        preview: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+test_job:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  script:
+    - ls`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
 test("include-inputs inputs validation for boolean", async () => {

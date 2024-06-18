@@ -1,0 +1,9 @@
+---
+spec:
+  inputs:
+    array_input:
+      type: array
+---
+scan-website:
+  script:
+    - echo $[[ inputs.array_input]]
