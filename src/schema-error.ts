@@ -78,7 +78,8 @@ export const betterAjvErrors = ({
     return definedErrors.map((error) => {
         const path = basePath ? pointerToDotNotation(basePath + error.instancePath) : pointerToDotNotation(error.instancePath).substring(1);
         const prop = getLastSegment(error.instancePath);
-        const defaultMessage = `${prop ? `property '${prop}'` : path} ${cleanAjvMessage(error.message as string)}`;
+        const propertyMessage = prop ? `property '${prop}'` : path;
+        const defaultMessage = `${propertyMessage} ${(cleanAjvMessage(error.message as string))}`;
 
         let validationError: ValidationError;
 
