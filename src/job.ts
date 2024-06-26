@@ -431,7 +431,7 @@ export class Job {
 
         const argv = this.argv;
         this._startTime = process.hrtime();
-        this._variables["CI_JOB_STARTED_AT"] = new Date().toISOString();
+        this._variables["CI_JOB_STARTED_AT"] = new Date().toISOString().split(".")[0] + "Z";
         const writeStreams = this.writeStreams;
         this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
         const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));

@@ -30,7 +30,7 @@ export class GitData {
         REF_NAME: "main",
         SHA: "0000000000000000000000000000000000000000",
         SHORT_SHA: "00000000",
-        TIMESTAMP: new Date().toISOString(),
+        TIMESTAMP: new Date().toISOString().split(".")[0] + "Z",
     };
 
     static async init (cwd: string, writeStreams: WriteStreams): Promise<GitData> {
