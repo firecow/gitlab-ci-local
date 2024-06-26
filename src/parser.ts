@@ -62,7 +62,7 @@ export class Parser {
         const pathToExpandedGitLabCi = path.join(argv.cwd, argv.stateDir, "expanded-gitlab-ci.yml");
         fs.mkdirpSync(path.join(argv.cwd, argv.stateDir));
         fs.writeFileSync(pathToExpandedGitLabCi, yaml.dump(parser.gitlabData));
-        writeStreams.stderr(chalk`{grey parsing and downloads finished in ${prettyHrtime(parsingTime)}. Expanded gitlab-ci written to ${pathToExpandedGitLabCi}}\n`);
+        writeStreams.stderr(chalk`{grey parsing and downloads finished in ${prettyHrtime(parsingTime)}.}\n`);
 
         for (const warning of warnings) {
             writeStreams.stderr(chalk`{yellow ${warning}}\n`);

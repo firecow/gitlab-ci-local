@@ -5,6 +5,7 @@ import chalk from "chalk";
 import schema from "./schema";
 import {betterAjvErrors} from "./schema-error";
 import {WriteStreams} from "./write-streams";
+import terminalLink from "terminal-link";
 
 const MAX_ERRORS = 5;
 
@@ -38,9 +39,9 @@ export class Validator {
                 writeStreams.stderr(`\t... and ${errors.length - MAX_ERRORS} more`);
             }
 
-            writeStreams.stderr(chalk`\nFor further troubleshooting, consider either of the following:
-\t• Copy the content of {blueBright ${pathToExpandedGitLabCi}} to the pipeline editor (https://docs.gitlab.com/ee/ci/pipeline_editor/) to debug it
-\t• Use --json-schema-validation=false to disable schema validation
+            writeStreams.stderr(chalk`\n\nFor further troubleshooting, consider either of the following:
+\t• Copy the content of {blueBright ${terminalLink(".gitlab-ci-local/expanded-gitlab-ci.yml", pathToExpandedGitLabCi)}} to the ${terminalLink("pipeline editor", "https://docs.gitlab.com/ee/ci/pipeline_editor/")} to debug it
+\t• Use --json-schema-validation=false to disable schema validation (not recommended)
 `);
             process.exit(1);
         }
