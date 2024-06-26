@@ -76,7 +76,7 @@ export class Job {
     readonly name: string;
     readonly baseName: string;
     readonly dependencies: string[] | null;
-    readonly environment?: {name: string; url: string | null};
+    readonly environment?: {name: string; url: string | null; deployment_tier: string | null; action: string | null};
     readonly jobId: number;
     readonly rules?: {
         if: string;
@@ -169,6 +169,9 @@ export class Job {
         predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
         predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 23).replace(/-$/, "").toLowerCase() ?? "";
         predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
+        predefinedVariables["CI_ENVIRONMENT_TIER"] = this.environment?.deployment_tier ?? "";
+        predefinedVariables["CI_ENVIRONMENT_ACTION"] = this.environment?.action ?? "";
+
         if (opt.nodeIndex !== null) {
             predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
         }
@@ -428,6 +431,7 @@ export class Job {
 
         const argv = this.argv;
         this._startTime = process.hrtime();
+        this._variables["CI_JOB_STARTED_AT"] = new Date().toISOString();
         const writeStreams = this.writeStreams;
         this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
         const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));

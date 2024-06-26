@@ -30,7 +30,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         .parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
         .version(packageJson["version"])
-        .wrap(yargs.terminalWidth())
+        .wrap(yargs.terminalWidth?.())
         .command({
             handler: async (argv) => {
                 try {
