@@ -4,11 +4,16 @@ import assert from "assert";
 import chalk from "chalk";
 import schema from "./schema";
 import {betterAjvErrors} from "./schema-error";
+import {WriteStreams} from "./write-streams";
 
 const MAX_ERRORS = 5;
 
 export class Validator {
-    static jsonSchemaValidation (pathToExpandedGitLabCi: string, data: object) {
+    static jsonSchemaValidation ({writeStreams, pathToExpandedGitLabCi, gitLabCiConfig}: {
+        writeStreams: WriteStreams;
+        pathToExpandedGitLabCi: string;
+        gitLabCiConfig: object;
+    }) {
         const ajv = new Ajv({
             verbose: true,
             allErrors: true,
@@ -18,22 +23,22 @@ export class Validator {
             keywords: ["markdownDescription"],
         });
         const validate = ajv.compile(schema);
-        const valid = validate(data);
+        const valid = validate(gitLabCiConfig);
         if (!valid) {
-            console.error(chalk`Invalid .gitlab-ci.yml configuration`);
+            writeStreams.stderr(chalk`Invalid .gitlab-ci.yml configuration`);
 
             const betterErrors = betterAjvErrors({
-                data,
+                data: gitLabCiConfig,
                 errors: validate.errors,
             });
 
             const errors = betterErrors.map((e => (chalk`\t• {redBright ${e.message}} at {blueBright ${e.path}}`)));
-            console.error(errors.splice(0, MAX_ERRORS).join("\n"));
+            writeStreams.stderr(errors.splice(0, MAX_ERRORS).join("\n"));
             if (errors.length > MAX_ERRORS) {
-                console.error(`\t... and ${errors.length - MAX_ERRORS} more`);
+                writeStreams.stderr(`\t... and ${errors.length - MAX_ERRORS} more`);
             }
 
-            console.error(chalk`\nWhat to do next:
+            writeStreams.stderr(chalk`\nWhat to do next:
 \t• Copy the content of {blueBright ${pathToExpandedGitLabCi}} to the pipeline editor (https://docs.gitlab.com/ee/ci/pipeline_editor/) to debug it
 \t• Use --json-schema-validation=false to disable schema validation
 `);

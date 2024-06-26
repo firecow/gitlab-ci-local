@@ -71,7 +71,11 @@ export class Parser {
         // # Second layer of check for errors that are not caught in Validator.run
         if (parser.argv.jsonSchemaValidation) {
             const time = process.hrtime();
-            Validator.jsonSchemaValidation(pathToExpandedGitLabCi, parser.gitlabData);
+            Validator.jsonSchemaValidation({
+                writeStreams,
+                pathToExpandedGitLabCi,
+                gitLabCiConfig: parser.gitlabData,
+            });
             writeStreams.stderr(chalk`{grey json schema validated in ${prettyHrtime(process.hrtime(time))}}\n`);
         }
         return parser;
