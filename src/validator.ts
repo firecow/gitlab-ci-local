@@ -3,6 +3,9 @@ import {Job} from "./job";
 import assert from "assert";
 import chalk from "chalk";
 import schema from "./schema";
+import {betterAjvErrors} from "./schema-error";
+
+const MAX_ERRORS = 5;
 
 export class Validator {
     static jsonSchemaValidation (pathToExpandedGitLabCi: string, data: object) {
@@ -17,20 +20,23 @@ export class Validator {
         const validate = ajv.compile(schema);
         const valid = validate(data);
         if (!valid) {
-            console.error(`Invalid .gitlab-ci.yml configuration.
-\t* Dump the content of this to the GitLab pipeline editor to debug: ${pathToExpandedGitLabCi}
-\t* Use --json-schema-validation=false to disable schema validation
-`);
-            console.error("Validation errors:");
-            const MAX_ERRORS = 5;
-            const errors = ajv.errorsText(validate.errors, {
-                separator: "\n",
-                dataVar: "",
-            }).split("\n").map((line: string) => `\t${line.startsWith("/") ? line.slice(1) : line}`);
+            console.error(chalk`Invalid .gitlab-ci.yml configuration`);
+
+            const betterErrors = betterAjvErrors({
+                data,
+                errors: validate.errors,
+            });
+
+            const errors = betterErrors.map((e => (chalk`\t• {redBright ${e.message}} at {blueBright ${e.path}}`)));
             console.error(errors.splice(0, MAX_ERRORS).join("\n"));
             if (errors.length > MAX_ERRORS) {
-                console.error(`\t... and ${errors.length - 5} more`);
+                console.error(`\t... and ${errors.length - MAX_ERRORS} more`);
             }
+
+            console.error(chalk`\nWhat to do next:
+\t• Copy the content of {blueBright ${pathToExpandedGitLabCi}} to the pipeline editor (https://docs.gitlab.com/ee/ci/pipeline_editor/) to debug it
+\t• Use --json-schema-validation=false to disable schema validation
+`);
             process.exit(1);
         }
     }
