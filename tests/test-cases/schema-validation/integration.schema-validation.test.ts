@@ -17,7 +17,7 @@ test("schema validation <test-job>", async () => {
     await handler({
         cwd: "tests/test-cases/schema-validation",
     }, writeStreams);
-    expect(writeStreams.stderrLines.join("\n")).toContain("Invalid .gitlab-ci.yml configuration");
+    expect(writeStreams.stderrLines.join("\n")).toContain("Invalid .gitlab-ci.yml configuration!");
     expect(writeStreams.stderrLines.join("\n")).toContain("property 'script' must not have fewer than 1 characters");
     expect(writeStreams.stderrLines.join("\n")).toContain("'when' property must be one of [on_success, on_failure, always, never, manual, delayed] (found manual2)");
     expect(writeStreams.stderrLines.join("\n")).toContain("'junit' property type must be string");

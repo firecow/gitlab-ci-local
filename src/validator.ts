@@ -25,7 +25,7 @@ export class Validator {
         const validate = ajv.compile(schema);
         const valid = validate(gitLabCiConfig);
         if (!valid) {
-            writeStreams.stderr(chalk`Invalid .gitlab-ci.yml configuration`);
+            writeStreams.stderr(chalk`Invalid .gitlab-ci.yml configuration!\n`);
 
             const betterErrors = betterAjvErrors({
                 data: gitLabCiConfig,
@@ -38,7 +38,7 @@ export class Validator {
                 writeStreams.stderr(`\t... and ${errors.length - MAX_ERRORS} more`);
             }
 
-            writeStreams.stderr(chalk`\nWhat to do next:
+            writeStreams.stderr(chalk`\nFor further troubleshooting, consider either of the following:
 \t• Copy the content of {blueBright ${pathToExpandedGitLabCi}} to the pipeline editor (https://docs.gitlab.com/ee/ci/pipeline_editor/) to debug it
 \t• Use --json-schema-validation=false to disable schema validation
 `);
