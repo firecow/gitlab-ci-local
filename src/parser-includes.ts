@@ -113,12 +113,20 @@ export class ParserIncludes {
                     assert(f !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the file [${files}] must exists in \`${domain}/${projectPath}\``);
 
                     const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && ref === gitData.commit.SHA;
-                    if (isLocalComponent && await fs.pathExists(`${cwd}/${f}`)) {
-                        const content = await Parser.loadYaml(`${cwd}/${f}`, {inputs: value.inputs || {}}, expandVariables);
+                    if (isLocalComponent) {
+                        const localComponentInclude = `${cwd}/${f}`;
+                        if (!(await fs.pathExists(localComponentInclude))) {
+                            continue;
+                        }
+
+                        const content = await Parser.loadYaml(localComponentInclude, {inputs: value.inputs || {}}, expandVariables);
                         includeDatas = includeDatas.concat(await this.init(content, opts));
                         break;
                     } else {
-                        if (!(await Utils.remoteFileExist(cwd, f, ref, domain, projectPath, gitData.remote.schema, gitData.remote.port))) continue;
+                        if (!(await Utils.remoteFileExist(cwd, f, ref, domain, projectPath, gitData.remote.schema, gitData.remote.port))) {
+                            continue;
+                        }
+
                         const fileDoc = {
                             include: {
                                 project: projectPath,
