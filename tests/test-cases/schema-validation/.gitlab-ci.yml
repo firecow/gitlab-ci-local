@@ -1,0 +1,8 @@
+---
+test:
+  when: 'manual2'
+  artifacts:
+    reports:
+      junit: 3
+  script: ''
+  data: "test"

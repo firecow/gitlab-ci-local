@@ -2,11 +2,19 @@ import Ajv from "ajv";
 import {Job} from "./job";
 import assert from "assert";
 import chalk from "chalk";
-import * as yaml from "js-yaml";
 import schema from "./schema";
+import {betterAjvErrors} from "./schema-error";
+import {WriteStreams} from "./write-streams";
+import terminalLink from "terminal-link";
+
+const MAX_ERRORS = 5;
 
 export class Validator {
-    static jsonSchemaValidation (data: any) {
+    static jsonSchemaValidation ({writeStreams, pathToExpandedGitLabCi, gitLabCiConfig}: {
+        writeStreams: WriteStreams;
+        pathToExpandedGitLabCi: string;
+        gitLabCiConfig: object;
+    }) {
         const ajv = new Ajv({
             verbose: true,
             allErrors: true,
@@ -16,8 +24,27 @@ export class Validator {
             keywords: ["markdownDescription"],
         });
         const validate = ajv.compile(schema);
-        const valid = validate(data);
-        assert(valid, chalk`Invalid gitlab-ci configuration! It have failed the json schema validation. Dump the following to the pipeline editor to debug: ${yaml.dump(data)}`);
+        const valid = validate(gitLabCiConfig);
+        if (!valid) {
+            writeStreams.stderr(chalk`Invalid .gitlab-ci.yml configuration!\n`);
+
+            const betterErrors = betterAjvErrors({
+                data: gitLabCiConfig,
+                errors: validate.errors,
+            });
+
+            const errors = betterErrors.map((e => (chalk`\t• {redBright ${e.message}} at {blueBright ${e.path}}`)));
+            writeStreams.stderr(errors.splice(0, MAX_ERRORS).join("\n"));
+            if (errors.length > MAX_ERRORS) {
+                writeStreams.stderr(`\t... and ${errors.length - MAX_ERRORS} more`);
+            }
+
+            writeStreams.stderr(chalk`\n\nFor further troubleshooting, consider either of the following:
+\t• Copy the content of {blueBright ${terminalLink(".gitlab-ci-local/expanded-gitlab-ci.yml", pathToExpandedGitLabCi)}} to the ${terminalLink("pipeline editor", "https://docs.gitlab.com/ee/ci/pipeline_editor/")} to debug it
+\t• Use --json-schema-validation=false to disable schema validation (not recommended)
+`);
+            process.exit(1);
+        }
     }
 
     private static needs (jobs: ReadonlyArray<Job>, stages: readonly string[]): string[] {
@@ -79,6 +106,22 @@ export class Validator {
         }
     }
 
+    /**
+     * These jobs named are reserved keywords in GitLab CI but does not prevent the pipeline from running
+     * https://github.com/firecow/gitlab-ci-local/issues/1263
+     * @param jobsNames
+     * @private
+     */
+    private static potentialIllegalJobName (jobsNames: string[]) {
+        const warnings = [];
+        for (const jobName of jobsNames) {
+            if (new Set(["types", "true", "false", "nil"]).has(jobName)) {
+                warnings.push(`Job name "${jobName}" is a reserved keyword. (https://docs.gitlab.com/ee/ci/jobs/#job-name-limitations)`);
+            }
+        }
+        return warnings;
+    }
+
     private static scriptBlank (jobs: ReadonlyArray<Job>) {
         for (const job of jobs) {
             if (job.trigger) continue; // Jobs with trigger are allowed to have empty script
@@ -102,6 +145,7 @@ export class Validator {
         warnings.push(...this.needs(jobs, stages));
         this.dependencies(jobs, stages);
         this.dependenciesContainment(jobs);
+        warnings.push(...this.potentialIllegalJobName(jobs.map(j => j.baseName)));
         return warnings;
     }
 }

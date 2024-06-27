@@ -68,8 +68,8 @@ export class Job {
 
     static readonly illegalJobNames = new Set([
         "include", "local_configuration", "image", "services",
-        "stages", "types", "before_script", "default",
-        "after_script", "variables", "cache", "workflow",
+        "stages", "before_script", "default",
+        "after_script", "variables", "cache", "workflow", "page:deploy",
     ]);
 
     readonly argv: Argv;

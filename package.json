@@ -34,12 +34,14 @@
     "fs-extra": "11.x.x",
     "globby": "11.x.x",
     "js-yaml": "4.x.x",
+    "jsonpointer": "^5.0.1",
     "micromatch": "^4.0.7",
     "object-traversal": "1.x.x",
     "p-map": "4.x.x",
     "pretty-hrtime": "1.x.x",
     "source-map-support": "0.5.x",
     "split2": "4.x.x",
+    "terminal-link": "2.1.1",
     "yargs": "17.x.x"
   },
   "devDependencies": {
