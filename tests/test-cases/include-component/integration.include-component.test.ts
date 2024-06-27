@@ -67,3 +67,24 @@ test-latest:
 
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
+
+test.concurrent("include-component local component", async () => {
+    const writeStreams = new WriteStreamsMock();
+
+    await handler({
+        cwd: "tests/test-cases/include-component/component-local",
+        preview: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - my-stage
+  - .post
+component-job:
+  script:
+    - echo job 1
+  stage: my-stage`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});

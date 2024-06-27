@@ -30,6 +30,7 @@ export function init ({gitData, argv}: PredefinedVariablesOpts): {[name: string]
         CI_COMMIT_DESCRIPTION: "More commit text",
         CI_DEFAULT_BRANCH: gitData.branches.default,
         CI_PIPELINE_SOURCE: "push",
+        CI_SERVER_FQDN: `${gitData.remote.host}`,
         CI_SERVER_HOST: `${gitData.remote.host}`,
         CI_SERVER_PORT: `${gitData.remote.port}`,
         CI_SERVER_URL: `https://${gitData.remote.host}:443`,

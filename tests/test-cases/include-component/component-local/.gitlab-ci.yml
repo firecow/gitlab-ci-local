@@ -1,0 +1,8 @@
+---
+include:
+  - component: $CI_SERVER_HOST/$CI_PROJECT_PATH/my-component@$CI_COMMIT_SHA
+    inputs:
+      stage: my-stage
+
+stages:
+  - my-stage

@@ -108,18 +108,35 @@ export class ParserIncludes {
                 const {domain, projectPath, componentName, ref} = this.parseIncludeComponent(value["component"]);
                 // converts component to project
                 const files = [`${componentName}.yml`, `${componentName}/template.yml`, null];
+
                 for (const f of files) {
                     assert(f !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the file [${files}] must exists in \`${domain}/${projectPath}\``);
-                    if (!(await Utils.remoteFileExist(cwd, f, ref, domain, projectPath, gitData.remote.schema, gitData.remote.port))) continue;
-                    const fileDoc = {
-                        include: {
-                            project: projectPath,
-                            file: f,
-                            ref: ref,
-                            inputs: value.inputs || {},
-                        },
-                    };
-                    includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
+
+                    const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && ref === gitData.commit.SHA;
+                    if (isLocalComponent) {
+                        const localComponentInclude = `${cwd}/${f}`;
+                        if (!(await fs.pathExists(localComponentInclude))) {
+                            continue;
+                        }
+
+                        const content = await Parser.loadYaml(localComponentInclude, {inputs: value.inputs || {}}, expandVariables);
+                        includeDatas = includeDatas.concat(await this.init(content, opts));
+                        break;
+                    } else {
+                        if (!(await Utils.remoteFileExist(cwd, f, ref, domain, projectPath, gitData.remote.schema, gitData.remote.port))) {
+                            continue;
+                        }
+
+                        const fileDoc = {
+                            include: {
+                                project: projectPath,
+                                file: f,
+                                ref: ref,
+                                inputs: value.inputs || {},
+                            },
+                        };
+                        includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
+                    }
                     break;
                 }
             } else if (value["template"]) {
