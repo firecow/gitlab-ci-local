@@ -15,6 +15,10 @@ deploy-stage-job:
     - echo ${CI_ENVIRONMENT_SLUG}
     - echo ${CI_ENVIRONMENT_NAME}
     - echo ${CI_ENVIRONMENT_URL}
+    - echo ${CI_ENVIRONMENT_ACTION}
+    - echo ${CI_ENVIRONMENT_TIER}
   environment:
     name: Stage Domain
     url: http://stage.domain.com
+    action: stop
+    deployment_tier: production

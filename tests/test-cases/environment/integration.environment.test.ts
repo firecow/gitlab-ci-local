@@ -33,6 +33,8 @@ test("environment <deploy-stage-job>", async () => {
         chalk`{blueBright deploy-stage-job} {greenBright >} stage-domain`,
         chalk`{blueBright deploy-stage-job} {greenBright >} Stage Domain`,
         chalk`{blueBright deploy-stage-job} {greenBright >} http://stage.domain.com`,
+        chalk`{blueBright deploy-stage-job} {greenBright >} stop`,
+        chalk`{blueBright deploy-stage-job} {greenBright >} production`,
         chalk`{blueBright deploy-stage-job} environment: \{ name: {bold Stage Domain}, url: {bold http://stage.domain.com} \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
