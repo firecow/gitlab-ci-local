@@ -59,6 +59,13 @@ export class Parser {
         const time = process.hrtime();
         await parser.init();
         const warnings = await Validator.run(parser.jobs, parser.stages);
+
+        for (const job of parser.jobs) {
+            if (job.artifacts === null) {
+                job.deleteArtifacts();
+            }
+        }
+
         const parsingTime = process.hrtime(time);
         const pathToExpandedGitLabCi = path.join(argv.cwd, argv.stateDir, "expanded-gitlab-ci.yml");
         fs.mkdirpSync(path.join(argv.cwd, argv.stateDir));
