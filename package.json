@@ -41,7 +41,7 @@
     "pretty-hrtime": "1.x.x",
     "source-map-support": "0.5.x",
     "split2": "4.x.x",
-    "terminal-link": "2.1.1",
+    "terminal-link": "3.0.0",
     "yargs": "17.x.x"
   },
   "devDependencies": {
