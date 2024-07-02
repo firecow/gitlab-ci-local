@@ -146,6 +146,17 @@ export class Validator {
         this.dependencies(jobs, stages);
         this.dependenciesContainment(jobs);
         warnings.push(...this.potentialIllegalJobName(jobs.map(j => j.baseName)));
+        warnings.push(...this.artifacts(jobs));
+        return warnings;
+    }
+
+    private static artifacts (jobs: ReadonlyArray<Job>) {
+        const warnings: string[] = [];
+        for (const job of jobs) {
+            if (job.artifacts === null) {
+                warnings.push(`${job.name}.artifacts is null, ignoring.`);
+            }
+        }
         return warnings;
     }
 }

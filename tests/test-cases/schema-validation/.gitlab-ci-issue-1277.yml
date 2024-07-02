@@ -1,0 +1,15 @@
+---
+default:
+  cache:
+    key: 'my-key'
+    paths:
+      - my-file
+
+.some-shared-yaml:
+  if: "$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH"
+
+my-job:
+  script: 'echo test'
+  artifacts:
+  rules:
+    - !reference [.some-shared-yaml]
