@@ -639,7 +639,9 @@ export class Job {
         }
 
         if (this.interactive) {
-            const iCmd = this.generateScriptCommands(scripts);
+            let iCmd = "set -eo pipefail\n";
+            iCmd += this.generateScriptCommands(scripts);
+
             const interactiveCp = execa(iCmd, {
                 cwd,
                 shell: "bash",
