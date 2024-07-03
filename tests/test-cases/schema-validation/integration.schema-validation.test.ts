@@ -25,3 +25,35 @@ test("schema validation <test-job>", async () => {
 
     expect(mockExit).toHaveBeenCalledWith(1);
 });
+
+test("schema validation - default <test-job>", async () => {
+    const writeStreams = new WriteStreamsMock();
+
+    await handler({
+        file: ".gitlab-ci-issue-1277.yml",
+        cwd: "tests/test-cases/schema-validation",
+        preview: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+my-job:
+  script:
+    - echo test
+  rules:
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+  cache:
+    - key: my-key
+      paths:
+        - my-file
+      policy: pull-push
+      when: on_success`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+    expect(writeStreams.stderrLines.join("\n")).toContain("my-job.artifacts is null, ignoring.");
+});

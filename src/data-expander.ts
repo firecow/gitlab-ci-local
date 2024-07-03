@@ -208,7 +208,11 @@ export function defaults (gitlabData: any) {
     const afterScript = gitlabData.default?.after_script ?? gitlabData.after_script;
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
-        if (Job.illegalJobNames.has(jobName)) continue;
+        if (Job.illegalJobNames.has(jobName) || jobName.startsWith(".")) {
+            // skip hidden jobs as they might just contain shared yaml
+            // see https://github.com/firecow/gitlab-ci-local/issues/1277
+            continue;
+        }
         if (typeof jobData === "string") continue;
         if (!jobData.artifacts && artifacts) jobData.artifacts = artifacts;
         if (!jobData.cache && cache) jobData.cache = cache;

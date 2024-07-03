@@ -363,6 +363,10 @@ export class Job {
         return this.jobData["artifacts"];
     }
 
+    deleteArtifacts () {
+        delete this.jobData["artifacts"];
+    }
+
     get cache (): Cache[] {
         return this.jobData["cache"] || [];
     }
