@@ -1,6 +1,5 @@
 import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
-import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 
@@ -15,8 +14,21 @@ test("preview", async () => {
         preview: true,
     }, writeStreams);
 
-    const expected = [
-        chalk`---\nstages:\n  - .pre\n  - build\n  - test\n  - deploy\n  - .post\nchild-job:\n  script:\n    - echo \"Irrelevant\"\n  environment:\n    name: $MY_VAR\n  before_script:\n    - echo \"Default before script\"`,
-    ];
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    const expected = `---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+variables:
+  MY_VAR: my value
+child-job:
+  script:
+    - echo "Irrelevant"
+  environment:
+    name: $MY_VAR
+  before_script:
+    - echo "Default before script"`;
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });

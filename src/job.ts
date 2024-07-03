@@ -144,8 +144,10 @@ export class Job {
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
 
-        // Set FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR
-        globalVariables["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] = argv.umask ? "false" : "true";
+        // HACK: So that this won't show up in the preview variables
+        if (! argv.preview) {
+            globalVariables["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] = argv.umask ? "false" : "true";
+        }
 
         const matrixVariables = opt.matrixVariables ?? {};
         this._variables = {...globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...argvVariables};

@@ -48,7 +48,8 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
             if (jobName === "stages") {
                 continue;
             }
-            if (Job.illegalJobNames.has(jobName) || jobName.startsWith(".")) {
+            if (jobName.startsWith(".") || ["include", "after_script", "before_script", "default"].includes(jobName)) {
+                // Remove since these are redundant info which are already "extended" in the jobs
                 delete gitlabData[jobName];
             }
         }
