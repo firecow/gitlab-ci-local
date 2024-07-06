@@ -180,11 +180,11 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success"): {when: string; allowFailure: boolean; variables?: {[name: string]: string}} {
+    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} = false): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}} {
         let when = "never";
 
         // optional manual jobs allowFailure defaults to true https://docs.gitlab.com/ee/ci/jobs/job_control.html#types-of-manual-jobs
-        let allowFailure = jobWhen === "manual";
+        let allowFailure = jobWhen === "manual" ? true : jobAllowFailure;
         let ruleVariable: {[name: string]: string} | undefined;
 
         for (const rule of opt.rules) {
