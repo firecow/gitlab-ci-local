@@ -141,6 +141,18 @@ test("script-failures <rules:allow_failure precedence>", async () => {
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
-        chalk`{black.bgYellowBright  WARN } {blueBright rules:allow_failure precedence}`,
+        chalk`{black.bgRed  FAIL } {blueBright rules:allow_failure precedence}`,
+    );
+});
+
+test("script-failures <rules:without allow_failure>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/script-failures",
+        job: ["rules:without allow_failure"],
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines.join("\n")).toContain(
+        chalk`{black.bgYellowBright  WARN } {blueBright rules:without allow_failure}`,
     );
 });

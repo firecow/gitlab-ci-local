@@ -62,9 +62,18 @@ exit_code[number[]] not allowed:
 
 rules:allow_failure precedence:
   image: nginx:alpine
-  allow_failure: false
+  allow_failure:
+    exit_codes: 137
   rules:
     - if: $CI_DEFAULT_BRANCH == "main"
-      allow_failure: true
+      allow_failure: false
   script:
-    - exit 1
+    - exit 137
+
+rules:without allow_failure:
+  allow_failure:
+    exit_codes: 137
+  rules:
+    - when: always
+  script:
+    - exit 137
