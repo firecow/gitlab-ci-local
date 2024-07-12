@@ -4,14 +4,12 @@ import assert from "assert";
 import chalk from "chalk";
 import schema from "./schema";
 import {betterAjvErrors} from "./schema-error";
-import {WriteStreams} from "./write-streams";
 import terminalLink from "terminal-link";
 
 const MAX_ERRORS = 5;
 
 export class Validator {
-    static jsonSchemaValidation ({writeStreams, pathToExpandedGitLabCi, gitLabCiConfig}: {
-        writeStreams: WriteStreams;
+    static jsonSchemaValidation ({pathToExpandedGitLabCi, gitLabCiConfig}: {
         pathToExpandedGitLabCi: string;
         gitLabCiConfig: object;
     }) {
@@ -26,24 +24,28 @@ export class Validator {
         const validate = ajv.compile(schema);
         const valid = validate(gitLabCiConfig);
         if (!valid) {
-            writeStreams.stderr(chalk`Invalid .gitlab-ci.yml configuration!\n`);
-
             const betterErrors = betterAjvErrors({
                 data: gitLabCiConfig,
                 errors: validate.errors,
             });
 
-            const errors = betterErrors.map((e => (chalk`\t• {redBright ${e.message}} at {blueBright ${e.path}}`)));
-            writeStreams.stderr(errors.splice(0, MAX_ERRORS).join("\n"));
-            if (errors.length > MAX_ERRORS) {
-                writeStreams.stderr(`\t... and ${errors.length - MAX_ERRORS} more`);
+            let e: string = "";
+            for (let i = 0, len = betterErrors.length; i < len; i++) {
+                if (i + 1 > MAX_ERRORS) {
+                    e += `\t... and ${len - MAX_ERRORS} more`;
+                    break;
+                }
+                e += chalk`\t• {redBright ${betterErrors[i].message}} at {blueBright ${betterErrors[i].path}}\n`;
             }
 
-            writeStreams.stderr(chalk`\n\nFor further troubleshooting, consider either of the following:
+            assert(valid, chalk`
+{reset Invalid .gitlab-ci.yml configuration!
+${e.trimEnd()}
+
+For further troubleshooting, consider either of the following:
 \t• Copy the content of {blueBright ${terminalLink(".gitlab-ci-local/expanded-gitlab-ci.yml", pathToExpandedGitLabCi)}} to the ${terminalLink("pipeline editor", "https://docs.gitlab.com/ee/ci/pipeline_editor/")} to debug it
-\t• Use --json-schema-validation=false to disable schema validation (not recommended)
+\t• Use --json-schema-validation=false to disable schema validation (not recommended)}
 `);
-            process.exit(1);
         }
     }
 

@@ -80,7 +80,6 @@ export class Parser {
         if (parser.argv.jsonSchemaValidation) {
             const time = process.hrtime();
             Validator.jsonSchemaValidation({
-                writeStreams,
                 pathToExpandedGitLabCi,
                 gitLabCiConfig: parser.gitlabData,
             });
