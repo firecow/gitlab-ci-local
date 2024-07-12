@@ -1,0 +1,11 @@
+---
+spec:
+  inputs:
+    boolean_input:
+      type: boolean
+---
+default:
+  interruptible: $[[ inputs.boolean_input ]]  # This should be !!bool and not !!str
+scan-website:
+  script:
+    - echo $[[ inputs.boolean_input]]

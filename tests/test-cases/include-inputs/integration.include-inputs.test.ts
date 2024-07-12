@@ -205,6 +205,26 @@ test_job:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
+test("include-inputs for type boolean", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-inputs/input-templates/types/boolean",
+        preview: true,
+        jsonSchemaValidation: true, // this test depends on the json schema validation, do not set to false
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+scan-website:
+  script:
+    - echo true`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
 test("include-inputs inputs validation for boolean", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
