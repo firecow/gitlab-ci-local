@@ -308,7 +308,7 @@ export class Parser {
 
             const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
                 .replace(
-                    /(?<firstChar>.)(?<secondChar>.)\$\[\[\s*inputs.(?<interpolationKey>[\w-]+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\](?<lastChar>.)/g // https://regexr.com/81c16
+                    /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?<interpolationKey>[\w-]+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\](?<lastChar>[^$])?/g // https://regexr.com/81c16
                     , (_: string, firstChar: string, secondChar: string, interpolationKey: string, interpolationFunctions: string, lastChar: string) => {
                         const configFilePath = path.relative(process.cwd(), filePath);
                         const context = {
@@ -318,6 +318,9 @@ export class Parser {
                             configFilePath,
                             ...ctx,
                         };
+                        firstChar ??= "";
+                        secondChar ??= "";
+                        lastChar ??= "";
 
                         const {inputValue, inputType} = parseIncludeInputs(context);
                         const firstTwoChar = firstChar + secondChar;
