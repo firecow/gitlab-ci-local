@@ -1,0 +1,8 @@
+---
+spec:
+  inputs:
+    name:
+---
+job $[[ inputs.name ]] $[[ inputs.name ]]:
+  script:
+    - echo $[[ inputs.name ]]$[[ inputs.name ]]
