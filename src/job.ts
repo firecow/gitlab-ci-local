@@ -385,8 +385,7 @@ export class Job {
             }
             return `${cwd}/${path}`;
         });
-
-        return "md-" + await Utils.checksumFiles(files);
+        return "md-" + await Utils.checksumFiles(cwd, files);
     }
 
     get beforeScripts (): string[] {

@@ -32,3 +32,15 @@ cache-key-file referencing $CI_PROJECT_DIR:
       - fakepackage.json
   script:
     - echo 1
+
+cache-key-file file dont exist:
+  stage: test
+  image: bash
+  cache:
+    key:
+      files:
+        - no-such-file
+    paths:
+      - /tmp
+  script:
+    - echo 1

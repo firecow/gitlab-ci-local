@@ -35,3 +35,16 @@ test("cache-key-files <cache-key-file referencing $CI_PROJECT_DIR>", async () =>
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(expected.join("\n"));
 });
+
+test("cache-key-files <cache-key-file file dont exist>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/cache-key-files",
+        job: ["cache-key-file file dont exist"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright cache-key-file file dont exist} {magentaBright exported cache /tmp 'md-18bbe9d7603e540e28418cf4a072938ac477a2c1'}`,
+    ];
+    expect(writeStreams.stdoutLines.join("\n")).toContain(expected.join("\n"));
+});
