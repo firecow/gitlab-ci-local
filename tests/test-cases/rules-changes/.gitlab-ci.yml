@@ -6,3 +6,15 @@ alpine:
         - "foo"
   script:
     - echo "Job is running"
+
+matrix:
+  image: alpine
+  parallel:
+    matrix:
+      - FILE:
+          - foo
+  rules:
+    - changes:
+        - "${FILE}"
+  script:
+    - echo "Job is running"

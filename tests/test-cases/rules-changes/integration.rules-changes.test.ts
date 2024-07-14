@@ -18,9 +18,10 @@ test("rules:changes (has changes))", async () => {
         cwd: "tests/test-cases/rules-changes",
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines.join("\n")).toContain(
-        chalk`{blueBright alpine} {greenBright >} Job is running\n`
-    );
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
+        chalk`{blueBright alpine       } {greenBright >} Job is running`,
+        chalk`{blueBright matrix: [foo]} {greenBright >} Job is running`,
+    ]));
 });
 
 test("rules:changes:paths (has changes)", async () => {
@@ -34,9 +35,10 @@ test("rules:changes:paths (has changes)", async () => {
         file: ".gitlab-ci-rules:changes:paths.yml",
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines.join("\n")).toContain(
-        chalk`{blueBright alpine} {greenBright >} Job is running\n`
-    );
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
+        chalk`{blueBright alpine       } {greenBright >} Job is running`,
+        chalk`{blueBright matrix: [foo]} {greenBright >} Job is running`,
+    ]));
 });
 
 test("rules:changes (no changes)", async () => {
@@ -49,9 +51,10 @@ test("rules:changes (no changes)", async () => {
         cwd: "tests/test-cases/rules-changes",
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines.join("\n")).not.toContain(
-        chalk`{blueBright alpine} {greenBright >} Job is running\n`
-    );
+    expect(writeStreams.stdoutLines).not.toEqual(expect.arrayContaining([
+        chalk`{blueBright alpine       } {greenBright >} Job is running`,
+        chalk`{blueBright matrix: [foo]} {greenBright >} Job is running`,
+    ]));
 });
 
 test("rules:changes:paths (no changes)", async () => {
@@ -65,7 +68,8 @@ test("rules:changes:paths (no changes)", async () => {
         file: ".gitlab-ci-rules:changes:paths.yml",
     }, writeStreams);
 
-    expect(writeStreams.stdoutLines.join("\n")).not.toContain(
-        chalk`{blueBright alpine} {greenBright >} Job is running\n`
-    );
+    expect(writeStreams.stdoutLines).not.toEqual(expect.arrayContaining([
+        chalk`{blueBright alpine       } {greenBright >} Job is running`,
+        chalk`{blueBright matrix: [foo]} {greenBright >} Job is running`,
+    ]));
 });
