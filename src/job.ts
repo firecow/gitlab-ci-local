@@ -79,11 +79,12 @@ export class Job {
     readonly environment?: {name: string; url: string | null; deployment_tier: string | null; action: string | null};
     readonly jobId: number;
     readonly rules?: {
-        if: string;
-        when: string;
-        exists: string[];
-        allow_failure: boolean;
-        variables: {[key: string]: string};
+        if?: string;
+        when?: string;
+        changes?: string[] | {paths: string[]};
+        exists?: string[];
+        allow_failure?: boolean;
+        variables?: {[name: string]: string};
     }[];
 
     readonly allowFailure: boolean | {
@@ -180,6 +181,22 @@ export class Job {
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
         predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH"].toLowerCase()}`;
+
+        // Expand variables in rules:changes
+        if (this.rules && expandVariables) {
+            const expanded = Utils.expandVariables(this._variables);
+            this.rules.forEach((rule, ruleIdx, rules) => {
+                const changes = Array.isArray(rule.changes) ? rule.changes : rule.changes?.paths;
+                if (!changes) {
+                    return;
+                }
+
+                changes.forEach((change, changeIdx, changes) => {
+                    changes[changeIdx] = Utils.expandText(change, expanded);
+                });
+                rules[ruleIdx].changes = changes;
+            });
+        }
 
         // Find environment matched variables
         if (this.environment && expandVariables) {
