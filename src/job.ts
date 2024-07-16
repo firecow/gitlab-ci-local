@@ -64,6 +64,15 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
     hour12: false,
 });
 
+export type JobRule = {
+    if?: string;
+    when?: string;
+    changes?: string[] | {paths: string[]};
+    exists?: string[];
+    allow_failure?: boolean;
+    variables?: {[name: string]: string};
+};
+
 export class Job {
 
     static readonly illegalJobNames = new Set([
@@ -78,14 +87,7 @@ export class Job {
     readonly dependencies: string[] | null;
     readonly environment?: {name: string; url: string | null; deployment_tier: string | null; action: string | null};
     readonly jobId: number;
-    readonly rules?: {
-        if?: string;
-        when?: string;
-        changes?: string[] | {paths: string[]};
-        exists?: string[];
-        allow_failure?: boolean;
-        variables?: {[name: string]: string};
-    }[];
+    readonly rules?: JobRule[];
 
     readonly allowFailure: boolean | {
         exit_codes: number | number[];
