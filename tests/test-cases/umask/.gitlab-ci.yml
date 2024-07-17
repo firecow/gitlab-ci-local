@@ -11,3 +11,11 @@ alpine-root:
   script:
     - stat -c "%a %n %u %g" one.txt
     - stat -c "%a %n %u %g" script.sh
+
+kaniko-root:
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.0-debug
+    entrypoint: [""]
+  script:
+    - stat -c "%a %n %u %g" one.txt
+    - stat -c "%a %n %u %g" script.sh
