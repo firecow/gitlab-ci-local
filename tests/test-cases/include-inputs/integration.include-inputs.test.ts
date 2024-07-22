@@ -135,6 +135,25 @@ scan-website:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
+test("include-inputs interpolation repeated", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-inputs/input-templates/interpolation-repeat",
+        preview: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+job foo foo:
+  script:
+    - echo foofoo`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
 test("include-inputs inputs validation for array", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
