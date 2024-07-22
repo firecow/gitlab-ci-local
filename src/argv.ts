@@ -61,7 +61,12 @@ export class Argv {
             for (const [key, value] of Object.entries(config)) {
                 const argKey = camelCase(key);
                 if (argv[argKey] == null) {
-                    this.map.set(argKey, value);
+                    // Work around `dotenv.parse` limitation https://github.com/motdotla/dotenv/issues/51#issuecomment-552559070
+                    if (value === "true") this.map.set(argKey, true);
+                    else if (value === "false") this.map.set(argKey, false);
+                    else if (value === "null") this.map.set(argKey, null);
+                    else if (!isNaN(Number(value))) this.map.set(argKey, Number(value));
+                    else this.map.set(argKey, value);
                 }
             }
         }
