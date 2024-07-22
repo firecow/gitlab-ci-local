@@ -1,5 +1,5 @@
 import chalk from "chalk";
-import {Job} from "./job";
+import {Job, JobRule} from "./job";
 import * as fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
@@ -14,14 +14,7 @@ import path from "path";
 
 type RuleResultOpt = {
     cwd: string;
-    rules: {
-        if?: string;
-        when?: string;
-        changes?: string[] | {paths: string[]};
-        exists?: string[];
-        allow_failure?: boolean;
-        variables?: {[name: string]: string};
-    }[];
+    rules: JobRule[];
     variables: {[key: string]: string};
 };
 
