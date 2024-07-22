@@ -69,3 +69,33 @@ test.concurrent("umask <alpine-root> --no-umask", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
+
+test.concurrent("umask <kaniko-root> --umask", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/umask/",
+        umask: true,
+        job: ["kaniko-root"],
+    }, writeStreams);
+
+    const expectedStdOut = [
+        chalk`{blueBright kaniko-root} {greenBright >} 666 one.txt 0 0`,
+        chalk`{blueBright kaniko-root} {greenBright >} 777 script.sh 0 0`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
+});
+
+test.concurrent("umask <kaniko-root> --no-umask", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/umask/",
+        umask: false,
+        job: ["kaniko-root"],
+    }, writeStreams);
+
+    const expectedStdOut = [
+        chalk`{blueBright kaniko-root} {greenBright >} 644 one.txt 0 0`,
+        chalk`{blueBright kaniko-root} {greenBright >} 755 script.sh 0 0`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
+});
