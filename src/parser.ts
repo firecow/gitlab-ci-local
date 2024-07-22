@@ -337,6 +337,9 @@ export class Parser {
 
                             case "number":
                             case "boolean":
+                                if ((secondChar == "\"" && lastChar == "\"") && firstChar != "\\") {
+                                    return firstChar + inputValue;
+                                }
                                 return firstTwoChar + inputValue + lastChar;
 
                             default:
