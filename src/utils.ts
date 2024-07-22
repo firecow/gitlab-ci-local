@@ -10,6 +10,7 @@ import {GitData, GitSchema} from "./git-data";
 import globby from "globby";
 import micromatch from "micromatch";
 import axios from "axios";
+import path from "path";
 
 type RuleResultOpt = {
     cwd: string;
@@ -261,11 +262,12 @@ export class Utils {
         return {hrdeltatime: process.hrtime(time)};
     }
 
-    static async checksumFiles (files: string[]): Promise<string> {
+    static async checksumFiles (cwd: string, files: string[]): Promise<string> {
         const promises: Promise<string>[] = [];
 
         files.forEach((file) => {
             promises.push(new Promise((resolve, reject) => {
+                if (! fs.pathExistsSync(file)) resolve(path.relative(cwd, file)); // must use relative path here, so that checksum can be deterministic when running the unit tests
                 checksum.file(file, (err, hash) => {
                     if (err) {
                         return reject(err);
