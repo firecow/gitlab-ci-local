@@ -50,10 +50,18 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                 }
             },
             builder: (y: any) => {
-                return y.positional("job", {
-                    describe: "Jobname's to execute",
-                    type: "array",
-                });
+                return y
+                    .positional("job", {
+                        describe: "Jobname's to execute",
+                        type: "string", // Type here is referring to each element of the positional args
+                    })
+                    // by default yargs's positional options (args) can be used as options (flags) so this coerce is solely for
+                    // handling scenario when a single --job option flag is passed
+                    // Once https://github.com/yargs/yargs/issues/2196 is implemented, we can probably remove this
+                    .coerce("job", (args: string[]) => {
+                        if (!Array.isArray(args)) return [args];
+                        return args;
+                    });
             },
             command: "$0 [job..]",
             describe: "Runs the entire pipeline or job's",
