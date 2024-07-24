@@ -1,0 +1,26 @@
+---
+error1:
+  variables:
+    true
+  script:
+    - echo hello
+error2:
+  variables:
+    true
+  script:
+    - echo hello
+error3:
+  variables:
+    true
+  script:
+    - echo hello
+error4:
+  variables:
+    true
+  script:
+    - echo hello
+error5:
+  variables:
+    true
+  script:
+    - echo hello
