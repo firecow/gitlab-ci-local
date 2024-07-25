@@ -511,6 +511,14 @@ export class Job {
         }
 
         if (this.services?.length) {
+            // `host` and `none` networks do not work with services because aliases only work for
+            // user defined networks.
+            for (const network of this.argv.network) {
+                if (["host", "none"].includes(network)) {
+                    throw new AssertionError({message: `Cannot add service network alias with network mode '${network}'`});
+                }
+            }
+
             await this.createDockerNetwork(`gitlab-ci-local-${this.jobId}`);
 
             await Promise.all(
@@ -720,12 +728,24 @@ export class Job {
                 dockerCmd += `--cpus=${cpuConfig} `;
             }
 
-            // host and none networks have to be specified using --network,
-            // since they cannot be used with `docker network connect`.
+            // host and none networks have to be specified using --network, since they cannot be used with
+            // `docker network connect`.
             for (const network of this.argv.network) {
                 if (["host", "none"].includes(network)) {
                     dockerCmd += `--network ${network} `;
                 }
+            }
+            // The default podman network mode is not `bridge`, which means a `podman network connect` call will fail
+            // when connecting user defined networks. The workaround is to use a user defined network on container
+            // creation.
+            //
+            // See https://github.com/containers/podman/issues/19577
+            //
+            // This should not clash with the `host` and `none` networks above, since service creation should have
+            // failed when using `host` or `none` networks.
+            if (this._serviceNetworkId) {
+                // `build` alias: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/27060
+                dockerCmd += `--network ${this._serviceNetworkId} --network-alias build `;
             }
 
             dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;
@@ -784,9 +804,6 @@ export class Job {
 
             const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
 
-            if (this.services?.length) {
-                await Utils.spawn([this.argv.containerExecutable, "network", "connect", "--alias", "build", `gitlab-ci-local-${this.jobId}`, `${containerId}`]);
-            }
             for (const network of this.argv.network) {
                 // Special network names that do not work with `docker network connect`
                 if (["host", "none"].includes(network)) {
@@ -1218,15 +1235,18 @@ export class Job {
         }
         dockerCmd += `--volume ${this.buildVolumeName}:/gcl-builds `;
         dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
-        dockerCmd += `${serviceName} `;
 
-        // host and none networks have to be specified using --network,
-        // since they cannot be used with `docker network connect`.
-        for (const network of this.argv.network) {
-            if (["host", "none"].includes(network)) {
-                dockerCmd += `--network ${network} `;
-            }
+        // The default podman network mode is not `bridge`, which means a `podman network connect` call will fail
+        // when connecting user defined networks. The workaround is to use a user defined network on container
+        // creation.
+        //
+        // See https://github.com/containers/podman/issues/19577
+        dockerCmd += `--network ${this._serviceNetworkId} `;
+        for (const alias of aliases) {
+            dockerCmd += `--network-alias ${alias} `;
         }
+
+        dockerCmd += `${serviceName} `;
 
         if (serviceEntrypoint?.length ?? 0 > 1) {
             serviceEntrypoint?.slice(1).forEach((e) => {
@@ -1240,13 +1260,7 @@ export class Job {
         const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
         this._containersToClean.push(containerId);
 
-        const aliasArgs = Array.from(aliases.values()).flatMap((alias) => ["--alias", alias]);
-        await Utils.spawn([this.argv.containerExecutable, "network", "connect", ...aliasArgs, `gitlab-ci-local-${this.jobId}`, `${containerId}`]);
         for (const network of this.argv.network) {
-            // Special network names that do not work with `docker network connect`.
-            if (["host", "none"].includes(network)) {
-                continue;
-            }
             await Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`]);
         }
 
@@ -1258,7 +1272,7 @@ export class Job {
         return containerId;
     }
 
-    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceIndex: number, serviceContanerLogFile: string) {
+    private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceIndex: number, serviceContainerLogFile: string) {
         const serviceAlias = service.alias;
         const serviceName = service.name;
 
@@ -1284,7 +1298,7 @@ export class Job {
             await Promise.any(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
-                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`, "--network", `gitlab-ci-local-${this.jobId}`, "docker.io/sumina46/wait-for-it", `${uniqueAlias}:${portNum}`, "-t", "30"];
+                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`, "--network", `${this._serviceNetworkId}`, "docker.io/sumina46/wait-for-it", `${uniqueAlias}:${portNum}`, "-t", "30"];
                 return Utils.spawn(spawnCmd);
             }));
             const endTime = process.hrtime(time);
@@ -1296,7 +1310,7 @@ export class Job {
                 singleError.message.split(/\r?\n/g).forEach((line: string) => {
                     writeStreams.stdout(chalk`${this.formattedJobName} {redBright   ${line}}\n`);
                 });
-                writeStreams.stdout(chalk`${this.formattedJobName} {redBright also see (${serviceContanerLogFile})}\n`);
+                writeStreams.stdout(chalk`${this.formattedJobName} {redBright also see (${serviceContainerLogFile})}\n`);
             });
         } finally {
             // Kill all wait-for-it containers, when one have been successful
