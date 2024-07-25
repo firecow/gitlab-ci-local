@@ -25,7 +25,7 @@ test("dind-no-tls <test-job> --needs", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdout));
 
     const expectedStderr = [
-        chalk`{blueBright test-job} {redBright >} WARNING: API is accessible on http://0.0.0.0:2375 without encryption.`,
+        chalk`{blueBright test-job} {redBright >} [DEPRECATION NOTICE]: API is accessible on http://0.0.0.0:2375 without encryption.`,
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStderr));
 });

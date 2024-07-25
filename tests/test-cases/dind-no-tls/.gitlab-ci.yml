@@ -1,8 +1,9 @@
 ---
 test-job:
-  image: docker.io/library/docker:stable
+  image: docker.io/library/docker:cli
   services:
-    - name: docker.io/library/docker:stable-dind
+    # Pinned to 27-dind in case non-TLS DIND is removed at some point in the future.
+    - name: docker.io/library/docker:27-dind
       alias: docker
   variables:
     DOCKER_HOST: tcp://docker:2375
