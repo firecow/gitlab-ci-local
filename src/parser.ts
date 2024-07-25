@@ -138,7 +138,7 @@ export class Parser {
                 let value = _value;
                 if (value === null) value = ""; // variable's values are nullable
                 assert(
-                    typeof value === "string" || typeof value === "number",
+                    typeof value === "string" || typeof value === "number" || typeof value === "boolean",
                     chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${value}`
                 );
                 jobData.variables[key] = String(value);
@@ -148,7 +148,7 @@ export class Parser {
                 const service = jobData.services[i];
                 for (const [key, value] of Object.entries(service.variables || {})) {
                     assert(
-                        typeof value === "string" || typeof value === "number",
+                        typeof value === "string" || typeof value === "number" || typeof value === "boolean",
                         chalk`{blueBright ${jobName}.services[${i}]} has invalid variables hash of key value pairs. ${key}=${value}`
                     );
                     jobData.services[i].variables[key] = String(value);
