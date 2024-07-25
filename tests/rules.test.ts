@@ -238,6 +238,12 @@ test("Complex parentheses junctions regex fail - case insensitive", () => {
     expect(val).toBe(false);
 });
 
+test("Regex with escape characters from variable", () => {
+    const ruleIf = "$TAG =~ $TAG_REGEX";
+    const val = Utils.evaluateRuleIf(ruleIf, {TAG: "prefix/1.0.0", TAG_REGEX: "/^prefix\\/.+/"});
+    expect(val).toBe(true);
+});
+
 test("https://github.com/firecow/gitlab-ci-local/issues/350", () => {
     let rules, rulesResult, variables;
     rules = [
