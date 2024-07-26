@@ -6,7 +6,7 @@ alpine-image:
       command:
         - --insecure-registry=gitlab-ci-local-registry:5000
   needs: []
-  image: docker:latest
+  image: docker:cli
   stage: build
   script:
     - docker pull $CI_REGISTRY_IMAGE:latest || true

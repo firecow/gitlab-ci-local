@@ -4,7 +4,7 @@ alpine-image:
   services:
     - docker:dind
   needs: []
-  image: docker:stable
+  image: docker:cli
   stage: build
   script:
     - printenv
