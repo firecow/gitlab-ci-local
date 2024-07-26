@@ -203,7 +203,7 @@ export class Utils {
         // Expand all variables
         evalStr = this.expandTextWith(evalStr, {
             unescape: JSON.stringify("$"),
-            variable: (name) => JSON.stringify(envs[name] ?? null),
+            variable: (name) => JSON.stringify(envs[name] ?? null).replaceAll("\\\\", "\\"),
         });
 
         // Convert =~ to match function
