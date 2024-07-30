@@ -7,6 +7,7 @@
   "scripts": {
     "pkg-linux": "pkg src/index.js --public -t node18-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
     "pkg-macos": "pkg src/index.js --public -t node18-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
+    "pkg-macos-arm64": "pkg src/index.js --public -t node18-macos-arm64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos-arm64/gitlab-ci-local > bin/macos-arm64.gz",
     "pkg-win": "pkg src/index.js --public -t node18-win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
     "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win",
     "pkg": "pkg",
