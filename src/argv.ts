@@ -122,7 +122,7 @@ export class Argv {
         const variables: {[key: string]: string} = {};
         const pairs = typeof val == "string" ? val.split(" ") : val;
         (pairs ?? []).forEach((variablePair: string) => {
-            const exec = /(?<key>\w*?)(=)(?<value>.*)/.exec(variablePair);
+            const exec = /(?<key>\w*?)(=)(?<value>(.|\n|\r)*)/.exec(variablePair);
             if (exec?.groups?.key) {
                 variables[exec.groups.key] = exec?.groups?.value;
             }
