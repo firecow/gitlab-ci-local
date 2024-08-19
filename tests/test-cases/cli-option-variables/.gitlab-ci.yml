@@ -3,3 +3,4 @@ test-job:
   script:
     - echo ${CLI_VAR}
     - echo ${CLI_VAR_DOT}
+    - echo "${CLI_MULTILINE}"
