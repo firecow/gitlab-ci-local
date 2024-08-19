@@ -21,7 +21,7 @@ line string`],
         chalk`{blueBright test-job} {greenBright >} hello world`,
         chalk`{blueBright test-job} {greenBright >} dotdot`,
         chalk`{blueBright test-job} {greenBright >} This is a multi`,
-        chalk`{blueBright test-job} {greenBright >} line string`
+        chalk`{blueBright test-job} {greenBright >} line string`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
