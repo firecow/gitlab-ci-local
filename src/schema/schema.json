@@ -256,9 +256,13 @@
         },
         "reports": {
           "type": "object",
-          "markdownDescription": "Reports will be uploaded as artifacts, and often displayed in the Gitlab UI, such as in Merge Requests. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactsreports).",
+          "markdownDescription": "Reports will be uploaded as artifacts, and often displayed in the Gitlab UI, such as in merge requests. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactsreports).",
           "additionalProperties": false,
           "properties": {
+            "annotations": {
+              "type": "string",
+              "description": "Path to JSON file with annotations report."
+            },
             "junit": {
               "description": "Path for file(s) that should be parsed as JUnit XML result",
               "oneOf": [
@@ -290,7 +294,8 @@
                 "coverage_format": {
                   "description": "Code coverage format used by the test framework.",
                   "enum": [
-                    "cobertura"
+                    "cobertura",
+                    "jacoco"
                   ]
                 },
                 "path": {
@@ -812,6 +817,15 @@
               ],
               "additionalProperties": false
             },
+            "akeyless": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
             "file": {
               "type": "boolean",
               "default": true,
@@ -836,6 +850,11 @@
             {
               "required": [
                 "gcp_secret_manager"
+              ]
+            },
+            {
+              "required": [
+                "akeyless"
               ]
             }
           ],
