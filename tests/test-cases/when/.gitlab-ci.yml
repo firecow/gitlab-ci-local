@@ -1,0 +1,6 @@
+---
+test-job:
+  stage: deploy
+  when: never
+  script:
+    - echo "test"

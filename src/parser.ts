@@ -134,6 +134,9 @@ export class Parser {
 
         // Check job variables for invalid hash of key value pairs, and cast numbers to strings
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
+            assert(jobData.when !== "never",
+                chalk`This GitLab CI configuration is invalid: jobs:${jobName} when:never can only be used in a rules section or workflow:rules`
+            );
             for (const [key, _value] of Object.entries(jobData.variables || {})) {
                 let value = _value;
                 if (value === null) value = ""; // variable's values are nullable
