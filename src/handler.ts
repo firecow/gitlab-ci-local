@@ -3,14 +3,14 @@ import chalk from "chalk";
 import path from "path";
 import * as fs from "fs-extra";
 import * as yargs from "yargs";
-import {Commander} from "./commander";
-import {Parser} from "./parser";
-import * as state from "./state";
+import {Commander} from "./commander.js";
+import {Parser} from "./parser.js";
+import * as state from "./state.js";
 import prettyHrtime from "pretty-hrtime";
-import {WriteStreams} from "./write-streams";
-import {cleanupJobResources, Job} from "./job";
-import {Utils} from "./utils";
-import {Argv} from "./argv";
+import {WriteStreams} from "./write-streams.js";
+import {cleanupJobResources, Job} from "./job.js";
+import {Utils} from "./utils.js";
+import {Argv} from "./argv.js";
 import assert from "assert";
 
 const generateGitIgnore = (cwd: string, stateDir: string) => {

@@ -1,11 +1,11 @@
-import {WriteStreams} from "./write-streams";
-import {GitData} from "./git-data";
+import {WriteStreams} from "./write-streams.js";
+import {GitData} from "./git-data.js";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import chalk from "chalk";
-import {Argv} from "./argv";
+import {Argv} from "./argv.js";
 import assert from "assert";
-import {Utils} from "./utils";
+import {Utils} from "./utils.js";
 
 export interface CICDVariable {
     type: "file" | "variable";

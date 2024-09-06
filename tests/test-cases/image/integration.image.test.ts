@@ -1,10 +1,10 @@
-import {WriteStreamsMock} from "../../../src/write-streams";
-import {handler} from "../../../src/handler";
+import {WriteStreamsMock} from "../../../src/write-streams.js";
+import {handler} from "../../../src/handler.js";
 import fs from "fs-extra";
 import chalk from "chalk";
-import {initSpawnSpy} from "../../mocks/utils.mock";
-import {WhenStatics} from "../../mocks/when-statics";
-import {cleanupJobResources, Job} from "../../../src/job";
+import {initSpawnSpy} from "../../mocks/utils.mock.js";
+import {WhenStatics} from "../../mocks/when-statics.js";
+import {cleanupJobResources, Job} from "../../../src/job.js";
 
 jest.setTimeout(30000);
 

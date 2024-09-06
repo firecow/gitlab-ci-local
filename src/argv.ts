@@ -3,8 +3,8 @@ import * as fs from "fs-extra";
 import * as dotenv from "dotenv";
 import * as path from "path";
 import camelCase from "camelcase";
-import {Utils} from "./utils";
-import {WriteStreams} from "./write-streams";
+import {Utils} from "./utils.js";
+import {WriteStreams} from "./write-streams.js";
 import chalk from "chalk";
 
 async function isInGitRepository () {

@@ -1,5 +1,5 @@
 import {when} from "jest-when";
-import {Utils} from "../../src/utils";
+import {Utils} from "../../src/utils.js";
 
 export function initBashSpyReject (spyMocks: {cmd: string; rejection: any}[]) {
     const spyOn = jest.spyOn(Utils, "bash");

@@ -1,7 +1,7 @@
 import chalk from "chalk";
-import {Job} from "./job";
+import {Job} from "./job.js";
 import assert, {AssertionError} from "assert";
-import {Argv} from "./argv";
+import {Argv} from "./argv.js";
 import pMap from "p-map";
 
 export class Executor {

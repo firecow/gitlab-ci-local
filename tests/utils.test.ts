@@ -1,8 +1,8 @@
-import {GitData} from "../src/git-data";
-import {Utils} from "../src/utils";
-import {initSpawnSpyReject, initSpawnSpy} from "./mocks/utils.mock";
+import {GitData} from "../src/git-data.js";
+import {Utils} from "../src/utils.js";
+import {initSpawnSpyReject, initSpawnSpy} from "./mocks/utils.mock.js";
 
-import {isSshDirFound} from "./utils";
+import {isSshDirFound} from "./utils.js";
 
 describe("remoteFileExist", () => {
     describe("protocol: git", () => {

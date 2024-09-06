@@ -1,6 +1,6 @@
-import {Utils} from "../src/utils";
-import {GitData} from "../src/git-data";
-import {WriteStreamsMock} from "../src/write-streams";
+import {Utils} from "../src/utils.js";
+import {GitData} from "../src/git-data.js";
+import {WriteStreamsMock} from "../src/write-streams.js";
 
 let writeStreams;
 let gitData: GitData;

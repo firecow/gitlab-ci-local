@@ -1,9 +1,9 @@
 import Ajv from "ajv";
-import {Job} from "./job";
+import {Job} from "./job.js";
 import assert from "assert";
 import chalk from "chalk";
-import schema from "./schema";
-import {betterAjvErrors} from "./schema-error";
+import schema from "./schema/index.js";
+import {betterAjvErrors} from "./schema-error.js";
 import terminalLink from "terminal-link";
 
 const MAX_ERRORS = 5;

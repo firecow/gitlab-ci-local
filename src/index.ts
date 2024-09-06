@@ -1,18 +1,18 @@
 #!/usr/bin/env node
-import "source-map-support/register";
+import "source-map-support/register.js";
 import chalk from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import yargs from "yargs";
-import {Parser} from "./parser";
-import * as state from "./state";
-import {WriteStreamsProcess, WriteStreamsMock} from "./write-streams";
-import {handler} from "./handler";
-import {Executor} from "./executor";
-import {Argv} from "./argv";
+import {Parser} from "./parser.js";
+import * as state from "./state.js";
+import {WriteStreamsProcess, WriteStreamsMock} from "./write-streams.js";
+import {handler} from "./handler.js";
+import {Executor} from "./executor.js";
+import {Argv} from "./argv.js";
 import {AssertionError} from "assert";
-import {Job, cleanupJobResources} from "./job";
-import {GitlabRunnerPresetValues} from "./gitlab-preset";
+import {Job, cleanupJobResources} from "./job.js";
+import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
 
 const jobs: Job[] = [];
 

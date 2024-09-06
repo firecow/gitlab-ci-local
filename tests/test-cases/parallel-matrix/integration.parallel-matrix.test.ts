@@ -1,5 +1,5 @@
-import {WriteStreamsMock} from "../../../src/write-streams";
-import {handler} from "../../../src/handler";
+import {WriteStreamsMock} from "../../../src/write-streams.js";
+import {handler} from "../../../src/handler.js";
 import chalk from "chalk";
 
 jest.setTimeout(60000);

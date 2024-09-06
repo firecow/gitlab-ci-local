@@ -1,5 +1,5 @@
-import {Utils} from "./utils";
-import {Job} from "./job";
+import {Utils} from "./utils.js";
+import {Job} from "./job.js";
 
 export class Producers {
 

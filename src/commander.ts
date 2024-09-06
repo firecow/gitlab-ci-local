@@ -1,11 +1,11 @@
 import chalk from "chalk";
-import {Job} from "./job";
-import {Parser} from "./parser";
-import {Utils} from "./utils";
-import {WriteStreams} from "./write-streams";
-import {Executor} from "./executor";
+import {Job} from "./job.js";
+import {Parser} from "./parser.js";
+import {Utils} from "./utils.js";
+import {WriteStreams} from "./write-streams.js";
+import {Executor} from "./executor.js";
 import fs from "fs-extra";
-import {Argv} from "./argv";
+import {Argv} from "./argv.js";
 import {AssertionError} from "assert";
 
 export class Commander {

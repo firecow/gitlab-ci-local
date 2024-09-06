@@ -1,6 +1,6 @@
-import {Utils} from "./utils";
+import {Utils} from "./utils.js";
 import assert, {AssertionError} from "assert";
-import {WriteStreams} from "./write-streams";
+import {WriteStreams} from "./write-streams.js";
 import chalk from "chalk";
 
 export type GitSchema = "git" | "http" | "https" | "ssh";

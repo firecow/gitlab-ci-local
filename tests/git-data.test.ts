@@ -1,6 +1,6 @@
-import {GitData} from "../src/git-data";
-import {WriteStreamsMock} from "../src/write-streams";
-import {initSpawnSpy, initSpawnSpyReject} from "./mocks/utils.mock";
+import {GitData} from "../src/git-data.js";
+import {WriteStreamsMock} from "../src/write-streams.js";
+import {initSpawnSpy, initSpawnSpyReject} from "./mocks/utils.mock.js";
 
 
 const tests = [

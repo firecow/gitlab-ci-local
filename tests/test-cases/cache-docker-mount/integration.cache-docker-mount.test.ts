@@ -1,9 +1,9 @@
-import {WriteStreamsMock} from "../../../src/write-streams";
-import {handler} from "../../../src/handler";
+import {WriteStreamsMock} from "../../../src/write-streams.js";
+import {handler} from "../../../src/handler.js";
 import fs from "fs-extra";
-import {initSpawnSpy} from "../../mocks/utils.mock";
-import {WhenStatics} from "../../mocks/when-statics";
-import {Utils} from "../../../src/utils";
+import {initSpawnSpy} from "../../mocks/utils.mock.js";
+import {WhenStatics} from "../../mocks/when-statics.js";
+import {Utils} from "../../../src/utils.js";
 
 jest.setTimeout(45000);
 

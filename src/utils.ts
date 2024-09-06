@@ -1,12 +1,12 @@
 import chalk from "chalk";
-import {Job, JobRule} from "./job";
+import {Job, JobRule} from "./job.js";
 import * as fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
 import execa from "execa";
 import assert from "assert";
-import {CICDVariable} from "./variables-from-files";
-import {GitData, GitSchema} from "./git-data";
+import {CICDVariable} from "./variables-from-files.js";
+import {GitData, GitSchema} from "./git-data.js";
 import globby from "globby";
 import micromatch from "micromatch";
 import axios from "axios";
