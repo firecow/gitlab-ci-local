@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "moduleResolution": "node",
-    "module": "commonjs",
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "inlineSourceMap": true,

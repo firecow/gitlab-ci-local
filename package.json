@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "gitlab-ci-local",
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
   "main": "src/index.js",
