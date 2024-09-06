@@ -2,7 +2,7 @@ import * as yaml from "js-yaml";
 import chalk from "chalk";
 import path from "path";
 import * as fs from "fs-extra";
-import * as yargs from "yargs";
+import yargs from "yargs";
 import {Commander} from "./commander.js";
 import {Parser} from "./parser.js";
 import * as state from "./state.js";
@@ -29,7 +29,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     let parser: Parser | null = null;
 
     if (argv.completion) {
-        yargs.showCompletionScript();
+        yargs(process.argv.slice(2)).showCompletionScript();
         return [];
     }
 

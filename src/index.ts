@@ -24,11 +24,11 @@ process.on("SIGINT", async (_: string, code: number) => {
 process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
 
 (() => {
-    yargs(process.argv.slice(2))
-        .parserConfiguration({"greedy-arrays": false})
+    const yparser = yargs(process.argv.slice(2));
+    yparser.parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
         .version(packageJson["version"])
-        .wrap(yargs.terminalWidth?.())
+        .wrap(yparser.terminalWidth?.())
         .command({
             handler: async (argv) => {
                 try {
