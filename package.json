@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "ajv": "8.x.x",
-    "axios": "0.28.x",
+    "axios": "1.7.x",
     "base64url": "3.x.x",
     "camelcase": "6.x.x",
     "chalk": "4.x.x",
