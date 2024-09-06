@@ -1,15 +1,16 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const schema = require("./schema.json");
+import _schema from "./schema.json" with { type: "json" };
 
-schema.definitions.job_template.properties.gclArtifactsToSource = {
+const schema: any = _schema;
+schema.definitions.job_template.properties.gclInjectSSHAgent = {
     "type": "boolean",
 };
 schema.definitions.job_template.properties.gclInteractive = {
     "type": "boolean",
 };
-schema.definitions.job_template.properties.gclInjectSSHAgent = {
+schema.definitions.job_template.properties.gclArtifactsToSource = {
     "type": "boolean",
 };
+
 schema.definitions.job_template.properties.gclDescription = {
     "type": "string",
 };

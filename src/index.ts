@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 import "source-map-support/register.js";
 import chalk from "chalk";
-import * as fs from "fs-extra";
-import * as path from "path";
 import yargs from "yargs";
 import {Parser} from "./parser.js";
 import * as state from "./state.js";
@@ -13,6 +11,7 @@ import {Argv} from "./argv.js";
 import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job.js";
 import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
+import packageJson from "../package.json" with { type: "json" };
 
 const jobs: Job[] = [];
 
@@ -25,7 +24,6 @@ process.on("SIGINT", async (_: string, code: number) => {
 process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
 
 (() => {
-    const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf8"));
     yargs(process.argv.slice(2))
         .parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)

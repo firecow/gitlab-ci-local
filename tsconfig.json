@@ -8,6 +8,7 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true
   }
 }
