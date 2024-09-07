@@ -1,7 +1,7 @@
 import {WriteStreamsProcess} from "../src/write-streams.js";
 
-const spyStdout = jest.spyOn(process.stdout, "write").mockImplementation();
-const spyStderr = jest.spyOn(process.stderr, "write").mockImplementation();
+const spyStdout = import.meta.jest.spyOn(process.stdout, "write").mockImplementation();
+const spyStderr = import.meta.jest.spyOn(process.stderr, "write").mockImplementation();
 
 afterEach(() => {
     spyStdout.mockClear();

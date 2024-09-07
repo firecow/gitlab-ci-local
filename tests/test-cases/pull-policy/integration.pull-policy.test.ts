@@ -4,7 +4,7 @@ import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import {Utils} from "../../../src/utils.js";
 
-jest.setTimeout(60000);
+import.meta.jest.setTimeout(60000);
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);

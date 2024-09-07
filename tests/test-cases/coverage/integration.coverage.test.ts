@@ -19,13 +19,13 @@ test("coverage <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("coverage <jest>", async () => {
+test("coverage <import.meta.jest>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/coverage",
-        job: ["jest"],
+        job: ["import.meta.jest"],
     }, writeStreams);
 
-    const expected = [chalk`{black.bgGreenBright  PASS } {blueBright jest} 97.91% {gray coverage}`];
+    const expected = [chalk`{black.bgGreenBright  PASS } {blueBright import.meta.jest} 97.91% {gray coverage}`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

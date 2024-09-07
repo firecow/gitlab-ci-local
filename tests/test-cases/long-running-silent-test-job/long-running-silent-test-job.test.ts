@@ -4,7 +4,7 @@ import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 
-jest.setTimeout(13000);
+import.meta.jest.setTimeout(13000);
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);

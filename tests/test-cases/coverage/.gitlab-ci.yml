@@ -5,7 +5,7 @@ test-job:
     - "echo \"  Lines:   48.46% (510/650)\""
     - "echo \"  Lines:   78.46% (510/650)\""
 
-jest:
+import.meta.jest:
   coverage: /All files.*?\|.*?\|.*?([\d\.]+)/
   script:
     - echo "All files            |    99.3 |    97.91 |     100 |     100 |                   "

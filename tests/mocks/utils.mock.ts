@@ -2,7 +2,7 @@ import {when} from "jest-when";
 import {Utils} from "../../src/utils.js";
 
 export function initBashSpyReject (spyMocks: {cmd: string; rejection: any}[]) {
-    const spyOn = jest.spyOn(Utils, "bash");
+    const spyOn = import.meta.jest.spyOn(Utils, "bash");
 
     for (const spyMock of spyMocks) {
         when(spyOn).calledWith(spyMock.cmd, expect.any(String)).mockRejectedValue(spyMock.rejection);
@@ -11,7 +11,7 @@ export function initBashSpyReject (spyMocks: {cmd: string; rejection: any}[]) {
 }
 
 export function initBashSpy (spyMocks: {cmd: string; returnValue: any}[]) {
-    const spyOn = jest.spyOn(Utils, "bash");
+    const spyOn = import.meta.jest.spyOn(Utils, "bash");
 
     for (const spyMock of spyMocks) {
         when(spyOn).calledWith(spyMock.cmd, expect.any(String)).mockResolvedValue(spyMock.returnValue);
@@ -22,7 +22,7 @@ export function initBashSpy (spyMocks: {cmd: string; returnValue: any}[]) {
 }
 
 export function initSyncSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[]) {
-    const spyOn = jest.spyOn(Utils, "syncSpawn");
+    const spyOn = import.meta.jest.spyOn(Utils, "syncSpawn");
 
     for (const spyMock of spyMocks) {
         when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockReturnValue(spyMock.returnValue);
@@ -31,7 +31,7 @@ export function initSyncSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any
 }
 
 export function initSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[]) {
-    const spyOn = jest.spyOn(Utils, "spawn");
+    const spyOn = import.meta.jest.spyOn(Utils, "spawn");
 
     for (const spyMock of spyMocks) {
         when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockResolvedValue(spyMock.returnValue);
@@ -42,7 +42,7 @@ export function initSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[])
 }
 
 export function initSpawnSpyReject (spyMocks: {cmdArgs: string[]; rejection: any}[]) {
-    const spyOn = jest.spyOn(Utils, "spawn");
+    const spyOn = import.meta.jest.spyOn(Utils, "spawn");
 
     for (const spyMock of spyMocks) {
         when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockRejectedValue(spyMock.rejection);

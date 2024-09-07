@@ -15,7 +15,7 @@ afterAll(() => {
 });
 
 test("--completion", async () => {
-    const spy = jest.spyOn(console, "log").mockImplementation();
+    const spy = import.meta.jest.spyOn(console, "log").mockImplementation();
     const writeStreams = new WriteStreamsMock();
     await handler({
         completion: true,
