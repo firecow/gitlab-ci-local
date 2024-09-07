@@ -20,5 +20,6 @@ tsconfig.tsbuildinfo
 .DS_Store
 
 .vscode
+pkg
 
 /.gitlab-ci.yml

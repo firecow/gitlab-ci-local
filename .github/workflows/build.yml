@@ -33,9 +33,9 @@ jobs:
           path: ${{ env.PKG_CACHE_PATH }}
           key: pkg-cache-${{ matrix.node-version }}
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:pkg
       - run: npm run pkg-linux
-      - run: node src/index.js --version
+      - run: node pkg/index.cjs --version
       - run: bin/linux/gitlab-ci-local --version
       - run: bin/linux/gitlab-ci-local --help
 
