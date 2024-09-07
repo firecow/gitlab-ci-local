@@ -16,9 +16,9 @@
     "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
     "audit": "npm audit --parseable",
     "lint": "npx eslint .",
-    "test": "npm run build && jest --testTimeout 60000",
-    "test-except-dind": "npm run build && jest --testTimeout 60000 --testPathIgnorePatterns=dind",
-    "coverage": "jest --coverage --testTimeout 60000",
+    "test": "npm run build && NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --testTimeout 60000",
+    "test-except-dind": "npm run build && NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --testTimeout 60000 --testPathIgnorePatterns=dind",
+    "coverage": "FORCE_COLOR=1 NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --coverage --testTimeout 90000 --verbose",
     "start": "tsx --log-error src/index.ts --cwd examples/docker-compose-nodejs",
     "dev": "touch .gitlab-ci.yml && nodemon -e ts --watch src --watch .gitlab-ci.yml --exec tsx src/index.ts",
     "fetch-and-patch-schema": "curl https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json -sf | jq 'del(.. | .pattern?)' > src/schema/schema.json"
@@ -133,6 +133,18 @@
     }
   },
   "jest": {
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ],
+      "^.+\\.jsx?$": "babel-jest"
+    },
     "preset": "ts-jest",
     "testMatch": [
       "**/*.test.ts"
