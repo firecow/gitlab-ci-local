@@ -1,7 +1,7 @@
 import * as yaml from "js-yaml";
 import chalk from "chalk";
 import path from "path";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import yargs from "yargs";
 import {Commander} from "./commander.js";
 import {Parser} from "./parser.js";

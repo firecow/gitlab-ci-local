@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import path from "path";
 import deepExtend from "deep-extend";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import * as yaml from "js-yaml";
 import prettyHrtime from "pretty-hrtime";
 import {Job} from "./job.js";

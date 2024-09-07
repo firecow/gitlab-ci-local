@@ -1,5 +1,5 @@
 import assert from "assert";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import * as dotenv from "dotenv";
 import * as path from "path";
 import camelCase from "camelcase";

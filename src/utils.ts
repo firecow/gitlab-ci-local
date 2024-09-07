@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import {Job, JobRule} from "./job.js";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
 import execa from "execa";
@@ -42,7 +42,7 @@ export class Utils {
 
     static safeDockerString (jobName: string) {
         return jobName.replace(/[^\w-]+/g, (match) => {
-            return base64url.encode(match);
+            return base64url.default.encode(match);
         });
     }
 

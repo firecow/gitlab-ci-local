@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import * as dotenv from "dotenv";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
 import split2 from "split2";
 import {Utils} from "./utils.js";

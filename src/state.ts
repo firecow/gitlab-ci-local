@@ -1,4 +1,4 @@
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import * as yaml from "js-yaml";
 
 const loadStateYML = async (stateFile: string): Promise<any> => {

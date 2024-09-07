@@ -1,6 +1,6 @@
 import {WriteStreams} from "./write-streams.js";
 import {GitData} from "./git-data.js";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import * as yaml from "js-yaml";
 import chalk from "chalk";
 import {Argv} from "./argv.js";
