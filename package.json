@@ -17,7 +17,7 @@
     "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
     "audit": "npm audit --parseable",
     "lint": "npx eslint .",
-    "test": "npm run build && NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --testTimeout 60000",
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --testTimeout 60000",
     "test-except-dind": "npm run build && NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --testTimeout 60000 --testPathIgnorePatterns=dind",
     "coverage": "FORCE_COLOR=1 NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --coverage --testTimeout 90000 --verbose",
     "start": "tsx --log-error src/index.ts --cwd examples/docker-compose-nodejs",
@@ -144,8 +144,7 @@
         {
           "useESM": true
         }
-      ],
-      "^.+\\.jsx?$": "babel-jest"
+      ]
     },
     "preset": "ts-jest",
     "testMatch": [
@@ -155,6 +154,9 @@
       "/node_modules/",
       "/.gitlab-ci-local/"
     ],
+    "moduleNameMapper": {
+      "(.+)\\.js": "$1"
+    },
     "coverageReporters": [
       "lcov",
       "json-summary",
