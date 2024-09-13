@@ -1,0 +1,6 @@
+---
+issue-1333:
+  script:
+    - echo "$API_KEY"
+  environment:
+    name: $CUSTOM_VAR

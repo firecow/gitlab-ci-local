@@ -153,7 +153,8 @@ export class Job {
         }
 
         const matrixVariables = opt.matrixVariables ?? {};
-        this._variables = {...globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...argvVariables};
+        const fileVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
+        this._variables = {...globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...fileVariables, ...argvVariables};
 
         let ciProjectDir = `${cwd}`;
         if (this.jobData["image"]) {
