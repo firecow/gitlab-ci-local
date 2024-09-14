@@ -1,15 +1,24 @@
 import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
+import {Job, cleanupJobResources} from "../../../src/job";
 import chalk from "chalk";
 import {initSpawnSpy, initBashSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
 import assert from "assert";
 import {AssertionError} from "assert";
 
+let jobs: Job[] = [];
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
+beforeEach(async () => {
+    jobs = [];
+});
+
+afterEach(async () => {
+    await cleanupJobResources(jobs);
+});
 
 test("network-host <test-job>", async () => {
     const bashSpy = initBashSpy([]);
@@ -36,7 +45,7 @@ test("network-host <service-job>", async () => {
             cwd: "tests/test-cases/network-arg",
             job: ["service-job"],
             network: ["host"],
-        }, writeStreams);
+        }, writeStreams, jobs);
     } catch (e) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`Cannot add service network alias with network mode 'host'`);
@@ -68,7 +77,7 @@ test("network-none <service-job>", async () => {
             cwd: "tests/test-cases/network-arg",
             job: ["service-job"],
             network: ["none"],
-        }, writeStreams);
+        }, writeStreams, jobs);
     } catch (e) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toBe(chalk`Cannot add service network alias with network mode 'none'`);
