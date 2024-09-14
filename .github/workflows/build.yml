@@ -69,8 +69,6 @@ jobs:
         with:
           cache: 'npm'
       - run: npm ci
-      - name: Build
-        run: npm run build
       - name: Run Tests
         run: npm run coverage
       - uses: sonarsource/sonarcloud-github-action@v3.1

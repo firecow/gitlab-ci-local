@@ -19,7 +19,7 @@
     "lint": "npx eslint .",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --testTimeout 60000",
     "test-except-dind": "npm run test -- --testPathIgnorePatterns=\"/dind.*/|/node_modules/|/.gitlab-ci-local/\"",
-    "coverage": "FORCE_COLOR=1 NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --coverage --testTimeout 90000 --verbose",
+    "coverage": "FORCE_COLOR=1 npm run test -- --coverage --verbose",
     "start": "NODE_OPTIONS='--loader ts-node/esm' ts-node --log-error src/index.ts --cwd examples/docker-compose-nodejs",
     "dev": "touch .gitlab-ci.yml && NODE_OPTIONS='--loader ts-node/esm' nodemon -e ts --watch src --watch .gitlab-ci.yml --exec ts-node src/index.ts",
     "fetch-and-patch-schema": "curl https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json -sf | jq 'del(.. | .pattern?)' > src/schema/schema.json"
