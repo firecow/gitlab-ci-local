@@ -42,7 +42,7 @@ export class Utils {
 
     static safeDockerString (jobName: string) {
         return jobName.replace(/[^\w-]+/g, (match) => {
-            return base64url.default.encode(match);
+            return base64url.encode(match);
         });
     }
 

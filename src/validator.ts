@@ -13,7 +13,7 @@ export class Validator {
         pathToExpandedGitLabCi: string;
         gitLabCiConfig: object;
     }) {
-        const ajv = new Ajv.default({
+        const ajv = new Ajv({
             verbose: true,
             allErrors: true,
             allowUnionTypes: true,
