@@ -14,3 +14,9 @@ FUNNY2:
 FUNNY3:
   values:
     "*": Recursive CI/CD
+
+CUSTOM_VAR: prod
+
+API_KEY:
+  values:
+    "prod": firecow

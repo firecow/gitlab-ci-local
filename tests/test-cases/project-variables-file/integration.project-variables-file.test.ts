@@ -21,3 +21,16 @@ test.concurrent("project-variables-file <test-job>", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test.concurrent("project-variables-file <issue-1333>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/project-variables-file",
+        file: ".gitlab-ci-issue-1333.yml",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright issue-1333} {greenBright >} firecow`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
