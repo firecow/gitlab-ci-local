@@ -65,6 +65,16 @@ If your distribution does not support this, you can run these commands:
 ```bash
 curl -s "https://gitlab-ci-local-ppa.firecow.dk/pubkey.gpg" | sudo apt-key add -
 echo "deb https://gitlab-ci-local-ppa.firecow.dk ./" | sudo tee /etc/apt/sources.list.d/gitlab-ci-local.list
+
+# OR
+
+# MUST be `.asc` at least for older apts (e.g. Ubuntu Focal), since the key is ASCII-armored
+PPA_KEY_PATH=/etc/apt/sources.list.d/gitlab-ci-local-ppa.asc
+curl -s "https://gitlab-ci-local-ppa.firecow.dk/pubkey.gpg" | sudo tee "${PPA_KEY_PATH}"
+echo "deb [ signed-by=${PPA_KEY_PATH} ] https://gitlab-ci-local-ppa.firecow.dk ./" | sudo tee /etc/apt/sources.list.d/gitlab-ci-local.list
+
+# and then
+
 sudo apt-get update
 sudo apt-get install gitlab-ci-local
 ```
@@ -133,7 +143,7 @@ echo "alias gcl='gitlab-ci-local'" >> ~/.bashrc
 ### Tab completion
 
 ```bash
-gitlab-ci-local --completion >> ~/.bashrc 
+gitlab-ci-local --completion >> ~/.bashrc
 ```
 
 ### Logging options
@@ -156,7 +166,7 @@ to `when: never`.
 
 ```text
 name        description  stage   when        allow_failure  needs
-test-job    Run Tests    test    on_success  false      
+test-job    Run Tests    test    on_success  false
 build-job                build   on_success  true           [test-job]
 ```
 
@@ -166,7 +176,7 @@ Same as `--list` but will also print out jobs which are set to `when: never` (di
 
 ```text
 name        description  stage   when        allow_failure  needs
-test-job    Run Tests    test    on_success  false      
+test-job    Run Tests    test    on_success  false
 build-job                build   on_success  true           [test-job]
 deploy-job               deploy  never       false          [build-job]
 ```
@@ -219,7 +229,7 @@ local-only-job:
 local-only-subsection:
   script:
     - if [ $GITLAB_CI == 'false' ]; then eslint . --fix; fi
-    - eslint . 
+    - eslint .
 ```
 
 ### Home file variables
