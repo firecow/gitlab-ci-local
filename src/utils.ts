@@ -101,11 +101,7 @@ export class Utils {
                 } else {
                     const name = var1 || var2;
                     assert(name, "unexpected unset capture group");
-                    let value = `${expandWith.variable(name)}`;
-                    if (value.startsWith("\"/") && value.endsWith("/\"")) {
-                        value = value.substring(1).slice(0, -1);
-                    }
-                    return `${value}`;
+                    return `${expandWith.variable(name)}`;
                 }
             }
         );
@@ -205,20 +201,74 @@ export class Utils {
             unescape: JSON.stringify("$"),
             variable: (name) => JSON.stringify(envs[name] ?? null).replaceAll("\\\\", "\\"),
         });
+        const expandedEvalStr = evalStr;
 
-        // Convert =~ to match function
-        evalStr = evalStr.replace(/\s*=~\s*(\/.*?\/[igmsuy]*)(?:\s|$)/g, ".match($1) != null");
-        evalStr = evalStr.replace(/\s*=~\s(.+?)(\)*?)(?:\s|$)/g, ".match(new RegExp($1)) != null$2"); // Without forward slashes
+        // Scenario when RHS is a <regex>
+        // https://regexr.com/85sjo
+        const pattern1 = /\s*(?<operator>(?:=~)|(?:!~))\s*(?<rhs>\/.*?\/)(?<flags>[igmsuy]*)(\s|$|\))/g;
+        evalStr = evalStr.replace(pattern1, (_, operator, rhs, flags, remainingTokens) => {
+            let _operator;
+            switch (operator) {
+                case "=~":
+                    _operator = "!=";
+                    break;
+                case "!~":
+                    _operator = "==";
+                    break;
+                default:
+                    throw operator;
+            }
+            return `.match(${rhs}${flags})${remainingTokens} ${_operator} null`;
+        });
 
-        // Convert !~ to match function
-        evalStr = evalStr.replace(/\s*!~\s*(\/.*?\/[igmsuy]*)(?:\s|$)/g, ".match($1) == null");
-        evalStr = evalStr.replace(/\s*!~\s(.+?)(\)*?)(?:\s|$)/g, ".match(new RegExp($1)) == null$2"); // Without forward slashes
+        // Scenario when RHS is surrounded by double-quotes
+        // https://regexr.com/85t0g
+        const pattern2 = /\s*(?<operator>(?:=~)|(?:!~))\s*"(?<rhs>[^"\\]*(?:\\.[^"\\]*)*)"/g;
+        evalStr = evalStr.replace(pattern2, (_, operator, rhs) => {
+            let _operator;
+            switch (operator) {
+                case "=~":
+                    _operator = "!=";
+                    break;
+                case "!~":
+                    _operator = "==";
+                    break;
+                default:
+                    throw operator;
+            }
+
+            if (!/\/(.*)\/([\w]*)/.test(rhs)) {
+                throw Error(`RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!
+Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...`);
+            }
+            const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
+            const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
+                const _pattern = pattern.replace(/(?<!\\)\//g, "\\/"); // escape potentially unescaped `/` that's in the pattern
+                return `/${_pattern}/${flags}`;
+            });
+            return `.match(new RegExp(${_rhs})) ${_operator} null`;
+        });
 
         // Convert all null.match functions to false
         evalStr = evalStr.replace(/null.match\(.+?\) != null/g, "false");
         evalStr = evalStr.replace(/null.match\(.+?\) == null/g, "false");
 
-        return Boolean(eval(evalStr));
+        let res;
+        try {
+            res = eval(evalStr);
+        } catch (err) {
+            console.log(`
+Error attempting to evaluate the following rules:
+  rules:
+    - if: '${expandedEvalStr}'
+as
+\`\`\`javascript
+${evalStr}
+\`\`\`
+`);
+            throw err;
+        }
+        return Boolean(res);
     }
 
     static evaluateRuleExist (cwd: string, ruleExists: string[] | undefined): boolean {

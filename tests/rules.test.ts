@@ -264,16 +264,16 @@ test("https://github.com/firecow/gitlab-ci-local/issues/350", () => {
 test("https://github.com/firecow/gitlab-ci-local/issues/300", () => {
     let rules, rulesResult, variables;
     rules = [
-        {if: "$VAR1 && (($VAR3 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR3 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))", when: "manual"},
+        {if: "$VAR1 && (($VAR2 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR2 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))", when: "manual"},
     ];
-    variables = {VAR1: "val", VAR2: "ci-skip-job-", VAR3: "ci-skip-job-"};
+    variables = {VAR1: "val", VAR2: "ci-skip-job-", VAR3: "/ci-skip-job-/"};
     rulesResult = Utils.getRulesResult({cwd: "", rules, variables}, gitData);
     expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
 
     rules = [
-        {if: "$VAR1 && (($VAR3 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR3 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))", when: "manual"},
+        {if: "$VAR1 && (($VAR2 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR2 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))", when: "manual"},
     ];
-    variables = {VAR1: "val", VAR2: "ci-skip-stage-", VAR3: "ci-skip-stage-"};
+    variables = {VAR1: "val", VAR2: "ci-skip-stage-", VAR3: "/ci-skip-stage-/"};
     rulesResult = Utils.getRulesResult({cwd: "", rules, variables}, gitData);
     expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
 });
