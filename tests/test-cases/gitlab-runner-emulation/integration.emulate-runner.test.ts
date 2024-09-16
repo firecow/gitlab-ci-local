@@ -2,17 +2,27 @@ import {WriteStreamsMock} from "../../../src/write-streams";
 import {handler} from "../../../src/handler";
 import {initBashSpy, initSpawnSpy} from "../../mocks/utils.mock";
 import {WhenStatics} from "../../mocks/when-statics";
+import {cleanupJobResources, Job} from "../../../src/job";
 import {
     GitlabRunnerCPUsPresetValue,
     GitlabRunnerMemoryPresetValue,
     GitlabRunnerPresetValues,
 } from "../../../src/gitlab-preset";
 
+let jobs: Job[] = [];
 beforeAll(() => {
     initSpawnSpy([...WhenStatics.all, {
         cmdArgs: ["docker", "cp", expect.any(String), expect.any(String)],
         returnValue: {stdout: "Ok"},
     }]);
+});
+
+beforeEach(async () => {
+    jobs = [];
+});
+
+afterEach(async () => {
+    await cleanupJobResources(jobs);
 });
 
 test("--container-emulate some_unexisting_runner", async () => {
@@ -21,7 +31,7 @@ test("--container-emulate some_unexisting_runner", async () => {
         await handler({
             cwd: "tests/test-cases/container-executable",
             containerEmulate: "some_unexisting_runner",
-        }, writeStreams);
+        }, writeStreams, jobs);
 
         expect(true).toBe(false);
     } catch (e: unknown) {
