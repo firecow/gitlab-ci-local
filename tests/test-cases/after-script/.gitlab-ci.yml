@@ -1,12 +1,15 @@
 ---
 default:
+  image: busybox
   after_script:
     - echo "Cleanup after test"
 
 test-job:
   script:
     - echo "Test something"
+    - echo "cache" > /tmp/cache
   after_script:
+    - rm /tmp/cache
     - echo "Cleanup after test"
 
 build-job:
