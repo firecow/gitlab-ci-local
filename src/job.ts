@@ -689,7 +689,7 @@ export class Job {
 
         this.refreshLongRunningSilentTimeout(writeStreams);
 
-        if (imageName) {
+        if (imageName && !this._containerId) {
             await this.pullImage(writeStreams, imageName);
 
             let dockerCmd = `${this.argv.containerExecutable} create --interactive ${this.generateInjectSSHAgentOptions()} `;
@@ -829,6 +829,11 @@ export class Job {
 
         if (imageName) {
             cmd += "cd /gcl-builds \n";
+
+            if (expanded["CI_JOB_STATUS"] != "running") {
+                // Ensures the env `CI_JOB_STATUS` is passed to the after_script context
+                cmd += `export CI_JOB_STATUS=${expanded["CI_JOB_STATUS"]}\n`;
+            }
         }
         cmd += this.generateScriptCommands(scripts);
 
