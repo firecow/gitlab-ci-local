@@ -368,9 +368,6 @@ You need nodejs 18+
 # Install node_modules
 npm install
 
-# Compiled typescript to javascript
-npm run build
-
 # Run all tests
 npm run test
 
