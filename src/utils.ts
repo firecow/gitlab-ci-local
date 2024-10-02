@@ -257,7 +257,7 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
 
         let res;
         try {
-            res = eval(evalStr);
+            res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
         } catch (err) {
             console.log(`
 Error attempting to evaluate the following rules:
