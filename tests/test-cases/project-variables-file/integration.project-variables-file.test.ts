@@ -34,3 +34,17 @@ test.concurrent("project-variables-file <issue-1333>", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test.concurrent("project-variables-file custom-path", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/project-variables-file",
+        file: ".gitlab-ci-custom.yml",
+        variablesFile: ".custom-local-var-file",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright job} {greenBright >} firecow`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});

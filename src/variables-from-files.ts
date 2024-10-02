@@ -112,7 +112,7 @@ export class VariablesFromFiles {
         await addVariableFileToVariables(remoteFileData, 0);
         await addVariableFileToVariables(homeFileData, 10);
 
-        const projectVariablesFile = `${argv.cwd}/.gitlab-ci-local-variables.yml`;
+        const projectVariablesFile = `${argv.cwd}/${argv.variablesFile}`;
         if (fs.existsSync(projectVariablesFile)) {
             const projectVariablesFileData: any = yaml.load(await fs.readFile(projectVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA}) ?? {};
             assert(projectVariablesFileData != null, "projectEntries cannot be null/undefined");
