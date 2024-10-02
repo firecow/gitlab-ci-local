@@ -199,7 +199,7 @@ export class Utils {
         // Expand all variables
         evalStr = this.expandTextWith(evalStr, {
             unescape: JSON.stringify("$"),
-            variable: (name) => JSON.stringify(envs[name] ?? null).replaceAll("\\\\", "\\"),
+            variable: (name) => JSON.stringify(envs[name] ?? "").replaceAll("\\\\", "\\"),
         });
         const expandedEvalStr = evalStr;
 
@@ -248,10 +248,6 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
             });
             return `.match(new RegExp(${_rhs})) ${_operator} null`;
         });
-
-        // Convert all null.match functions to false
-        evalStr = evalStr.replace(/null.match\(.+?\) != null/g, "false");
-        evalStr = evalStr.replace(/null.match\(.+?\) == null/g, "false");
 
         let res;
         try {
