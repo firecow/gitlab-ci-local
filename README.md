@@ -274,17 +274,32 @@ gitlab-ci-local --remote-variables git@gitlab.com:firecow/example.git=gitlab-var
 
 ### Project file variables
 
-Put a file like this in `$CWD/.gitlab-ci-local-variables.yml`
+The `--variables-file` [default: $CWD/.gitlab-ci-local-variables.yml] can be used to setup the CI/CD variables for the executors
 
+#### `yaml` format
 ```yaml
 ---
 AUTHORIZATION_PASSWORD: djwqiod910321
 DOCKER_LOGIN_PASSWORD: dij3213n123n12in3
 # Will be type File, because value is a file path
 KNOWN_HOSTS: '~/.ssh/known_hosts'
+
+# This is only supported in the yaml format
+# https://docs.gitlab.com/ee/ci/environments/index.html#limit-the-environment-scope-of-a-cicd-variable
+EXAMPLE:
+  values:
+    "*": "I am only available in all jobs"
+    staging: "I am only available in jobs with `environment: staging`"
+    production: "I am only available in jobs with `environment: production`"
 ```
 
-Variables will now appear in your jobs.
+#### `.env` format
+```
+AUTHORIZATION_PASSWORD=djwqiod910321
+DOCKER_LOGIN_PASSWORD=dij3213n123n12in3
+# NOTE: value will be '~/.ssh/known_hosts' which is different behavior from the yaml format
+KNOWN_HOSTS='~/.ssh/known_hosts'
+```
 
 ### Decorators
 
