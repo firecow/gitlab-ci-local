@@ -74,7 +74,7 @@ const tests = [
     },
     {
         rule: '$CI_COMMIT_BRANCH && $GITLAB_FEATURES =~ /\bdependency_scanning\b/ && $CI_GITLAB_FIPS_MODE == "true"',
-        jsExpression: 'null && false&& null == "true"',
+        jsExpression: 'null && false && null == "true"',
         evalResult: false,
     },
 ];
