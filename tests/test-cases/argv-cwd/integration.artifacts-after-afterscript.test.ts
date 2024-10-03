@@ -72,7 +72,7 @@ job:
     });
 
     test("won't fallback if not inside git repository", async () => {
-        const {stdout: tmpDir} = await Utils.bash("mktemp -d");
+        const {stdout: tmpDir} = await Utils.bash("realpath $(mktemp -d)");
         process.chdir(tmpDir);
 
         try {
@@ -82,7 +82,7 @@ job:
             }, writeStreams);
         } catch (e: any) {
             assert(e instanceof AssertionError, "e is not instanceof AssertionError");
-            expect(e.message).toContain(chalk`${tmpDir}/.gitlab-ci.yml could not be found`);
+            expect(e.message).toContain(chalk`--file (${tmpDir}/.gitlab-ci.yml) could not be found`);
         }
     });
 
@@ -98,7 +98,7 @@ job:
             }, writeStreams);
         } catch (e: any) {
             assert(e instanceof AssertionError, "e is not instanceof AssertionError");
-            expect(e.message).toEqual(chalk`${originalDir}/${currentRelativeDir}/.gitlab-ci.yml could not be found`);
+            expect(e.message).toEqual(chalk`--file (${originalDir}/${currentRelativeDir}/.gitlab-ci.yml) could not be found`);
         }
     });
 
@@ -114,7 +114,7 @@ job:
             }, writeStreams);
         } catch (e: any) {
             assert(e instanceof AssertionError, "e is not instanceof AssertionError");
-            expect(e.message).toEqual(chalk`${originalDir}/${currentRelativeDir}/.gitlab-ci.yml could not be found`);
+            expect(e.message).toEqual(chalk`--file (${originalDir}/${currentRelativeDir}/.gitlab-ci.yml) could not be found`);
         }
     });
 

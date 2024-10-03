@@ -9,15 +9,15 @@ const loadStateYML = async (stateFile: string): Promise<any> => {
     return yaml.load(stateFileContent) || {};
 };
 
-const getPipelineIid = async (cwd: string, stateDir: string) => {
-    const stateFile = `${cwd}/${stateDir}/state.yml`;
+const getPipelineIid = async (stateDir: string) => {
+    const stateFile = `${stateDir}/state.yml`;
     const ymlData = await loadStateYML(stateFile);
 
     return ymlData["pipelineIid"] ? ymlData["pipelineIid"] : 0;
 };
 
-const incrementPipelineIid = async (cwd: string, stateDir: string) => {
-    const stateFile = `${cwd}/${stateDir}/state.yml`;
+const incrementPipelineIid = async (stateDir: string) => {
+    const stateFile = `${stateDir}/state.yml`;
     const ymlData = await loadStateYML(stateFile);
 
     ymlData["pipelineIid"] = ymlData["pipelineIid"] != null ? ymlData["pipelineIid"] + 1 : 0;

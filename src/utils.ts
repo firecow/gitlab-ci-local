@@ -68,7 +68,7 @@ export class Utils {
     }
 
     static async getCoveragePercent (cwd: string, stateDir: string, coverageRegex: string, jobName: string) {
-        const content = await fs.readFile(`${cwd}/${stateDir}/output/${jobName}.log`, "utf8");
+        const content = await fs.readFile(`${stateDir}/output/${jobName}.log`, "utf8");
 
         const regex = new RegExp(coverageRegex.replace(/^\//, "").replace(/\/$/, ""), "gm");
         const matches = Array.from(content.matchAll(regex));
@@ -302,7 +302,7 @@ ${evalStr}
 
     static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
-        await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
+        await fs.mkdirp(`${stateDir}/builds/${target}`);
         await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') --exclude ${stateDir}/ ./ ${stateDir}/builds/${target}/`, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }

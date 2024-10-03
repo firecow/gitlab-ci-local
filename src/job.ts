@@ -160,7 +160,7 @@ export class Job {
         if (this.jobData["image"]) {
             ciProjectDir = CI_PROJECT_DIR;
         } else if (argv.shellIsolation) {
-            ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
+            ciProjectDir = `${stateDir}/builds/${this.safeJobName}`;
         }
 
         predefinedVariables["CI_JOB_ID"] = `${this.jobId}`;
@@ -463,7 +463,7 @@ export class Job {
         const imageName = this.imageName(expanded);
         const safeJobName = this.safeJobName;
 
-        const outputLogFilePath = `${argv.cwd}/${argv.stateDir}/output/${safeJobName}.log`;
+        const outputLogFilePath = `${argv.stateDir}/output/${safeJobName}.log`;
         await fs.ensureFile(outputLogFilePath);
         await fs.truncate(outputLogFilePath);
 
@@ -527,7 +527,7 @@ export class Job {
                     const serviceName = service.name;
                     await this.pullImage(writeStreams, serviceName);
                     const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service);
-                    const serviceContainerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
+                    const serviceContainerLogFile = `${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
                     await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContainerLogFile);
                     const {stdout, stderr} = await Utils.spawn([this.argv.containerExecutable, "logs", serviceContainerId]);
                     await fs.ensureFile(serviceContainerLogFile);
@@ -656,7 +656,7 @@ export class Job {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
-        const outputFilesPath = `${cwd}/${stateDir}/output/${safeJobName}.log`;
+        const outputFilesPath = `${stateDir}/output/${safeJobName}.log`;
         const buildVolumeName = this.buildVolumeName;
         const tmpVolumeName = this.tmpVolumeName;
         const imageName = this.imageName(expanded);
@@ -839,7 +839,7 @@ export class Job {
 
         cmd += "exit 0\n";
 
-        const jobScriptFile = `${cwd}/${stateDir}/scripts/${safeJobName}_${this.jobId}`;
+        const jobScriptFile = `${stateDir}/scripts/${safeJobName}_${this.jobId}`;
         await fs.outputFile(jobScriptFile, cmd, "utf-8");
         await fs.chmod(jobScriptFile, "0755");
         this._filesToRm.push(jobScriptFile);
@@ -877,7 +877,7 @@ export class Job {
             if (imageName) {
                 cp.stdin?.end("/gcl-cmd");
             } else {
-                cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}_${this.jobId}`);
+                cp.stdin?.end(`${stateDir}/scripts/${safeJobName}_${this.jobId}`);
             }
         });
     }
@@ -936,7 +936,6 @@ export class Job {
     }
 
     private async initProducerReportsDotenvVariables (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
-        const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const producers = this.producers;
         let producerReportsEnvs = {};
@@ -945,7 +944,7 @@ export class Job {
             if (producerDotenv === null) continue;
 
             const safeProducerName = Utils.safeDockerString(producer.name);
-            const dotenvFolder = `${cwd}/${stateDir}/artifacts/${safeProducerName}/.gitlab-ci-reports/dotenv/`;
+            const dotenvFolder = `${stateDir}/artifacts/${safeProducerName}/.gitlab-ci-reports/dotenv/`;
             if (await fs.pathExists(dotenvFolder)) {
                 const dotenvFiles = (await Utils.spawn(["find", ".", "-type", "f"], dotenvFolder)).stdout.split("\n");
                 for (const dotenvFile of dotenvFiles) {
@@ -973,7 +972,7 @@ export class Job {
 
             const time = process.hrtime();
             const cacheName = await this.getUniqueCacheName(cwd, expanded, c.key);
-            const cacheFolder = `${cwd}/${stateDir}/cache/${cacheName}`;
+            const cacheFolder = `${stateDir}/cache/${cacheName}`;
             if (!await fs.pathExists(cacheFolder)) {
                 continue;
             }
@@ -989,13 +988,12 @@ export class Job {
     private async copyArtifactsIn (writeStreams: WriteStreams) {
         if ((!this.imageName(this._variables) && !this.argv.shellIsolation) || (this.producers ?? []).length === 0) return;
 
-        const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const time = process.hrtime();
         const promises = [];
         for (const producer of this.producers ?? []) {
             const producerSafeName = Utils.safeDockerString(producer.name);
-            const artifactFolder = `${cwd}/${stateDir}/artifacts/${producerSafeName}`;
+            const artifactFolder = `${stateDir}/artifacts/${producerSafeName}`;
             if (!await fs.pathExists(artifactFolder)) {
                 await fs.mkdirp(artifactFolder);
             }
@@ -1015,7 +1013,7 @@ export class Job {
     copyIn (source: string) {
         const safeJobName = this.safeJobName;
         if (!this.imageName(this._variables) && this.argv.shellIsolation) {
-            return Utils.spawn(["rsync", "-a", `${source}/.`, `${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`]);
+            return Utils.spawn(["rsync", "-a", `${source}/.`, `${this.argv.stateDir}/builds/${safeJobName}`]);
         }
         return Utils.spawn([this.argv.containerExecutable, "cp", `${source}/.`, `${this._containerId}:/gcl-builds`]);
     }
@@ -1045,7 +1043,7 @@ export class Job {
                 });
                 endTime = process.hrtime(time);
 
-                const readdir = await fs.readdir(`${this.argv.cwd}/${stateDir}/cache/${cacheName}`);
+                const readdir = await fs.readdir(`${stateDir}/cache/${cacheName}`);
                 if (readdir.length === 0) {
                     writeStreams.stdout(chalk`${this.formattedJobName} {yellow !! no cache was copied for ${path} !!}\n`);
                 } else {
@@ -1099,13 +1097,13 @@ export class Job {
 
         if (reportDotenvs != null) {
             reportDotenvs.forEach(async (reportDotenv) => {
-                if (!await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) {
+                if (!await fs.pathExists(`${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) {
                     writeStreams.stderr(chalk`${this.formattedJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
                 }
             });
         }
 
-        const readdir = await fs.readdir(`${cwd}/${stateDir}/artifacts/${safeJobName}`);
+        const readdir = await fs.readdir(`${stateDir}/artifacts/${safeJobName}`);
         if (readdir.length === 0) {
             writeStreams.stdout(chalk`${this.formattedJobName} {yellow !! no artifacts was copied !!}\n`);
         } else {
@@ -1114,9 +1112,9 @@ export class Job {
 
         if (this.artifactsToSource && (this.argv.shellIsolation || this.imageName(expanded))) {
             time = process.hrtime();
-            await Utils.spawn(["rsync", "--exclude=/.gitlab-ci-reports/", "-a", `${cwd}/${stateDir}/artifacts/${safeJobName}/.`, cwd]);
+            await Utils.spawn(["rsync", "--exclude=/.gitlab-ci-reports/", "-a", `${stateDir}/artifacts/${safeJobName}/.`, cwd]);
             if (reportDotenv != null) {
-                await Utils.spawn(["rsync", "-a", `${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.`, cwd]);
+                await Utils.spawn(["rsync", "-a", `${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.`, cwd]);
             }
             endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -1128,7 +1126,7 @@ export class Job {
         const buildVolumeName = this.buildVolumeName;
         const cwd = this.argv.cwd;
 
-        await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
+        await fs.mkdirp(`${stateDir}/${type}`);
 
         if (this.imageName(this._variables)) {
             const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/gcl-builds/ -w /gcl-builds docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
@@ -1136,7 +1134,7 @@ export class Job {
             await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
             await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
         } else if (this.argv.shellIsolation) {
-            await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}/${stateDir}/builds/${safeJobName}`);
+            await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${stateDir}/builds/${safeJobName}`);
         } else if (!this.argv.shellIsolation) {
             await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}`);
         }
