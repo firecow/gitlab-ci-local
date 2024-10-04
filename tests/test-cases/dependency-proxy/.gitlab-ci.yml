@@ -1,0 +1,5 @@
+---
+job:
+  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/busybox:latest
+  script:
+    - echo 1
