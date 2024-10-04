@@ -28,6 +28,9 @@ const envVars: {[key: string]: string} = {
     CI_COMMIT_TIMESTAMP: mockDate,
     CI_COMMIT_TITLE: "Commit Title",
     CI_DEFAULT_BRANCH: "main",
+    CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX: "gitlab.com:443/GCL/dependency_proxy/containers",
+    CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX: "gitlab.com:443/GCL/dependency_proxy/containers",
+    CI_DEPENDENCY_PROXY_SERVER: "gitlab.com:443",
     CI_ENVIRONMENT_ACTION: "",
     CI_ENVIRONMENT_NAME: "",
     CI_ENVIRONMENT_SLUG: "",
@@ -147,6 +150,10 @@ CI_SERVER_SHELL_SSH_PORT: 8022
         envVars["CI_SERVER_SHELL_SSH_PORT"] = "8022";
         envVars["CI_SERVER_URL"] = "https://gitlab.com:8443";
 
+        envVars["CI_DEPENDENCY_PROXY_SERVER"] = "gitlab.com:8443";
+        envVars["CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX"] = "gitlab.com:8443/GCL/dependency_proxy/containers";
+        envVars["CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX"] = "gitlab.com:8443/GCL/dependency_proxy/containers";
+
         let expected = "";
         Object.keys(envVars).forEach(key => {
             expected += `test-job > ${key}=${envVars[key]}\n`;
@@ -182,6 +189,10 @@ CI_SERVER_SHELL_SSH_PORT: 8022
         envVars["CI_SERVER_PORT"] = "9443";
         envVars["CI_SERVER_SHELL_SSH_PORT"] = "9022";
         envVars["CI_SERVER_URL"] = "https://gitlab.com:9443";
+
+        envVars["CI_DEPENDENCY_PROXY_SERVER"] = "gitlab.com:9443";
+        envVars["CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX"] = "gitlab.com:9443/GCL/dependency_proxy/containers";
+        envVars["CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX"] = "gitlab.com:9443/GCL/dependency_proxy/containers";
 
         let expected = "";
         Object.keys(envVars).forEach(key => {
