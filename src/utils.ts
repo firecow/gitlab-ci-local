@@ -218,7 +218,7 @@ export class Utils {
                 default:
                     throw operator;
             }
-            return `.match(${rhs}${flags})${remainingTokens} ${_operator} null`;
+            return `.match(${rhs}${flags})${remainingTokens} ${_operator} null `;
         });
 
         // Scenario when RHS is surrounded by double-quotes
@@ -250,8 +250,10 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
         });
 
         // Convert all null.match functions to false
-        evalStr = evalStr.replace(/null.match\(.+?\) != null/g, "false");
-        evalStr = evalStr.replace(/null.match\(.+?\) == null/g, "false");
+        evalStr = evalStr.replace(/null.match\(.+?\)\s*!=\s*null/g, "false");
+        evalStr = evalStr.replace(/null.match\(.+?\)\s*==\s*null/g, "false");
+
+        evalStr = evalStr.trim();
 
         let res;
         try {
