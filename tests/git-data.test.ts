@@ -75,6 +75,16 @@ const tests = [
         },
     },
     {
+        input: "https://username-with-dashes:glpat-qwerty12345@somegitlab.com:8080/vendor/package.git",
+        expected: {
+            schema: "https",
+            port: "8080",
+            host: "somegitlab.com",
+            group: "vendor",
+            project: "package",
+        },
+    },
+    {
         input: "https://example.com:8443/1/2/3package.git",
         expected: {
             schema: "https",
