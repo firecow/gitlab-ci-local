@@ -100,7 +100,7 @@ export class GitData {
             }
 
             if (gitRemote.startsWith("http")) {
-                gitRemoteMatch = /(?<schema>https?):\/\/(?:(\w+):([\w-]+)@)?(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7ve8l
+                gitRemoteMatch = /(?<schema>https?):\/\/(?:([^:]+):([^@]+)@)?(?<host>[^/:]+):?(?<port>\d+)?\/(?<group>\S+)\/(?<project>\S+)\.git/.exec(gitRemote); // regexr.com/7ve8l
                 assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
 
                 let port = "443";
