@@ -87,7 +87,7 @@ export class ParserIncludes {
             } else if (value["project"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
                     const fileDoc = await Parser.loadYaml(
-                        `${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`
+                        `${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`
                         , {inputs: value.inputs || {}}
                         , expandVariables);
                     // Expand local includes inside a "project"-like include
@@ -143,13 +143,13 @@ export class ParserIncludes {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
                 const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables
+                    `${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
                 const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables
+                    `${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else {
@@ -217,7 +217,7 @@ export class ParserIncludes {
     static async downloadIncludeRemote (cwd: string, stateDir: string, url: string, fetchIncludes: boolean): Promise<void> {
         const fsUrl = Utils.fsUrl(url);
         try {
-            const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
+            const target = `${stateDir}/includes/${fsUrl}`;
             if (await fs.pathExists(target) && !fetchIncludes) return;
             const res = await axios.get(url);
             await fs.outputFile(target, res.data);
@@ -231,25 +231,25 @@ export class ParserIncludes {
         const normalizedFile = file.replace(/^\/+/, "");
         try {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
-            if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
+            if (await fs.pathExists(`${target}/${normalizedFile}`) && !fetchIncludes) return;
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
-                await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
+                await fs.mkdirp(path.dirname(`${target}/${normalizedFile}`));
                 await Utils.bash(`
-                    cd ${cwd}/${stateDir} \\
+                    cd ${stateDir} \\
                         && git clone --branch "${ref}" -n --depth=1 --filter=tree:0 \\
                                 ${remote.schema}://${remote.host}/${project}.git \\
-                                ${cwd}/${target}.${ext} \\
-                        && cd ${cwd}/${target}.${ext} \\
+                                ${target}.${ext} \\
+                        && cd ${target}.${ext} \\
                         && git sparse-checkout set --no-cone ${normalizedFile} \\
                         && git checkout \\
-                        && cd ${cwd}/${stateDir} \\
-                        && cp ${cwd}/${target}.${ext}/${normalizedFile} \\
-                              ${cwd}/${target}/${normalizedFile}
+                        && cd ${stateDir} \\
+                        && cp ${target}.${ext}/${normalizedFile} \\
+                              ${target}/${normalizedFile}
                     `, cwd);
             } else {
-                await fs.mkdirp(`${cwd}/${target}`);
+                await fs.mkdirp(`${target}`);
                 await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}/`, cwd);
             }
         } catch (e) {

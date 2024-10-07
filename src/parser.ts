@@ -67,8 +67,8 @@ export class Parser {
         }
 
         const parsingTime = process.hrtime(time);
-        const pathToExpandedGitLabCi = path.join(argv.cwd, argv.stateDir, "expanded-gitlab-ci.yml");
-        fs.mkdirpSync(path.join(argv.cwd, argv.stateDir));
+        const pathToExpandedGitLabCi = path.join(argv.stateDir, "expanded-gitlab-ci.yml");
+        fs.mkdirpSync(argv.stateDir);
         fs.writeFileSync(pathToExpandedGitLabCi, yaml.dump(parser.gitlabData));
         writeStreams.stderr(chalk`{grey parsing and downloads finished in ${prettyHrtime(parsingTime)}.}\n`);
 
@@ -104,7 +104,7 @@ export class Parser {
         const expanded = Utils.expandVariables(variables);
 
         let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
-        const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`, {}, this.expandVariables);
+        const gitlabCiData = await Parser.loadYaml(file, {}, this.expandVariables);
 
         yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, {cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables, maximumIncludes: argv.maximumIncludes}));
         ParserIncludes.resetCount();

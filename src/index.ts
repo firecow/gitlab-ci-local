@@ -106,7 +106,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         })
         .option("cwd", {
             type: "string",
-            description: "Path to a current working directory",
+            description: "Path to the current working directory of the gitlab-ci-local executor",
             requiresArg: true,
         })
         .option("completion", {
@@ -146,17 +146,17 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         })
         .option("state-dir", {
             type: "string",
-            description: "Location of the .gitlab-ci-local state dir, relative to cwd, eg. (symfony/.gitlab-ci-local/)",
+            description: "Location of the .gitlab-ci-local state dir",
             requiresArg: false,
         })
         .option("file", {
             type: "string",
-            description: "Location of the .gitlab-ci.yml, relative to cwd, eg. (gitlab/.gitlab-ci.yml)",
+            description: "Location of the .gitlab-ci.yml",
             requiresArg: false,
         })
         .option("home", {
             type: "string",
-            description: "Location of the HOME .gitlab-ci-local folder ($HOME/.gitlab-ci-local/variables.yml)",
+            description: "Location of the HOME(gcl global config) [default: $HOME/.gitlab-ci-local]",
             requiresArg: false,
         })
         .option("shell-isolation", {
@@ -275,7 +275,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                     completionFilter();
                 } else {
                     Argv.build({...yargsArgv, autoCompleting: true})
-                        .then(argv => state.getPipelineIid(argv.cwd, argv.stateDir).then(pipelineIid => ({argv, pipelineIid})))
+                        .then(argv => state.getPipelineIid(argv.stateDir).then(pipelineIid => ({argv, pipelineIid})))
                         .then(({argv, pipelineIid}) => Parser.create(argv, new WriteStreamsMock(), pipelineIid, []))
                         .then((parser) => {
                             const jobNames = [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);

@@ -12,12 +12,15 @@ beforeAll(() => {
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 });
 
+const home = `${process.cwd()}/tests/test-cases/custom-home/.home/.gitlab-ci-local`;
+const homeNormalizeKey = `${process.cwd()}/tests/test-cases/custom-home/.home-normalize-key/.gitlab-ci-local`;
+
 test("custom-home <test-staging>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-staging"],
-        home: "tests/test-cases/custom-home/.home",
+        home: home,
     }, writeStreams);
 
     const expected = [
@@ -37,7 +40,7 @@ test("custom-home <test-production>", async () => {
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-production"],
-        home: "tests/test-cases/custom-home/.home",
+        home: home,
     }, writeStreams);
 
     const expected = [
@@ -53,7 +56,7 @@ test("custom-home <test-image>", async () => {
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-image"],
-        home: "tests/test-cases/custom-home/.home",
+        home: home,
     }, writeStreams);
 
     const expected = [
@@ -69,7 +72,7 @@ test("custom-home <test-normalize-key>", async () => {
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-normalize-key"],
-        home: "tests/test-cases/custom-home/.home-normalize-key",
+        home: homeNormalizeKey,
     }, writeStreams);
 
     const expected = [
@@ -84,7 +87,7 @@ test("custom-home <test-predefined-overwrite>", async () => {
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-predefined-overwrite"],
-        home: "tests/test-cases/custom-home/.home",
+        home: home,
     }, writeStreams);
 
     const expected = [
@@ -99,7 +102,7 @@ test("custom-home <build-job>", async () => {
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["build-job"],
-        home: "tests/test-cases/custom-home/.home",
+        home: home,
     }, writeStreams);
 
     const expected = [

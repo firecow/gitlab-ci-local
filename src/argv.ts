@@ -21,6 +21,14 @@ async function gitRootPath () {
     return stdout;
 }
 
+const generateGitIgnore = (stateDir: string) => {
+    const gitIgnoreFilePath = path.join(stateDir, ".gitignore");
+    const gitIgnoreContent = "*\n!.gitignore\n";
+    if (!fs.pathExistsSync(gitIgnoreFilePath)) {
+        fs.outputFileSync(gitIgnoreFilePath, gitIgnoreContent);
+    }
+};
+
 export class Argv {
 
     private map: Map<string, any> = new Map<string, any>();
@@ -39,7 +47,7 @@ export class Argv {
         const argv = new Argv(args, writeStreams);
         await argv.fallbackCwd(args);
 
-        argv.injectDotenv(`${argv.home}/.gitlab-ci-local/.env`, args);
+        argv.injectDotenv(`${argv.home}/.env`, args);
         argv.injectDotenv(`${argv.cwd}/.gitlab-ci-local-env`, args);
 
         if (!argv.shellExecutorNoImage && argv.shellIsolation) {
@@ -75,23 +83,37 @@ export class Argv {
     get cwd (): string {
         let cwd = this.map.get("cwd") ?? ".";
         assert(typeof cwd != "object", "--cwd option cannot be an array");
-        assert(!path.isAbsolute(cwd), "Please use relative path for the --cwd option");
-        cwd = path.normalize(`${process.cwd()}/${cwd}`);
-        cwd = cwd.replace(/\/$/, "");
-        assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
+        if (!path.isAbsolute(cwd)) {
+            cwd = path.resolve(`${process.cwd()}/${cwd}`);
+        }
+        assert(fs.pathExistsSync(cwd), `--cwd (${cwd}) is not a directory`);
         return cwd;
     }
 
     get file (): string {
-        return this.map.get("file") ?? ".gitlab-ci.yml";
+        let file = this.map.get("file") ?? ".gitlab-ci.yml";
+        if (!path.isAbsolute(file)) {
+            file = `${this.cwd}/${file}`;
+        }
+        assert(fs.pathExistsSync(`${file}`), `--file (${file}) could not be found`);
+        return file;
     }
 
     get stateDir (): string {
-        return (this.map.get("stateDir") ?? ".gitlab-ci-local").replace(/\/$/, "");
+        let stateDir = this.map.get("stateDir") ?? ".gitlab-ci-local";
+        if (path.isAbsolute(stateDir)) {
+            // autogenerate uniqueStateDir
+            return `${stateDir}/${this.cwd.replaceAll("/", ".")}`;
+        }
+        stateDir = `${this.cwd}/${stateDir}`;
+        generateGitIgnore(stateDir);
+        return stateDir;
     }
 
     get home (): string {
-        return (this.map.get("home") ?? process.env.HOME ?? "").replace(/\/$/, "");
+        const home = (this.map.get("home") ?? `${process.env.HOME}/.gitlab-ci-local}`).replace(/\/$/, "");
+        assert(path.isAbsolute(home), `--home (${home}) must be a absolute path`);
+        return home;
     }
 
     get volume (): string[] {

@@ -1,0 +1,4 @@
+---
+job:
+  script:
+    - echo "Test something"
