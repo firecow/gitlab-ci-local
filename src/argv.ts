@@ -22,6 +22,9 @@ async function gitRootPath () {
 }
 
 export class Argv {
+    static readonly default = {
+        "variablesFile": ".gitlab-ci-local-variables.yml",
+    };
 
     private map: Map<string, any> = new Map<string, any>();
     private writeStreams: WriteStreams | undefined;
@@ -80,6 +83,10 @@ export class Argv {
         cwd = cwd.replace(/\/$/, "");
         assert(fs.pathExistsSync(cwd), `${cwd} is not a directory`);
         return cwd;
+    }
+
+    get variablesFile (): string {
+        return this.map.get("variablesFile") ?? Argv.default.variablesFile;
     }
 
     get file (): string {

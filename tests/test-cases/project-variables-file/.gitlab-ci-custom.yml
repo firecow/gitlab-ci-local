@@ -1,0 +1,10 @@
+---
+job:
+  image: busybox
+  script:
+    - echo $SECRET
+
+job2:
+  image: busybox
+  script:
+    - env | grep SECRET | sort
