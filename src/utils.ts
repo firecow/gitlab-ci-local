@@ -24,6 +24,9 @@ type ExpandWith = {
 };
 
 export class Utils {
+    static removePrefix = (value: string, prefix: string) =>
+        value.startsWith(prefix) ? value.slice(prefix.length) : value;
+
     static bash (shellScript: string, cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode: number}> {
         return execa(shellScript, {shell: "bash", cwd});
     }

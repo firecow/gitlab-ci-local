@@ -690,6 +690,17 @@ export class Job {
         this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (imageName && !this._containerId) {
+            const CI_DEPENDENCY_PROXY_SERVER = this._variables["CI_DEPENDENCY_PROXY_SERVER"];
+            if (imageName.startsWith(CI_DEPENDENCY_PROXY_SERVER)) {
+                try {
+                    await Utils.spawn([this.argv.containerExecutable, "login", CI_DEPENDENCY_PROXY_SERVER], cwd);
+                } catch (e: any) {
+                    assert(!e.stderr.includes("Cannot perform an interactive login"),
+                        `Please authenticate to the Dependency Proxy (${CI_DEPENDENCY_PROXY_SERVER}) https://docs.gitlab.com/ee/user/packages/dependency_proxy/#authenticate-with-the-dependency-proxy`
+                    );
+                    throw e;
+                }
+            }
             await this.pullImage(writeStreams, imageName);
 
             let dockerCmd = `${this.argv.containerExecutable} create --interactive ${this.generateInjectSSHAgentOptions()} `;
