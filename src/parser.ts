@@ -98,8 +98,8 @@ export class Parser {
         const fetchIncludes = argv.fetchIncludes;
         const gitData = await GitData.init(cwd, writeStreams);
         const variablesFromFiles = await VariablesFromFiles.init(argv, writeStreams, gitData);
-        const predefinedVariables = initPredefinedVariables({gitData, argv});
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles);
+        const predefinedVariables = initPredefinedVariables({gitData, argv, envMatchedVariables});
         const variables = {...predefinedVariables, ...envMatchedVariables, ...argv.variable};
         const expanded = Utils.expandVariables(variables);
 

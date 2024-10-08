@@ -42,6 +42,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [Decorators](#decorators)
     * [Includes](#includes)
     * [Artifacts](#artifacts)
+    * [Custom Gitlab Ports](#custom-gitlab-ports)
 * [Development](#development)
     * [Scripts](#scripts)
     * [Package binaries](#package-binaries)
@@ -357,6 +358,18 @@ Shell executor jobs copies artifacts to host/cwd directory. Use --shell-isolatio
 handling for shell jobs.
 
 Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
+
+### Custom gitlab ports
+
+If you have a custom gitlab ports, it is recommended to manually define the `CI_SERVER_PORT` and `CI_SERVER_SHELL_SSH_PORT` so that the predefined variables will be generated with the correct values
+
+```yaml
+---
+# $CWD/.gitlab-ci-local-variables.yml
+
+CI_SERVER_PORT: 8443
+CI_SERVER_SHELL_SSH_PORT: 8022
+```
 
 ## Development
 
