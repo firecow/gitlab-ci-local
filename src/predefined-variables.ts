@@ -4,9 +4,25 @@ import {GitData} from "./git-data.js";
 type PredefinedVariablesOpts = {
     gitData: GitData;
     argv: {unsetVariables: string[]};
+    envMatchedVariables: {[key: string]: string};
 };
 
-export function init ({gitData, argv}: PredefinedVariablesOpts): {[name: string]: string} {
+export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesOpts): {[name: string]: string} {
+
+    // precedence:
+    // 1. gitlab variables files
+    // 2. values derieved implicitly from `git remote -v`
+    // 3. default value
+    const CI_SERVER_PORT = envMatchedVariables["CI_SERVER_PORT"]
+      ?? (gitData.remote.schema === "http" || gitData.remote.schema === "https")
+        ? gitData.remote.port
+        : "443";
+    const CI_SERVER_SHELL_SSH_PORT = envMatchedVariables["CI_SERVER_SHELL_SSH_PORT"]
+      ?? (gitData.remote.schema === "ssh")
+        ? gitData.remote.port
+        : "22";
+
+    const CI_SERVER_URL = `https://${gitData.remote.host}:${CI_SERVER_PORT}`;
     const predefinedVariables: {[key: string]: string} = {
         CI: "true",
         GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
@@ -34,13 +50,14 @@ export function init ({gitData, argv}: PredefinedVariablesOpts): {[name: string]
         CI_COMMIT_DESCRIPTION: "More commit text",
         CI_DEFAULT_BRANCH: gitData.branches.default,
         CI_PIPELINE_SOURCE: "push",
-        CI_SERVER_FQDN: `${gitData.remote.host}`,
+        CI_SERVER_FQDN: `${gitData.remote.host}:${CI_SERVER_PORT}`,
         CI_SERVER_HOST: `${gitData.remote.host}`,
-        CI_SERVER_PORT: `${gitData.remote.port}`,
-        CI_SERVER_URL: `https://${gitData.remote.host}:443`,
+        CI_SERVER_PORT: CI_SERVER_PORT,
+        CI_SERVER_SHELL_SSH_PORT: CI_SERVER_SHELL_SSH_PORT,
+        CI_SERVER_URL: CI_SERVER_URL,
         CI_SERVER_PROTOCOL: "https",
-        CI_API_V4_URL: `https://${gitData.remote.host}/api/v4`,
-        CI_PROJECT_URL: `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}`,
+        CI_API_V4_URL: `${CI_SERVER_URL}/api/v4`,
+        CI_PROJECT_URL: `${CI_SERVER_URL}/${gitData.remote.group}/${gitData.remote.project}`,
         CI_TEMPLATE_REGISTRY_HOST: "registry.gitlab.com",
         GITLAB_CI: "false",
     };
