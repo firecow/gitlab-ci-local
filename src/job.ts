@@ -74,6 +74,9 @@ export type JobRule = {
 };
 
 export class Job {
+    private generateJobId (): number {
+        return Math.floor(Math.random() * 1000000);
+    }
 
     static readonly illegalJobNames = new Set([
         "include", "local_configuration", "image", "services",
@@ -136,7 +139,7 @@ export class Job {
         this.gitData = opt.gitData;
         this.name = opt.name;
         this.baseName = opt.baseName;
-        this.jobId = Math.floor(Math.random() * 1000000);
+        this.jobId = this.generateJobId();
         this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
 
@@ -170,8 +173,8 @@ export class Job {
         predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
         predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
         predefinedVariables["CI_PROJECT_DIR"] = ciProjectDir;
-        predefinedVariables["CI_JOB_URL"] = `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
-        predefinedVariables["CI_PIPELINE_URL"] = `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
+        predefinedVariables["CI_JOB_URL"] = `${this._variables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
+        predefinedVariables["CI_PIPELINE_URL"] = `${this._variables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
         predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
         predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 23).replace(/-$/, "").toLowerCase() ?? "";
         predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
