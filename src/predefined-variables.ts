@@ -15,16 +15,16 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
     // 3. default value
     const CI_SERVER_PROTOCOL = envMatchedVariables["CI_SERVER_PROTOCOL"]
       ?? ((gitData.remote.schema === "http" || gitData.remote.schema === "https")
-        ? gitData.remote.schema
-        : "https");
+          ? gitData.remote.schema
+          : "https");
     const CI_SERVER_PORT = envMatchedVariables["CI_SERVER_PORT"]
       ?? ((gitData.remote.schema === "http" || gitData.remote.schema === "https")
-        ? gitData.remote.port
-        : "443");
+          ? gitData.remote.port
+          : "443");
     const CI_SERVER_SHELL_SSH_PORT = envMatchedVariables["CI_SERVER_SHELL_SSH_PORT"]
       ?? ((gitData.remote.schema === "ssh")
-        ? gitData.remote.port
-        : "22");
+          ? gitData.remote.port
+          : "22");
     const CI_SERVER_HOST = envMatchedVariables["CI_SERVER_HOST"]
       ?? `${gitData.remote.host}`;
     const CI_SERVER_FQDN = envMatchedVariables["CI_SERVER_FQDN"]
