@@ -345,7 +345,7 @@ ${evalStr}
             case "http":
             case "https": {
                 try {
-                    const {status} = await axios.get(`${protocol}://${domain}/${projectPath}/-/raw/${ref}/${file}`);
+                    const {status} = await axios.get(`${protocol}://${domain}:${port}/${projectPath}/-/raw/${ref}/${file}`);
                     return (status === 200);
                 } catch (e) {
                     return false;
