@@ -1,8 +1,8 @@
 ---
 test-job:
-  image: docker.io/ruby:3.1
+  image: busybox
   script:
-    - env | sort | grep -Ev "^RUBY|^PATH|^GEM|^BUNDLE|^HOSTNAME|^HOME=|^LANG="
+    - env | sort | grep -Ev "^PATH|^HOSTNAME|^HOME=|^More commit text$|^SHLVL"
 
 shell-isolation:
   script:

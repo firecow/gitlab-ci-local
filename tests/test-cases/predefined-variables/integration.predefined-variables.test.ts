@@ -15,6 +15,68 @@ let dateSpy: jest.SpyInstance;
 const mockJobId = 123;
 const mockDate = "2020-01-05T00:00:00Z";
 
+const envVars: {[key: string]: string} = {
+    CI: "true",
+    CI_API_V4_URL: "https://gitlab.com/api/v4",
+    CI_COMMIT_BRANCH: "master",
+    CI_COMMIT_DESCRIPTION: "More commit text",
+    CI_COMMIT_MESSAGE: "Commit Title",
+    CI_COMMIT_REF_NAME: "master",
+    CI_COMMIT_REF_PROTECTED: "false",
+    CI_COMMIT_REF_SLUG: "master",
+    CI_COMMIT_SHA: "02618988a1864b3d06cfee3bd79f8baa2dd21407",
+    CI_COMMIT_SHORT_SHA: "02618988",
+    CI_COMMIT_TIMESTAMP: mockDate,
+    CI_COMMIT_TITLE: "Commit Title",
+    CI_DEFAULT_BRANCH: "main",
+    CI_ENVIRONMENT_ACTION: "",
+    CI_ENVIRONMENT_NAME: "",
+    CI_ENVIRONMENT_SLUG: "",
+    CI_ENVIRONMENT_TIER: "",
+    CI_ENVIRONMENT_URL: "",
+    CI_JOB_ID: `${mockJobId}`,
+    CI_JOB_NAME: "test-job",
+    CI_JOB_NAME_SLUG: "test-job",
+    CI_JOB_STAGE: "test",
+    CI_JOB_STARTED_AT: mockDate,
+    CI_JOB_STATUS: "running",
+    CI_JOB_URL: `https://gitlab.com/GCL/predefined-variables/-/jobs/${mockJobId}`,
+    CI_NODE_TOTAL: "1",
+    CI_PIPELINE_CREATED_AT: mockDate,
+    CI_PIPELINE_ID: "1000",
+    CI_PIPELINE_IID: "0",
+    CI_PIPELINE_SOURCE: "push",
+    CI_PIPELINE_URL: "https://gitlab.com/GCL/predefined-variables/pipelines/0",
+    CI_PROJECT_DIR: "/gcl-builds",
+    CI_PROJECT_ID: "1217",
+    CI_PROJECT_NAME: "predefined-variables",
+    CI_PROJECT_NAMESPACE: "GCL",
+    CI_PROJECT_PATH: "GCL/predefined-variables",
+    CI_PROJECT_PATH_SLUG: "gcl-predefined-variables",
+    CI_PROJECT_ROOT_NAMESPACE: "GCL",
+    CI_PROJECT_TITLE: "predefinedVariables",
+    CI_PROJECT_URL: "https://gitlab.com/GCL/predefined-variables",
+    CI_PROJECT_VISIBILITY: "internal",
+    CI_REGISTRY: "local-registry.gitlab.com",
+    CI_REGISTRY_IMAGE: "local-registry.gitlab.com/gcl/predefined-variables",
+    CI_SERVER_FQDN: "gitlab.com",
+    CI_SERVER_HOST: "gitlab.com",
+    CI_SERVER_PORT: "443",
+    CI_SERVER_PROTOCOL: "https",
+    CI_SERVER_SHELL_SSH_PORT: "22",
+    CI_SERVER_URL: "https://gitlab.com",
+    CI_TEMPLATE_REGISTRY_HOST: "registry.gitlab.com",
+    FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR: "false",
+    GITLAB_CI: "false",
+    GITLAB_USER_EMAIL: "test@test.com",
+    GITLAB_USER_ID: "990",
+    GITLAB_USER_LOGIN: "test",
+    GITLAB_USER_NAME: "Testersen",
+    OLDPWD: "/gcl-builds",
+    PWD: "/gcl-builds",
+};
+
+
 const cwd = "tests/test-cases/predefined-variables";
 const fileVariable = path.join(cwd, ".gitlab-ci-local-variables.yml");
 
@@ -52,70 +114,13 @@ describe("predefined-variables", () => {
             shellIsolation: true,
         }, writeStreams);
 
-        const expected = `test-job $ env | sort | grep -Ev "^RUBY|^PATH|^GEM|^BUNDLE|^HOSTNAME|^HOME=|^LANG="
-test-job > CI=true
-test-job > CI_API_V4_URL=https://gitlab.com/api/v4
-test-job > CI_COMMIT_BRANCH=master
-test-job > CI_COMMIT_DESCRIPTION=More commit text
-test-job > CI_COMMIT_MESSAGE=Commit Title
-test-job > CI_COMMIT_REF_NAME=master
-test-job > CI_COMMIT_REF_PROTECTED=false
-test-job > CI_COMMIT_REF_SLUG=master
-test-job > CI_COMMIT_SHA=02618988a1864b3d06cfee3bd79f8baa2dd21407
-test-job > CI_COMMIT_SHORT_SHA=02618988
-test-job > CI_COMMIT_TIMESTAMP=${mockDate}
-test-job > CI_COMMIT_TITLE=Commit Title
-test-job > CI_DEFAULT_BRANCH=main
-test-job > CI_ENVIRONMENT_ACTION=
-test-job > CI_ENVIRONMENT_NAME=
-test-job > CI_ENVIRONMENT_SLUG=
-test-job > CI_ENVIRONMENT_TIER=
-test-job > CI_ENVIRONMENT_URL=
-test-job > CI_JOB_ID=${mockJobId}
-test-job > CI_JOB_NAME=test-job
-test-job > CI_JOB_NAME_SLUG=test-job
-test-job > CI_JOB_STAGE=test
-test-job > CI_JOB_STARTED_AT=${mockDate}
-test-job > CI_JOB_STATUS=running
-test-job > CI_JOB_URL=https://gitlab.com/GCL/predefined-variables/-/jobs/${mockJobId}
-test-job > CI_NODE_TOTAL=1
-test-job > CI_PIPELINE_CREATED_AT=${mockDate}
-test-job > CI_PIPELINE_ID=1000
-test-job > CI_PIPELINE_IID=0
-test-job > CI_PIPELINE_SOURCE=push
-test-job > CI_PIPELINE_URL=https://gitlab.com/GCL/predefined-variables/pipelines/0
-test-job > CI_PROJECT_DIR=/gcl-builds
-test-job > CI_PROJECT_ID=1217
-test-job > CI_PROJECT_NAME=predefined-variables
-test-job > CI_PROJECT_NAMESPACE=GCL
-test-job > CI_PROJECT_PATH=GCL/predefined-variables
-test-job > CI_PROJECT_PATH_SLUG=gcl-predefined-variables
-test-job > CI_PROJECT_ROOT_NAMESPACE=GCL
-test-job > CI_PROJECT_TITLE=predefinedVariables
-test-job > CI_PROJECT_URL=https://gitlab.com/GCL/predefined-variables
-test-job > CI_PROJECT_VISIBILITY=internal
-test-job > CI_REGISTRY=local-registry.gitlab.com
-test-job > CI_REGISTRY_IMAGE=local-registry.gitlab.com/gcl/predefined-variables
-test-job > CI_SERVER_FQDN=gitlab.com
-test-job > CI_SERVER_HOST=gitlab.com
-test-job > CI_SERVER_PORT=443
-test-job > CI_SERVER_PROTOCOL=https
-test-job > CI_SERVER_SHELL_SSH_PORT=22
-test-job > CI_SERVER_URL=https://gitlab.com
-test-job > CI_TEMPLATE_REGISTRY_HOST=registry.gitlab.com
-test-job > FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR=false
-test-job > GITLAB_CI=false
-test-job > GITLAB_USER_EMAIL=test@test.com
-test-job > GITLAB_USER_ID=990
-test-job > GITLAB_USER_LOGIN=test
-test-job > GITLAB_USER_NAME=Testersen
-test-job > More commit text
-test-job > OLDPWD=/gcl-builds
-test-job > PWD=/gcl-builds
-test-job > SHLVL=2
-test-job > _=/usr/bin/env`;
+        let expected = "";
+        Object.keys(envVars).forEach(key => {
+            expected += `test-job > ${key}=${envVars[key]}\n`;
+        });
 
-        expect(stripAnsi(writeStreams.stdoutLines.slice(2, -3).join("\n"))).toEqual(expected);
+        const filteredStdout = stripAnsi(writeStreams.stdoutLines.filter(f => stripAnsi(f).startsWith("test-job > ")).join("\n"));
+        expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
         expect(dateSpy).toHaveBeenCalledTimes(3);
     });
@@ -132,70 +137,21 @@ CI_SERVER_SHELL_SSH_PORT: 8022
             job: ["test-job"],
         }, writeStreams);
 
-        const expected = `test-job $ env | sort | grep -Ev "^RUBY|^PATH|^GEM|^BUNDLE|^HOSTNAME|^HOME=|^LANG="
-test-job > CI=true
-test-job > CI_API_V4_URL=https://gitlab.com:8443/api/v4
-test-job > CI_COMMIT_BRANCH=master
-test-job > CI_COMMIT_DESCRIPTION=More commit text
-test-job > CI_COMMIT_MESSAGE=Commit Title
-test-job > CI_COMMIT_REF_NAME=master
-test-job > CI_COMMIT_REF_PROTECTED=false
-test-job > CI_COMMIT_REF_SLUG=master
-test-job > CI_COMMIT_SHA=02618988a1864b3d06cfee3bd79f8baa2dd21407
-test-job > CI_COMMIT_SHORT_SHA=02618988
-test-job > CI_COMMIT_TIMESTAMP=${mockDate}
-test-job > CI_COMMIT_TITLE=Commit Title
-test-job > CI_DEFAULT_BRANCH=main
-test-job > CI_ENVIRONMENT_ACTION=
-test-job > CI_ENVIRONMENT_NAME=
-test-job > CI_ENVIRONMENT_SLUG=
-test-job > CI_ENVIRONMENT_TIER=
-test-job > CI_ENVIRONMENT_URL=
-test-job > CI_JOB_ID=${mockJobId}
-test-job > CI_JOB_NAME=test-job
-test-job > CI_JOB_NAME_SLUG=test-job
-test-job > CI_JOB_STAGE=test
-test-job > CI_JOB_STARTED_AT=${mockDate}
-test-job > CI_JOB_STATUS=running
-test-job > CI_JOB_URL=https://gitlab.com:8443/GCL/predefined-variables/-/jobs/${mockJobId}
-test-job > CI_NODE_TOTAL=1
-test-job > CI_PIPELINE_CREATED_AT=${mockDate}
-test-job > CI_PIPELINE_ID=1000
-test-job > CI_PIPELINE_IID=0
-test-job > CI_PIPELINE_SOURCE=push
-test-job > CI_PIPELINE_URL=https://gitlab.com:8443/GCL/predefined-variables/pipelines/0
-test-job > CI_PROJECT_DIR=/gcl-builds
-test-job > CI_PROJECT_ID=1217
-test-job > CI_PROJECT_NAME=predefined-variables
-test-job > CI_PROJECT_NAMESPACE=GCL
-test-job > CI_PROJECT_PATH=GCL/predefined-variables
-test-job > CI_PROJECT_PATH_SLUG=gcl-predefined-variables
-test-job > CI_PROJECT_ROOT_NAMESPACE=GCL
-test-job > CI_PROJECT_TITLE=predefinedVariables
-test-job > CI_PROJECT_URL=https://gitlab.com:8443/GCL/predefined-variables
-test-job > CI_PROJECT_VISIBILITY=internal
-test-job > CI_REGISTRY=local-registry.gitlab.com
-test-job > CI_REGISTRY_IMAGE=local-registry.gitlab.com/gcl/predefined-variables
-test-job > CI_SERVER_FQDN=gitlab.com:8443
-test-job > CI_SERVER_HOST=gitlab.com
-test-job > CI_SERVER_PORT=8443
-test-job > CI_SERVER_PROTOCOL=https
-test-job > CI_SERVER_SHELL_SSH_PORT=8022
-test-job > CI_SERVER_URL=https://gitlab.com:8443
-test-job > CI_TEMPLATE_REGISTRY_HOST=registry.gitlab.com
-test-job > FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR=false
-test-job > GITLAB_CI=false
-test-job > GITLAB_USER_EMAIL=test@test.com
-test-job > GITLAB_USER_ID=990
-test-job > GITLAB_USER_LOGIN=test
-test-job > GITLAB_USER_NAME=Testersen
-test-job > More commit text
-test-job > OLDPWD=/gcl-builds
-test-job > PWD=/gcl-builds
-test-job > SHLVL=2
-test-job > _=/usr/bin/env`;
+        envVars["CI_API_V4_URL"] = "https://gitlab.com:8443/api/v4";
+        envVars["CI_JOB_URL"] = `https://gitlab.com:8443/GCL/predefined-variables/-/jobs/${mockJobId}`;
+        envVars["CI_PIPELINE_URL"] = "https://gitlab.com:8443/GCL/predefined-variables/pipelines/0";
+        envVars["CI_PROJECT_URL"] = "https://gitlab.com:8443/GCL/predefined-variables";
+        envVars["CI_SERVER_FQDN"] = "gitlab.com:8443";
+        envVars["CI_SERVER_PORT"] = "8443";
+        envVars["CI_SERVER_SHELL_SSH_PORT"] = "8022";
+        envVars["CI_SERVER_URL"] = "https://gitlab.com:8443";
 
-        expect(stripAnsi(writeStreams.stdoutLines.slice(2, -3).join("\n"))).toEqual(expected);
+        let expected = "";
+        Object.keys(envVars).forEach(key => {
+            expected += `test-job > ${key}=${envVars[key]}\n`;
+        });
+        const filteredStdout = stripAnsi(writeStreams.stdoutLines.filter(f => stripAnsi(f).startsWith("test-job > ")).join("\n"));
+        expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
         expect(dateSpy).toHaveBeenCalledTimes(3);
     });
@@ -216,71 +172,22 @@ CI_SERVER_SHELL_SSH_PORT: 8022
             ],
         }, writeStreams);
 
+        envVars["CI_API_V4_URL"] = "https://gitlab.com:9443/api/v4";
+        envVars["CI_JOB_URL"] = `https://gitlab.com:9443/GCL/predefined-variables/-/jobs/${mockJobId}`;
+        envVars["CI_PIPELINE_URL"] = "https://gitlab.com:9443/GCL/predefined-variables/pipelines/0";
+        envVars["CI_PROJECT_URL"] = "https://gitlab.com:9443/GCL/predefined-variables";
+        envVars["CI_SERVER_FQDN"] = "gitlab.com:9443";
+        envVars["CI_SERVER_PORT"] = "9443";
+        envVars["CI_SERVER_SHELL_SSH_PORT"] = "9022";
+        envVars["CI_SERVER_URL"] = "https://gitlab.com:9443";
 
-        const expected = `test-job $ env | sort | grep -Ev "^RUBY|^PATH|^GEM|^BUNDLE|^HOSTNAME|^HOME=|^LANG="
-test-job > CI=true
-test-job > CI_API_V4_URL=https://gitlab.com:9443/api/v4
-test-job > CI_COMMIT_BRANCH=master
-test-job > CI_COMMIT_DESCRIPTION=More commit text
-test-job > CI_COMMIT_MESSAGE=Commit Title
-test-job > CI_COMMIT_REF_NAME=master
-test-job > CI_COMMIT_REF_PROTECTED=false
-test-job > CI_COMMIT_REF_SLUG=master
-test-job > CI_COMMIT_SHA=02618988a1864b3d06cfee3bd79f8baa2dd21407
-test-job > CI_COMMIT_SHORT_SHA=02618988
-test-job > CI_COMMIT_TIMESTAMP=${mockDate}
-test-job > CI_COMMIT_TITLE=Commit Title
-test-job > CI_DEFAULT_BRANCH=main
-test-job > CI_ENVIRONMENT_ACTION=
-test-job > CI_ENVIRONMENT_NAME=
-test-job > CI_ENVIRONMENT_SLUG=
-test-job > CI_ENVIRONMENT_TIER=
-test-job > CI_ENVIRONMENT_URL=
-test-job > CI_JOB_ID=${mockJobId}
-test-job > CI_JOB_NAME=test-job
-test-job > CI_JOB_NAME_SLUG=test-job
-test-job > CI_JOB_STAGE=test
-test-job > CI_JOB_STARTED_AT=${mockDate}
-test-job > CI_JOB_STATUS=running
-test-job > CI_JOB_URL=https://gitlab.com:9443/GCL/predefined-variables/-/jobs/${mockJobId}
-test-job > CI_NODE_TOTAL=1
-test-job > CI_PIPELINE_CREATED_AT=${mockDate}
-test-job > CI_PIPELINE_ID=1000
-test-job > CI_PIPELINE_IID=0
-test-job > CI_PIPELINE_SOURCE=push
-test-job > CI_PIPELINE_URL=https://gitlab.com:9443/GCL/predefined-variables/pipelines/0
-test-job > CI_PROJECT_DIR=/gcl-builds
-test-job > CI_PROJECT_ID=1217
-test-job > CI_PROJECT_NAME=predefined-variables
-test-job > CI_PROJECT_NAMESPACE=GCL
-test-job > CI_PROJECT_PATH=GCL/predefined-variables
-test-job > CI_PROJECT_PATH_SLUG=gcl-predefined-variables
-test-job > CI_PROJECT_ROOT_NAMESPACE=GCL
-test-job > CI_PROJECT_TITLE=predefinedVariables
-test-job > CI_PROJECT_URL=https://gitlab.com:9443/GCL/predefined-variables
-test-job > CI_PROJECT_VISIBILITY=internal
-test-job > CI_REGISTRY=local-registry.gitlab.com
-test-job > CI_REGISTRY_IMAGE=local-registry.gitlab.com/gcl/predefined-variables
-test-job > CI_SERVER_FQDN=gitlab.com:9443
-test-job > CI_SERVER_HOST=gitlab.com
-test-job > CI_SERVER_PORT=9443
-test-job > CI_SERVER_PROTOCOL=https
-test-job > CI_SERVER_SHELL_SSH_PORT=9022
-test-job > CI_SERVER_URL=https://gitlab.com:9443
-test-job > CI_TEMPLATE_REGISTRY_HOST=registry.gitlab.com
-test-job > FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR=false
-test-job > GITLAB_CI=false
-test-job > GITLAB_USER_EMAIL=test@test.com
-test-job > GITLAB_USER_ID=990
-test-job > GITLAB_USER_LOGIN=test
-test-job > GITLAB_USER_NAME=Testersen
-test-job > More commit text
-test-job > OLDPWD=/gcl-builds
-test-job > PWD=/gcl-builds
-test-job > SHLVL=2
-test-job > _=/usr/bin/env`;
+        let expected = "";
+        Object.keys(envVars).forEach(key => {
+            expected += `test-job > ${key}=${envVars[key]}\n`;
+        });
 
-        expect(stripAnsi(writeStreams.stdoutLines.slice(2, -3).join("\n"))).toEqual(expected);
+        const filteredStdout = stripAnsi(writeStreams.stdoutLines.filter(f => stripAnsi(f).startsWith("test-job > ")).join("\n"));
+        expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
         expect(dateSpy).toHaveBeenCalledTimes(3);
     });
