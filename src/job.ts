@@ -74,6 +74,9 @@ export type JobRule = {
 };
 
 export class Job {
+    private generateJobId (): number {
+        return Math.floor(Math.random() * 1000000);
+    }
 
     static readonly illegalJobNames = new Set([
         "include", "local_configuration", "image", "services",
@@ -136,7 +139,7 @@ export class Job {
         this.gitData = opt.gitData;
         this.name = opt.name;
         this.baseName = opt.baseName;
-        this.jobId = Math.floor(Math.random() * 1000000);
+        this.jobId = this.generateJobId();
         this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
 
