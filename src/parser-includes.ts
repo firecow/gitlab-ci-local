@@ -110,7 +110,8 @@ export class ParserIncludes {
                 const files = [`${componentName}.yml`, `${componentName}/template.yml`, null];
 
                 for (const f of files) {
-                    assert(f !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the files [${files}] must exist in \`${domain}:${port}/${projectPath}\``);
+                    assert(f !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the files [${files}] must exist in \`${domain}` +
+                                        (port ? `:${port}` : "") + `/${projectPath}\``);
 
                     const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && ref === gitData.commit.SHA;
                     if (isLocalComponent) {
