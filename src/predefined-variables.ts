@@ -3,35 +3,41 @@ import {GitData} from "./git-data.js";
 
 type PredefinedVariablesOpts = {
     gitData: GitData;
-    argv: {unsetVariables: string[]};
+    argv: {
+        unsetVariables: string[];
+        variable: {[key: string]: string};
+    };
     envMatchedVariables: {[key: string]: string};
 };
 
 export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesOpts): {[name: string]: string} {
 
+    const _variables = {...envMatchedVariables, ...argv.variable};
+
     // precedence:
-    // 1. gitlab variables files
-    // 2. values derieved implicitly from `git remote -v`
-    // 3. default value
-    const CI_SERVER_PROTOCOL = envMatchedVariables["CI_SERVER_PROTOCOL"]
+    // 1. cli option
+    // 2. gitlab variables files
+    // 3. values derieved implicitly from `git remote -v`
+    // 4. default value
+    const CI_SERVER_PROTOCOL = _variables["CI_SERVER_PROTOCOL"]
       ?? ((gitData.remote.schema === "http" || gitData.remote.schema === "https")
           ? gitData.remote.schema
           : "https");
-    const CI_SERVER_PORT = envMatchedVariables["CI_SERVER_PORT"]
+    const CI_SERVER_PORT = _variables["CI_SERVER_PORT"]
       ?? ((gitData.remote.schema === "http" || gitData.remote.schema === "https")
           ? gitData.remote.port
           : "443");
-    const CI_SERVER_SHELL_SSH_PORT = envMatchedVariables["CI_SERVER_SHELL_SSH_PORT"]
+    const CI_SERVER_SHELL_SSH_PORT = _variables["CI_SERVER_SHELL_SSH_PORT"]
       ?? ((gitData.remote.schema === "ssh")
           ? gitData.remote.port
           : "22");
-    const CI_SERVER_HOST = envMatchedVariables["CI_SERVER_HOST"]
+    const CI_SERVER_HOST = _variables["CI_SERVER_HOST"]
       ?? `${gitData.remote.host}`;
-    const CI_SERVER_FQDN = envMatchedVariables["CI_SERVER_FQDN"]
+    const CI_SERVER_FQDN = _variables["CI_SERVER_FQDN"]
       ?? (CI_SERVER_PORT == "443"
           ? gitData.remote.host
           : `${gitData.remote.host}:${CI_SERVER_PORT}`);
-    const CI_SERVER_URL = envMatchedVariables["CI_SERVER_URL"]
+    const CI_SERVER_URL = _variables["CI_SERVER_URL"]
       ?? `${CI_SERVER_PROTOCOL}://${CI_SERVER_FQDN}`;
     const CI_PROJECT_ROOT_NAMESPACE = gitData.remote.group.split("/")[0];
     const CI_PROJECT_NAMESPACE = gitData.remote.group;
