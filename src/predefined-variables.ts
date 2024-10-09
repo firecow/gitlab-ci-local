@@ -84,6 +84,7 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
         CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX: `${CI_DEPENDENCY_PROXY_SERVER}/${CI_PROJECT_NAMESPACE}/dependency_proxy/containers`,
         CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX: `${CI_DEPENDENCY_PROXY_SERVER}/${CI_PROJECT_ROOT_NAMESPACE}/dependency_proxy/containers`,
         CI_DEPENDENCY_PROXY_SERVER: CI_DEPENDENCY_PROXY_SERVER,
+        CI_DEPENDENCY_PROXY_USER: "gitlab-ci-token",
     };
 
     // Delete variables the user intentionally wants unset

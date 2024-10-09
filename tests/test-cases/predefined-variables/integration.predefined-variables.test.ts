@@ -31,6 +31,7 @@ const envVars: {[key: string]: string} = {
     CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX: "gitlab.com:443/GCL/dependency_proxy/containers",
     CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX: "gitlab.com:443/GCL/dependency_proxy/containers",
     CI_DEPENDENCY_PROXY_SERVER: "gitlab.com:443",
+    CI_DEPENDENCY_PROXY_USER: "gitlab-ci-token",
     CI_ENVIRONMENT_ACTION: "",
     CI_ENVIRONMENT_NAME: "",
     CI_ENVIRONMENT_SLUG: "",
