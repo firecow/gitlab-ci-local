@@ -361,7 +361,7 @@ Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
 
 ### Self Hosted Custom Ports
 
-If your self-host gitlab instance uses custom gitlab ports, it is recommended to manually define the `CI_SERVER_PORT` and `CI_SERVER_SHELL_SSH_PORT` so that the predefined variables will be generated with the correct values
+If your self-host gitlab instance uses custom ports, it is recommended to manually define the `CI_SERVER_PORT` and `CI_SERVER_SHELL_SSH_PORT`
 
 ```yaml
 ---
