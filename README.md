@@ -42,7 +42,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [Decorators](#decorators)
     * [Includes](#includes)
     * [Artifacts](#artifacts)
-    * [Custom Gitlab Ports](#custom-gitlab-ports)
+    * [Self Hosted Custom Ports](#self-hosted-custom-ports)
 * [Development](#development)
     * [Scripts](#scripts)
     * [Package binaries](#package-binaries)
@@ -359,9 +359,9 @@ handling for shell jobs.
 
 Docker executor copies artifacts to and from .gitlab-ci-local/artifacts
 
-### Custom gitlab ports
+### Self Hosted Custom Ports
 
-If you have a custom gitlab ports, it is recommended to manually define the `CI_SERVER_PORT` and `CI_SERVER_SHELL_SSH_PORT` so that the predefined variables will be generated with the correct values
+If your self-host gitlab instance uses custom ports, it is recommended to manually define the `CI_SERVER_PORT` and `CI_SERVER_SHELL_SSH_PORT`
 
 ```yaml
 ---
