@@ -105,12 +105,12 @@ export class ParserIncludes {
                     includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
                 }
             } else if (value["component"]) {
-                const {domain, projectPath, componentName, ref} = this.parseIncludeComponent(value["component"]);
+                const {domain, port, projectPath, componentName, ref} = this.parseIncludeComponent(value["component"]);
                 // converts component to project
                 const files = [`${componentName}.yml`, `${componentName}/template.yml`, null];
 
                 for (const f of files) {
-                    assert(f !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the file [${files}] must exists in \`${domain}/${projectPath}\``);
+                    assert(f !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the files [${files}] must exist in \`${domain}:${port}/${projectPath}\``);
 
                     const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && ref === gitData.commit.SHA;
                     if (isLocalComponent) {
@@ -199,15 +199,16 @@ export class ParserIncludes {
         };
     }
 
-    static parseIncludeComponent (component: string): {domain: string; projectPath: string; componentName: string; ref: string} {
+    static parseIncludeComponent (component: string): {domain: string; port: string; projectPath: string; componentName: string; ref: string} {
         assert(!component.includes("://"), `This GitLab CI configuration is invalid: component: \`${component}\` should not contain protocol`);
         // eslint-disable-next-line no-useless-escape
-        const pattern = /(?<domain>[^/\s]+)\/(?<projectPath>.+)\/(?<componentName>[^@]+)@(?<ref>.+)/; // regexr.com/7v7hm
+        const pattern = /(?<domain>[^/:\s]+)(:(?<port>[0-9]+))?\/(?<projectPath>.+)\/(?<componentName>[^@]+)@(?<ref>.+)/; // https://regexr.com/86q5d
         const gitRemoteMatch = pattern.exec(component);
 
         if (gitRemoteMatch?.groups == null) throw new Error(`This is a bug, please create a github issue if this is something you're expecting to work. input: ${component}`);
         return {
             domain: gitRemoteMatch.groups["domain"],
+            port: gitRemoteMatch.groups["port"],
             projectPath: gitRemoteMatch.groups["projectPath"],
             componentName: `templates/${gitRemoteMatch.groups["componentName"]}`,
             ref: gitRemoteMatch.groups["ref"],
@@ -239,7 +240,7 @@ export class ParserIncludes {
                 await Utils.bash(`
                     cd ${cwd}/${stateDir} \\
                         && git clone --branch "${ref}" -n --depth=1 --filter=tree:0 \\
-                                ${remote.schema}://${remote.host}/${project}.git \\
+                                ${remote.schema}://${remote.host}:${remote.port}/${project}.git \\
                                 ${cwd}/${target}.${ext} \\
                         && cd ${cwd}/${target}.${ext} \\
                         && git sparse-checkout set --no-cone ${normalizedFile} \\

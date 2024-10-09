@@ -170,8 +170,8 @@ export class Job {
         predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
         predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
         predefinedVariables["CI_PROJECT_DIR"] = ciProjectDir;
-        predefinedVariables["CI_JOB_URL"] = `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
-        predefinedVariables["CI_PIPELINE_URL"] = `https://${gitData.remote.host}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
+        predefinedVariables["CI_JOB_URL"] = `${predefinedVariables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
+        predefinedVariables["CI_PIPELINE_URL"] = `${predefinedVariables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
         predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
         predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 23).replace(/-$/, "").toLowerCase() ?? "";
         predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
