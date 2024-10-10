@@ -52,6 +52,9 @@ export class Argv {
     }
 
     private constructor (argv: any, writeStreams?: WriteStreams) {
+        if (argv.noColor) {
+            chalk.level = 0;
+        }
         this.writeStreams = writeStreams;
         for (const [key, value] of Object.entries(argv)) {
             this.map.set(key, value);

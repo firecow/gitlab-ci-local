@@ -3,8 +3,6 @@ import {handler} from "../../../src/handler.js";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import assert, {AssertionError} from "assert";
-import {stripAnsi} from "../../utils.js";
-
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -65,7 +63,7 @@ test("schema validation 4 errors", async () => {
         await handler({
             file: ".gitlab-ci-4-errors.yml",
             cwd: "tests/test-cases/schema-validation",
-
+            noColor: true,
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e: any) {
@@ -78,7 +76,7 @@ Invalid .gitlab-ci.yml configuration!
 
 `;
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
-        expect(stripAnsi(e.message)).toContain(expected);
+        expect(e.message).toContain(expected);
     }
 });
 
@@ -101,7 +99,7 @@ test("schema validation 5 errors", async () => {
 
 For further troubleshooting, consider either of the following:`;
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
-        expect(stripAnsi(e.message)).toContain(expected);
+        expect(e.message).toContain(expected);
     }
 });
 
@@ -125,6 +123,6 @@ test("schema validation 6 errors", async () => {
 
 `;
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
-        expect(stripAnsi(e.message)).toContain(expected);
+        expect(e.message).toContain(expected);
     }
 });
