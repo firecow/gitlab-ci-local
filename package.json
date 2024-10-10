@@ -6,12 +6,11 @@
   "bin": "src/index.js",
   "version": "4.54.0",
   "scripts": {
-    "build:pkg": "mkdir -p pkg && esbuild src/index.ts --outfile=pkg/index.cjs --bundle --platform=node --format=cjs --minify --external:yargs",
-    "pkg-linux": "pkg pkg/index.cjs --public -t node18-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
-    "pkg-macos": "pkg pkg/index.cjs --public -t node18-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
-    "pkg-win": "pkg pkg/index.cjs --public -t node18-win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
+    "esbuild": "esbuild src/index.ts --outfile=bin/index.cjs --bundle --platform=node --format=cjs --minify --external:yargs --sourcemap=inline",
+    "pkg-linux": "pkg bin/index.cjs --public -t node18-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
+    "pkg-macos": "pkg bin/index.cjs --public -t node18-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
+    "pkg-win": "pkg bin/index.cjs --public -t node18-win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
     "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win",
-    "pkg": "pkg",
     "cleanup": "git clean -fX tests/ && git clean -fX src/",
     "build": " npm run cleanup && tsc",
     "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
@@ -63,6 +62,7 @@
     "@types/yargs": "17.x.x",
     "@typescript-eslint/eslint-plugin": "7.x.x",
     "@typescript-eslint/parser": "7.x.x",
+    "@yao-pkg/pkg": "^5.15.0",
     "axios-mock-adapter": "2.x",
     "depcheck": "1.x.x",
     "esbuild": "^0.23.1",
@@ -70,7 +70,6 @@
     "jest": "29.x.x",
     "jest-when": "3.x.x",
     "nodemon": "^3.1.1",
-    "pkg": "5.x.x",
     "ts-jest": "29.x.x",
     "ts-node": "10.x.x",
     "typescript": "5.x.x"
@@ -144,8 +143,7 @@
         {
           "useESM": true
         }
-      ],
-      "^.+\\.jsx?$": "babel-jest"
+      ]
     },
     "preset": "ts-jest",
     "testMatch": [
