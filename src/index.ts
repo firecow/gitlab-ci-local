@@ -269,6 +269,17 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "The name, without the architecture, of a gitlab hosted runner to emulate. See here: https://docs.gitlab.com/ee/ci/runners/hosted_runners/linux.html#machine-types-available-for-linux---x86-64",
             choices: GitlabRunnerPresetValues,
         })
+        .option("color", {
+            type: "boolean",
+            requiresArg: false,
+            default: false,
+            hidden: true,
+        })
+        .option("no-color", {
+            type: "boolean",
+            requiresArg: false,
+            description: "Disable all color.",
+        })
         .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {
             try {
                 if (current.startsWith("-")) {
