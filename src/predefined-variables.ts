@@ -1,5 +1,5 @@
 import camelCase from "camelcase";
-import {GitData} from "./git-data";
+import {GitData} from "./git-data.js";
 
 type PredefinedVariablesOpts = {
     gitData: GitData;

@@ -1,6 +1,6 @@
-import {WriteStreamsMock} from "../src/write-streams";
+import {WriteStreamsMock} from "../src/write-streams.js";
 import chalk from "chalk";
-import {handler} from "../src/handler";
+import {handler} from "../src/handler.js";
 import assert from "assert";
 import {AssertionError} from "assert";
 import fs from "fs-extra";
@@ -15,7 +15,7 @@ afterAll(() => {
 });
 
 test("--completion", async () => {
-    const spy = jest.spyOn(console, "log").mockImplementation();
+    const spy = import.meta.jest.spyOn(console, "log").mockImplementation();
     const writeStreams = new WriteStreamsMock();
     await handler({
         completion: true,

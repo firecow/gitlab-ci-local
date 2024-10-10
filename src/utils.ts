@@ -1,12 +1,12 @@
 import chalk from "chalk";
-import {Job, JobRule} from "./job";
-import * as fs from "fs-extra";
+import {Job, JobRule} from "./job.js";
+import fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
 import execa from "execa";
 import assert from "assert";
-import {CICDVariable} from "./variables-from-files";
-import {GitData, GitSchema} from "./git-data";
+import {CICDVariable} from "./variables-from-files.js";
+import {GitData, GitSchema} from "./git-data.js";
 import globby from "globby";
 import micromatch from "micromatch";
 import axios from "axios";
@@ -257,7 +257,7 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
 
         let res;
         try {
-            res = eval(evalStr);
+            res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
         } catch (err) {
             console.log(`
 Error attempting to evaluate the following rules:

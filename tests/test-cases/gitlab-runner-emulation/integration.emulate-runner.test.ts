@@ -1,13 +1,13 @@
-import {WriteStreamsMock} from "../../../src/write-streams";
-import {handler} from "../../../src/handler";
-import {initBashSpy, initSpawnSpy} from "../../mocks/utils.mock";
-import {WhenStatics} from "../../mocks/when-statics";
-import {cleanupJobResources, Job} from "../../../src/job";
+import {WriteStreamsMock} from "../../../src/write-streams.js";
+import {handler} from "../../../src/handler.js";
+import {initBashSpy, initSpawnSpy} from "../../mocks/utils.mock.js";
+import {WhenStatics} from "../../mocks/when-statics.js";
+import {cleanupJobResources, Job} from "../../../src/job.js";
 import {
     GitlabRunnerCPUsPresetValue,
     GitlabRunnerMemoryPresetValue,
     GitlabRunnerPresetValues,
-} from "../../../src/gitlab-preset";
+} from "../../../src/gitlab-preset.js";
 
 let jobs: Job[] = [];
 beforeAll(() => {

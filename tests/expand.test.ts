@@ -1,6 +1,6 @@
 import chalk from "chalk";
-import * as DataExpander from "../src/data-expander";
-import {Utils} from "../src/utils";
+import * as DataExpander from "../src/data-expander.js";
+import {Utils} from "../src/utils.js";
 import assert from "assert";
 import {AssertionError} from "assert";
 

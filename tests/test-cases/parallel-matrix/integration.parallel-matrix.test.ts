@@ -1,8 +1,8 @@
-import {WriteStreamsMock} from "../../../src/write-streams";
-import {handler} from "../../../src/handler";
+import {WriteStreamsMock} from "../../../src/write-streams.js";
+import {handler} from "../../../src/handler.js";
 import chalk from "chalk";
 
-jest.setTimeout(60000);
+import.meta.jest.setTimeout(60000);
 
 test("parallel-matrix - ensure successful", async () => {
     const writeStreams = new WriteStreamsMock();

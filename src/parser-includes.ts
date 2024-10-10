@@ -1,10 +1,10 @@
-import {Utils} from "./utils";
+import {Utils} from "./utils.js";
 import fs from "fs-extra";
-import {WriteStreams} from "./write-streams";
-import {GitData} from "./git-data";
+import {WriteStreams} from "./write-streams.js";
+import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "assert";
 import chalk from "chalk";
-import {Parser} from "./parser";
+import {Parser} from "./parser.js";
 import axios from "axios";
 import globby from "globby";
 import path from "path";
@@ -219,7 +219,7 @@ export class ParserIncludes {
         try {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
             if (await fs.pathExists(target) && !fetchIncludes) return;
-            const res = await axios.get(url);
+            const res = await axios.get(url, {headers: {"User-Agent": "gitlab-ci-local"}});
             await fs.outputFile(target, res.data);
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});

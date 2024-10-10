@@ -1,11 +1,11 @@
-import {WriteStreamsMock} from "../../../src/write-streams";
-import {handler} from "../../../src/handler";
-import {initSpawnSpy} from "../../mocks/utils.mock";
-import {WhenStatics} from "../../mocks/when-statics";
+import {WriteStreamsMock} from "../../../src/write-streams.js";
+import {handler} from "../../../src/handler.js";
+import {initSpawnSpy} from "../../mocks/utils.mock.js";
+import {WhenStatics} from "../../mocks/when-statics.js";
 import fs from "fs-extra";
 import chalk from "chalk";
 
-jest.setTimeout(60000);
+import.meta.jest.setTimeout(60000);
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);

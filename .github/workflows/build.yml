@@ -21,7 +21,7 @@ jobs:
         with:
           strict: true
 
-  pkg:
+  smoke-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,9 +33,9 @@ jobs:
           path: ${{ env.PKG_CACHE_PATH }}
           key: pkg-cache-${{ matrix.node-version }}
       - run: npm ci
-      - run: npm run build
+      - run: npm run esbuild
       - run: npm run pkg-linux
-      - run: node src/index.js --version
+      - run: node bin/index.cjs --version
       - run: bin/linux/gitlab-ci-local --version
       - run: bin/linux/gitlab-ci-local --help
 
@@ -70,7 +70,7 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - name: Run Tests
-        run: FORCE_COLOR=1 npx jest --coverage --testTimeout 90000 --verbose
+        run: npm run coverage
       - uses: sonarsource/sonarcloud-github-action@v3.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

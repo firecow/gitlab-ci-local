@@ -1,9 +1,9 @@
-import {WriteStreamsMock} from "../../../src/write-streams";
-import {handler} from "../../../src/handler";
-import {Job, cleanupJobResources} from "../../../src/job";
+import {WriteStreamsMock} from "../../../src/write-streams.js";
+import {handler} from "../../../src/handler.js";
+import {Job, cleanupJobResources} from "../../../src/job.js";
 import chalk from "chalk";
-import {initSpawnSpy, initBashSpy} from "../../mocks/utils.mock";
-import {WhenStatics} from "../../mocks/when-statics";
+import {initSpawnSpy, initBashSpy} from "../../mocks/utils.mock.js";
+import {WhenStatics} from "../../mocks/when-statics.js";
 import assert from "assert";
 import {AssertionError} from "assert";
 

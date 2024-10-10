@@ -1,17 +1,17 @@
 import chalk from "chalk";
 import * as dotenv from "dotenv";
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
 import split2 from "split2";
-import {Utils} from "./utils";
-import {WriteStreams} from "./write-streams";
-import {GitData} from "./git-data";
+import {Utils} from "./utils.js";
+import {WriteStreams} from "./write-streams.js";
+import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "assert";
-import {Mutex} from "./mutex";
-import {Argv} from "./argv";
+import {Mutex} from "./mutex.js";
+import {Argv} from "./argv.js";
 import execa from "execa";
-import {CICDVariable} from "./variables-from-files";
-import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues} from "./gitlab-preset";
+import {CICDVariable} from "./variables-from-files.js";
+import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues} from "./gitlab-preset.js";
 
 const CI_PROJECT_DIR = "/gcl-builds";
 interface JobOptions {

@@ -9,7 +9,7 @@ let gitData: GitData;
 beforeEach(async () => {
     writeStreams = new WriteStreamsMock();
     gitData = await GitData.init("tests", writeStreams);
-    jest.clearAllMocks();
+    import.meta.jest.clearAllMocks();
 });
 
 /* eslint-disable @typescript-eslint/quotes */
@@ -85,8 +85,8 @@ describe("gitlab rules regex", () => {
         .forEach((t) => {
             test(`- if: '${t.rule}'\n\t => ${t.evalResult}`, async () => {
                 const rules = [ {if: t.rule} ];
-                const evalSpy = jest.spyOn(global, "eval");
-                const evaluateRuleIfSpy = jest.spyOn(Utils, "evaluateRuleIf");
+                const evalSpy = import.meta.jest.spyOn(global, "eval");
+                const evaluateRuleIfSpy = import.meta.jest.spyOn(Utils, "evaluateRuleIf");
 
                 Utils.getRulesResult({cwd: "", rules, variables: {}}, gitData);
                 expect(evalSpy).toHaveBeenCalledWith(t.jsExpression);

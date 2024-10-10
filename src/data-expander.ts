@@ -1,9 +1,9 @@
 import chalk from "chalk";
 import deepExtend from "deep-extend";
 import assert, {AssertionError} from "assert";
-import {Job, Need} from "./job";
+import {Job, Need} from "./job.js";
 import {traverse} from "object-traversal";
-import {Utils} from "./utils";
+import {Utils} from "./utils.js";
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
