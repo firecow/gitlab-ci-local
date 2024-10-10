@@ -219,7 +219,7 @@ export class ParserIncludes {
         try {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
             if (await fs.pathExists(target) && !fetchIncludes) return;
-            const res = await axios.get(url);
+            const res = await axios.get(url, {headers: {"User-Agent": "gitlab-ci-local"}});
             await fs.outputFile(target, res.data);
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});
