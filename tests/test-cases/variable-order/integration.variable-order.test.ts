@@ -14,7 +14,7 @@ test("variable-order <test-job> --needs", async () => {
         cwd: "tests/test-cases/variable-order",
         job: ["test-job"],
         variable: ["PROJECT_VARIABLE=project-value"],
-        home: "tests/test-cases/variable-order/.home",
+        home: `${process.cwd()}/tests/test-cases/variable-order/.home/.gitlab-ci-local`,
     }, writeStreams);
 
     const expected = [

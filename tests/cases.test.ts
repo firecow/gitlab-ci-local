@@ -33,7 +33,7 @@ test("something/unknown-directory (non-existing dir)", async () => {
         expect(true).toBe(false);
     } catch (e) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
-        expect(e.message).toBe(chalk`${process.cwd()}/something/unknown-directory is not a directory`);
+        expect(e.message).toBe(chalk`--cwd (${process.cwd()}/something/unknown-directory) is not a directory`);
     }
 });
 
@@ -46,7 +46,7 @@ test("docs (no .gitlab-ci.yml)", async () => {
         expect(true).toBe(false);
     } catch (e) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
-        expect(e.message).toBe(chalk`${process.cwd()}/docs/.gitlab-ci.yml could not be found`);
+        expect(e.message).toBe(chalk`--file (${process.cwd()}/docs/.gitlab-ci.yml) could not be found`);
     }
 });
 

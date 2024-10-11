@@ -19,7 +19,6 @@ export class Commander {
         potentialStarters = potentialStarters.filter(j => j.when !== "manual" || argv.manual.includes(j.name));
         await Executor.runLoop(argv, jobs, stages, potentialStarters);
         await Commander.printReport({
-            cwd: argv.cwd,
             showTimestamps: argv.showTimestamps,
             stateDir: argv.stateDir,
             writeStreams: writeStreams,
@@ -39,7 +38,6 @@ export class Commander {
         potentialStarters = potentialStarters.filter(j => j.stage === argv.stage);
         await Executor.runLoop(argv, jobs, stages, potentialStarters);
         await Commander.printReport({
-            cwd: argv.cwd,
             showTimestamps: argv.showTimestamps,
             stateDir: argv.stateDir,
             writeStreams: writeStreams,
@@ -78,7 +76,6 @@ export class Commander {
 
         await Executor.runLoop(argv, Array.from(jobSet), stages, starters);
         await Commander.printReport({
-            cwd: argv.cwd,
             showTimestamps: argv.showTimestamps,
             stateDir: argv.stateDir,
             writeStreams: writeStreams,
@@ -88,8 +85,7 @@ export class Commander {
         });
     }
 
-    static async printReport ({cwd, stateDir, showTimestamps, writeStreams, jobs, stages, jobNamePad}: {
-        cwd: string;
+    static async printReport ({stateDir, showTimestamps, writeStreams, jobs, stages, jobNamePad}: {
         showTimestamps: boolean;
         stateDir: string;
         writeStreams: WriteStreams;
@@ -149,7 +145,7 @@ export class Commander {
                 const namePad = name.padEnd(jobNamePad);
                 const safeName = Utils.safeDockerString(name);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN }${renderDuration(prettyDuration)} {blueBright ${namePad}}  pre_script\n`);
-                const outputLog = await fs.readFile(`${cwd}/${stateDir}/output/${safeName}.log`, "utf8");
+                const outputLog = await fs.readFile(`${stateDir}/output/${safeName}.log`, "utf8");
                 for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
                     writeStreams.stdout(chalk`  {yellow >} ${line}\n`);
                 }
@@ -170,7 +166,7 @@ export class Commander {
                 const namePad = name.padEnd(jobNamePad);
                 const safeName = Utils.safeDockerString(name);
                 writeStreams.stdout(chalk`{black.bgRed  FAIL }${renderDuration(prettyDuration)} {blueBright ${namePad}}\n`);
-                const outputLog = await fs.readFile(`${cwd}/${stateDir}/output/${safeName}.log`, "utf8");
+                const outputLog = await fs.readFile(`${stateDir}/output/${safeName}.log`, "utf8");
                 for (const line of outputLog.split(/\r?\n/).filter(j => !j.includes("[32m$ ")).filter(j => j !== "").slice(-3)) {
                     writeStreams.stdout(chalk`  {red >} ${line}\n`);
                 }
