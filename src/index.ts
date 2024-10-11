@@ -107,6 +107,12 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Path to a current working directory",
             requiresArg: true,
         })
+        .option("variables-file", {
+            type: "string",
+            description: "Path to the project file variables",
+            requiresArg: true,
+            default: Argv.default.variablesFile,
+        })
         .option("completion", {
             type: "boolean",
             description: "Generate tab completion script",
