@@ -5,7 +5,6 @@ import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import fs from "fs-extra";
 import path from "path";
-import {stripAnsi} from "../../utils";
 
 const cwd = "tests/test-cases/project-variables-file";
 const emptyFileVariable = "dummy";
@@ -110,6 +109,7 @@ test.concurrent("project-variables-file custom-path (.envs)", async () => {
         file: ".gitlab-ci-custom.yml",
         job: ["job2"],
         variablesFile: ".envs",
+        noColor: true,
     }, writeStreams);
 
     const expected = `
@@ -136,6 +136,6 @@ job2 > SECRET_QUEUE_CONNECTION=sync
 job2 > SECRET_SESSION_DRIVER=file
 job2 > SECRET_SESSION_LIFETIME=120`;
 
-    const stdout = stripAnsi(writeStreams.stdoutLines.join("\n"));
+    const stdout = writeStreams.stdoutLines.join("\n");
     expect(stdout).toContain(expected);
 });
