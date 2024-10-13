@@ -3,7 +3,6 @@ import {handler} from "../../../src/handler.js";
 import chalk from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
-import {stripAnsi} from "../../utils.js";
 import {Job} from "../../../src/job.js";
 import path from "path";
 import fs from "fs-extra";
@@ -112,6 +111,7 @@ describe("predefined-variables", () => {
             cwd: cwd,
             job: ["test-job"],
             shellIsolation: true,
+            noColor: true,
         }, writeStreams);
 
         let expected = "";
@@ -119,7 +119,7 @@ describe("predefined-variables", () => {
             expected += `test-job > ${key}=${envVars[key]}\n`;
         });
 
-        const filteredStdout = stripAnsi(writeStreams.stdoutLines.filter(f => stripAnsi(f).startsWith("test-job > ")).join("\n"));
+        const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ")).join("\n");
         expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
         expect(dateSpy).toHaveBeenCalledTimes(3);
@@ -135,6 +135,7 @@ CI_SERVER_SHELL_SSH_PORT: 8022
         await handler({
             cwd: cwd,
             job: ["test-job"],
+            noColor: true,
         }, writeStreams);
 
         envVars["CI_API_V4_URL"] = "https://gitlab.com:8443/api/v4";
@@ -150,7 +151,7 @@ CI_SERVER_SHELL_SSH_PORT: 8022
         Object.keys(envVars).forEach(key => {
             expected += `test-job > ${key}=${envVars[key]}\n`;
         });
-        const filteredStdout = stripAnsi(writeStreams.stdoutLines.filter(f => stripAnsi(f).startsWith("test-job > ")).join("\n"));
+        const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ")).join("\n");
         expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
         expect(dateSpy).toHaveBeenCalledTimes(3);
@@ -170,6 +171,7 @@ CI_SERVER_SHELL_SSH_PORT: 8022
                 "CI_SERVER_PORT=9443",
                 "CI_SERVER_SHELL_SSH_PORT=9022",
             ],
+            noColor: true,
         }, writeStreams);
 
         envVars["CI_API_V4_URL"] = "https://gitlab.com:9443/api/v4";
@@ -186,7 +188,7 @@ CI_SERVER_SHELL_SSH_PORT: 8022
             expected += `test-job > ${key}=${envVars[key]}\n`;
         });
 
-        const filteredStdout = stripAnsi(writeStreams.stdoutLines.filter(f => stripAnsi(f).startsWith("test-job > ")).join("\n"));
+        const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ")).join("\n");
         expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
         expect(dateSpy).toHaveBeenCalledTimes(3);
