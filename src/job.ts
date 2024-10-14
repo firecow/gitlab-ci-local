@@ -476,6 +476,8 @@ export class Job {
         }
 
         if (imageName) {
+            await this.pullImage(writeStreams, imageName);
+
             const buildVolumeName = this.buildVolumeName;
             const tmpVolumeName = this.tmpVolumeName;
             const fileVariablesDir = this.fileVariablesDir;
@@ -694,8 +696,6 @@ export class Job {
         this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (imageName && !this._containerId) {
-            await this.pullImage(writeStreams, imageName);
-
             let dockerCmd = `${this.argv.containerExecutable} create --interactive ${this.generateInjectSSHAgentOptions()} `;
             if (this.argv.privileged) {
                 dockerCmd += "--privileged ";
