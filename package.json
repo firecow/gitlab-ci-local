@@ -65,7 +65,7 @@
     "@yao-pkg/pkg": "^5.15.0",
     "axios-mock-adapter": "2.x",
     "depcheck": "1.x.x",
-    "esbuild": "^0.23.1",
+    "esbuild": "^0.24.0",
     "eslint": "8.x.x",
     "jest": "29.x.x",
     "jest-when": "3.x.x",
