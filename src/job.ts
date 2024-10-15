@@ -14,6 +14,7 @@ import {CICDVariable} from "./variables-from-files.js";
 import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues} from "./gitlab-preset.js";
 
 const CI_PROJECT_DIR = "/gcl-builds";
+const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
 interface JobOptions {
     argv: Argv;
     writeStreams: WriteStreams;
@@ -610,11 +611,11 @@ export class Job {
     private generateScriptCommands (scripts: string[]) {
         let cmd = "";
         scripts.forEach((script) => {
-            // Print command echo'ed in color
+            // Print command echo'ed with $GCL_SHELL_PROMPT_PLACEHOLDER
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
             const text = split[0]?.replace(/\\/g, "\\\\").replace(/"/g, "\\\"").replace(/[$]/g, "\\$");
-            cmd += chalk`echo "{green $ ${text}${multilineText}}"\n`;
+            cmd += `echo "${GCL_SHELL_PROMPT_PLACEHOLDER} ${text}${multilineText}"\n`;
 
             // Execute actual script
             cmd += `${script}\n`;
@@ -860,7 +861,11 @@ export class Job {
         const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
             this.refreshLongRunningSilentTimeout(writeStreams);
             stream(`${this.formattedJobName} `);
-            if (!line.startsWith("\u001b[32m$")) {
+            if (line.startsWith(GCL_SHELL_PROMPT_PLACEHOLDER)) {
+                // replace the GCL_SHELL_PROMPT_PLACEHOLDER with `$` and make the SHELL_PROMPT line green color
+                line = line.slice(GCL_SHELL_PROMPT_PLACEHOLDER.length);
+                line = chalk`{green $${line}}`;
+            } else {
                 stream(`${colorize(">")} `);
             }
             stream(`${line}\n`);
