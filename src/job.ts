@@ -153,6 +153,10 @@ export class Job {
         this.inherit.variables = this.jobData.inherit?.variables ?? true;
         this.inherit.default = this.jobData.inherit?.default ?? true;
 
+        if (this.inherit.default === false) {
+            this.writeStreams.memoStdout(chalk`{black.bgYellowBright  WARN } \`.inherit.default\` has not been implemented!\n`);
+        }
+
         this.when = jobData.when || "on_success";
         this.exists = jobData.exists || [];
         this.allowFailure = jobData.allow_failure ?? false;
