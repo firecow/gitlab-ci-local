@@ -100,7 +100,12 @@ export class Job {
     readonly exists: string[];
     readonly pipelineIid: number;
     readonly gitData: GitData;
+    readonly inherit: {
+        variables?: boolean | string[];
+        default?: boolean | string[];
+    };
 
+    private readonly _globalVariables: {[key: string]: string} = {};
     private readonly _variables: {[key: string]: string} = {};
     private _dotenvVariables: {[key: string]: string} = {};
     private _prescriptsExitCode: number | null = null;
@@ -126,7 +131,6 @@ export class Job {
         const jobData = opt.data;
         const gitData = opt.gitData;
         const jobVariables = jobData.variables ?? {};
-        const globalVariables = opt.globalVariables ?? {};
         const variablesFromFiles = opt.variablesFromFiles;
         const argv = opt.argv;
         const cwd = argv.cwd;
@@ -143,6 +147,11 @@ export class Job {
         this.jobId = this.generateJobId();
         this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
+        this._globalVariables = opt.globalVariables;
+
+        this.inherit = {};
+        this.inherit.variables = this.jobData.inherit?.variables ?? true;
+        this.inherit.default = this.jobData.inherit?.default ?? true;
 
         this.when = jobData.when || "on_success";
         this.exists = jobData.exists || [];
@@ -153,7 +162,7 @@ export class Job {
 
         const matrixVariables = opt.matrixVariables ?? {};
         const fileVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
-        this._variables = {...globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...fileVariables, ...argvVariables};
+        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...fileVariables, ...argvVariables};
 
         let ciProjectDir = `${cwd}`;
         if (this.jobData["image"]) {
@@ -209,14 +218,14 @@ export class Job {
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
         // Merge and expand after finding env matched variables
-        this._variables = {...globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
+        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
 
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
             const ruleResult = Utils.getRulesResult({cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when, this.allowFailure);
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
-            this._variables = {...globalVariables, ...jobVariables, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
+            this._variables = {...this.globalVariables, ...jobVariables, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
         }
         // Delete variables the user intentionally wants unset
         for (const unsetVariable of argv.unsetVariables) {
@@ -448,6 +457,18 @@ export class Job {
 
     get fileVariablesDir () {
         return `/tmp/gitlab-ci-local-file-variables-${this._variables["CI_PROJECT_PATH_SLUG"]}-${this.jobId}`;
+    }
+
+    get globalVariables () {
+        if (this.inherit.variables === false) {
+            return {};
+        } else if (Array.isArray(this.inherit.variables)) {
+            const inheritVariables = this.inherit.variables;
+            return Object.fromEntries(
+                Object.entries(this._globalVariables).filter(([k]) => inheritVariables.includes(k))
+            );
+        }
+        return this._globalVariables;
     }
 
     async start (): Promise<void> {
