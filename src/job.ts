@@ -151,11 +151,6 @@ export class Job {
         this.rules = jobData.rules || null;
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
 
-        // HACK: So that this won't show up in the preview variables
-        if (! argv.preview) {
-            globalVariables["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] = argv.umask ? "false" : "true";
-        }
-
         const matrixVariables = opt.matrixVariables ?? {};
         const fileVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
         this._variables = {...globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...fileVariables, ...argvVariables};
@@ -494,7 +489,7 @@ export class Job {
 
             let chownOpt = "0:0";
             let chmodOpt = "a+rw";
-            if (expanded["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] === "true") {
+            if (this.argv.umask === false) {
                 const {stdout} = await Utils.spawn(["docker", "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
                 chownOpt = stdout;
                 if (chownOpt == "0:0") {
@@ -705,7 +700,7 @@ export class Job {
                 dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
             }
 
-            if (expanded["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] === "false") {
+            if (this.argv.umask === true) {
                 dockerCmd += "--user 0:0 ";
             }
 
@@ -1204,7 +1199,7 @@ export class Job {
         let dockerCmd = `${this.argv.containerExecutable} create --interactive `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
-        if (expanded["FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR"] === "false") {
+        if (this.argv.umask === true) {
             dockerCmd += "--user 0:0 ";
         }
 
