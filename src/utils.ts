@@ -303,7 +303,11 @@ ${evalStr}
     static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
         await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
-        await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') --exclude ${stateDir}/ ./ ${stateDir}/builds/${target}/`, cwd);
+        const _excludedGitUntrackedFolders = (await Utils.spawn("git ls-files -o --directory".split(" "), cwd)).stdout;
+        const excludedGitUntrackedFolders = _excludedGitUntrackedFolders
+            .split("\n")
+            .map(line => `--exclude=/${line}`);
+        await Utils.spawn(["rsync", "-a", "--delete-excluded", "--delete", `--exclude=/${stateDir}/`, "./", `${stateDir}/builds/${target}/`].concat(excludedGitUntrackedFolders), cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
 
