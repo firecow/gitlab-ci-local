@@ -1,12 +1,10 @@
 import camelCase from "camelcase";
 import {GitData} from "./git-data.js";
+import {Argv} from "./argv.js";
 
 type PredefinedVariablesOpts = {
     gitData: GitData;
-    argv: {
-        unsetVariables: string[];
-        variable: {[key: string]: string};
-    };
+    argv: Argv;
     envMatchedVariables: {[key: string]: string};
 };
 
@@ -79,6 +77,7 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
         CI_PROJECT_URL: `${CI_SERVER_URL}/${gitData.remote.group}/${gitData.remote.project}`,
         CI_TEMPLATE_REGISTRY_HOST: "registry.gitlab.com",
         GITLAB_CI: "false",
+        FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR: argv.umask ? "false" : "true",
     };
 
     // Delete variables the user intentionally wants unset
