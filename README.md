@@ -122,7 +122,7 @@ export GCL_VARIABLE="IMAGE=someimage SOMEOTHERIMAGE=someotherimage"
 ```
 
 ### DotEnv file
-
+#### Gitlab-ci-local configuration
 Add a `.gitlab-ci-local-env` file to the current working directory or a `.env` file in `$HOME/.gitlab-ci-local`
 
 ```
@@ -132,6 +132,10 @@ FILE=doctor-strange.yml # --file
 # Always runs needed jobs, when gitlab-ci-local <job-name> is called
 NEEDS=true # --needs
 ```
+
+#### Project configuration and environment variables
+To import env variablaes from a `.env` file in your local gitlab ci, you can use the following command : 
+```gitlab-ci-local --variables-file=path/to/.env```
 
 All cli options can be assigned default values this way
 
