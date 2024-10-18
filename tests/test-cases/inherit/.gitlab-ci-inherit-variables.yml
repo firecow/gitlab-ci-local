@@ -1,0 +1,22 @@
+---
+default:
+  image: busybox
+
+variables:
+  GCL_TESTS_VAR1: "This is variable 1"
+  GCL_TESTS_VAR2: "This is variable 2"
+  GCL_TESTS_VAR3: "This is variable 3"
+
+job1:
+  inherit:
+    variables: false
+  script:
+    - env | grep GCL_TESTS
+
+job2:
+  inherit:
+    variables:
+      - GCL_TESTS_VAR1
+      - GCL_TESTS_VAR2
+  script:
+    - env | grep GCL_TESTS

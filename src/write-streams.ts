@@ -1,10 +1,26 @@
 export interface WriteStreams {
     stdout: (txt: string) => void;
+    memoStdout: (txt: string) => void;
     stderr: (txt: string) => void;
     flush: () => void;
 }
 
-export class WriteStreamsProcess implements WriteStreams {
+abstract class AbstractWriteStreams implements WriteStreams {
+    abstract stdout (txt: string): void;
+    abstract stderr (txt: string): void;
+    abstract flush (): void;
+
+    memoStdout = (() => {
+        const cache = new Map();
+        return (message: string) => {
+            if (cache.has(message)) return;
+            cache.set(message, null);
+            this.stdout(message);
+        };
+    })();
+}
+
+export class WriteStreamsProcess extends AbstractWriteStreams {
     stderr (txt: string): void {
         process.stderr.write(txt);
     }
@@ -18,7 +34,7 @@ export class WriteStreamsProcess implements WriteStreams {
     }
 }
 
-export class WriteStreamsMock implements WriteStreams {
+export class WriteStreamsMock extends AbstractWriteStreams {
     private currentStderr = "";
     private currentStdout = "";
 
