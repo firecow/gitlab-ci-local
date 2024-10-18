@@ -118,10 +118,10 @@ export class Parser {
         // Expand various fields in gitlabData
         DataExpander.jobExtends(gitlabData);
         DataExpander.reference(gitlabData, gitlabData);
+        DataExpander.flattenLists(gitlabData);
         DataExpander.complexObjects(gitlabData);
         DataExpander.defaults(gitlabData);
         DataExpander.globalVariables(gitlabData);
-        DataExpander.flattenLists(gitlabData);
 
         assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
         if (!gitlabData.stages.includes(".pre")) {

@@ -12,8 +12,6 @@ const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents:
 
     jobData.extends = typeof jobData.extends === "string" ? [jobData.extends] : jobData.extends;
     jobData.extends = jobData.extends ?? [];
-    reference(gitlabData, jobData.extends);
-    jobData.extends = jobData.extends.flat(5);
 
     for (const parentName of jobData.extends) {
         const parentData = gitlabData[parentName];
@@ -106,8 +104,6 @@ export function needsEach (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
     if (!jobData.needs) return;
 
-    reference(gitlabData, jobData.needs);
-    jobData.needs = jobData.needs.flat(5);
     for (const [i, n] of Object.entries<any>(jobData.needs)) {
         jobData.needs[i] = needsComplex(n);
     }
@@ -128,8 +124,6 @@ export function cacheEach (jobName: string, gitlabData: any) {
     if (!cache) return;
 
     jobData.cache = Array.isArray(cache) ? cache : [cache];
-    reference(gitlabData, jobData.cache);
-    jobData.cache = jobData.cache.flat(5);
     for (const [i, c] of Object.entries<any>(jobData.cache)) {
         if (c.key?.files instanceof Array) {
             assert(c.key.files.length === 1 || c.key.files.length === 2, `cache:key:files should be an array of one or two file paths. Got ${c.key.files.length}`);
@@ -157,8 +151,6 @@ export function servicesEach (jobName: string, gitlabData: any) {
     if (!services) return;
 
     jobData.services = Array.isArray(services) ? services : [services];
-    reference(gitlabData, jobData.services);
-    jobData.services = jobData.services.flat(5);
 
     for (const [i, s] of Object.entries<any>(jobData.services)) {
         jobData.services[i] = servicesComplex(s);
@@ -179,7 +171,6 @@ export function imageEach (jobName: string, gitlabData: any) {
     const image = jobData.image;
     if (!image) return;
 
-    reference(gitlabData, jobData);
     jobData.image = imageComplex(jobData.image);
 }
 
