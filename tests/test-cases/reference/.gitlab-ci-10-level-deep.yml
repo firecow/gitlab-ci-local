@@ -1,0 +1,23 @@
+---
+.script1:
+  - echo test
+.script2:
+  - !reference [.script1]
+.script3:
+  - !reference [.script2]
+.script4:
+  - !reference [.script3]
+.script5:
+  - !reference [.script4]
+.script6:
+  - !reference [.script5]
+.script7:
+  - !reference [.script6]
+.script8:
+  - !reference [.script7]
+.script9:
+  - !reference [.script8]
+test:
+  image: alpine
+  script:
+    - !reference [.script9]
