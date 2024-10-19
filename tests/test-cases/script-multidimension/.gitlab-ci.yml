@@ -1,5 +1,0 @@
----
-test-job:
-  script:
-    - - echo "Test something"
-    - - echo "Test something else"

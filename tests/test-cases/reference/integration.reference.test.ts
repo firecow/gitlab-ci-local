@@ -110,3 +110,45 @@ normal_job:
     - echo Hello from \${CI_JOB_NAME}`;
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
+
+
+test("should support 10 level deep", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        preview: true,
+        file: ".gitlab-ci-10-level-deep.yml",
+        cwd: "tests/test-cases/reference",
+    }, writeStreams);
+
+    const expected = `
+---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+test:
+  image:
+    name: alpine
+  script:
+    - echo test
+`;
+
+    expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
+});
+
+test("should not support 11 level deep", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            noColor: true,
+            file: ".gitlab-ci-11-level-deep.yml",
+            cwd: "tests/test-cases/reference",
+        }, writeStreams);
+    } catch (e: any) {
+        expect(e.message).toEqual("This Gitlab CI configuration is invalid: test.script config should be string or a nested array of strings up to 10 level deep");
+        return;
+    }
+    throw new Error("Error is expected but not thrown/caught");
+});
