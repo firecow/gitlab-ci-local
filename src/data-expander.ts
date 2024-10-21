@@ -72,10 +72,10 @@ function hasCircularChain (data: any) {
 }
 
 /**
-  Transpile the globally defined ["image", "services", "cache", "before_script", "after_script"] into the default.x syntax
+  Transform the globally defined ["image", "services", "cache", "before_script", "after_script"] into the default.x syntax
   https://docs.gitlab.com/ee/ci/yaml/index.html#globally-defined-image-services-cache-before_script-after_script
 */
-export function transpileDeprecatedGlobalDefaultSyntax (gitlabData: any) {
+export function transformDeprecatedGlobalDefaultSyntax (gitlabData: any) {
     const GITLAB_DEPRECATED_GLOBALLY_DEFINED_KEYWORDS = ["image", "services", "cache", "before_script", "after_script"];
 
     gitlabData.default = gitlabData.default ?? {};

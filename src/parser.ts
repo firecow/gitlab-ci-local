@@ -119,7 +119,7 @@ export class Parser {
         DataExpander.jobExtends(gitlabData);
         DataExpander.reference(gitlabData, gitlabData);
         DataExpander.flattenLists(gitlabData);
-        DataExpander.transpileDeprecatedGlobalDefaultSyntax(gitlabData);
+        DataExpander.transformDeprecatedGlobalDefaultSyntax(gitlabData);
         DataExpander.injectDefault(gitlabData);
         DataExpander.normalize(gitlabData);
 
