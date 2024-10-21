@@ -71,15 +71,35 @@ function hasCircularChain (data: any) {
     return false;
 }
 
-export function complexObjects (gitlabData: any) {
+/**
+  Transform the globally defined ["image", "services", "cache", "before_script", "after_script"] into the default.x syntax
+  https://docs.gitlab.com/ee/ci/yaml/index.html#globally-defined-image-services-cache-before_script-after_script
+*/
+export function transformDeprecatedGlobalDefaultSyntax (gitlabData: any) {
+    const GITLAB_DEPRECATED_GLOBALLY_DEFINED_KEYWORDS = ["image", "services", "cache", "before_script", "after_script"];
+
+    gitlabData.default = gitlabData.default ?? {};
+    for (const g of GITLAB_DEPRECATED_GLOBALLY_DEFINED_KEYWORDS) {
+        if (gitlabData[g] !== undefined) {
+            gitlabData.default[g] = gitlabData[g];
+            delete gitlabData[g]; // Since this is deprecated, deleting it to prevent us from using it internally
+        }
+    }
+}
+
+export function normalize (gitlabData: any) {
+    normalizeGlobalVariables(gitlabData);
+
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
-        if (Job.illegalJobNames.has(jobName)) continue;
-        if (typeof jobData === "string") continue;
+        if (Job.illegalJobNames.has(jobName) || jobName.startsWith(".")) continue;
         needsEach(jobName, gitlabData);
         cacheEach(jobName, gitlabData);
         servicesEach(jobName, gitlabData);
         imageEach(jobName, gitlabData);
-        if (jobData.script) jobData.script = typeof jobData.script === "string" ? [jobData.script] : jobData.script;
+
+        jobData.after_script = (typeof jobData.after_script === "string" && jobData.after_script !== "") ? [jobData.after_script] : jobData.after_script;
+        jobData.before_script = (typeof jobData.before_script === "string" && jobData.before_script !== "") ? [jobData.before_script] : jobData.before_script;
+        jobData.script = (typeof jobData.script === "string" && jobData.script !== "") ? [jobData.script] : jobData.script;
     }
 }
 
@@ -174,47 +194,21 @@ export function imageEach (jobName: string, gitlabData: any) {
     jobData.image = imageComplex(jobData.image);
 }
 
-export function defaults (gitlabData: any) {
-    const cacheData = gitlabData.default?.cache ?? gitlabData.cache;
-    let cache = null;
-    if (cacheData) {
-        cache = [];
-        for (const c of Array.isArray(cacheData) ? cacheData : [cacheData]) {
-            cache.push(cacheComplex(c));
-        }
-    }
-
-    const serviceData = gitlabData.default?.services ?? gitlabData.services;
-    let services = null;
-    if (serviceData) {
-        services = [];
-        for (const s of serviceData) {
-            services.push(servicesComplex(s));
-        }
-    }
-
-    const image = imageComplex(gitlabData.default?.image ?? gitlabData.image);
-    const artifacts = gitlabData.default?.artifacts ?? gitlabData.artifacts;
-    const beforeScript = gitlabData.default?.before_script ?? gitlabData.before_script;
-    const afterScript = gitlabData.default?.after_script ?? gitlabData.after_script;
-
+export function inheritDefault (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName) || jobName.startsWith(".")) {
             // skip hidden jobs as they might just contain shared yaml
             // see https://github.com/firecow/gitlab-ci-local/issues/1277
             continue;
         }
-        if (typeof jobData === "string") continue;
-        if (!jobData.artifacts && artifacts) jobData.artifacts = artifacts;
-        if (!jobData.cache && cache) jobData.cache = cache;
-        if (!jobData.services && services) jobData.services = services;
-        if (!jobData.image && image) jobData.image = image;
-        if (!jobData.after_script && afterScript) jobData.after_script = afterScript;
-        if (!jobData.before_script && beforeScript) jobData.before_script = beforeScript;
+
+        for (const keyword of ["artifacts", "cache", "services", "image", "before_script", "after_script"]) {
+            if (gitlabData.default[keyword] !== undefined) jobData[keyword] = jobData[keyword] ?? gitlabData.default[keyword];
+        }
     }
 }
 
-export function globalVariables (gitlabData: any) {
+function normalizeGlobalVariables (gitlabData: any) {
     for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
         if (value === null) {
             gitlabData.variables[key] = ""; // variable's values are nullable
