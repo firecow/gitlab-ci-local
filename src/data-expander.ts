@@ -194,7 +194,7 @@ export function imageEach (jobName: string, gitlabData: any) {
     jobData.image = imageComplex(jobData.image);
 }
 
-export function injectDefault (gitlabData: any) {
+export function inheritDefault (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName) || jobName.startsWith(".")) {
             // skip hidden jobs as they might just contain shared yaml

@@ -120,7 +120,7 @@ export class Parser {
         DataExpander.reference(gitlabData, gitlabData);
         DataExpander.flattenLists(gitlabData);
         DataExpander.transformDeprecatedGlobalDefaultSyntax(gitlabData);
-        DataExpander.injectDefault(gitlabData);
+        DataExpander.inheritDefault(gitlabData);
         DataExpander.normalize(gitlabData);
 
         assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
