@@ -202,12 +202,9 @@ export function injectDefault (gitlabData: any) {
             continue;
         }
 
-        const d = gitlabData.default;
-        if (d.cache) jobData.cache = jobData.cache ?? d.cache;
-        if (d.services) jobData.services = jobData.services ?? d.services;
-        if (d.image) jobData.image = jobData.image ?? d.image;
-        if (d.before_script) jobData.before_script = jobData.before_script ?? d.before_script;
-        if (d.after_script) jobData.after_script = jobData.after_script ?? d.after_script;
+        for (const keyword of ["cache", "services", "image", "before_script", "after_script"]) {
+            if (gitlabData.default[keyword] !== undefined) jobData[keyword] = jobData[keyword] ?? gitlabData.default[keyword];
+        }
     }
 }
 
