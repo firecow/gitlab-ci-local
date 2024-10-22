@@ -12,6 +12,11 @@ import {Argv} from "./argv.js";
 import execa from "execa";
 import {CICDVariable} from "./variables-from-files.js";
 import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues} from "./gitlab-preset.js";
+import {handler} from "./handler.js";
+import * as yaml from "js-yaml";
+import {Parser} from "./parser.js";
+import globby from "globby";
+import {validateIncludeLocal} from "./parser-includes.js";
 
 const CI_PROJECT_DIR = "/gcl-builds";
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
@@ -105,6 +110,8 @@ export class Job {
     };
 
     private readonly _globalVariables: {[key: string]: string} = {};
+
+    readonly variablesForDownstreamPipeline: {[key: string]: string} = {};
     private readonly _variables: {[key: string]: string} = {};
     private _dotenvVariables: {[key: string]: string} = {};
     private _prescriptsExitCode: number | null = null;
@@ -310,12 +317,14 @@ export class Job {
     }
 
     get formattedJobName () {
+        let prefix = "";
+        if (this.argv.childPipelineDepth > 0) prefix = "\t".repeat(this.argv.childPipelineDepth) + `[${this.argv.variable.GCL_TRIGGERER}] -> `;
         const timestampPrefix = this.argv.showTimestamps
             ? `[${dateFormatter.format(new Date())} ${this.prettyDuration.padStart(7)}] `
             : "";
 
         // [16:33:19 1.37 min] my-job     > hello world
-        return chalk`${timestampPrefix}{blueBright ${this.name.padEnd(this.jobNamePad)}}`;
+        return chalk`${timestampPrefix}{blueBright ${prefix}${this.name.padEnd(this.jobNamePad)}}`;
     }
 
     get safeJobName () {
@@ -433,6 +442,24 @@ export class Job {
         return this.jobData["trigger"];
     }
 
+    async startTriggerPipeline () {
+        this.writeStreams.memoStdout(chalk`{bgYellowBright  WARN } downstream pipeline is experimental in gitlab-ci-local\n`);
+        await this.fetchTriggerInclude();
+        const variablesForDownstreamPipeline = Object.entries({...this.globalVariables, ...this.jobData.variables}).map(([key, value]) => `${key}=${value}`);
+
+        const gclTriggerer = this.argv.variable["GCL_TRIGGERER"]
+            ? `${this.argv.variable["GCL_TRIGGERER"]} -> ${this.name}`
+            : this.name;
+        await handler({
+            ...Object.fromEntries(this.argv.map),
+            file: `${this.argv.stateDir}/includes/triggers/${this.name}.yml`,
+            variable: [
+                chalk`GCL_TRIGGERER=${gclTriggerer}`,
+                "CI_PIPELINE_SOURCE=parent_pipeline",
+            ].concat(variablesForDownstreamPipeline),
+        }, this.writeStreams, [], this.argv.childPipelineDepth + 1);
+    }
+
     get preScriptsExitCode () {
         return this._prescriptsExitCode;
     }
@@ -470,6 +497,12 @@ export class Job {
     }
 
     async start (): Promise<void> {
+        if (this.trigger) {
+            await this.startTriggerPipeline();
+            this._prescriptsExitCode = 0; // NOTE: so that `this.finished` will implicitly be set to true
+            return;
+        }
+
         this._running = true;
 
         const argv = this.argv;
@@ -1348,6 +1381,45 @@ export class Job {
                 return Utils.spawn([this.argv.containerExecutable, "rm", "-vf", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
             }));
         }
+    }
+
+    private async fetchTriggerInclude () {
+        const {cwd, stateDir} = this.argv;
+
+        fs.mkdirpSync(`${cwd}/${stateDir}/includes/triggers`);
+
+        let contents: any = {};
+
+        for (const include of this.jobData.trigger?.include ?? []) {
+            if (include["local"]) {
+                validateIncludeLocal(include["local"]);
+                const files = await globby(include["local"].replace(/^\//, ""), {dot: true, cwd});
+                if (files.length == 0) {
+                    throw new AssertionError({message: `Local include file \`${include["local"]}\` specified in \`.${this.name}\` cannot be found!`});
+                }
+
+                for (const file of files) {
+                    const content = await Parser.loadYaml(`${cwd}/${file}`, {});
+                    contents = {
+                        ...contents,
+                        ...content,
+                    };
+                }
+            } else if (include["artifact"]) {
+                const content = await Parser.loadYaml(`${cwd}/${stateDir}/artifacts/${include["job"]}/${include["artifact"]}`, {});
+                contents = {
+                    ...contents,
+                    ...content,
+                };
+            } else if (include["project"]) {
+                this.writeStreams.memoStdout(chalk`{bgYellowBright  WARN } \`{blueBright ${this.name}.trigger.include.*.project}\` will be no-op. It is currently not implemented\n`);
+
+            } else if (include["template"]) {
+                this.writeStreams.memoStdout(chalk`{bgYellowBright  WARN } \`{blueBright ${this.name}.trigger.include.*.template}\` will be no-op. It is currently not implemented\n`);
+            }
+        }
+        const target = `${cwd}/${stateDir}/includes/triggers/${this.name}.yml`;
+        fs.writeFileSync(target, yaml.dump(contents));
     }
 }
 

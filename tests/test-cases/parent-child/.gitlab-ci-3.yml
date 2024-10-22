@@ -1,0 +1,16 @@
+---
+variables:
+  GLOBAL_VAR_1: i am global var 1
+  GLOBAL_VAR_2: i am global var 2
+  GLOBAL_VAR_3: i am global var 3
+
+parent:
+  variables:
+    PARENT_JOB_VAR: i am parent job var
+  inherit:
+    variables:
+      - GLOBAL_VAR_1
+      - GLOBAL_VAR_3
+  trigger:
+    include:
+      - local: child-pipeline.yml

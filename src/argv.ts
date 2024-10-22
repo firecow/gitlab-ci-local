@@ -26,7 +26,7 @@ export class Argv {
         "variablesFile": ".gitlab-ci-local-variables.yml",
     };
 
-    private map: Map<string, any> = new Map<string, any>();
+    map: Map<string, any> = new Map<string, any>();
     private writeStreams: WriteStreams | undefined;
 
     private async fallbackCwd (args: any) {
@@ -275,5 +275,9 @@ export class Argv {
 
     get maximumIncludes (): number {
         return this.map.get("maximumIncludes") ?? 150; // https://docs.gitlab.com/ee/administration/settings/continuous_integration.html#maximum-includes
+    }
+
+    get childPipelineDepth (): number {
+        return this.map.get("childPipelineDepth");
     }
 }

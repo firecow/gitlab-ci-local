@@ -1,0 +1,4 @@
+---
+nested-child-1:
+  trigger:
+    include: nested-child-2.yml

@@ -1,0 +1,29 @@
+---
+generate-config:
+  image: busybox
+  stage: build
+  script:
+    - sleep 3
+    - |
+      cat > generated-config.yml << EOF
+      ---
+      child:
+        image: busybox
+        script:
+        - echo i am generated
+      EOF
+  artifacts:
+    paths:
+      - generated-config.yml
+
+dynamic-pipeline-1:
+  trigger:
+    include:
+      - artifact: generated-config.yml
+        job: generate-config
+
+dynamic-pipeline-2:
+  trigger:
+    include:
+      - artifact: generated-config.yml
+        job: generate-config

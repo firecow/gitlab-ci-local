@@ -1,0 +1,7 @@
+---
+child:
+  image: busybox
+  variables:
+    JOB_VAR: "i am job var"
+  script:
+    - env | sort | grep VAR
