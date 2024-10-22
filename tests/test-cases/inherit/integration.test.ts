@@ -38,3 +38,49 @@ job2 > GCL_TESTS_VAR2=This is variable 2`;
         expect(filteredStdout).toEqual(expected);
     });
 });
+
+test("inherit:default", async () => {
+
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        file: ".gitlab-ci-inherit-default.yml",
+        cwd: "tests/test-cases/inherit",
+        preview: true,
+    }, writeStreams);
+
+    const expected = `
+---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+inherit-default-true:
+  script:
+    - echo script
+  image:
+    name: busybox
+  before_script: &ref_0
+    - echo default before script
+  after_script:
+    - echo default after script
+inherit-default-false:
+  inherit:
+    default: false
+  script:
+    - echo script
+inherit-default-before_script_and_image:
+  inherit:
+    default:
+      - image
+      - before_script
+  script:
+    - echo script
+  image:
+    name: busybox
+  before_script: *ref_0
+`;
+
+    expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
+});

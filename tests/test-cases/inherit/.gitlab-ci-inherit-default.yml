@@ -1,0 +1,25 @@
+---
+default:
+  image: busybox
+  before_script:
+    - echo default before script
+  after_script:
+    - echo default after script
+
+inherit-default-true:
+  script:
+    - echo script
+
+inherit-default-false:
+  inherit:
+    default: false
+  script:
+    - echo script
+
+inherit-default-before_script_and_image:
+  inherit:
+    default:
+      - image
+      - before_script
+  script:
+    - echo script

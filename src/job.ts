@@ -102,7 +102,6 @@ export class Job {
     readonly gitData: GitData;
     readonly inherit: {
         variables?: boolean | string[];
-        default?: boolean | string[];
     };
 
     private readonly _globalVariables: {[key: string]: string} = {};
@@ -151,11 +150,6 @@ export class Job {
 
         this.inherit = {};
         this.inherit.variables = this.jobData.inherit?.variables ?? true;
-        this.inherit.default = this.jobData.inherit?.default ?? true;
-
-        if (this.inherit.default === false) {
-            this.writeStreams.memoStdout(chalk`{black.bgYellowBright  WARN } \`.inherit.default\` has not been implemented!\n`);
-        }
 
         this.when = jobData.when || "on_success";
         this.exists = jobData.exists || [];
