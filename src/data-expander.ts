@@ -196,13 +196,19 @@ export function imageEach (jobName: string, gitlabData: any) {
 
 export function inheritDefault (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (jobData.inherit?.default === false) continue;
+
         if (Job.illegalJobNames.has(jobName) || jobName.startsWith(".")) {
             // skip hidden jobs as they might just contain shared yaml
             // see https://github.com/firecow/gitlab-ci-local/issues/1277
             continue;
         }
 
-        for (const keyword of ["artifacts", "cache", "services", "image", "before_script", "after_script"]) {
+        const keywordsToInheritFrom = (Array.isArray(jobData.inherit?.default))
+            ? jobData.inherit.default
+            : ["artifacts", "cache", "services", "image", "before_script", "after_script"];
+
+        for (const keyword of keywordsToInheritFrom) {
             if (gitlabData.default[keyword] !== undefined) jobData[keyword] = jobData[keyword] ?? gitlabData.default[keyword];
         }
     }
