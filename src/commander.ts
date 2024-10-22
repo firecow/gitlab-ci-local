@@ -133,9 +133,12 @@ export class Commander {
 
         if (preScripts.successful.length !== 0) {
             preScripts.successful.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            preScripts.successful.forEach(({coveragePercent, name, prettyDuration}) => {
+            preScripts.successful.forEach(({argv, coveragePercent, name, prettyDuration}) => {
+                let prefix = "";
+                if (argv.childPipelineDepth > 0) prefix = `[${argv.variable.GCL_TRIGGERER}] -> `;
+
                 const namePad = name.padEnd(jobNamePad);
-                writeStreams.stdout(chalk`{black.bgGreenBright  PASS }${renderDuration(prettyDuration)} {blueBright ${namePad}}`);
+                writeStreams.stdout(chalk`{black.bgGreenBright  PASS }${renderDuration(prettyDuration)} {blueBright ${prefix}${namePad}}`);
                 if (coveragePercent) {
                     writeStreams.stdout(chalk` ${coveragePercent}% {grey coverage}`);
                 }

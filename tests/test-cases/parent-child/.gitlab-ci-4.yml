@@ -1,0 +1,10 @@
+---
+variables:
+  GLOBAL_VAR: i am global var
+
+parent:
+  variables:
+    JOB_VAR: i have a higher precedence
+  trigger:
+    include:
+      - local: child-pipeline.yml
