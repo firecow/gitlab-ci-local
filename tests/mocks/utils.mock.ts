@@ -46,5 +46,6 @@ export function initSpawnSpyReject (spyMocks: {cmdArgs: string[]; rejection: any
 
     for (const spyMock of spyMocks) {
         when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockRejectedValue(spyMock.rejection);
+        when(spyOn).calledWith(spyMock.cmdArgs).mockRejectedValue(spyMock.rejection);
     }
 }
