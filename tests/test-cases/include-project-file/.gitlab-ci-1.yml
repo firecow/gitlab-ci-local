@@ -1,0 +1,7 @@
+---
+include:
+  # https://gitlab.com/ANGkeith/gitlab-ci-local-test/-/tree/dev?ref_type=heads
+  - project: angkeith/gitlab-ci-local-test
+    ref: dev
+    file:
+      - .gitlab-ci.yml

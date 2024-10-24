@@ -1,0 +1,6 @@
+---
+include:
+  # https://gitlab.com/ANGkeith/gitlab-ci-local-test
+  - project: angkeith/gitlab-ci-local-test
+    file:
+      - .gitlab-ci.yml

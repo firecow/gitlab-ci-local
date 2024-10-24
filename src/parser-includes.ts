@@ -238,9 +238,11 @@ export class ParserIncludes {
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
+
+                const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
                 await Utils.bash(`
                     cd ${cwd}/${stateDir} \\
-                        && git clone --branch "${ref}" -n --depth=1 --filter=tree:0 \\
+                        && git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 \\
                                 ${remote.schema}://${remote.host}:${remote.port}/${project}.git \\
                                 ${cwd}/${target}.${ext} \\
                         && cd ${cwd}/${target}.${ext} \\
