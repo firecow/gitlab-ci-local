@@ -911,7 +911,7 @@ export class Job {
                 return null;
             } else {
                 // https://docs.gitlab.com/ee/ci/runners/hosted_runners/linux.html#container-images
-                return "docker.io/ruby:3.1";
+                return this.argv.defaultImage ?? "docker.io/ruby:3.1";
             }
         }
         const expanded = Utils.expandVariables(vars);
