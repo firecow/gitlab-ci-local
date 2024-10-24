@@ -48,6 +48,15 @@ export class Argv {
         if (!argv.shellExecutorNoImage && argv.shellIsolation) {
             writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --shell-isolation does not work with --no-shell-executor-no-image\n`);
         }
+
+        if (argv.defaultImage && argv.shellIsolation) {
+            writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --default-image does not work with --shell-isolation=true\n`);
+        }
+
+        if (argv.defaultImage && argv.shellExecutorNoImage) {
+            writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --default-image does not work with --shell-executor-no-image=true\n`);
+        }
+
         return argv;
     }
 
@@ -271,6 +280,10 @@ export class Argv {
     get shellExecutorNoImage (): boolean {
         // TODO: default to false in 5.x.x
         return this.map.get("shellExecutorNoImage") ?? true;
+    }
+
+    get defaultImage (): string {
+        return this.map.get("defaultImage") ?? "docker.io/ruby:3.1";
     }
 
     get maximumIncludes (): number {

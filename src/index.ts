@@ -172,6 +172,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Whether to use shell executor when no image is specified.",
             requiresArg: false,
         })
+        .option("default-image", {
+            type: "string",
+            description: "When using --shell-executor-no-image=false which image to be used for the container. Defaults to docker.io/ruby:3.1 if not set.",
+            requiresArg: false,
+        })
         .option("mount-cache", {
             type: "boolean",
             description: "Enable docker mount based caching",
