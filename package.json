@@ -60,7 +60,7 @@
     "@types/yargs": "17.x.x",
     "@typescript-eslint/eslint-plugin": "7.x.x",
     "@typescript-eslint/parser": "7.x.x",
-    "@yao-pkg/pkg": "^5.15.0",
+    "@yao-pkg/pkg": "^6.0.0",
     "axios-mock-adapter": "2.x",
     "depcheck": "1.x.x",
     "esbuild": "^0.24.0",
