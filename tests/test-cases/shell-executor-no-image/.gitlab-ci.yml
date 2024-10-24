@@ -1,0 +1,5 @@
+---
+test-job:
+  stage: test
+  script:
+    - echo "Heya from default-image"
