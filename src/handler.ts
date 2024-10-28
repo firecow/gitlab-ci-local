@@ -35,11 +35,6 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
 
     assert(fs.existsSync(`${cwd}/${file}`), `${path.resolve(cwd)}/${file} could not be found`);
 
-    if (argv.fetchIncludes) {
-        await Parser.create(argv, writeStreams, 0, jobs);
-        return [];
-    }
-
     if (argv.preview) {
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs, false);
