@@ -54,7 +54,7 @@
     "@types/jest-when": "3.x.x",
     "@types/js-yaml": "4.x.x",
     "@types/micromatch": "^4.0.7",
-    "@types/node": "18.x.x",
+    "@types/node": "22.x",
     "@types/pretty-hrtime": "1.x.x",
     "@types/split2": "4.x.x",
     "@types/yargs": "17.x.x",
