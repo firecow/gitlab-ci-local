@@ -409,7 +409,7 @@ function parseIncludeInputs (ctx: any): {inputValue: any; inputType: InputType} 
 
 function getInputValue (ctx: any) {
     const {inputs, interpolationKey, configFilePath, inputsSpecification} = ctx;
-    const inputValue = inputs[interpolationKey] || inputsSpecification.spec.inputs[interpolationKey]?.default;
+    const inputValue = inputs[interpolationKey] !== undefined ? inputs[interpolationKey] : inputsSpecification.spec.inputs[interpolationKey]?.default;
     assert(inputValue !== undefined, chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: required value has not been provided.`);
     return inputValue;
 }
