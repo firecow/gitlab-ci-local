@@ -214,11 +214,6 @@ export class Job {
 
         assert(this.scripts || this.trigger, chalk`{blueBright ${this.name}} must have script specified`);
 
-        assert(!(this.interactive && !this.argv.shellExecutorNoImage), chalk`${this.formattedJobName} @Interactive decorator cannot be used with --no-shell-executor-no-image`);
-
-        if (this.interactive && (this.when !== "manual" || this.imageName(this._variables) !== null)) {
-            throw new AssertionError({message: `${this.formattedJobName} @Interactive decorator cannot have image: and must be when:manual`});
-        }
 
         if (this.injectSSHAgent && this.imageName(this._variables) === null) {
             throw new AssertionError({message: `${this.formattedJobName} @InjectSSHAgent can only be used with image:`});
@@ -625,7 +620,9 @@ export class Job {
         await this.execPreScripts(expanded);
         if (this._prescriptsExitCode == null) throw Error("this._prescriptsExitCode must be defined!");
 
-        await this.execAfterScripts(expanded);
+        if (!this.interactive) {
+            await this.execAfterScripts(expanded);
+        }
 
         this._running = false;
         this._endTime = this._endTime ?? process.hrtime(this._startTime);
@@ -760,26 +757,14 @@ export class Job {
             await Utils.rsyncTrackedFiles(cwd, stateDir, `${safeJobName}`);
         }
 
-        if (this.interactive) {
-            let iCmd = "set -eo pipefail\n";
-            iCmd += this.generateScriptCommands(scripts);
-
-            const interactiveCp = execa(iCmd, {
-                cwd,
-                shell: "bash",
-                stdio: ["inherit", "inherit", "inherit"],
-                env: {...expanded, ...process.env},
-            });
-            return new Promise<number>((resolve, reject) => {
-                void interactiveCp.on("exit", (code) => resolve(code ?? 0));
-                void interactiveCp.on("error", (err) => reject(err));
-            });
-        }
-
         this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (imageName && !this._containerId) {
             let dockerCmd = `${this.argv.containerExecutable} create --interactive ${this.generateInjectSSHAgentOptions()} `;
+            if (this.interactive) {
+                dockerCmd += "--tty ";
+            }
+
             if (this.argv.privileged) {
                 dockerCmd += "--privileged ";
             }
@@ -938,6 +923,7 @@ export class Job {
         const cp = execa(this._containerId ? `${this.argv.containerExecutable} start --attach -i ${this._containerId}` : "bash", {
             cwd,
             shell: "bash",
+            stdio: this.interactive ? "inherit" : undefined,
             env: imageName ? process.env : expanded,
         });
 
@@ -958,17 +944,22 @@ export class Job {
         const quiet = this.argv.quiet;
 
         return await new Promise<number>((resolve, reject) => {
-            if (!quiet) {
+            if (!quiet && !this.interactive) {
                 cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
                 cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
             }
             void cp.on("exit", (code) => resolve(code ?? 0));
             void cp.on("error", (err) => reject(err));
 
-            if (imageName) {
-                cp.stdin?.end("/gcl-cmd");
+            if (this.interactive) {
+                // stop from showing still running message in interactive mode
+                clearTimeout(this._longRunningSilentTimeout);
             } else {
-                cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}_${this.jobId}`);
+                if (imageName) {
+                    cp.stdin?.end("/gcl-cmd");
+                } else {
+                    cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}_${this.jobId}`);
+                }
             }
         });
     }
