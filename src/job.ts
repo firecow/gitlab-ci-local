@@ -936,9 +936,28 @@ export class Job {
         return image.entrypoint;
     }
 
+    private async validateCiDependencyProxyServerAuthentication (imageName: string) {
+        const CI_DEPENDENCY_PROXY_SERVER = this._variables["CI_DEPENDENCY_PROXY_SERVER"];
+        if (!imageName.startsWith(CI_DEPENDENCY_PROXY_SERVER)) {
+            return;
+        }
+        try {
+            await Utils.spawn([this.argv.containerExecutable, "login", CI_DEPENDENCY_PROXY_SERVER]);
+        } catch (e: any) {
+            const errMsg = `Please authenticate to the Dependency Proxy (${CI_DEPENDENCY_PROXY_SERVER}) https://docs.gitlab.com/ee/user/packages/dependency_proxy/#authenticate-with-the-dependency-proxy`;
+            if (this.argv.containerExecutable == "docker") {
+                assert(!e.stderr.includes("Cannot perform an interactive login"), errMsg);
+            } else if (this.argv.containerExecutable == "podman") {
+                assert(!e.stderr.includes("Username: Error: getting username and password: reading username: EOF"), errMsg);
+            }
+            throw e;
+        }
+    }
+
     private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
         const pullPolicy = this.argv.pullPolicy;
         const actualPull = async () => {
+            await this.validateCiDependencyProxyServerAuthentication(imageToPull);
             const time = process.hrtime();
             await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull]);
             const endTime = process.hrtime(time);
