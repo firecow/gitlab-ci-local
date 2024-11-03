@@ -94,6 +94,12 @@ export class ParserIncludes {
                     fileDoc["include"] = this.expandInclude(fileDoc["include"], opts.variables);
                     fileDoc["include"].forEach((inner: any, i: number) => {
                         if (!inner["local"]) return;
+                        if (inner["rules"]) {
+                            const rulesResult = Utils.getRulesResult({cwd: opts.cwd, variables: opts.variables, rules: inner["rules"]}, gitData);
+                            if (rulesResult.when === "never") {
+                                return;
+                            }
+                        }
                         fileDoc["include"][i] = {
                             project: value["project"],
                             file: inner["local"].replace(/^\//, ""),
