@@ -117,6 +117,12 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Generate tab completion script",
             requiresArg: false,
         })
+        .option("evaluate-rule-changes", {
+            type: "boolean",
+            description: "Whether to evaluate rule:changes. If set to false, rules:changes will always evaluate to true",
+            requiresArg: false,
+            default: Argv.default.evaluateRuleChanges,
+        })
         .option("needs", {
             type: "boolean",
             description: "Run needed jobs, when executing specific jobs",

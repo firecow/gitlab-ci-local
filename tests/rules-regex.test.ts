@@ -1,14 +1,16 @@
-
+import {Argv} from "../src/argv";
 import {Utils} from "../src/utils";
 import {GitData} from "../src/git-data";
 import {WriteStreamsMock} from "../src/write-streams";
 
 let writeStreams;
 let gitData: GitData;
-//
+let argv: Argv;
+
 beforeEach(async () => {
     writeStreams = new WriteStreamsMock();
     gitData = await GitData.init("tests", writeStreams);
+    argv = await Argv.build({}, writeStreams);
     import.meta.jest.clearAllMocks();
 });
 
@@ -88,7 +90,7 @@ describe("gitlab rules regex", () => {
                 const evalSpy = import.meta.jest.spyOn(global, "eval");
                 const evaluateRuleIfSpy = import.meta.jest.spyOn(Utils, "evaluateRuleIf");
 
-                Utils.getRulesResult({cwd: "", rules, variables: {}}, gitData);
+                Utils.getRulesResult({argv, cwd: "", rules, variables: {}}, gitData);
                 expect(evalSpy).toHaveBeenCalledWith(t.jsExpression);
                 expect(evaluateRuleIfSpy).toHaveReturnedWith(t.evalResult);
             });
@@ -102,7 +104,7 @@ describe("gitlab rules regex [invalid]", () => {
                 const rules = [ {if: t.rule} ];
 
                 try {
-                    Utils.getRulesResult({cwd: "", rules, variables: {}}, gitData);
+                    Utils.getRulesResult({argv, cwd: "", rules, variables: {}}, gitData);
                 } catch (e) {
                     return;
                 }
