@@ -7,10 +7,10 @@
   "version": "4.55.0",
   "scripts": {
     "esbuild": "esbuild src/index.ts --outfile=bin/index.cjs --bundle --platform=node --format=cjs --minify --external:yargs --external:re2 --sourcemap=inline",
-    "pkg-linux": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t node20-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
-    "pkg-macos": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t node20-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
-    "pkg-win": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t node20-win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
-    "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win",
+    "pkg-linux": "npx tsx scripts/install-re2-bin.ts --platform linux --platform-arch=x64 && pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t node20-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
+    "pkg-macos": "npx tsx scripts/install-re2-bin.ts --platform darwin --platform-arch=x64 && pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t node20-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
+    "pkg-win": "npx tsx scripts/install-re2-bin.ts --platform win32 --platform-arch=x64 && pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t node20-win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
+    "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win && npm ci",
     "cleanup": "git clean -fX tests/ && git clean -fX src/",
     "build": " npm run cleanup && tsc",
     "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
@@ -148,6 +148,9 @@
     "preset": "ts-jest",
     "testMatch": [
       "**/*.test.ts"
+    ],
+    "coveragePathIgnorePatterns": [
+      "<rootDir>/scripts"
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
