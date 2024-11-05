@@ -1,3 +1,4 @@
+import RE2 from "re2";
 import chalk from "chalk";
 import {Job, JobRule} from "./job.js";
 import fs from "fs-extra";
@@ -208,7 +209,7 @@ export class Utils {
 
         // Scenario when RHS is a <regex>
         // https://regexr.com/85sjo
-        const pattern1 = /\s*(?<operator>(?:=~)|(?:!~))\s*(?<rhs>\/.*?\/)(?<flags>[igmsuy]*)(\s|$|\))/g;
+        const pattern1 = /\s*(?<operator>(?:=~)|(?:!~))\s*\/(?<rhs>.*?)\/(?<flags>[igmsuy]*)(\s|$|\))/g;
         evalStr = evalStr.replace(pattern1, (_, operator, rhs, flags, remainingTokens) => {
             let _operator;
             switch (operator) {
@@ -221,7 +222,13 @@ export class Utils {
                 default:
                     throw operator;
             }
-            return `.match(${rhs}${flags}) ${_operator} null${remainingTokens}`;
+            const _rhs = JSON.stringify(rhs); // JSON.stringify for escaping `"`
+            const containsNonEscapedSlash = /(?<!\\)\//.test(_rhs);
+            assert(!containsNonEscapedSlash, `Error attempting to evaluate the following rules:
+  rules:
+    - if: '${expandedEvalStr}'
+as rhs contains unescaped \`/\``);
+            return `.match(new RE2(${_rhs}, "${flags}")) ${_operator} null${remainingTokens}`;
         });
 
         // Scenario when RHS is surrounded by double-quotes
@@ -246,10 +253,9 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
             }
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
-                const _pattern = pattern.replace(/(?<!\\)\//g, "\\/"); // escape potentially unescaped `/` that's in the pattern
-                return `/${_pattern}/${flags}`;
+                return `new RE2("${pattern}", "${flags}")`;
             });
-            return `.match(new RegExp(${_rhs})) ${_operator} null`;
+            return `.match(${_rhs}) ${_operator} null`;
         });
 
         // Convert all null.match functions to false
@@ -260,7 +266,9 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
 
         let res;
         try {
+            (global as any).RE2 = RE2; // Assign RE2 to the global object
             res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
+            delete (global as any).RE2; // Cleanup
         } catch (err) {
             console.log(`
 Error attempting to evaluate the following rules:

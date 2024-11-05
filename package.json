@@ -6,7 +6,7 @@
   "bin": "src/index.js",
   "version": "4.55.0",
   "scripts": {
-    "esbuild": "esbuild src/index.ts --outfile=bin/index.cjs --bundle --platform=node --format=cjs --minify --external:yargs --sourcemap=inline",
+    "esbuild": "esbuild src/index.ts --outfile=bin/index.cjs --bundle --platform=node --format=cjs --minify --external:yargs --external:re2 --sourcemap=inline",
     "pkg-linux": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t node20-linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
     "pkg-macos": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t node20-macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
     "pkg-win": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t node20-win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
@@ -41,6 +41,7 @@
     "object-traversal": "1.x.x",
     "p-map": "4.x.x",
     "pretty-hrtime": "1.x.x",
+    "re2": "^1.21.4",
     "split2": "4.x.x",
     "terminal-link": "2.1.1",
     "yargs": "17.x.x"
