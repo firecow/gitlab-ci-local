@@ -32,7 +32,7 @@ test("rules:changes:paths (has changes)", async () => {
     }]);
     await handler({
         cwd: "tests/test-cases/rules-changes",
-        file: ".gitlab-ci-rules:changes:paths.yml",
+        file: ".gitlab-ci-2.yml",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
@@ -65,7 +65,7 @@ test("rules:changes:paths (no changes)", async () => {
     }]);
     await handler({
         cwd: "tests/test-cases/rules-changes",
-        file: ".gitlab-ci-rules:changes:paths.yml",
+        file: ".gitlab-ci-2.yml",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines).not.toEqual(expect.arrayContaining([
