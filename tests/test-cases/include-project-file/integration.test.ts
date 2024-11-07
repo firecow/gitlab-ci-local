@@ -49,3 +49,22 @@ test("include:project should target default branch when ref is missing", async (
     const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job >")).join("\n");
     expect(filteredStdout).toEqual(expected);
 });
+
+test("include:project should respect rules specified in included project", async () => {
+    const writeStreams = new WriteStreamsMock();
+
+    await handler({
+        file: ".gitlab-ci-3.yml",
+        cwd: "tests/test-cases/include-project-file",
+        noColor: true,
+        list: true,
+    }, writeStreams);
+
+
+    const expected = [
+        "name                                    description  stage   when        allow_failure  needs",
+        "should execute since rule eval to true               test    on_success  false      ",
+    ];
+
+    expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.join("\n"));
+});
