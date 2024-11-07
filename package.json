@@ -39,7 +39,6 @@
     "jsonpointer": "5.x.x",
     "micromatch": "4.x.x",
     "object-traversal": "1.x.x",
-    "p-map": "4.x.x",
     "pretty-hrtime": "1.x.x",
     "re2": "^1.21.4",
     "split2": "4.x.x",

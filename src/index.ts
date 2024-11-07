@@ -102,6 +102,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         })
         .option("interactive-jobs", {
             type: "array",
+            alias: "i",
             description: "Select jobs to run interactively",
             requiresArg: false,
         })
