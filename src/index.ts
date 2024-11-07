@@ -100,6 +100,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Print YML with defaults, includes, extends and reference's expanded",
             requiresArg: false,
         })
+        .option("interactive-jobs", {
+            type: "array",
+            description: "Select jobs to run interactively",
+            requiresArg: false,
+        })
         .option("cwd", {
             type: "string",
             description: "Path to a current working directory",

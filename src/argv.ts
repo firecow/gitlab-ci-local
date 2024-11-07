@@ -141,6 +141,10 @@ export class Argv {
         return this.map.get("remoteVariables");
     }
 
+    get interactiveJobs (): string[] {
+        return this.map.get("interactiveJobs") ?? [];
+    }
+
     get variable (): {[key: string]: string} {
         const val = this.map.get("variable");
         const variables: {[key: string]: string} = {};
