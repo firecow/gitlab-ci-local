@@ -1,0 +1,7 @@
+---
+include:
+  # https://gitlab.com/ANGkeith/gitlab-ci-local-test
+  - project: angkeith/gitlab-ci-local-test
+    ref: issue/#1011
+    file:
+      - .gitlab-ci.yml
