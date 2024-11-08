@@ -140,7 +140,18 @@ For further troubleshooting, consider either of the following:
         }
     }
 
-    static async run (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
+    private static interactiveJobsExist (jobs: ReadonlyArray<Job>, interactiveJobs: string[]) {
+        const warnings = [];
+        for (const interactiveJob of interactiveJobs) {
+            if (!jobs.some(j => j.baseName === interactiveJob)) {
+                warnings.push(`Interactive job "${interactiveJob}" does not exist and will be ignored.`);
+            }
+        }
+
+        return warnings;
+    }
+
+    static async run (jobs: ReadonlyArray<Job>, stages: readonly string[], interactiveJobs: string[] = []) {
         const warnings: string[] = [];
         this.scriptBlank(jobs);
         this.arrayOfStrings(jobs);
@@ -149,6 +160,7 @@ For further troubleshooting, consider either of the following:
         this.dependenciesContainment(jobs);
         warnings.push(...this.potentialIllegalJobName(jobs.map(j => j.baseName)));
         warnings.push(...this.artifacts(jobs));
+        warnings.push(...this.interactiveJobsExist(jobs, interactiveJobs));
         return warnings;
     }
 

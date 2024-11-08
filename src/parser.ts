@@ -58,7 +58,7 @@ export class Parser {
         const parser = new Parser(argv, writeStreams, pipelineIid, jobs, expandVariables);
         const time = process.hrtime();
         await parser.init();
-        const warnings = await Validator.run(parser.jobs, parser.stages);
+        const warnings = await Validator.run(parser.jobs, parser.stages, argv.interactiveJobs);
 
         for (const job of parser.jobs) {
             if (job.artifacts === null) {
