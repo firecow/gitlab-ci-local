@@ -218,7 +218,7 @@ export class Utils {
                 default:
                     throw operator;
             }
-            return `.match(${rhs}${flags})${remainingTokens} ${_operator} null `;
+            return `.match(${rhs}${flags}) ${_operator} null${remainingTokens}`;
         });
 
         // Scenario when RHS is surrounded by double-quotes
