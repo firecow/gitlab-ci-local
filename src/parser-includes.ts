@@ -1,3 +1,4 @@
+import {Argv} from "./argv.js";
 import {Utils} from "./utils.js";
 import fs from "fs-extra";
 import {WriteStreams} from "./write-streams.js";
@@ -10,6 +11,7 @@ import globby from "globby";
 import path from "path";
 
 type ParserIncludesInitOptions = {
+    argv: Argv;
     cwd: string;
     stateDir: string;
     writeStreams: WriteStreams;
@@ -41,6 +43,7 @@ export class ParserIncludes {
     }
 
     static async init (gitlabData: any, opts: ParserIncludesInitOptions): Promise<any[]> {
+        const {argv} = opts;
         this.count++;
         assert(
             this.count <= opts.maximumIncludes + 1, // 1st init call is not counted
@@ -57,7 +60,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables}, gitData);
+                const rulesResult = Utils.getRulesResult({argv, cwd, rules: include_rules, variables: opts.variables}, gitData);
                 if (rulesResult.when === "never") {
                     continue;
                 }
@@ -87,7 +90,7 @@ export class ParserIncludes {
         for (const value of include) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({cwd, rules: include_rules, variables: opts.variables}, gitData);
+                const rulesResult = Utils.getRulesResult({argv, cwd, rules: include_rules, variables: opts.variables}, gitData);
                 if (rulesResult.when === "never") {
                     continue;
                 }

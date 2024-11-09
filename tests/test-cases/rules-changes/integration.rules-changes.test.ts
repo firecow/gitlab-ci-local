@@ -57,6 +57,23 @@ test("rules:changes (no changes)", async () => {
     ]));
 });
 
+test("rules:changes --no-evaluate-rule-changes (no changes)", async () => {
+    const writeStreams = new WriteStreamsMock();
+    initSyncSpawnSpy([{
+        cmdArgs: ["git", "diff", "--name-only", "origin/main"],
+        returnValue: {stdout: ""},
+    }]);
+    await handler({
+        cwd: "tests/test-cases/rules-changes",
+        evaluateRuleChanges: false,
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
+        chalk`{blueBright alpine       } {greenBright >} Job is running`,
+        chalk`{blueBright matrix: [foo]} {greenBright >} Job is running`,
+    ]));
+});
+
 test("rules:changes:paths (no changes)", async () => {
     const writeStreams = new WriteStreamsMock();
     initSyncSpawnSpy([{

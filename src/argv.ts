@@ -24,6 +24,7 @@ async function gitRootPath () {
 export class Argv {
     static readonly default = {
         "variablesFile": ".gitlab-ci-local-variables.yml",
+        "evaluateRuleChanges": true,
     };
 
     map: Map<string, any> = new Map<string, any>();
@@ -90,6 +91,10 @@ export class Argv {
 
     get variablesFile (): string {
         return this.map.get("variablesFile") ?? Argv.default.variablesFile;
+    }
+
+    get evaluateRuleChanges (): boolean {
+        return this.map.get("evaluateRuleChanges") ?? Argv.default.evaluateRuleChanges;
     }
 
     get file (): string {

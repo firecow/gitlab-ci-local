@@ -11,8 +11,10 @@ import globby from "globby";
 import micromatch from "micromatch";
 import axios from "axios";
 import path from "path";
+import {Argv} from "./argv.js";
 
 type RuleResultOpt = {
+    argv: Argv;
     cwd: string;
     rules: JobRule[];
     variables: {[key: string]: string};
@@ -172,6 +174,7 @@ export class Utils {
 
     static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} = false): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}} {
         let when = "never";
+        const {evaluateRuleChanges} = opt.argv;
 
         // optional manual jobs allowFailure defaults to true https://docs.gitlab.com/ee/ci/jobs/job_control.html#types-of-manual-jobs
         let allowFailure = jobWhen === "manual" ? true : jobAllowFailure;
@@ -180,7 +183,7 @@ export class Utils {
         for (const rule of opt.rules) {
             if (!Utils.evaluateRuleIf(rule.if, opt.variables)) continue;
             if (!Utils.evaluateRuleExist(opt.cwd, rule.exists)) continue;
-            if (!Utils.evaluateRuleChanges(gitData.branches.default, rule.changes)) continue;
+            if (evaluateRuleChanges && !Utils.evaluateRuleChanges(gitData.branches.default, rule.changes)) continue;
 
             when = rule.when ? rule.when : jobWhen;
             allowFailure = rule.allow_failure ?? allowFailure;
