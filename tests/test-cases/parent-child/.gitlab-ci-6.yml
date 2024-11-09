@@ -1,0 +1,5 @@
+---
+parent:
+  trigger:
+    include:
+      - local: nested-child-1.yml

@@ -27,6 +27,19 @@ export class ParserIncludes {
         this.count = 0;
     }
 
+    private static normalizeTriggerInclude (gitlabData: any, opts: ParserIncludesInitOptions) {
+        const {writeStreams} = opts;
+        for (const [jobName, jobData] of Object.entries<any>(gitlabData ?? {})) {
+            if (typeof jobData.trigger?.include === "string") {
+                jobData.trigger.include = [{
+                    local: jobData.trigger.include,
+                } ];
+            } else if (jobData.trigger?.project) {
+                writeStreams.memoStdout(chalk`{bgYellowBright  WARN } The job: \`{blueBright ${jobName}}\` will be no-op. Multi-project pipeline is not supported by gitlab-ci-local\n`);
+            }
+        }
+    }
+
     static async init (gitlabData: any, opts: ParserIncludesInitOptions): Promise<any[]> {
         this.count++;
         assert(
@@ -39,6 +52,7 @@ export class ParserIncludes {
 
         const include = this.expandInclude(gitlabData?.include, opts.variables);
 
+        this.normalizeTriggerInclude(gitlabData, opts);
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
         for (const value of include) {
             if (value["rules"]) {
@@ -268,7 +282,7 @@ export class ParserIncludes {
     }
 }
 
-function validateIncludeLocal (filePath: string) {
+export function validateIncludeLocal (filePath: string) {
     assert(!filePath.startsWith("./"), `\`${filePath}\` for include:local is invalid. Gitlab does not support relative path (ie. cannot start with \`./\`).`);
     assert(!filePath.includes(".."), `\`${filePath}\` for include:local is invalid. Gitlab does not support directory traversal.`);
 }

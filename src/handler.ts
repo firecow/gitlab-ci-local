@@ -21,8 +21,9 @@ const generateGitIgnore = (cwd: string, stateDir: string) => {
     }
 };
 
-export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[] = []) {
-    const argv = await Argv.build(args, writeStreams);
+export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[] = [], childPipelineDepth = 0) {
+    assert(childPipelineDepth <= 2, "Parent and child pipelines have a maximum depth of two levels of child pipelines.");
+    const argv = await Argv.build({...args, childPipelineDepth: childPipelineDepth}, writeStreams);
     const cwd = argv.cwd;
     const stateDir = argv.stateDir;
     const file = argv.file;
@@ -87,13 +88,13 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     } else {
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
-        await fs.remove(`${cwd}/${stateDir}/artifacts`);
+        if (childPipelineDepth == 0) await fs.remove(`${cwd}/${stateDir}/artifacts`);
         await state.incrementPipelineIid(cwd, stateDir);
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
         await Commander.runPipeline(argv, parser, writeStreams);
-        writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+        if (childPipelineDepth == 0) writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();
 

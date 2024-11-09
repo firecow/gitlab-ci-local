@@ -1,0 +1,5 @@
+---
+nested-child-2:
+  image: busybox
+  script:
+    - echo i am nested child 2
