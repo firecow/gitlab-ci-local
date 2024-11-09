@@ -112,7 +112,7 @@ export class ParserIncludes {
                     fileDoc["include"].forEach((inner: any, i: number) => {
                         if (!inner["local"]) return;
                         if (inner["rules"]) {
-                            const rulesResult = Utils.getRulesResult({cwd: opts.cwd, variables: opts.variables, rules: inner["rules"]}, gitData);
+                            const rulesResult = Utils.getRulesResult({argv, cwd: opts.cwd, variables: opts.variables, rules: inner["rules"]}, gitData);
                             if (rulesResult.when === "never") {
                                 return;
                             }
