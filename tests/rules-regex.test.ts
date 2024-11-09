@@ -77,6 +77,16 @@ const tests = [
         jsExpression: 'null && false && null == "true"',
         evalResult: false,
     },
+    {
+        rule: '($CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^perf_.*$/)',
+        jsExpression: '(false)', // ((null.match(/^perf_.*$/) != null)) => (false)
+        evalResult: false,
+    },
+    {
+        rule: '("qwerty" =~ /^perf_.*$/)',
+        jsExpression: '("qwerty".match(/^perf_.*$/) != null)',
+        evalResult: false,
+    },
 ];
 /* eslint-enable @typescript-eslint/quotes */
 
