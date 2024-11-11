@@ -1,4 +1,4 @@
-import _schema from "./schema.json" with { type: "json" };
+import _schema from "./schema.json";
 
 const schema: any = _schema;
 schema.definitions.job_template.properties.gclInjectSSHAgent = {

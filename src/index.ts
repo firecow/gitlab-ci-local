@@ -10,7 +10,7 @@ import {Argv} from "./argv.js";
 import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job.js";
 import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
-import packageJson from "../package.json" with { type: "json" };
+import packageJson from "../package.json";
 
 const jobs: Job[] = [];
 
