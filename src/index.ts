@@ -10,9 +10,9 @@ import {Argv} from "./argv.js";
 import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job.js";
 import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
-import packageJson from "../package.json";
 
 const jobs: Job[] = [];
+const version = JSON.parse("../package.json")["version"];
 
 process.on("SIGINT", async (_: string, code: number) => {
     await cleanupJobResources(jobs);
@@ -26,7 +26,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
     const yparser = yargs(process.argv.slice(2));
     yparser.parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
-        .version(packageJson["version"])
+        .version(version)
         .wrap(yparser.terminalWidth?.())
         .command({
             handler: async (argv) => {

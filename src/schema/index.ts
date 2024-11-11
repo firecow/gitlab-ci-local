@@ -1,6 +1,4 @@
-import _schema from "./schema.json";
-
-const schema: any = _schema;
+const schema: any = JSON.parse("./schema.json");
 schema.definitions.job_template.properties.gclInjectSSHAgent = {
     "type": "boolean",
 };
