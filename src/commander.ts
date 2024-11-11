@@ -244,7 +244,7 @@ export class Commander {
                 when: job.when,
                 allow_failure: job.allowFailure,
                 needs: job.needs?.filter(n => !n.project && !n.pipeline),
-                rules: job.rules,
+                rules: job.rules ?? [],
             });
         });
 
