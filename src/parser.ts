@@ -318,6 +318,7 @@ export class Parser {
                             interpolationFunctions,
                             inputsSpecification,
                             configFilePath,
+                            inputs: {},
                             ...ctx,
                         };
                         firstChar ??= "";
