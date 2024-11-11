@@ -21,6 +21,27 @@ import terminalLink from "terminal-link";
 
 const CI_PROJECT_DIR = "/gcl-builds";
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
+const SHELL_CMD = `sh -c "
+if [ -x /usr/local/bin/bash ]; then
+    exec /usr/local/bin/bash
+elif [ -x /usr/bin/bash ]; then
+    exec /usr/bin/bash 
+elif [ -x /bin/bash ]; then
+    exec /bin/bash
+elif [ -x /usr/local/bin/sh ]; then
+    exec /usr/local/bin/sh
+elif [ -x /usr/bin/sh ]; then
+    exec /usr/bin/sh
+elif [ -x /bin/sh ]; then
+    exec /bin/sh
+elif [ -x /busybox/sh ]; then
+    exec /busybox/sh
+else
+    echo shell not found
+    exit 1
+fi"
+`;
+
 interface JobOptions {
     argv: Argv;
     writeStreams: WriteStreams;
@@ -663,7 +684,7 @@ export class Job {
         }
 
         try {
-            await execa(this._containerId ? `DOCKER_CLI_HINTS=false ${this.argv.containerExecutable} exec -it ${this._containerId} bash` : "bash", {
+            await execa(this._containerId ? `DOCKER_CLI_HINTS=false ${this.argv.containerExecutable} exec -it ${this._containerId} ${SHELL_CMD}` : "bash", {
                 cwd,
                 shell: "bash",
                 stdio: "inherit",
@@ -908,25 +929,7 @@ export class Job {
                 });
             }
 
-            dockerCmd += "sh -c \"\n";
-            dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
-            dockerCmd += "\texec /usr/local/bin/bash \n";
-            dockerCmd += "elif [ -x /usr/bin/bash ]; then\n";
-            dockerCmd += "\texec /usr/bin/bash \n";
-            dockerCmd += "elif [ -x /bin/bash ]; then\n";
-            dockerCmd += "\texec /bin/bash \n";
-            dockerCmd += "elif [ -x /usr/local/bin/sh ]; then\n";
-            dockerCmd += "\texec /usr/local/bin/sh \n";
-            dockerCmd += "elif [ -x /usr/bin/sh ]; then\n";
-            dockerCmd += "\texec /usr/bin/sh \n";
-            dockerCmd += "elif [ -x /bin/sh ]; then\n";
-            dockerCmd += "\texec /bin/sh \n";
-            dockerCmd += "elif [ -x /busybox/sh ]; then\n";
-            dockerCmd += "\texec /busybox/sh \n";
-            dockerCmd += "else\n";
-            dockerCmd += "\techo shell not found\n";
-            dockerCmd += "\texit 1\n";
-            dockerCmd += "fi\n\"";
+            dockerCmd += SHELL_CMD;
 
             const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
 
