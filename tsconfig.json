@@ -9,6 +9,5 @@
     "inlineSources": true,
     "strict": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
   }
 }
