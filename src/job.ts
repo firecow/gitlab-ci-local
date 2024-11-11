@@ -622,6 +622,12 @@ export class Job {
         await this.execPreScripts(expanded);
         if (this._prescriptsExitCode == null) throw Error("this._prescriptsExitCode must be defined!");
 
+        if (this.argv.debug && this.jobStatus === "failed") {
+            // To successfully finish the job, someone has to call debug();
+            clearInterval(this._longRunningSilentTimeout);
+            return;
+        }
+
         if (!this.interactive) {
             await this.execAfterScripts(expanded);
         }
@@ -635,6 +641,51 @@ export class Job {
 
         if (this.jobData["coverage"]) {
             this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobName);
+        }
+
+        this.cleanupResources();
+    }
+
+    async debug (): Promise<void> {
+        // stop still running message in debug mode
+        clearInterval(this._longRunningSilentTimeout);
+        this.writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright starting debug shell}\n`);
+
+        const cwd = this.argv.cwd;
+        const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));
+        const imageName = this.imageName(expanded);
+
+        if (this._containerId) {
+            await execa(`${this.argv.containerExecutable} start ${this._containerId}`, {
+                shell: "bash",
+                env: imageName ? process.env : expanded,
+            });
+        }
+
+        try {
+            await execa(this._containerId ? `DOCKER_CLI_HINTS=false ${this.argv.containerExecutable} exec -it ${this._containerId} bash` : "bash", {
+                cwd,
+                shell: "bash",
+                stdio: "inherit",
+                env: imageName ? process.env : expanded,
+            });
+        } catch (e) {
+            // nothing to do, failing is allowed
+        }
+
+        if (!this.interactive) {
+            await this.execAfterScripts(expanded);
+        }
+
+        this._running = false;
+        this._endTime = this._endTime ?? process.hrtime(this._startTime);
+        this.printFinishedString();
+
+        await this.copyCacheOut(this.writeStreams, expanded);
+        await this.copyArtifactsOut(this.writeStreams, expanded);
+
+        if (this.jobData["coverage"]) {
+            this._coveragePercent = await Utils.getCoveragePercent(this.argv.cwd, this.argv.stateDir, this.jobData["coverage"], this.safeJobName);
         }
 
         this.cleanupResources();
@@ -920,6 +971,10 @@ export class Job {
 
         if (imageName) {
             await Utils.spawn([this.argv.containerExecutable, "cp", `${stateDir}/scripts/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-cmd`], cwd);
+        }
+
+        if (this.interactive) {
+            this.writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright starting interactive shell}\n`);
         }
 
         const cp = execa(this._containerId ? `${this.argv.containerExecutable} start --attach -i ${this._containerId}` : "bash", {
