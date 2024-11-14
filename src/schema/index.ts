@@ -1,6 +1,5 @@
-import _schema from "./schema.json" with { type: "json" };
-
-const schema: any = _schema;
+import {readFileSync} from "fs";
+const schema: any = JSON.parse(readFileSync("src/schema/schema.json", "utf8"));
 schema.definitions.job_template.properties.gclInjectSSHAgent = {
     "type": "boolean",
 };
