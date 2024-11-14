@@ -396,6 +396,9 @@ You need nodejs 18+
 # Install node_modules
 npm install
 
+# Build
+npm run esbuild
+
 # Run all tests
 npm run test
 
