@@ -17,43 +17,63 @@ beforeEach(async () => {
 /* eslint-disable @typescript-eslint/quotes */
 const tests = [
     {
+        rule: '"Hello World" =~ "/hello world/i"',
+        jsExpression: '"Hello World".match(new RE2("hello world", "i")) != null',
+        evalResult: true,
+    },
+    {
+        rule: '"Hello World" =~ /hello world/i',
+        jsExpression: '"Hello World".match(new RE2("hello world", "i")) != null',
+        evalResult: true,
+    },
+    {
+        rule: '"Hello World" =~ /Hello (?i)world/',
+        jsExpression: '"Hello World".match(new RE2("Hello (?i)world", "")) != null',
+        evalResult: true,
+    },
+    {
+        rule: '"1.11" =~ /^([[:digit:]]+(.[[:digit:]]+)*|latest)$/',
+        jsExpression: '"1.11".match(new RE2("^([[:digit:]]+(.[[:digit:]]+)*|latest)$", "")) != null',
+        evalResult: true,
+    },
+    {
         rule: '"foo" !~ /foo/',
-        jsExpression: '"foo".match(/foo/) == null',
+        jsExpression: '"foo".match(new RE2("foo", "")) == null',
         evalResult: false,
     },
     {
         rule: '"foo" =~ /foo/',
-        jsExpression: '"foo".match(/foo/) != null',
+        jsExpression: '"foo".match(new RE2("foo", "")) != null',
         evalResult: true,
     },
     {
         rule: '"foo"=~ /foo/',
-        jsExpression: '"foo".match(/foo/) != null',
+        jsExpression: '"foo".match(new RE2("foo", "")) != null',
         evalResult: true,
     },
     {
         rule: '"foo"=~/foo/',
-        jsExpression: '"foo".match(/foo/) != null',
+        jsExpression: '"foo".match(new RE2("foo", "")) != null',
         evalResult: true,
     },
     {
         rule: '"foo"=~  /foo/',
-        jsExpression: '"foo".match(/foo/) != null',
+        jsExpression: '"foo".match(new RE2("foo", "")) != null',
         evalResult: true,
     },
     {
         rule: '"foo" =~ "/foo/"',
-        jsExpression: '"foo".match(new RegExp(/foo/)) != null',
+        jsExpression: '"foo".match(new RE2("foo", "")) != null',
         evalResult: true,
     },
     {
         rule: '"test/url" =~ "/test/ur/"',
-        jsExpression: '"test/url".match(new RegExp(/test\\/ur/)) != null',
+        jsExpression: '"test/url".match(new RE2("test/ur", "")) != null',
         evalResult: true,
     },
     {
         rule: '"test/url" =~ "/test\\/ur/"',
-        jsExpression: '"test/url".match(new RegExp(/test\\/ur/)) != null',
+        jsExpression: '"test/url".match(new RE2("test\\/ur", "")) != null',
         evalResult: true,
     },
     {
@@ -62,7 +82,7 @@ const tests = [
     },
     {
         rule: '"master" =~ /master$/',
-        jsExpression: '"master".match(/master$/) != null',
+        jsExpression: '"master".match(new RE2("master$", "")) != null',
         evalResult: true,
     },
     {
@@ -71,7 +91,7 @@ const tests = [
     },
     {
         rule: '"23" =~ /1234/',
-        jsExpression: '"23".match(/1234/) != null',
+        jsExpression: '"23".match(new RE2("1234", "")) != null',
         evalResult: false,
     },
     {
@@ -81,12 +101,12 @@ const tests = [
     },
     {
         rule: '($CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^perf_.*$/)',
-        jsExpression: '(false)', // ((null.match(/^perf_.*$/) != null)) => (false)
+        jsExpression: '(false)', // (null.match(new RE2("^perf_.*$", "")) != null => (false)
         evalResult: false,
     },
     {
         rule: '("qwerty" =~ /^perf_.*$/)',
-        jsExpression: '("qwerty".match(/^perf_.*$/) != null)',
+        jsExpression: '("qwerty".match(new RE2("^perf_.*$", "")) != null)',
         evalResult: false,
     },
 ];
@@ -101,8 +121,8 @@ describe("gitlab rules regex", () => {
                 const evaluateRuleIfSpy = import.meta.jest.spyOn(Utils, "evaluateRuleIf");
 
                 Utils.getRulesResult({argv, cwd: "", rules, variables: {}}, gitData);
-                expect(evalSpy).toHaveBeenCalledWith(t.jsExpression);
                 expect(evaluateRuleIfSpy).toHaveReturnedWith(t.evalResult);
+                expect(evalSpy).toHaveBeenCalledWith(t.jsExpression);
             });
         });
 });

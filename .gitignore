@@ -8,6 +8,7 @@ tsconfig.tsbuildinfo
 /src/**/*.js
 /src/**/*.d.ts
 
+/scripts/**/*.js
 /tests/**/*.js
 /tests/**/*.d.ts
 
