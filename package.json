@@ -73,7 +73,7 @@
     "typescript": "5.x.x"
   },
   "engines": {
-    "node": ">=16.10.0"
+    "node": ">=18"
   },
   "pkg": {
     "assets": [
