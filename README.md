@@ -45,7 +45,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [Self Hosted Custom Ports](#self-hosted-custom-ports)
 * [Development](#development)
     * [Scripts](#scripts)
-    * [Package binaries](#package-binaries)
+* [Creating single executable binaries from source](#creating-single-executable-binaries-from-source)
 
 ## Installation
 
@@ -402,19 +402,29 @@ npm run esbuild
 # Run all tests
 npm run test
 
+# Run the program with hot-reloading enabled using the `.gitlab-ci.yml` in the root directory
+npm run dev
+
+# Pass --help flag into the program
+npm run dev -- -- --help # (equivalent of gitlab-ci-local --help)
+
 # Run individual test-case
 npx jest tests/test-cases/cache-paths-not-array
 ```
 
 ![example](./docs/images/example.png)
 
-It's also possible to run individual `.gitlab-ci.yml`, via `node src/index.js --cwd examples/docker-compose-nodejs`
+It's also possible to run individual `.gitlab-ci.yml`, via `npx tsx src/index.ts --cwd examples/docker-compose-nodejs`
 
-### Package binaries
-
+## Creating single executable binaries from source
 ```bash
+npm install
+npm run esbuild
+
+# According to your needs:
 npm run pkg-linux
 npm run pkg-win
 npm run pkg-macos
 npm run pkg-all
+# the binary will be generated in the respective ./bin/<os>/gitlab-ci-local
 ```
