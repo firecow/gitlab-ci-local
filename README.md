@@ -365,7 +365,7 @@ gitlab-ci-local --no-artifacts-to-source
 
 ### Includes
 
-Includes from external sources are only fetched once. Use `--fetch-includes` to invoke an external fetching routine.
+Includes from external sources are only fetched once and cached. Use `--fetch-includes` to ensure that the latest external sources are always fetched.
 
 ### Artifacts
 
