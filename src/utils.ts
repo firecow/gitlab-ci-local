@@ -209,7 +209,7 @@ export class Utils {
 
         // Scenario when RHS is a <regex>
         // https://regexr.com/85sjo
-        const pattern1 = /\s*(?<operator>(?:=~)|(?:!~))\s*\/(?<rhs>.*?)\/(?<flags>[igmsuy]*)(\s|$|\))/g;
+        const pattern1 = /\s*(?<operator>=~|!~)\s*\/(?<rhs>.*?)\/(?<flags>[igmsuy]*)(\s|$|\))/g;
         evalStr = evalStr.replace(pattern1, (_, operator, rhs, flags, remainingTokens) => {
             let _operator;
             switch (operator) {
@@ -233,7 +233,7 @@ as rhs contains unescaped \`/\``);
 
         // Scenario when RHS is surrounded by double-quotes
         // https://regexr.com/85t0g
-        const pattern2 = /\s*(?<operator>(?:=~)|(?:!~))\s*"(?<rhs>[^"\\]*(?:\\.[^"\\]*)*)"/g;
+        const pattern2 = /\s*(?<operator>=~|!~)\s*"(?<rhs>[^"\\]*(?:\\.[^"\\]*)*)"/g;
         evalStr = evalStr.replace(pattern2, (_, operator, rhs) => {
             let _operator;
             switch (operator) {
@@ -247,7 +247,7 @@ as rhs contains unescaped \`/\``);
                     throw operator;
             }
 
-            if (!/\/(.*)\/([\w]*)/.test(rhs)) {
+            if (!/\/(.*)\/(\w*)/.test(rhs)) {
                 throw Error(`RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!
 Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...`);
             }

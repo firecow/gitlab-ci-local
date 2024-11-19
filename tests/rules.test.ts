@@ -318,3 +318,12 @@ test("https://github.com/firecow/gitlab-ci-local/issues/1252", () => {
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
     expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
 });
+
+test("https://github.com/firecow/gitlab-ci-local/issues/1431", () => {
+    const rules = [
+        {if: "$GITLAB_CI == 'false' && $APP_ENV_TIER =~ 'dev'"},
+    ];
+    const variables = {APP_ENV_TIER: "dev", GITLAB_CI: "false"};
+    const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
+});
