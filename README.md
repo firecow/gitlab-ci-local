@@ -28,7 +28,9 @@ Get rid of all those dev specific shell scripts and make files.
     * [docker-in-docker with a local registry](./examples/docker-in-docker-build-with-local-registry)
 * [Installation](#installation)
 * [Convenience](#convenience)
-    * [CLI options via shell](#cli-options-via-shell)
+    * [CLI options](#cli-options)
+      * [Via a file](#via-a-file)
+      * [Via environment variables](#via-environment-variables)
     * [DotEnv file](#dotenv-file)
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
@@ -112,28 +114,26 @@ Executing `gitlab-ci-local` with `--variable MSYS_NO_PATHCONV=1` can be useful i
 
 ## Convenience
 
-### CLI options via shell
+### CLI options
+> [!NOTE]
+> Most likely [home-file-variables](https://github.com/firecow/gitlab-ci-local?tab=readme-ov-file#home-file-variables) or [project-file-variables](https://github.com/firecow/gitlab-ci-local?tab=readme-ov-file#project-file-variables) is what you're looking for instead
 
-```
-# Overrides .gitlab-ci.yml as the default git ci/cd file
-export GCL_NEEDS='true' >> ~/.bashrc
-export GCL_FILE='.gitlab-ci-local.yml' >> ~/.bashrc
-export GCL_VARIABLE="IMAGE=someimage SOMEOTHERIMAGE=someotherimage"
-```
+All cli options can be assigned default values by either of the following ways:
 
-### DotEnv file
-
-Add a `.gitlab-ci-local-env` file to the current working directory or a `.env` file in `$HOME/.gitlab-ci-local`
-
-```
-# Overrides .gitlab-ci.yml as the default git ci/cd file
-FILE=doctor-strange.yml # --file
-
-# Always runs needed jobs, when gitlab-ci-local <job-name> is called
-NEEDS=true # --needs
+#### Via environment variables
+```bash
+export GCL_NEEDS=true                   # --needs options
+export GCL_FILE='.gitlab-ci-local.yml'  # --file=.gitlab-ci-local.yml
 ```
 
-All cli options can be assigned default values this way
+#### Via a file
+```sh
+# Either of the following:
+# - `.gitlab-ci-local-env` in the current working directory
+# - `$HOME/.gitlab-ci-local/.env`
+NEEDS=true               # --needs
+FILE=doctor-strange.yml  # --file=doctor-strange.yml
+```
 
 ### Bash alias
 
