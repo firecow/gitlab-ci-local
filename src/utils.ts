@@ -231,10 +231,10 @@ as rhs contains unescaped \`/\``);
             return `.match(new RE2(${_rhs}, "${flags}")) ${_operator} null${remainingTokens}`;
         });
 
-        // Scenario when RHS is surrounded by double-quotes
+        // Scenario when RHS is surrounded by single/double-quotes
         // https://regexr.com/85t0g
-        const pattern2 = /\s*(?<operator>(?:=~)|(?:!~))\s*"(?<rhs>[^"\\]*(?:\\.[^"\\]*)*)"/g;
-        evalStr = evalStr.replace(pattern2, (_, operator, rhs) => {
+        const pattern2 = /\s*(?<operator>(?:=~)|(?:!~))\s*(?<quote_type>["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
+        evalStr = evalStr.replace(pattern2, (_, operator, _quote_type, rhs) => {
             let _operator;
             switch (operator) {
                 case "=~":

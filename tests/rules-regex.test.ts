@@ -90,6 +90,10 @@ const tests = [
         expectedErrSubStr: "must be a regex pattern. Do not rely on this behavior!",
     },
     {
+        rule: '"23" =~ \'1234\'',
+        expectedErrSubStr: "must be a regex pattern. Do not rely on this behavior!",
+    },
+    {
         rule: '"23" =~ /1234/',
         jsExpression: '"23".match(new RE2("1234", "")) != null',
         evalResult: false,
