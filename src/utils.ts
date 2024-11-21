@@ -247,10 +247,9 @@ as rhs contains unescaped \`/\``);
                     throw operator;
             }
 
-            if (!/\/(.*)\/([\w]*)/.test(rhs)) {
-                throw Error(`RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!
-Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...`);
-            }
+            assert((/\/(.*)\/([\w]*)/.test(rhs)), (`RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!
+Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...`));
+
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
                 return `new RE2("${pattern}", "${flags}")`;
@@ -270,7 +269,7 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
             res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
             delete (global as any).RE2; // Cleanup
         } catch (err) {
-            console.log(`
+            assert(false, (`
 Error attempting to evaluate the following rules:
   rules:
     - if: '${expandedEvalStr}'
@@ -278,8 +277,7 @@ as
 \`\`\`javascript
 ${evalStr}
 \`\`\`
-`);
-            throw err;
+`));
         }
         return Boolean(res);
     }
