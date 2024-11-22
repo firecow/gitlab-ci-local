@@ -78,7 +78,7 @@ const tests = [
     },
     {
         rule: '"test/url" =~ /test/ur/',
-        expectErr: true,
+        expectedErrSubStr: "Error attempting to evaluate the following rules:",
     },
     {
         rule: '"master" =~ /master$/',
@@ -87,7 +87,11 @@ const tests = [
     },
     {
         rule: '"23" =~ "1234"',
-        expectErr: true,
+        expectedErrSubStr: "must be a regex pattern. Do not rely on this behavior!",
+    },
+    {
+        rule: '"23" =~ \'1234\'',
+        expectedErrSubStr: "must be a regex pattern. Do not rely on this behavior!",
     },
     {
         rule: '"23" =~ /1234/',
@@ -113,7 +117,7 @@ const tests = [
 /* eslint-enable @typescript-eslint/quotes */
 
 describe("gitlab rules regex", () => {
-    tests.filter(t => !t.expectErr)
+    tests.filter(t => !t.expectedErrSubStr)
         .forEach((t) => {
             test(`- if: '${t.rule}'\n\t => ${t.evalResult}`, async () => {
                 const rules = [ {if: t.rule} ];
@@ -128,14 +132,15 @@ describe("gitlab rules regex", () => {
 });
 
 describe("gitlab rules regex [invalid]", () => {
-    tests.filter(t => t.expectErr)
+    tests.filter(t => t.expectedErrSubStr)
         .forEach((t) => {
-            test(`- if: '${t.rule}'\n\t => error`, async () => {
+            test(`- if: '${t.rule}'\n\t to throws error that contains \`${t.expectedErrSubStr}\``, async () => {
                 const rules = [ {if: t.rule} ];
 
                 try {
                     Utils.getRulesResult({argv, cwd: "", rules, variables: {}}, gitData);
-                } catch (e) {
+                } catch (e: any) {
+                    expect(e.message).toContain(t.expectedErrSubStr);
                     return;
                 }
 
