@@ -55,10 +55,15 @@ const main = async () => {
             choices: ["x64", "arm64"],
             demandOption: true,
         })
+        .option("platformABI", {
+            type: "string",
+            choices: ["127", "115"],
+            default: "127",
+            demandOption: true,
+        })
         .argv;
 
-    const {platform, platformArch} = argv;
-    const platformABI = process.versions.modules;
+    const {platform, platformArch, platformABI} = argv;
     const re2Version = JSON.parse(fs.readFileSync("./node_modules/re2/package.json", "utf8")).version;
     const url = `https://github.com/uhop/node-re2/releases/download/${re2Version}/${platform}-${platformArch}-${platformABI}.gz`;
 

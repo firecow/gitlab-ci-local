@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import chalk from "chalk";
-import {readFileSync} from "fs";
 import yargs from "yargs";
 import {Parser} from "./parser.js";
 import * as state from "./state.js";
@@ -14,8 +13,6 @@ import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
 
 const jobs: Job[] = [];
 
-const version = JSON.parse(readFileSync("package.json", "utf8"))["version"];
-
 process.on("SIGINT", async (_: string, code: number) => {
     await cleanupJobResources(jobs);
     process.exit(code);
@@ -28,7 +25,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
     const yparser = yargs(process.argv.slice(2));
     yparser.parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
-        .version(version)
+        .version("4.56.0")
         .wrap(yparser.terminalWidth?.())
         .command({
             handler: async (argv) => {
