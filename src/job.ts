@@ -726,8 +726,14 @@ export class Job {
 
         if (this.interactive) {
             let iCmd = "set -eo pipefail\n";
-            iCmd += this.generateScriptCommands(scripts);
-
+            for (let line of this.generateScriptCommands(scripts).split("\r\n")) {
+                if (line.startsWith(GCL_SHELL_PROMPT_PLACEHOLDER)) {
+                    // replace the GCL_SHELL_PROMPT_PLACEHOLDER with `$` and make the SHELL_PROMPT line green color
+                    line = line.slice(GCL_SHELL_PROMPT_PLACEHOLDER.length);
+                    line = chalk`{green $${line}}`;
+                }
+                iCmd += line;
+            }
             const interactiveCp = execa(iCmd, {
                 cwd,
                 shell: "bash",
