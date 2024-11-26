@@ -7,9 +7,9 @@
   "version": "4.56.0",
   "scripts": {
     "esbuild": "esbuild src/index.ts --outfile=bin/index.cjs --bundle --platform=node --format=cjs --minify --external:yargs --external:re2 --sourcemap=inline",
-    "pkg-linux": "npx tsx scripts/install-re2-bin.ts --platform linux --platform-arch=x64 && pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
-    "pkg-macos": "npx tsx scripts/install-re2-bin.ts --platform darwin --platform-arch=x64 && pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
-    "pkg-win": "npx tsx scripts/install-re2-bin.ts --platform win32 --platform-arch=x64 && pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
+    "pkg-linux": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
+    "pkg-macos": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
+    "pkg-win": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
     "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win && npm ci",
     "cleanup": "git clean -fX tests/ && git clean -fX src/",
     "build": " npm run cleanup && tsc",
@@ -41,9 +41,9 @@
     "object-traversal": "1.x.x",
     "p-map": "4.x.x",
     "pretty-hrtime": "1.x.x",
-    "re2": "^1.21.4",
+    "re2js": "0.4.x",
     "split2": "4.x.x",
-    "terminal-link": "2.1.1",
+    "terminal-link": "2.x.x",
     "yargs": "17.x.x"
   },
   "devDependencies": {
@@ -61,7 +61,7 @@
     "@types/yargs": "17.x.x",
     "@typescript-eslint/eslint-plugin": "7.x.x",
     "@typescript-eslint/parser": "7.x.x",
-    "@yao-pkg/pkg": "^6.0.0",
+    "@yao-pkg/pkg": "6.x.x",
     "axios-mock-adapter": "2.x",
     "depcheck": "1.x.x",
     "esbuild": "0.24.x",
