@@ -660,12 +660,15 @@ export class Job {
     private generateScriptCommands (scripts: string[]) {
         let cmd = "";
         scripts.forEach((script) => {
-            // Print command echo'ed with $GCL_SHELL_PROMPT_PLACEHOLDER
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
             const text = split[0]?.replace(/\\/g, "\\\\").replace(/"/g, "\\\"").replace(/[$]/g, "\\$");
-            cmd += `echo "${GCL_SHELL_PROMPT_PLACEHOLDER} ${text}${multilineText}"\n`;
-
+            if (this.interactive) {
+                cmd += chalk`echo "{green $ ${text}${multilineText}}"\n`;
+            } else {
+                // Print command echo'ed with $GCL_SHELL_PROMPT_PLACEHOLDER
+                cmd += `echo "${GCL_SHELL_PROMPT_PLACEHOLDER} ${text}${multilineText}"\n`;
+            }
             // Execute actual script
             cmd += `${script}\n`;
         });
