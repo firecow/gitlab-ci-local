@@ -198,6 +198,9 @@ export class Job {
         predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH"].toLowerCase()}`;
 
+        // NOTE: Update `this._variables` with the patched predefinedVariables
+        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...fileVariables, ...argvVariables};
+
         // Expand variables in rules:changes
         if (this.rules && expandVariables) {
             const expanded = Utils.expandVariables(this._variables);
@@ -214,6 +217,16 @@ export class Job {
             });
         }
 
+        let ruleVariables: {[name: string]: string} | undefined;
+        // Set {when, allowFailure} based on rules result
+        if (this.rules) {
+            const ruleResult = Utils.getRulesResult({argv, cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when, this.allowFailure);
+            this.when = ruleResult.when;
+            this.allowFailure = ruleResult.allowFailure;
+            ruleVariables = ruleResult.variables;
+            this._variables = {...this._variables, ...ruleVariables, ...argvVariables};
+        }
+
         // Find environment matched variables
         if (this.environment && expandVariables) {
             const expanded = Utils.expandVariables(this._variables);
@@ -223,15 +236,7 @@ export class Job {
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
         // Merge and expand after finding env matched variables
-        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
-
-        // Set {when, allowFailure} based on rules result
-        if (this.rules) {
-            const ruleResult = Utils.getRulesResult({argv, cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when, this.allowFailure);
-            this.when = ruleResult.when;
-            this.allowFailure = ruleResult.allowFailure;
-            this._variables = {...this.globalVariables, ...jobVariables, ...ruleResult.variables, ...matrixVariables, ...predefinedVariables, ...envMatchedVariables, ...argvVariables};
-        }
+        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
         // Delete variables the user intentionally wants unset
         for (const unsetVariable of argv.unsetVariables) {
             delete this._variables[unsetVariable];
