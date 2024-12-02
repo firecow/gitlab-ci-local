@@ -63,3 +63,29 @@ test(`variable-expansion <${test_job_4}>`, async () => {
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
 });
+
+test("should expand predefined variables in environment", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/variable-expansion",
+        file: ".gitlab-ci-1.yml",
+        noColor: true,
+    }, writeStreams);
+
+    const expected = "job environment: { name: review/test/deploy }";
+    const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job environment")).join("\n");
+    expect(filteredStdout).toEqual(expected);
+});
+
+test("should expand rule variables in environment", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/variable-expansion",
+        file: ".gitlab-ci-2.yml",
+        noColor: true,
+    }, writeStreams);
+
+    const expected = "job environment: { name: test }";
+    const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job environment")).join("\n");
+    expect(filteredStdout).toEqual(expected);
+});

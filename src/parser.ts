@@ -184,7 +184,7 @@ export class Parser {
                     baseName: jobName,
                     globalVariables: gitlabData.variables,
                     pipelineIid: pipelineIid,
-                    predefinedVariables,
+                    predefinedVariables: {...predefinedVariables}, // NOTE: pass by value because predefinedVariables is mutated in the constructor
                     gitData,
                     variablesFromFiles,
                     matrixVariables: parallelMatrixVariables,
