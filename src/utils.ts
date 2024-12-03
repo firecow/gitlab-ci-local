@@ -1,4 +1,4 @@
-import RE2 from "re2";
+import {RE2JS} from "re2js";
 import chalk from "chalk";
 import {Job, JobRule} from "./job.js";
 import fs from "fs-extra";
@@ -228,7 +228,7 @@ export class Utils {
   rules:
     - if: '${expandedEvalStr}'
 as rhs contains unescaped \`/\``);
-            return `.match(new RE2(${_rhs}, "${flags}")) ${_operator} null${remainingTokens}`;
+            return `.match(new RE2JS(${_rhs}, "${flags}")) ${_operator} null${remainingTokens}`;
         });
 
         // Scenario when RHS is surrounded by single/double-quotes
@@ -252,7 +252,7 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
 
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
-                return `new RE2("${pattern}", "${flags}")`;
+                return `new RE2JS("${pattern}", "${flags}")`;
             });
             return `.match(${_rhs}) ${_operator} null`;
         });
@@ -265,9 +265,9 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
 
         let res;
         try {
-            (global as any).RE2 = RE2; // Assign RE2 to the global object
+            (global as any).RE2JS = RE2JS; // Assign RE2JS to the global object
             res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
-            delete (global as any).RE2; // Cleanup
+            delete (global as any).RE2JS; // Cleanup
         } catch (err) {
             assert(false, (`
 Error attempting to evaluate the following rules:
