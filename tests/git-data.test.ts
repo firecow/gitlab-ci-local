@@ -35,6 +35,26 @@ const tests = [
         },
     },
     {
+        input: "http://example.com/vendor/package", // does not need to end with .git
+        expected: {
+            schema: "http",
+            port: "80",
+            host: "example.com",
+            group: "vendor",
+            project: "package",
+        },
+    },
+    {
+        input: "http://example.com/vendor/package/", // can end with /
+        expected: {
+            schema: "http",
+            port: "80",
+            host: "example.com",
+            group: "vendor",
+            project: "package",
+        },
+    },
+    {
         input: "git@github.com:firecow/gitlab-ci.local.git", // project can contain .
         expected: {
             schema: "git",
