@@ -99,6 +99,7 @@ export class GitData {
                 gitRemote = res.stdout;
             }
 
+            // To simplify the regex. Stripping the trailing `/` or `.git` since they're both optional.
             const normalizedGitRemote = gitRemote
                 .replace(/\/$/, "")
                 .replace(/\.git$/, "");
