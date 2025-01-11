@@ -17,6 +17,7 @@ import * as yaml from "js-yaml";
 import {Parser} from "./parser.js";
 import globby from "globby";
 import {validateIncludeLocal} from "./parser-includes.js";
+import terminalLink from "terminal-link";
 
 const CI_PROJECT_DIR = "/gcl-builds";
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
@@ -201,8 +202,11 @@ export class Job {
         }
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
+        const userDefinedVariables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
+        this.discourageOverridingOfPredefinedVariables(predefinedVariables, userDefinedVariables);
+
         // Merge and expand after finding env matched variables
-        this._variables = {...predefinedVariables, ...this.globalVariables, ...jobVariables, ...matrixVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
+        this._variables = {...predefinedVariables, ...userDefinedVariables};
         // Delete variables the user intentionally wants unset
         for (const unsetVariable of argv.unsetVariables) {
             delete this._variables[unsetVariable];
@@ -244,6 +248,22 @@ export class Job {
                 });
             }
         }
+    }
+
+    /**
+     *  Warn when overriding of predefined variables is detected
+     */
+    private discourageOverridingOfPredefinedVariables (predefinedVariables: {[name: string]: string}, userDefinedVariables: {[name: string]: string}) {
+        const predefinedVariablesKeys = Object.keys(predefinedVariables);
+        const userDefinedVariablesKeys = Object.keys(userDefinedVariables);
+
+        const overridingOfPredefinedVariables = userDefinedVariablesKeys.filter(ele => predefinedVariablesKeys.includes(ele));
+        if (overridingOfPredefinedVariables.length == 0) {
+            return;
+        }
+
+        const linkToGitlab = "https://gitlab.com/gitlab-org/gitlab/-/blob/v17.7.1-ee/doc/ci/variables/predefined_variables.md?plain=1&ref_type=tags#L15-16";
+        this.writeStreams.memoStdout(chalk`{bgYellowBright  WARN } ${terminalLink("Avoid overriding predefined variables", linkToGitlab)} [{bold ${overridingOfPredefinedVariables}}] as it can cause the pipeline to behave unexpectedly.\n`);
     }
 
     /**
