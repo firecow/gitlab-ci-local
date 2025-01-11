@@ -135,14 +135,11 @@ export class Job {
 
     constructor (opt: JobOptions) {
         const jobData = opt.data;
-        const gitData = opt.gitData;
         const jobVariables = jobData.variables ?? {};
         const variablesFromFiles = opt.variablesFromFiles;
         const argv = opt.argv;
         const cwd = argv.cwd;
-        const stateDir = argv.stateDir;
         const argvVariables = argv.variable;
-        const predefinedVariables = opt.predefinedVariables;
         const expandVariables = opt.expandVariables ?? true;
 
         this.argv = argv;
@@ -167,39 +164,8 @@ export class Job {
 
         const matrixVariables = opt.matrixVariables ?? {};
         const fileVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
-        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...fileVariables, ...argvVariables};
-
-        let ciProjectDir = `${cwd}`;
-        if (this.jobData["image"]) {
-            ciProjectDir = CI_PROJECT_DIR;
-        } else if (argv.shellIsolation) {
-            ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
-        }
-
-        predefinedVariables["CI_JOB_ID"] = `${this.jobId}`;
-        predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
-        predefinedVariables["CI_PIPELINE_IID"] = `${this.pipelineIid}`;
-        predefinedVariables["CI_JOB_NAME"] = `${this.name}`;
-        predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
-        predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
-        predefinedVariables["CI_PROJECT_DIR"] = ciProjectDir;
-        predefinedVariables["CI_JOB_URL"] = `${this._variables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
-        predefinedVariables["CI_PIPELINE_URL"] = `${this._variables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
-        predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
-        predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 23).replace(/-$/, "").toLowerCase() ?? "";
-        predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
-        predefinedVariables["CI_ENVIRONMENT_TIER"] = this.environment?.deployment_tier ?? "";
-        predefinedVariables["CI_ENVIRONMENT_ACTION"] = this.environment?.action ?? "";
-
-        if (opt.nodeIndex !== null) {
-            predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
-        }
-        predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
-        predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
-        predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH"].toLowerCase()}`;
-
-        // NOTE: Update `this._variables` with the patched predefinedVariables
-        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...fileVariables, ...argvVariables};
+        const predefinedVariables = this._predefinedVariables(opt);
+        this._variables = {...predefinedVariables, ...this.globalVariables, ...jobVariables, ...matrixVariables, ...fileVariables, ...argvVariables};
 
         // Expand variables in rules:changes
         if (this.rules && expandVariables) {
@@ -236,7 +202,7 @@ export class Job {
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
         // Merge and expand after finding env matched variables
-        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
+        this._variables = {...predefinedVariables, ...this.globalVariables, ...jobVariables, ...matrixVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
         // Delete variables the user intentionally wants unset
         for (const unsetVariable of argv.unsetVariables) {
             delete this._variables[unsetVariable];
@@ -278,6 +244,48 @@ export class Job {
                 });
             }
         }
+    }
+
+    /**
+     * Get the predefinedVariables that's enriched with the additional info that's only available when constructing
+     */
+    private _predefinedVariables (opt: JobOptions) {
+        const argv = this.argv;
+        const cwd = argv.cwd;
+        const stateDir = this.argv.stateDir;
+        const gitData = this.gitData;
+
+        let ciProjectDir = `${cwd}`;
+        if (this.jobData["image"]) {
+            ciProjectDir = CI_PROJECT_DIR;
+        } else if (argv.shellIsolation) {
+            ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
+        }
+
+        const predefinedVariables = opt.predefinedVariables;
+
+        predefinedVariables["CI_JOB_ID"] = `${this.jobId}`;
+        predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
+        predefinedVariables["CI_PIPELINE_IID"] = `${this.pipelineIid}`;
+        predefinedVariables["CI_JOB_NAME"] = `${this.name}`;
+        predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
+        predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
+        predefinedVariables["CI_PROJECT_DIR"] = ciProjectDir;
+        predefinedVariables["CI_JOB_URL"] = `${predefinedVariables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
+        predefinedVariables["CI_PIPELINE_URL"] = `${predefinedVariables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
+        predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
+        predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 23).replace(/-$/, "").toLowerCase() ?? "";
+        predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
+        predefinedVariables["CI_ENVIRONMENT_TIER"] = this.environment?.deployment_tier ?? "";
+        predefinedVariables["CI_ENVIRONMENT_ACTION"] = this.environment?.action ?? "";
+
+        if (opt.nodeIndex !== null) {
+            predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
+        }
+        predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
+        predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
+        predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${predefinedVariables["CI_PROJECT_PATH"].toLowerCase()}`;
+        return predefinedVariables;
     }
 
     get jobStatus () {
