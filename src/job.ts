@@ -17,6 +17,7 @@ import * as yaml from "js-yaml";
 import {Parser} from "./parser.js";
 import globby from "globby";
 import {validateIncludeLocal} from "./parser-includes.js";
+import terminalLink from "terminal-link";
 
 const CI_PROJECT_DIR = "/gcl-builds";
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
@@ -135,14 +136,11 @@ export class Job {
 
     constructor (opt: JobOptions) {
         const jobData = opt.data;
-        const gitData = opt.gitData;
         const jobVariables = jobData.variables ?? {};
         const variablesFromFiles = opt.variablesFromFiles;
         const argv = opt.argv;
         const cwd = argv.cwd;
-        const stateDir = argv.stateDir;
         const argvVariables = argv.variable;
-        const predefinedVariables = opt.predefinedVariables;
         const expandVariables = opt.expandVariables ?? true;
 
         this.argv = argv;
@@ -167,39 +165,8 @@ export class Job {
 
         const matrixVariables = opt.matrixVariables ?? {};
         const fileVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
-        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...fileVariables, ...argvVariables};
-
-        let ciProjectDir = `${cwd}`;
-        if (this.jobData["image"]) {
-            ciProjectDir = CI_PROJECT_DIR;
-        } else if (argv.shellIsolation) {
-            ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
-        }
-
-        predefinedVariables["CI_JOB_ID"] = `${this.jobId}`;
-        predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
-        predefinedVariables["CI_PIPELINE_IID"] = `${this.pipelineIid}`;
-        predefinedVariables["CI_JOB_NAME"] = `${this.name}`;
-        predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
-        predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
-        predefinedVariables["CI_PROJECT_DIR"] = ciProjectDir;
-        predefinedVariables["CI_JOB_URL"] = `${this._variables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
-        predefinedVariables["CI_PIPELINE_URL"] = `${this._variables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
-        predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
-        predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 23).replace(/-$/, "").toLowerCase() ?? "";
-        predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
-        predefinedVariables["CI_ENVIRONMENT_TIER"] = this.environment?.deployment_tier ?? "";
-        predefinedVariables["CI_ENVIRONMENT_ACTION"] = this.environment?.action ?? "";
-
-        if (opt.nodeIndex !== null) {
-            predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
-        }
-        predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
-        predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
-        predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${this._variables["CI_PROJECT_PATH"].toLowerCase()}`;
-
-        // NOTE: Update `this._variables` with the patched predefinedVariables
-        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...fileVariables, ...argvVariables};
+        const predefinedVariables = this._predefinedVariables(opt);
+        this._variables = {...predefinedVariables, ...this.globalVariables, ...jobVariables, ...matrixVariables, ...fileVariables, ...argvVariables};
 
         // Expand variables in rules:changes
         if (this.rules && expandVariables) {
@@ -235,8 +202,11 @@ export class Job {
         }
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
+        const userDefinedVariables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
+        this.discourageOverridingOfPredefinedVariables(predefinedVariables, userDefinedVariables);
+
         // Merge and expand after finding env matched variables
-        this._variables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...predefinedVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
+        this._variables = {...predefinedVariables, ...userDefinedVariables};
         // Delete variables the user intentionally wants unset
         for (const unsetVariable of argv.unsetVariables) {
             delete this._variables[unsetVariable];
@@ -278,6 +248,64 @@ export class Job {
                 });
             }
         }
+    }
+
+    /**
+     *  Warn when overriding of predefined variables is detected
+     */
+    private discourageOverridingOfPredefinedVariables (predefinedVariables: {[name: string]: string}, userDefinedVariables: {[name: string]: string}) {
+        const predefinedVariablesKeys = Object.keys(predefinedVariables);
+        const userDefinedVariablesKeys = Object.keys(userDefinedVariables);
+
+        const overridingOfPredefinedVariables = userDefinedVariablesKeys.filter(ele => predefinedVariablesKeys.includes(ele));
+        if (overridingOfPredefinedVariables.length == 0) {
+            return;
+        }
+
+        const linkToGitlab = "https://gitlab.com/gitlab-org/gitlab/-/blob/v17.7.1-ee/doc/ci/variables/predefined_variables.md?plain=1&ref_type=tags#L15-16";
+        this.writeStreams.memoStdout(chalk`{bgYellowBright  WARN } ${terminalLink("Avoid overriding predefined variables", linkToGitlab)} [{bold ${overridingOfPredefinedVariables}}] as it can cause the pipeline to behave unexpectedly.\n`);
+    }
+
+    /**
+     * Get the predefinedVariables that's enriched with the additional info that's only available when constructing
+     */
+    private _predefinedVariables (opt: JobOptions) {
+        const argv = this.argv;
+        const cwd = argv.cwd;
+        const stateDir = this.argv.stateDir;
+        const gitData = this.gitData;
+
+        let ciProjectDir = `${cwd}`;
+        if (this.jobData["image"]) {
+            ciProjectDir = CI_PROJECT_DIR;
+        } else if (argv.shellIsolation) {
+            ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
+        }
+
+        const predefinedVariables = opt.predefinedVariables;
+
+        predefinedVariables["CI_JOB_ID"] = `${this.jobId}`;
+        predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
+        predefinedVariables["CI_PIPELINE_IID"] = `${this.pipelineIid}`;
+        predefinedVariables["CI_JOB_NAME"] = `${this.name}`;
+        predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
+        predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
+        predefinedVariables["CI_PROJECT_DIR"] = ciProjectDir;
+        predefinedVariables["CI_JOB_URL"] = `${predefinedVariables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
+        predefinedVariables["CI_PIPELINE_URL"] = `${predefinedVariables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
+        predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
+        predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 23).replace(/-$/, "").toLowerCase() ?? "";
+        predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
+        predefinedVariables["CI_ENVIRONMENT_TIER"] = this.environment?.deployment_tier ?? "";
+        predefinedVariables["CI_ENVIRONMENT_ACTION"] = this.environment?.action ?? "";
+
+        if (opt.nodeIndex !== null) {
+            predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
+        }
+        predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
+        predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
+        predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${predefinedVariables["CI_PROJECT_PATH"].toLowerCase()}`;
+        return predefinedVariables;
     }
 
     get jobStatus () {
