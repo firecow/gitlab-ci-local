@@ -168,21 +168,10 @@ export class Job {
         const predefinedVariables = this._predefinedVariables(opt);
         this._variables = {...predefinedVariables, ...this.globalVariables, ...jobVariables, ...matrixVariables, ...fileVariables, ...argvVariables};
 
-        // Expand variables in rules:exists
         if (this.rules && expandVariables) {
             const expanded = Utils.expandVariables(this._variables);
-            this.rules.forEach((rule, ruleIdx, rules) => {
-                const exists = Array.isArray(rule.exists) ? rule.exists : [];
-                exists.forEach((exist, changeIdx, exists) => {
-                    exists[changeIdx] = Utils.expandText(exist, expanded);
-                });
-                rules[ruleIdx].exists = exists;
-            });
-        }
 
-        // Expand variables in rules:changes
-        if (this.rules && expandVariables) {
-            const expanded = Utils.expandVariables(this._variables);
+            // Expand variables in rules:changes
             this.rules.forEach((rule, ruleIdx, rules) => {
                 const changes = Array.isArray(rule.changes) ? rule.changes : rule.changes?.paths;
                 if (!changes) {
@@ -193,6 +182,18 @@ export class Job {
                     changes[changeIdx] = Utils.expandText(change, expanded);
                 });
                 rules[ruleIdx].changes = changes;
+            });
+
+            // Expand variables in rules:exists
+            this.rules.forEach((rule, ruleIdx, rules) => {
+                const exists = Array.isArray(rule.exists) ? rule.exists : null;
+                if (!exists) {
+                    return;
+                }
+                exists.forEach((exist, existId, exists) => {
+                    exists[existId] = Utils.expandText(exist, expanded);
+                });
+                rules[ruleIdx].exists = exists;
             });
         }
 
