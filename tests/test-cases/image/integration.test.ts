@@ -1,7 +1,7 @@
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import fs from "fs-extra";
-import chalk from "chalk";
+import chalk, {blueBright} from "chalk";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import {cleanupJobResources, Job} from "../../../src/job.js";
@@ -18,7 +18,10 @@ test.concurrent("image <test job>", async () => {
         cwd: "tests/test-cases/image",
         job: ["test job"],
     }, writeStreams);
-    const expected = [chalk`{blueBright test job} {greenBright >} Test something`];
+
+    const projectDirOnHost = `${process.cwd()}/tests/test-cases/image`;
+
+    const expected = [chalk`{blueBright test job} {greenBright >} Test something ${projectDirOnHost}`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 

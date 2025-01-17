@@ -386,6 +386,11 @@ CI_SERVER_PORT: 8443
 CI_SERVER_SHELL_SSH_PORT: 8022
 ```
 
+### Speciel job variables
+- `GCL_PROJECT_DIR_ON_HOST`
+  - Absolute path to gitlab-ci-local current working directory  on the host machine
+  - Use in docker-executor jobs only
+
 ## Development
 
 You need nodejs 18+

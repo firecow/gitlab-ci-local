@@ -211,6 +211,10 @@ export class Job {
         for (const unsetVariable of argv.unsetVariables) {
             delete this._variables[unsetVariable];
         }
+        // Set GCL_PROJECT_DIR_ON_HOST if docker image
+        if (this.imageName(this._variables)) {
+            this._variables = {...this._variables, ...{GCL_PROJECT_DIR_ON_HOST: cwd}};
+        }
 
         assert(this.scripts || this.trigger, chalk`{blueBright ${this.name}} must have script specified`);
 
