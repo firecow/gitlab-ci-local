@@ -70,6 +70,7 @@ const envVars: {[key: string]: string} = {
     CI_SERVER_URL: "https://gitlab.com",
     CI_TEMPLATE_REGISTRY_HOST: "registry.gitlab.com",
     FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR: "false",
+    GCL_PROJECT_DIR_ON_HOST: "", // this will get dynamicly filled
     GITLAB_CI: "false",
     GITLAB_USER_EMAIL: "test@test.com",
     GITLAB_USER_ID: "990",
@@ -118,6 +119,8 @@ describe("predefined-variables", () => {
             noColor: true,
         }, writeStreams);
 
+        envVars["GCL_PROJECT_DIR_ON_HOST"] = `${process.cwd()}/tests/test-cases/predefined-variables`;
+
         let expected = "";
         Object.keys(envVars).forEach(key => {
             expected += `test-job > ${key}=${envVars[key]}\n`;
@@ -141,6 +144,8 @@ CI_SERVER_SHELL_SSH_PORT: 8022
             job: ["test-job"],
             noColor: true,
         }, writeStreams);
+
+        envVars["GCL_PROJECT_DIR_ON_HOST"] = `${process.cwd()}/tests/test-cases/predefined-variables`;
 
         envVars["CI_API_V4_URL"] = "https://gitlab.com:8443/api/v4";
         envVars["CI_JOB_URL"] = `https://gitlab.com:8443/GCL/predefined-variables/-/jobs/${mockJobId}`;
