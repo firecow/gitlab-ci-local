@@ -63,16 +63,16 @@ jobs:
   jest:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4.1.0
         with:
           cache: 'npm'
       - run: npm ci
       - name: Run Tests
         run: npm run coverage
-      - uses: sonarsource/sonarcloud-github-action@v4.0
+      - uses: sonarsource/sonarcloud-github-action@v4.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
