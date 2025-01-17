@@ -168,6 +168,18 @@ export class Job {
         const predefinedVariables = this._predefinedVariables(opt);
         this._variables = {...predefinedVariables, ...this.globalVariables, ...jobVariables, ...matrixVariables, ...fileVariables, ...argvVariables};
 
+        // Expand variables in rules:exists
+        if (this.rules && expandVariables) {
+            const expanded = Utils.expandVariables(this._variables);
+            this.rules.forEach((rule, ruleIdx, rules) => {
+                const exists = Array.isArray(rule.exists) ? rule.exists : [];
+                exists.forEach((exist, changeIdx, exists) => {
+                    exists[changeIdx] = Utils.expandText(exist, expanded);
+                });
+                rules[ruleIdx].exists = exists;
+            });
+        }
+
         // Expand variables in rules:changes
         if (this.rules && expandVariables) {
             const expanded = Utils.expandVariables(this._variables);
