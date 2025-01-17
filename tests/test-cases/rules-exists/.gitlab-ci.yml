@@ -46,3 +46,13 @@ skipped-job-dir-recursive:
   rules:
     - exists:
         - notExistsDir/**/*
+
+variables:
+  DIR: existsDir/existDirNested
+
+var-expand-test:
+  script:
+    - echo "${DIR}/recursive.file successfully found, even though dir value was found via variable"
+  rules:
+    - exists:
+        - ${DIR}/recursive.file
