@@ -3,6 +3,8 @@ import {handler} from "../../../src/handler.js";
 import assert, {AssertionError} from "assert";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
+import {Utils} from "../../../src/utils.js";
+import {when} from "jest-when";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -26,6 +28,8 @@ test.concurrent("include-component no component template file (protocol: https)"
 
 test.concurrent("include-component component (protocol: https)", async () => {
     initSpawnSpy([WhenStatics.mockGitRemoteHttp]);
+    const remoteFileExistSpy = import.meta.jest.spyOn(Utils, "remoteFileExist");
+    when(remoteFileExistSpy).calledWith(expect.anything(), "templates/full-pipeline.yml", "0.3.1", "gitlab.com", "components/go", "https", "443").mockResolvedValue(true);
 
     const writeStreams = new WriteStreamsMock();
     await handler({
