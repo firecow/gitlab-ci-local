@@ -8,7 +8,7 @@ default:
 test job:
   extends: .image
   script:
-    - echo "Test something"
+    - echo "Test something ${GCL_PROJECT_DIR_ON_HOST}"
 
 test-entrypoint:
   # This image have an `echo ${MULTILINE_VARIABLE}` in its entry point

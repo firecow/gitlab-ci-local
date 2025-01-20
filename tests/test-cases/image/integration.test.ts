@@ -18,7 +18,10 @@ test.concurrent("image <test job>", async () => {
         cwd: "tests/test-cases/image",
         job: ["test job"],
     }, writeStreams);
-    const expected = [chalk`{blueBright test job} {greenBright >} Test something`];
+
+    const projectDirOnHost = `${process.cwd()}/tests/test-cases/image`;
+
+    const expected = [chalk`{blueBright test job} {greenBright >} Test something ${projectDirOnHost}`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
