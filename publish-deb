@@ -20,6 +20,7 @@ Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
 Description: ${DESCRIPTION}
 Homepage: https://github.com/firecow/gitlab-ci-local
 Website: https://github.com/firecow/gitlab-ci-local
+Depends: rsync
 EOF
 
 mkdir -p "bin/gitlab-ci-local_${VERSION}_amd64/usr/local/bin/"
