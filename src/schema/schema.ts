@@ -196,7 +196,10 @@ export const schema = {
     },
     "definitions": {
         "artifacts": {
-            "type": "object",
+            "type": [
+                "object",
+                "null",
+            ],
             "markdownDescription": "Used to specify a list of files and directories that should be attached to the job if it succeeds. Artifacts are sent to Gitlab where they can be downloaded. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifacts).",
             "additionalProperties": false,
             "properties": {
@@ -392,6 +395,12 @@ export const schema = {
                     "description": "Will infer the method based on the value. E.g. `https://...` strings will be of type `include:remote`, and `/templates/...` or `templates/...` will be of type `include:local`.",
                     "type": "string",
                     "format": "uri-reference",
+                    "anyOf": [
+                        {},
+                        {
+                            "not": {},
+                        },
+                    ],
                 },
                 {
                     "type": "object",
@@ -823,6 +832,18 @@ export const schema = {
                                 "name": {
                                     "type": "string",
                                 },
+                                "data_key": {
+                                    "type": "string",
+                                },
+                                "cert_user_name": {
+                                    "type": "string",
+                                },
+                                "public_key_data": {
+                                    "type": "string",
+                                },
+                                "csr_data": {
+                                    "type": "string",
+                                },
                             },
                             "additionalProperties": false,
                         },
@@ -895,44 +916,7 @@ export const schema = {
         "steps": {
             "type": "array",
             "items": {
-                "oneOf": [
-                    {
-                        "required": [
-                            "step",
-                        ],
-                    },
-                    {
-                        "required": [
-                            "script",
-                        ],
-                    },
-                ],
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Unique identifier for this step.",
-                    },
-                    "step": {
-                        "type": "string",
-                        "description": "Reference to the step to invoke.",
-                    },
-                    "env": {
-                        "$ref": "#/definitions/globalVariables",
-                    },
-                    "inputs": {
-                        "$ref": "#/definitions/inputs",
-                    },
-                    "script": {
-                        "type": "string",
-                        "description": "Shell script to evaluate.",
-                    },
-                },
-                "additionalProperties": false,
-                "type": "object",
-                "required": [
-                    "name",
-                ],
-                "description": "A single step invocation.",
+                "$ref": "#/definitions/step",
             },
         },
         "optional_script": {
@@ -1448,6 +1432,20 @@ export const schema = {
         },
         "cache": {
             "markdownDescription": "Use `cache` to specify a list of files and directories to cache between jobs. You can only use paths that are in the local working copy. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cache)",
+            "oneOf": [
+                {
+                    "$ref": "#/definitions/cache_item",
+                },
+                {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/cache_item",
+                    },
+                },
+            ],
+        },
+        "cache_item": {
+            "type": "object",
             "properties": {
                 "key": {
                     "markdownDescription": "Use the `cache:key` keyword to give each cache a unique identifying key. All jobs that use the same cache key use the same cache, including in different pipelines. Must be used with `cache:path`, or nothing is cached. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cachekey).",
@@ -1744,7 +1742,7 @@ export const schema = {
             "default": false,
         },
         "inputs": {
-            "markdownDescription": "Used to pass input values to included templates or components. [Learn More](https://docs.gitlab.com/ee/ci/yaml/includes.html#set-input-parameter-values-with-includeinputs).",
+            "markdownDescription": "Used to pass input values to included templates or components. [Learn More](https://docs.gitlab.com/ee/ci/yaml/inputs.html#set-input-values-when-using-include).",
             "type": "object",
         },
         "job": {
@@ -1998,6 +1996,14 @@ export const schema = {
                                             "description": "The kubernetes namespace where this environment should be deployed to.",
                                             "minLength": 1,
                                         },
+                                        "agent": {
+                                            "type": "string",
+                                            "description": "Specifies the Gitlab Agent for Kubernetes. The format is `path/to/agent/project:agent-name`.",
+                                        },
+                                        "flux_resource_path": {
+                                            "type": "string",
+                                            "description": "The Flux resource path to associate with this environment. This must be the full resource path. For example, 'helm.toolkit.fluxcd.io/v2/namespaces/gitlab-agent/helmreleases/gitlab-agent'.",
+                                        },
                                     },
                                 },
                                 "deployment_tier": {
@@ -2206,7 +2212,13 @@ export const schema = {
                                                                 "type": "string",
                                                                 "format": "uri-reference",
                                                             },
+                                                            "inputs": {
+                                                                "$ref": "#/definitions/inputs",
+                                                            },
                                                         },
+                                                        "required": [
+                                                            "local",
+                                                        ],
                                                     },
                                                     {
                                                         "type": "object",
@@ -2217,7 +2229,13 @@ export const schema = {
                                                                 "type": "string",
                                                                 "format": "uri-reference",
                                                             },
+                                                            "inputs": {
+                                                                "$ref": "#/definitions/inputs",
+                                                            },
                                                         },
+                                                        "required": [
+                                                            "template",
+                                                        ],
                                                     },
                                                     {
                                                         "type": "object",
@@ -2231,6 +2249,9 @@ export const schema = {
                                                             "job": {
                                                                 "description": "Job name which generates the artifact",
                                                                 "type": "string",
+                                                            },
+                                                            "inputs": {
+                                                                "$ref": "#/definitions/inputs",
                                                             },
                                                         },
                                                         "required": [
@@ -2256,10 +2277,47 @@ export const schema = {
                                                                 "type": "string",
                                                                 "format": "uri-reference",
                                                             },
+                                                            "inputs": {
+                                                                "$ref": "#/definitions/inputs",
+                                                            },
                                                         },
                                                         "required": [
                                                             "project",
                                                             "file",
+                                                        ],
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "properties": {
+                                                            "component": {
+                                                                "description": "Local path to component directory or full path to external component directory.",
+                                                                "type": "string",
+                                                                "format": "uri-reference",
+                                                            },
+                                                            "inputs": {
+                                                                "$ref": "#/definitions/inputs",
+                                                            },
+                                                        },
+                                                        "required": [
+                                                            "component",
+                                                        ],
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "additionalProperties": false,
+                                                        "properties": {
+                                                            "remote": {
+                                                                "description": "URL to a `yaml`/`yml` template file using HTTP/HTTPS.",
+                                                                "type": "string",
+                                                                "format": "uri-reference",
+                                                            },
+                                                            "inputs": {
+                                                                "$ref": "#/definitions/inputs",
+                                                            },
+                                                        },
+                                                        "required": [
+                                                            "remote",
                                                         ],
                                                     },
                                                 ],
@@ -2351,14 +2409,27 @@ export const schema = {
                     "type": "string",
                 },
                 "pages": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "properties": {
-                        "path_prefix": {
-                            "type": "string",
-                            "markdownDescription": "The GitLab Pages URL path prefix used in this version of pages. The given value is converted to lowercase, shortened to 63 bytes, and everything except alphanumeric characters is replaced with a hyphen. Leading and trailing hyphens are not permitted.",
+                    "oneOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "path_prefix": {
+                                    "type": "string",
+                                    "markdownDescription": "The GitLab Pages URL path prefix used in this version of pages. The given value is converted to lowercase, shortened to 63 bytes, and everything except alphanumeric characters is replaced with a hyphen. Leading and trailing hyphens are not permitted.",
+                                },
+                                "expire_in": {
+                                    "type": "string",
+                                    "markdownDescription": "How long the deployment should be active. Deployments that have expired are no longer available on the web. Supports a wide variety of formats, e.g. '1 week', '3 mins 4 sec', '2 hrs 20 min', '2h20min', '6 mos 1 day', '47 yrs 6 mos and 4d', '3 weeks and 2 days'. Set to 'never' to prevent extra deployments from expiring. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#pagesexpire_in).",
+                                },
+                            },
                         },
-                    },
+                        {
+                            "type": "boolean",
+                            "markdownDescription": "Whether this job should trigger a Pages deploy (Replaces the need to name the job `pages`)",
+                            "default": false,
+                        },
+                    ],
                 },
             },
             "oneOf": [
@@ -2418,6 +2489,239 @@ export const schema = {
                 },
             },
             "additionalProperties": false,
+        },
+        "step": {
+            "description": "Any of these step use cases are valid.",
+            "oneOf": [
+                {
+                    "description": "Run a referenced step.",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "name",
+                        "step",
+                    ],
+                    "properties": {
+                        "name": {
+                            "$ref": "#/definitions/stepName",
+                        },
+                        "env": {
+                            "$ref": "#/definitions/stepNamedStrings",
+                        },
+                        "inputs": {
+                            "$ref": "#/definitions/stepNamedValues",
+                        },
+                        "step": {
+                            "oneOf": [
+                                {
+                                    "type": "string",
+                                },
+                                {
+                                    "$ref": "#/definitions/stepReference",
+                                },
+                            ],
+                        },
+                    },
+                },
+                {
+                    "description": "Run a sequence of steps.",
+                    "oneOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "steps",
+                            ],
+                            "properties": {
+                                "env": {
+                                    "$ref": "#/definitions/stepNamedStrings",
+                                },
+                                "steps": {
+                                    "description": "Deprecated. Use `run` instead.",
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/step",
+                                    },
+                                },
+                                "outputs": {
+                                    "$ref": "#/definitions/stepNamedValues",
+                                },
+                                "delegate": {
+                                    "type": "string",
+                                },
+                            },
+                        },
+                        {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "run",
+                            ],
+                            "properties": {
+                                "env": {
+                                    "$ref": "#/definitions/stepNamedStrings",
+                                },
+                                "run": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/step",
+                                    },
+                                },
+                                "outputs": {
+                                    "$ref": "#/definitions/stepNamedValues",
+                                },
+                                "delegate": {
+                                    "type": "string",
+                                },
+                            },
+                        },
+                    ],
+                },
+                {
+                    "description": "Run an action.",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "name",
+                        "action",
+                    ],
+                    "properties": {
+                        "name": {
+                            "$ref": "#/definitions/stepName",
+                        },
+                        "env": {
+                            "$ref": "#/definitions/stepNamedStrings",
+                        },
+                        "inputs": {
+                            "$ref": "#/definitions/stepNamedValues",
+                        },
+                        "action": {
+                            "type": "string",
+                            "minLength": 1,
+                        },
+                    },
+                },
+                {
+                    "description": "Run a script.",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "name",
+                        "script",
+                    ],
+                    "properties": {
+                        "name": {
+                            "$ref": "#/definitions/stepName",
+                        },
+                        "env": {
+                            "$ref": "#/definitions/stepNamedStrings",
+                        },
+                        "script": {
+                            "type": "string",
+                            "minLength": 1,
+                        },
+                    },
+                },
+                {
+                    "description": "Exec a binary.",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "exec",
+                    ],
+                    "properties": {
+                        "env": {
+                            "$ref": "#/definitions/stepNamedStrings",
+                        },
+                        "exec": {
+                            "description": "Exec is a command to run.",
+                            "$ref": "#/definitions/stepExec",
+                        },
+                    },
+                },
+            ],
+        },
+        "stepName": {
+            "type": "string",
+        },
+        "stepNamedStrings": {
+            "type": "object",
+            "patternProperties": {
+                "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+                    "type": "string",
+                },
+            },
+            "additionalProperties": false,
+        },
+        "stepNamedValues": {
+            "type": "object",
+            "patternProperties": {
+                "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "null",
+                        "array",
+                        "object",
+                    ],
+                },
+            },
+            "additionalProperties": false,
+        },
+        "stepReference": {
+            "type": "object",
+            "description": "Git a reference to a step in a Git repository.",
+            "additionalProperties": false,
+            "required": [
+                "git",
+            ],
+            "properties": {
+                "git": {
+                    "$ref": "#/definitions/stepGitReference",
+                },
+            },
+        },
+        "stepGitReference": {
+            "type": "object",
+            "description": "GitReference is a reference to a step in a Git repository containing the full set of configuration options.",
+            "additionalProperties": false,
+            "required": [
+                "url",
+                "rev",
+            ],
+            "properties": {
+                "url": {
+                    "type": "string",
+                },
+                "dir": {
+                    "type": "string",
+                },
+                "rev": {
+                    "type": "string",
+                },
+            },
+        },
+        "stepExec": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "command",
+            ],
+            "properties": {
+                "command": {
+                    "type": "array",
+                    "description": "Command are the parameters to the system exec API. It does not invoke a shell.",
+                    "items": {
+                        "type": "string",
+                    },
+                    "minItems": 1,
+                },
+                "work_dir": {
+                    "type": "string",
+                    "description": "WorkDir is the working directly in which `command` will be exec'ed.",
+                },
+            },
         },
     },
 };
