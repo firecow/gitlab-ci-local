@@ -991,6 +991,9 @@ export class Job {
     }
 
     private imageName (vars: {[key: string]: string} = {}): string | null {
+        if (this.argv.forceShellExecutor) {
+            return null;
+        }
         const image = this.jobData["image"];
         if (!image) {
             if (this.argv.shellExecutorNoImage) {
