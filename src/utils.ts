@@ -285,6 +285,9 @@ ${evalStr}
     static evaluateRuleExist (cwd: string, ruleExists: string[] | undefined): boolean {
         if (ruleExists === undefined) return true;
         for (const pattern of ruleExists) {
+            if (pattern == "") {
+                continue;
+            }
             if (globby.sync(pattern, {dot: true, cwd}).length > 0) {
                 return true;
             }
