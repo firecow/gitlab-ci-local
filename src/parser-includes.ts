@@ -67,7 +67,8 @@ export class ParserIncludes {
             }
             if (value["local"]) {
                 validateIncludeLocal(value["local"]);
-                const files = await globby(value["local"].replace(/^\//, ""), {dot: true, cwd});
+                const localPath = sanitizeIncludeLocal(value["local"]);
+                const files = await globby(localPath, {dot: true, cwd});
                 if (files.length == 0) {
                     throw new AssertionError({message: `Local include file cannot be found ${value["local"]}`});
                 }
@@ -96,7 +97,8 @@ export class ParserIncludes {
                 }
             }
             if (value["local"]) {
-                const files = await globby([value["local"].replace(/^\//, "")], {dot: true, cwd});
+                const localPath = sanitizeIncludeLocal(value["local"]);
+                const files = await globby(localPath, {dot: true, cwd});
                 for (const localFile of files) {
                     const content = await Parser.loadYaml(`${cwd}/${localFile}`, {inputs: value.inputs || {}}, expandVariables);
                     includeDatas = includeDatas.concat(await this.init(content, opts));
@@ -288,4 +290,12 @@ export class ParserIncludes {
 export function validateIncludeLocal (filePath: string) {
     assert(!filePath.startsWith("./"), `\`${filePath}\` for include:local is invalid. Gitlab does not support relative path (ie. cannot start with \`./\`).`);
     assert(!filePath.includes(".."), `\`${filePath}\` for include:local is invalid. Gitlab does not support directory traversal.`);
+}
+
+function sanitizeIncludeLocal (filePath: string): string {
+    let path = filePath.replace(/^\//, "");
+    path = path.replace("/**/", "/*/**/");
+    path = path.replace(/\*\*([^/])/, "**/**$1");
+
+    return path;
 }

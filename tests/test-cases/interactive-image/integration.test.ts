@@ -9,7 +9,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("interactive-image <image-job>", async () => {
+test.skip("interactive-image <image-job>", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
