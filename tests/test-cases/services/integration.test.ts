@@ -140,3 +140,19 @@ test.concurrent("services <no-tmp>", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test("services <no-tmp>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/services",
+        file: ".gitlab-ci-2.yml",
+        noColor: true,
+    }, writeStreams);
+
+    const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job1 >")).join("\n");
+    expect(filteredStdout).toEqual(`
+job1 > should support single quote       [']
+job1 > should support double quote       ["]
+job1 > should support variable expansion [1.27.4]
+`.trim());
+});

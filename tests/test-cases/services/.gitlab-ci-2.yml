@@ -1,0 +1,17 @@
+---
+job1:
+  services:
+    - name: nginx:1.27.4-alpine-slim
+      entrypoint:
+        - "sh"
+        - "-c"
+        - |
+          cat > /usr/share/nginx/html/index.html <<EOF
+          should support single quote       [']
+          should support double quote       ["]
+          should support variable expansion [$NGINX_VERSION]
+          EOF
+          /docker-entrypoint.sh nginx -g 'daemon off;'
+  image: busybox
+  script:
+    - wget -qO- nginx
