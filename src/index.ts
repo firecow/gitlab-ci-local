@@ -172,6 +172,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Enable artifact isolation for shell-executor jobs",
             requiresArg: false,
         })
+        .option("force-shell-executor", {
+            type: "boolean",
+            description: "Forces all jobs to be executed using the shell executor. (Only use this option for trusted job)",
+            requiresArg: false,
+        })
         .option("shell-executor-no-image", {
             type: "boolean",
             description: "Whether to use shell executor when no image is specified.",

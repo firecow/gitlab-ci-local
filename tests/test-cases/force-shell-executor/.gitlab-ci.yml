@@ -1,0 +1,6 @@
+---
+test-job:
+  image: alpine:latest
+  stage: test
+  script:
+    - echo "Heya from default-image"

@@ -58,6 +58,10 @@ export class Argv {
             writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --default-image does not work with --shell-executor-no-image=true\n`);
         }
 
+        if (argv.defaultImageExplicitlySet && argv.forceShellExecutor) {
+            writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --default-image does not work with --force-shell-executor=true\n`);
+        }
+
         return argv;
     }
 
@@ -285,6 +289,10 @@ export class Argv {
     get shellExecutorNoImage (): boolean {
         // TODO: default to false in 5.x.x
         return this.map.get("shellExecutorNoImage") ?? true;
+    }
+
+    get forceShellExecutor (): boolean {
+        return this.map.get("forceShellExecutor") ?? false;
     }
 
     get defaultImage (): string {
