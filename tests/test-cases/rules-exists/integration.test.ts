@@ -21,4 +21,5 @@ test("rules-exists", async () => {
     expect(output).not.toContain("File Skipped!");
     expect(output).not.toContain("Directory Skipped!");
     expect(output).not.toContain("Directory Recursive Skipped!");
+    expect(output).not.toContain("rule-exist-empty-string Executed!");
 });

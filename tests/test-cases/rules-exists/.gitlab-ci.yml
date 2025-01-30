@@ -56,3 +56,10 @@ var-expand-test:
   rules:
     - exists:
         - ${DIR}/recursive.file
+
+rule-exist-empty-string:
+  script:
+    - echo "$CI_JOB_NAME Executed!"
+  rules:
+    - exists:
+        - ""
