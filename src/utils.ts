@@ -118,28 +118,29 @@ export class Utils {
     }
 
     static expandVariables (variables: {[key: string]: string}) {
+        const _variables = {...variables}; // copy by value to prevent mutating the original input
         let expandedAnyVariables, i = 0;
         do {
             assert(i < 100, "Recursive variable expansion reached 100 iterations");
             expandedAnyVariables = false;
-            for (const [k, v] of Object.entries(variables)) {
-                const envsWithoutSelf = {...variables};
+            for (const [k, v] of Object.entries(_variables)) {
+                const envsWithoutSelf = {..._variables};
                 delete envsWithoutSelf[k];
                 // If the $$'s are converted to single $'s now, then the next
-                // iteration, they might be interpreted as variables, even
+                // iteration, they might be interpreted as _variables, even
                 // though they were *explicitly* escaped. To work around this,
                 // leave the '$$'s as the same value, then only unescape them at
                 // the very end.
-                variables[k] = Utils.expandTextWith(v, {
+                _variables[k] = Utils.expandTextWith(v, {
                     unescape: "$$",
                     variable: (name) => envsWithoutSelf[name] ?? "",
                 });
-                expandedAnyVariables ||= variables[k] !== v;
+                expandedAnyVariables ||= _variables[k] !== v;
             }
             i++;
         } while (expandedAnyVariables);
 
-        return variables;
+        return _variables;
     }
 
     static unscape$$Variables (variables: {[key: string]: string}) {
