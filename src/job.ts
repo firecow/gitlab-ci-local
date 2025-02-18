@@ -1469,8 +1469,9 @@ export class Job {
 
         for (const include of this.jobData.trigger?.include ?? []) {
             if (include["local"]) {
-                validateIncludeLocal(include["local"]);
-                const files = await globby(include["local"].replace(/^\//, ""), {dot: true, cwd});
+                const expandedInclude = Utils.expandText(include["local"], this._variables);
+                validateIncludeLocal(expandedInclude);
+                const files = await globby(expandedInclude.replace(/^\//, ""), {dot: true, cwd});
                 if (files.length == 0) {
                     throw new AssertionError({message: `Local include file \`${include["local"]}\` specified in \`.${this.name}\` cannot be found!`});
                 }
