@@ -57,9 +57,7 @@ const main = async () => {
         })
         .option("platformABI", {
             type: "string",
-            choices: ["127", "115"],
-            default: "127",
-            demandOption: true,
+            default: process.versions.modules,
         })
         .argv;
 
