@@ -1,0 +1,16 @@
+---
+job:
+  stage: build
+  image: busybox
+  script:
+    - echo "BUILD_IMAGE_REF=latest" > build.env
+  artifacts:
+    reports: { dotenv: build.env }
+
+job2:
+  stage: deploy
+  variables:
+    REF: $BUILD_IMAGE_REF
+  image: busybox
+  script:
+    - echo $REF

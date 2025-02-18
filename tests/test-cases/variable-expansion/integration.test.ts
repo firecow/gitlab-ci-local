@@ -89,3 +89,17 @@ test("should expand rule variables in environment", async () => {
     const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job environment")).join("\n");
     expect(filteredStdout).toEqual(expected);
 });
+
+test("should expand variables referencing dotenv artifact variables", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/variable-expansion",
+        file: ".gitlab-ci-3.yml",
+        noColor: true,
+    }, writeStreams);
+
+    const expected = "job2 > latest";
+
+    const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job2 >")).join("\n");
+    expect(filteredStdout).toEqual(expected);
+});
