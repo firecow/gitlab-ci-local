@@ -141,7 +141,7 @@ test.concurrent("services <no-tmp>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("services <no-tmp>", async () => {
+test("services <services:entrypoint should support variable expansion and double quotes>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
