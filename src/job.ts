@@ -1386,7 +1386,9 @@ export class Job {
 
         if (serviceEntrypoint?.length ?? 0 > 1) {
             serviceEntrypoint?.slice(1).forEach((e) => {
-                dockerCmd += `"${e}" `;
+                dockerCmd += `'${e
+                    .replace(/'/g, "'\"'\"'") // replaces `'` with `'"'"'`
+                }' `;
             });
         }
         (service.command ?? []).forEach((e) => dockerCmd += `"${e.replace(/\$/g, "\\$")}" `);
