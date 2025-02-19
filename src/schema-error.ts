@@ -7,6 +7,7 @@ import pointer from "jsonpointer";
 export interface ValidationError {
     message: string;
     path: string;
+    schemaPath: string;
 }
 
 const QUOTES_REGEX = /"/g;
@@ -78,6 +79,7 @@ export const betterAjvErrors = ({
     return definedErrors.map((error) => {
         const path = basePath ? pointerToDotNotation(basePath + error.instancePath) : pointerToDotNotation(error.instancePath).substring(1);
         const prop = getLastSegment(error.instancePath);
+        const schemaPath = error.schemaPath;
         const propertyMessage = prop ? `property '${prop}'` : path;
         const defaultMessage = `${propertyMessage} ${(cleanAjvMessage(error.message as string))}`;
 
@@ -89,6 +91,7 @@ export const betterAjvErrors = ({
                 validationError = {
                     message: `'${additionalProp}' property is not expected to be here`,
                     path,
+                    schemaPath,
                 };
                 break;
             }
@@ -99,6 +102,7 @@ export const betterAjvErrors = ({
                 validationError = {
                     message: `'${prop}' property must be one of [${allowedValues.join(", ")}] (found ${value})`,
                     path,
+                    schemaPath,
                 };
                 break;
             }
@@ -108,6 +112,7 @@ export const betterAjvErrors = ({
                 validationError = {
                     message: `'${prop}' property type must be ${type}`,
                     path,
+                    schemaPath,
                 };
                 break;
             }
@@ -115,6 +120,7 @@ export const betterAjvErrors = ({
                 validationError = {
                     message: `${path} must have required property '${error.params.missingProperty}'`,
                     path,
+                    schemaPath,
                 };
                 break;
             }
@@ -122,11 +128,12 @@ export const betterAjvErrors = ({
                 return {
                     message: `'${prop}' property must be equal to the allowed value`,
                     path,
+                    schemaPath,
                 };
             }
 
             default:
-                validationError = {message: defaultMessage, path};
+                validationError = {message: defaultMessage, path, schemaPath};
         }
 
         // Remove empty properties
@@ -140,4 +147,3 @@ export const betterAjvErrors = ({
         return validationError;
     });
 };
-
