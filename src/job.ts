@@ -21,6 +21,27 @@ import terminalLink from "terminal-link";
 
 const CI_PROJECT_DIR = "/gcl-builds";
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
+const SHELL_CMD = `sh -c "
+if [ -x /usr/local/bin/bash ]; then
+    exec /usr/local/bin/bash
+elif [ -x /usr/bin/bash ]; then
+    exec /usr/bin/bash 
+elif [ -x /bin/bash ]; then
+    exec /bin/bash
+elif [ -x /usr/local/bin/sh ]; then
+    exec /usr/local/bin/sh
+elif [ -x /usr/bin/sh ]; then
+    exec /usr/bin/sh
+elif [ -x /bin/sh ]; then
+    exec /bin/sh
+elif [ -x /busybox/sh ]; then
+    exec /busybox/sh
+else
+    echo shell not found
+    exit 1
+fi"
+`;
+
 interface JobOptions {
     argv: Argv;
     writeStreams: WriteStreams;
@@ -231,11 +252,6 @@ export class Job {
 
         assert(this.scripts || this.trigger, chalk`{blueBright ${this.name}} must have script specified`);
 
-        assert(!(this.interactive && !this.argv.shellExecutorNoImage), chalk`${this.formattedJobName} @Interactive decorator cannot be used with --no-shell-executor-no-image`);
-
-        if (this.interactive && (this.when !== "manual" || this.imageName(this._variables) !== null)) {
-            throw new AssertionError({message: `${this.formattedJobName} @Interactive decorator cannot have image: and must be when:manual`});
-        }
 
         if (this.injectSSHAgent && this.imageName(this._variables) === null) {
             throw new AssertionError({message: `${this.formattedJobName} @InjectSSHAgent can only be used with image:`});
@@ -436,7 +452,9 @@ export class Job {
     }
 
     get interactive (): boolean {
-        return this.jobData["gclInteractive"] || false;
+        return this.jobData["gclInteractive"]
+            || this.argv.interactiveJobs.indexOf(this.baseName) >= 0
+            || false;
     }
 
     get injectSSHAgent (): boolean {
@@ -643,7 +661,15 @@ export class Job {
         await this.execPreScripts(expanded);
         if (this._prescriptsExitCode == null) throw Error("this._prescriptsExitCode must be defined!");
 
-        await this.execAfterScripts(expanded);
+        if (this.argv.debug && this.jobStatus === "failed") {
+            // To successfully finish the job, someone has to call debug();
+            clearInterval(this._longRunningSilentTimeout);
+            return;
+        }
+
+        if (!this.interactive) {
+            await this.execAfterScripts(expanded);
+        }
 
         this._running = false;
         this._endTime = this._endTime ?? process.hrtime(this._startTime);
@@ -654,6 +680,51 @@ export class Job {
 
         if (this.jobData["coverage"]) {
             this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobName);
+        }
+
+        this.cleanupResources();
+    }
+
+    async debug (): Promise<void> {
+        // stop still running message in debug mode
+        clearInterval(this._longRunningSilentTimeout);
+        this.writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright starting debug shell}\n`);
+
+        const cwd = this.argv.cwd;
+        const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));
+        const imageName = this.imageName(expanded);
+
+        if (this._containerId) {
+            await execa(`${this.argv.containerExecutable} start ${this._containerId}`, {
+                shell: "bash",
+                env: imageName ? process.env : expanded,
+            });
+        }
+
+        try {
+            await execa(this._containerId ? `DOCKER_CLI_HINTS=false ${this.argv.containerExecutable} exec -it ${this._containerId} ${SHELL_CMD}` : "bash", {
+                cwd,
+                shell: "bash",
+                stdio: "inherit",
+                env: imageName ? process.env : expanded,
+            });
+        } catch (e) {
+            // nothing to do, failing is allowed
+        }
+
+        if (!this.interactive) {
+            await this.execAfterScripts(expanded);
+        }
+
+        this._running = false;
+        this._endTime = this._endTime ?? process.hrtime(this._startTime);
+        this.printFinishedString();
+
+        await this.copyCacheOut(this.writeStreams, expanded);
+        await this.copyArtifactsOut(this.writeStreams, expanded);
+
+        if (this.jobData["coverage"]) {
+            this._coveragePercent = await Utils.getCoveragePercent(this.argv.cwd, this.argv.stateDir, this.jobData["coverage"], this.safeJobName);
         }
 
         this.cleanupResources();
@@ -778,26 +849,14 @@ export class Job {
             await Utils.rsyncTrackedFiles(cwd, stateDir, `${safeJobName}`);
         }
 
-        if (this.interactive) {
-            let iCmd = "set -eo pipefail\n";
-            iCmd += this.generateScriptCommands(scripts);
-
-            const interactiveCp = execa(iCmd, {
-                cwd,
-                shell: "bash",
-                stdio: ["inherit", "inherit", "inherit"],
-                env: {...expanded, ...process.env},
-            });
-            return new Promise<number>((resolve, reject) => {
-                void interactiveCp.on("exit", (code) => resolve(code ?? 0));
-                void interactiveCp.on("error", (err) => reject(err));
-            });
-        }
-
         this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (imageName && !this._containerId) {
             let dockerCmd = `${this.argv.containerExecutable} create --interactive ${this.generateInjectSSHAgentOptions()} `;
+            if (this.interactive) {
+                dockerCmd += "--tty ";
+            }
+
             if (this.argv.privileged) {
                 dockerCmd += "--privileged ";
             }
@@ -888,25 +947,7 @@ export class Job {
                 });
             }
 
-            dockerCmd += "sh -c \"\n";
-            dockerCmd += "if [ -x /usr/local/bin/bash ]; then\n";
-            dockerCmd += "\texec /usr/local/bin/bash \n";
-            dockerCmd += "elif [ -x /usr/bin/bash ]; then\n";
-            dockerCmd += "\texec /usr/bin/bash \n";
-            dockerCmd += "elif [ -x /bin/bash ]; then\n";
-            dockerCmd += "\texec /bin/bash \n";
-            dockerCmd += "elif [ -x /usr/local/bin/sh ]; then\n";
-            dockerCmd += "\texec /usr/local/bin/sh \n";
-            dockerCmd += "elif [ -x /usr/bin/sh ]; then\n";
-            dockerCmd += "\texec /usr/bin/sh \n";
-            dockerCmd += "elif [ -x /bin/sh ]; then\n";
-            dockerCmd += "\texec /bin/sh \n";
-            dockerCmd += "elif [ -x /busybox/sh ]; then\n";
-            dockerCmd += "\texec /busybox/sh \n";
-            dockerCmd += "else\n";
-            dockerCmd += "\techo shell not found\n";
-            dockerCmd += "\texit 1\n";
-            dockerCmd += "fi\n\"";
+            dockerCmd += SHELL_CMD;
 
             const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
 
@@ -953,9 +994,14 @@ export class Job {
             await Utils.spawn([this.argv.containerExecutable, "cp", `${stateDir}/scripts/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-cmd`], cwd);
         }
 
+        if (this.interactive) {
+            this.writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright starting interactive shell}\n`);
+        }
+
         const cp = execa(this._containerId ? `${this.argv.containerExecutable} start --attach -i ${this._containerId}` : "bash", {
             cwd,
             shell: "bash",
+            stdio: this.interactive ? "inherit" : undefined,
             env: imageName ? process.env : expanded,
         });
 
@@ -976,17 +1022,22 @@ export class Job {
         const quiet = this.argv.quiet;
 
         return await new Promise<number>((resolve, reject) => {
-            if (!quiet) {
+            if (!quiet && !this.interactive) {
                 cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
                 cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
             }
             void cp.on("exit", (code) => resolve(code ?? 0));
             void cp.on("error", (err) => reject(err));
 
-            if (imageName) {
-                cp.stdin?.end("/gcl-cmd");
+            if (this.interactive) {
+                // stop from showing still running message in interactive mode
+                clearTimeout(this._longRunningSilentTimeout);
             } else {
-                cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}_${this.jobId}`);
+                if (imageName) {
+                    cp.stdin?.end("/gcl-cmd");
+                } else {
+                    cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}_${this.jobId}`);
+                }
             }
         });
     }

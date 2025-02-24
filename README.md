@@ -326,11 +326,9 @@ npm-install:
 ```yml
 # @Interactive
 interactive-shell:
-  rules:
-    - if: $GITLAB_CI == 'false'
-      when: manual
+  image: debian:latest
   script:
-    - docker run -it debian bash
+    - echo "this i not being executed in interactive mode"
 ```
 
 ![description-decorator](./docs/images/interactive-decorator.png)
