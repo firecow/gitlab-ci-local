@@ -400,6 +400,7 @@ export class Job {
         for (const service of Object.values<any>(this.jobData["services"])) {
             const expanded = Utils.expandVariables({...this._variables, ...this._dotenvVariables, ...service["variables"]});
             let serviceName = Utils.expandText(service["name"], expanded);
+            if (serviceName == "") continue;
             serviceName = serviceName.includes(":") ? serviceName : `${serviceName}:latest`;
             services.push({
                 name: serviceName,

@@ -1,0 +1,6 @@
+---
+job1:
+  services:
+    - name: $UNDEFINED
+  script:
+    - echo "I should run normally"
