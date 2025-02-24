@@ -1,0 +1,1 @@
+VARIABLE=KUBE_CONTEXT=minikube KUBECONFIG=/root/.kube/config XDEBUG_MODE=develop

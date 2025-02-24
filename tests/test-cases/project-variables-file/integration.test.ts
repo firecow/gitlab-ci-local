@@ -31,6 +31,22 @@ test.concurrent("project-variables-file <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
+test.concurrent("project-variables-file <issue-1508>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: cwd,
+        job: ["issue-1508"],
+        variable: ["XDEBUG_MODE=debug,develop"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright issue-1508} {greenBright >} minikube`,
+        chalk`{blueBright issue-1508} {greenBright >} /root/.kube/config`,
+        chalk`{blueBright issue-1508} {greenBright >} debug,develop`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
 test.concurrent("project-variables-file <issue-1333>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
