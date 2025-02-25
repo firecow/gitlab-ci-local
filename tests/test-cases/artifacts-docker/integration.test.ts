@@ -3,7 +3,6 @@ import {handler} from "../../../src/handler.js";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import fs from "fs-extra";
-import chalk from "chalk";
 
 import.meta.jest.setTimeout(60000);
 
@@ -18,10 +17,11 @@ test.concurrent("artifacts-docker <consume artifacts> --needs", async () => {
         cwd: "tests/test-cases/artifacts-docker",
         job: ["consume artifacts 🏗️"],
         needs: true,
+        noColor: true,
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright produce artifacts 📝 } {greenBright >} CI_PROJECT_DIR=/gcl-builds`,
+        "produce artifacts 📝  > CI_PROJECT_DIR=/builds/gcl/test-project",
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 

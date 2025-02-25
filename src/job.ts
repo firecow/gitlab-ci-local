@@ -19,7 +19,6 @@ import globby from "globby";
 import {validateIncludeLocal} from "./parser-includes.js";
 import terminalLink from "terminal-link";
 
-const CI_PROJECT_DIR = "/gcl-builds";
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
 interface JobOptions {
     argv: Argv;
@@ -125,6 +124,7 @@ export class Job {
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
     private _producers: {name: string; dotenv: string | null}[] | null = null;
     private _jobNamePad: number | null = null;
+    private _ciProjectDir: string | null = null;
 
     private _containersToClean: string[] = [];
     private _filesToRm: string[] = [];
@@ -292,11 +292,16 @@ export class Job {
         const stateDir = this.argv.stateDir;
         const gitData = this.gitData;
 
-        let ciProjectDir = `${cwd}`;
+        let ciBuildsDir: string;
         if (this.jobData["image"]) {
-            ciProjectDir = CI_PROJECT_DIR;
+            ciBuildsDir = "/builds";
+            this.ciProjectDir = `${ciBuildsDir}/${gitData.remote.group}/${gitData.remote.project}`;
         } else if (argv.shellIsolation) {
-            ciProjectDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
+            ciBuildsDir = `${cwd}/${stateDir}/builds/${this.safeJobName}`;
+            this.ciProjectDir = ciBuildsDir;
+        } else {
+            ciBuildsDir = cwd;
+            this.ciProjectDir = ciBuildsDir;
         }
 
         const predefinedVariables = opt.predefinedVariables;
@@ -307,7 +312,8 @@ export class Job {
         predefinedVariables["CI_JOB_NAME"] = `${this.name}`;
         predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
         predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
-        predefinedVariables["CI_PROJECT_DIR"] = ciProjectDir;
+        predefinedVariables["CI_BUILDS_DIR"] = ciBuildsDir;
+        predefinedVariables["CI_PROJECT_DIR"] = this.ciProjectDir;
         predefinedVariables["CI_JOB_URL"] = `${predefinedVariables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
         predefinedVariables["CI_PIPELINE_URL"] = `${predefinedVariables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
         predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
@@ -413,6 +419,15 @@ export class Job {
         return services;
     }
 
+    set ciProjectDir (ciProjectDir: string) {
+        assert(this._ciProjectDir == null, "this._ciProjectDir can only be set once");
+        this._ciProjectDir = ciProjectDir;
+    }
+    get ciProjectDir () {
+        assert(this._ciProjectDir, "attempted to access this._ciProjectDir before it is initialized");
+        return this._ciProjectDir;
+    }
+
     set jobNamePad (jobNamePad: number) {
         assert(this._jobNamePad == null, "this._jobNamePad can only be set once");
         this._jobNamePad = jobNamePad;
@@ -466,8 +481,8 @@ export class Job {
 
         const files = key["files"].map((f: string) => {
             let path = Utils.expandText(f, expanded);
-            if (path.startsWith(`${CI_PROJECT_DIR}/`)) {
-                path = path.slice(`${CI_PROJECT_DIR}/`.length);
+            if (path.startsWith(`${this.ciProjectDir}/`)) {
+                path = path.slice(`${this.ciProjectDir}/`.length);
             }
             return `${cwd}/${path}`;
         });
@@ -600,15 +615,15 @@ export class Job {
                 }
             }
             const {stdout: containerId} = await Utils.spawn([
-                this.argv.containerExecutable, "create", "--user=0:0", `--volume=${buildVolumeName}:/gcl-builds`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
-                ...["sh", "-c", `chown ${chownOpt} -R /gcl-builds/ && chmod ${chmodOpt} -R /gcl-builds/ && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`],
+                this.argv.containerExecutable, "create", "--user=0:0", `--volume=${buildVolumeName}:${this.ciProjectDir}`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
+                ...["sh", "-c", `chown ${chownOpt} -R ${this.ciProjectDir} && chmod ${chmodOpt} -R ${this.ciProjectDir} && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`],
             ], argv.cwd);
             this._containersToClean.push(containerId);
             if (await fs.pathExists(fileVariablesDir)) {
                 await Utils.spawn([this.argv.containerExecutable, "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
-            await Utils.spawn([this.argv.containerExecutable, "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:/gcl-builds`], argv.cwd);
+            await Utils.spawn([this.argv.containerExecutable, "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:${this.ciProjectDir}`], argv.cwd);
             await Utils.spawn([this.argv.containerExecutable, "start", "--attach", containerId], argv.cwd);
             await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", containerId], argv.cwd);
             const endTime = process.hrtime(time);
@@ -736,7 +751,7 @@ export class Job {
                 const path = Utils.expandText(p, expanded);
                 writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright mounting cache} for path ${path}\n`);
                 const cacheMount = Utils.safeDockerString(`gcl-${expanded.CI_PROJECT_PATH_SLUG}-${uniqueCacheName}`);
-                cmd.push("-v", `${cacheMount}:/gcl-builds/${path}`);
+                cmd.push("-v", `${cacheMount}:${this.ciProjectDir}/${path}`);
             });
         }
         return cmd;
@@ -854,9 +869,9 @@ export class Job {
                 dockerCmd += `--network ${this._serviceNetworkId} --network-alias build `;
             }
 
-            dockerCmd += `--volume ${buildVolumeName}:/gcl-builds `;
+            dockerCmd += `--volume ${buildVolumeName}:${this.ciProjectDir} `;
             dockerCmd += `--volume ${tmpVolumeName}:${this.fileVariablesDir} `;
-            dockerCmd += "--workdir /gcl-builds ";
+            dockerCmd += `--workdir ${this.ciProjectDir} `;
 
             for (const volume of this.argv.volume) {
                 dockerCmd += `--volume ${volume} `;
@@ -933,7 +948,7 @@ export class Job {
         }
 
         if (imageName) {
-            cmd += "cd /gcl-builds \n";
+            cmd += `cd ${this.ciProjectDir} \n`;
 
             if (expanded["CI_JOB_STATUS"] != "running") {
                 // Ensures the env `CI_JOB_STATUS` is passed to the after_script context
@@ -1148,7 +1163,7 @@ export class Job {
         if (!this.imageName(this._variables) && this.argv.shellIsolation) {
             return Utils.spawn(["rsync", "-a", `${source}/.`, `${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`]);
         }
-        return Utils.spawn([this.argv.containerExecutable, "cp", `${source}/.`, `${this._containerId}:/gcl-builds`]);
+        return Utils.spawn([this.argv.containerExecutable, "cp", `${source}/.`, `${this._containerId}:${this.ciProjectDir}`]);
     }
 
     private async copyCacheOut (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
@@ -1157,6 +1172,7 @@ export class Job {
 
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
+        const cachePath = this.imageName(expanded) ? "/cache" : "../../cache";
 
         let time, endTime;
         for (const c of this.cache) {
@@ -1168,8 +1184,8 @@ export class Job {
                 time = process.hrtime();
                 const expandedPath = Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
                 let cmd = "shopt -s globstar nullglob dotglob\n";
-                cmd += `mkdir -p ../../cache/${cacheName}\n`;
-                cmd += `rsync -Ra ${expandedPath} ../../cache/${cacheName}/. || true\n`;
+                cmd += `mkdir -p ${cachePath}/${cacheName}\n`;
+                cmd += `rsync -Ra ${expandedPath} ${cachePath}/${cacheName}/. || true\n`;
 
                 await Mutex.exclusive(cacheName, async () => {
                     await this.copyOut(cmd, stateDir, "cache", []);
@@ -1195,7 +1211,15 @@ export class Job {
         const safeJobName = this.safeJobName;
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
-        const artifactsPath = !this.argv.shellIsolation && !this.imageName(expanded) ? `${stateDir}/artifacts` : "../../artifacts";
+        let artifactsPath: string;
+
+        if (!this.argv.shellIsolation && !this.imageName(expanded)) {
+            artifactsPath = `${stateDir}/artifacts`;
+        } else if (this.imageName(expanded)) {
+            artifactsPath = "/artifacts";
+        } else {
+            artifactsPath = "../../artifacts";
+        }
 
         let time, endTime;
         let cpCmd = "shopt -s globstar nullglob dotglob\n";
@@ -1262,7 +1286,7 @@ export class Job {
         await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName(this._variables)) {
-            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:/gcl-builds/ -w /gcl-builds docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
+            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
             await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
@@ -1370,7 +1394,7 @@ export class Job {
                 dockerCmd += `--entrypoint ${serviceEntrypoint[0]} `;
             }
         }
-        dockerCmd += `--volume ${this.buildVolumeName}:/gcl-builds `;
+        dockerCmd += `--volume ${this.buildVolumeName}:${this.ciProjectDir} `;
         dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
 
         // The default podman network mode is not `bridge`, which means a `podman network connect` call will fail
