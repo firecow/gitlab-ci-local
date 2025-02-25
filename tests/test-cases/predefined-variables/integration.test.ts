@@ -17,6 +17,7 @@ const mockDate = "2020-01-05T00:00:00Z";
 const envVars: {[key: string]: string} = {
     CI: "true",
     CI_API_V4_URL: "https://gitlab.com/api/v4",
+    CI_BUILDS_DIR: "/builds",
     CI_COMMIT_BRANCH: "master",
     CI_COMMIT_DESCRIPTION: "More commit text",
     CI_COMMIT_MESSAGE: "Commit Title",
@@ -50,7 +51,7 @@ const envVars: {[key: string]: string} = {
     CI_PIPELINE_IID: "0",
     CI_PIPELINE_SOURCE: "push",
     CI_PIPELINE_URL: "https://gitlab.com/GCL/predefined-variables/pipelines/0",
-    CI_PROJECT_DIR: "/gcl-builds",
+    CI_PROJECT_DIR: "/builds/GCL/predefined-variables",
     CI_PROJECT_ID: "1217",
     CI_PROJECT_NAME: "predefined-variables",
     CI_PROJECT_NAMESPACE: "GCL",
@@ -76,8 +77,8 @@ const envVars: {[key: string]: string} = {
     GITLAB_USER_ID: "990",
     GITLAB_USER_LOGIN: "test",
     GITLAB_USER_NAME: "Testersen",
-    OLDPWD: "/gcl-builds",
-    PWD: "/gcl-builds",
+    OLDPWD: "/builds/GCL/predefined-variables",
+    PWD: "/builds/GCL/predefined-variables",
 };
 
 
