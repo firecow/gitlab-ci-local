@@ -1354,6 +1354,9 @@ export const schema = {
             "description": "Splits up a single job into multiple that run in parallel. Provides `CI_NODE_INDEX` and `CI_NODE_TOTAL` environment variables to the jobs.",
             "oneOf": [
                 {
+                    "type": "null",
+                },
+                {
                     "type": "integer",
                     "description": "Creates N instances of the job that run in parallel.",
                     "default": 0,
