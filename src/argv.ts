@@ -25,6 +25,7 @@ export class Argv {
     static readonly default = {
         "variablesFile": ".gitlab-ci-local-variables.yml",
         "evaluateRuleChanges": true,
+        "ignoreSchemaPaths": [],
     };
 
     map: Map<string, any> = new Map<string, any>();
@@ -135,6 +136,10 @@ export class Argv {
     get extraHost (): string[] {
         const val = this.map.get("extraHost") ?? [];
         return typeof val == "string" ? val.split(" ") : val;
+    }
+
+    get ignoreSchemaPaths (): string[] {
+        return this.map.get("ignoreSchemaPaths") ?? Argv.default.ignoreSchemaPaths;
     }
 
     get pullPolicy (): string {

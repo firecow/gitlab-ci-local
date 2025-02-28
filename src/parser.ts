@@ -82,6 +82,7 @@ export class Parser {
             Validator.jsonSchemaValidation({
                 pathToExpandedGitLabCi,
                 gitLabCiConfig: parser.gitlabData,
+                argv,
             });
             if (argv.childPipelineDepth == 0) writeStreams.stderr(chalk`{grey json schema validated in ${prettyHrtime(process.hrtime(time))}}\n`);
         }

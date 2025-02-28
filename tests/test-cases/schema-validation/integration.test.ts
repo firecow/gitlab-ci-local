@@ -69,10 +69,10 @@ test("schema validation 4 errors", async () => {
     } catch (e: any) {
         const expected = `
 Invalid .gitlab-ci.yml configuration!
-\t• 'variables' property type must be object at error1.variables
-\t• 'variables' property type must be object at error2.variables
-\t• 'variables' property type must be object at error3.variables
-\t• 'variables' property type must be object at error4.variables
+\t• 'variables' property type must be object at error1.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error2.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error3.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error4.variables [#/definitions/jobVariables/type]
 
 `;
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
@@ -91,11 +91,11 @@ test("schema validation 5 errors", async () => {
         expect(true).toBe(false);
     } catch (e: any) {
         const expected = `Invalid .gitlab-ci.yml configuration!
-\t• 'variables' property type must be object at error1.variables
-\t• 'variables' property type must be object at error2.variables
-\t• 'variables' property type must be object at error3.variables
-\t• 'variables' property type must be object at error4.variables
-\t• 'variables' property type must be object at error5.variables
+\t• 'variables' property type must be object at error1.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error2.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error3.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error4.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error5.variables [#/definitions/jobVariables/type]
 
 For further troubleshooting, consider either of the following:`;
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
@@ -114,11 +114,11 @@ test("schema validation 6 errors", async () => {
         expect(true).toBe(false);
     } catch (e: any) {
         const expected = `Invalid .gitlab-ci.yml configuration!
-\t• 'variables' property type must be object at error1.variables
-\t• 'variables' property type must be object at error2.variables
-\t• 'variables' property type must be object at error3.variables
-\t• 'variables' property type must be object at error4.variables
-\t• 'variables' property type must be object at error5.variables
+\t• 'variables' property type must be object at error1.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error2.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error3.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error4.variables [#/definitions/jobVariables/type]
+\t• 'variables' property type must be object at error5.variables [#/definitions/jobVariables/type]
 \t... and 1 more
 
 `;

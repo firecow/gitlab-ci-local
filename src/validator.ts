@@ -5,13 +5,15 @@ import chalk from "chalk";
 import schema from "./schema/index.js";
 import {betterAjvErrors} from "./schema-error.js";
 import terminalLink from "terminal-link";
+import {Argv} from "./argv.js";
 
 const MAX_ERRORS = 5;
 
 export class Validator {
-    static jsonSchemaValidation ({pathToExpandedGitLabCi, gitLabCiConfig}: {
+    static jsonSchemaValidation ({pathToExpandedGitLabCi, gitLabCiConfig, argv}: {
         pathToExpandedGitLabCi: string;
         gitLabCiConfig: object;
+        argv: Argv;
     }) {
         const ajv = new Ajv({
             verbose: true,
@@ -23,30 +25,30 @@ export class Validator {
         });
         const validate = ajv.compile(schema);
         const valid = validate(gitLabCiConfig);
-        if (!valid) {
-            const betterErrors = betterAjvErrors({
-                data: gitLabCiConfig,
-                errors: validate.errors,
-            });
+        if (valid) return;
+        const betterErrors = betterAjvErrors({
+            data: gitLabCiConfig,
+            errors: validate.errors,
+        }).filter(betterError => !argv.ignoreSchemaPaths.includes(betterError.schemaPath));
 
-            let e: string = "";
-            for (let i = 0, len = betterErrors.length; i < len; i++) {
-                if (i + 1 > MAX_ERRORS) {
-                    e += `\t... and ${len - MAX_ERRORS} more`;
-                    break;
-                }
-                e += chalk`\t• {redBright ${betterErrors[i].message}} at {blueBright ${betterErrors[i].path}}\n`;
+        let e: string = "";
+        for (let i = 0, len = betterErrors.length; i < len; i++) {
+            if (i + 1 > MAX_ERRORS) {
+                e += `\t... and ${len - MAX_ERRORS} more`;
+                break;
             }
+            e += chalk`\t• {redBright ${betterErrors[i].message}} at {blueBright ${betterErrors[i].path}} {grey [${betterErrors[i].schemaPath}]}\n`;
+        }
 
-            assert(valid, chalk`
+        assert(valid || betterErrors.length == 0, chalk`
 {reset Invalid .gitlab-ci.yml configuration!
 ${e.trimEnd()}
 
 For further troubleshooting, consider either of the following:
 \t• Copy the content of {blueBright ${terminalLink(".gitlab-ci-local/expanded-gitlab-ci.yml", pathToExpandedGitLabCi)}} to the ${terminalLink("pipeline editor", "https://docs.gitlab.com/ee/ci/pipeline_editor/")} to debug it
+\t• Use --ignore-schema-paths= "#/definitions/tags/minItems" --ignore-schema-paths "#/additionalProperties" to partially disable certain validation rule
 \t• Use --json-schema-validation=false to disable schema validation (not recommended)}
 `);
-        }
     }
 
     private static needs (jobs: ReadonlyArray<Job>, stages: readonly string[]): string[] {
