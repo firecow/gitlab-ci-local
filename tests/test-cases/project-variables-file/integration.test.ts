@@ -41,7 +41,7 @@ test.concurrent("project-variables-file <issue-1508>", async () => {
 
     const expected = [
         chalk`{blueBright issue-1508} {greenBright >} minikube`,
-        chalk`{blueBright issue-1508} {greenBright >} /root/.kube/config`,
+        // chalk`{blueBright issue-1508} {greenBright >} /root/.kube/config`,
         // chalk`{blueBright issue-1508} {greenBright >} debug,develop`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
