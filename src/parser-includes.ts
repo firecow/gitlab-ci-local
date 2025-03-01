@@ -276,18 +276,15 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
 
                 const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
-                await Utils.bash(`
-                    cd ${cwd}/${stateDir} \\
-                        && git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 \\
-                                ${remote.schema}://${remote.host}:${remote.port}/${project}.git \\
-                                ${cwd}/${target}.${ext} \\
-                        && cd ${cwd}/${target}.${ext} \\
-                        && git sparse-checkout set --no-cone ${normalizedFile} \\
-                        && git checkout \\
-                        && cd ${cwd}/${stateDir} \\
-                        && cp ${cwd}/${target}.${ext}/${normalizedFile} \\
-                              ${cwd}/${target}/${normalizedFile}
-                    `, cwd);
+                await Utils.bashMulti([
+                    `cd ${cwd}/${stateDir}`,
+                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${cwd}/${target}.${ext}`,
+                    `cd ${cwd}/${target}.${ext}`,
+                    `git sparse-checkout set --no-cone ${normalizedFile}`,
+                    "git checkout",
+                    `cd ${cwd}/${stateDir}`,
+                    `cp ${cwd}/${target}.${ext}/${normalizedFile} ${cwd}/${target}/${normalizedFile}`,
+                ], cwd);
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
                 await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}/`, cwd);

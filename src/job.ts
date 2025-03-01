@@ -604,7 +604,7 @@ export class Job {
 
             let chownOpt = "0:0";
             let chmodOpt = "a+rw";
-            if (this.argv.umask === false) {
+            if (!this.argv.umask) {
                 const {stdout} = await Utils.spawn(["docker", "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
                 chownOpt = stdout;
                 if (chownOpt == "0:0") {
@@ -667,8 +667,6 @@ export class Job {
         if (this.jobData["coverage"]) {
             this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobName);
         }
-
-        this.cleanupResources();
     }
 
     async cleanupResources () {
@@ -818,7 +816,7 @@ export class Job {
                 dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
             }
 
-            if (this.argv.umask === true) {
+            if (this.argv.umask) {
                 dockerCmd += "--user 0:0 ";
             }
 
@@ -1249,12 +1247,9 @@ export class Job {
         await this.copyOut(cpCmd, stateDir, "artifacts", dockerCmdExtras);
         endTime = process.hrtime(time);
 
-        if (reportDotenvs != null) {
-            reportDotenvs.forEach(async (reportDotenv) => {
-                if (!await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) {
-                    writeStreams.stderr(chalk`${this.formattedJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
-                }
-            });
+        for (const reportDotenv of reportDotenvs ?? []) {
+            if (await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) continue;
+            writeStreams.stderr(chalk`${this.formattedJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
         }
 
         const readdir = await fs.readdir(`${cwd}/${stateDir}/artifacts/${safeJobName}`);
@@ -1348,7 +1343,7 @@ export class Job {
         let dockerCmd = `${this.argv.containerExecutable} create --interactive `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
-        if (this.argv.umask === true) {
+        if (this.argv.umask) {
             dockerCmd += "--user 0:0 ";
         }
 

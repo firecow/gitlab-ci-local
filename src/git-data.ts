@@ -73,9 +73,7 @@ export class GitData {
             this.branches.default = gitRemoteDefaultBranch.replace("origin/", "");
         } catch (e: any) {
             if (e.stderr === "fatal: ref refs/remotes/origin/HEAD is not a symbolic ref") {
-                writeStreams.stderr(chalk`{yellow Unable to retrieve default remote branch, falling back to \`${this.branches.default}\`.
-  The default remote branch can be set via \`git remote set-head origin <default_branch>\`
-}`);
+                writeStreams.stderr(chalk`{yellow Unable to retrieve default remote branch, falling back to \`${this.branches.default}\`. The default remote branch can be set via \`git remote set-head origin <default_branch>\`}`);
             } else {
                 writeStreams.stderr(chalk`{yellow Unable to retrieve default remote branch, falling back to \`${this.branches.default}\`.\n}`);
             }
