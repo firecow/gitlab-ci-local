@@ -27,6 +27,10 @@ type ExpandWith = {
 };
 
 export class Utils {
+    static bashMulti (scripts: string[], cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode: number}> {
+        return execa(scripts.join(" && \\"), {shell: "bash", cwd});
+    }
+
     static bash (shellScript: string, cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode: number}> {
         return execa(shellScript, {shell: "bash", cwd});
     }
@@ -225,10 +229,13 @@ export class Utils {
             }
             const _rhs = JSON.stringify(rhs); // JSON.stringify for escaping `"`
             const containsNonEscapedSlash = /(?<!\\)\//.test(_rhs);
-            assert(!containsNonEscapedSlash, `Error attempting to evaluate the following rules:
-  rules:
-    - if: '${expandedEvalStr}'
-as rhs contains unescaped \`/\``);
+            const assertMsg = [
+                "Error attempting to evaluate the following rules:",
+                "  rules:",
+                `    - if: '${expandedEvalStr}'`,
+                "as rhs contains unescaped quote",
+            ];
+            assert(!containsNonEscapedSlash, assertMsg.join("\n"));
             return `.match(new RE2(${_rhs}, "${flags}")) ${_operator} null${remainingTokens}`;
         });
 
