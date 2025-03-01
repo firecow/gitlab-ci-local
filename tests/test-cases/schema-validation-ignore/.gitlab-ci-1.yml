@@ -1,0 +1,6 @@
+---
+job:
+  image: busybox:latest
+  script:
+    - echo "hello world"
+  tags: []

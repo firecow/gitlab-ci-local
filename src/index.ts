@@ -267,6 +267,12 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Whether to enable json schema validation",
             requiresArg: false,
         })
+        .option("ignore-schema-paths", {
+            type: "array",
+            requiresArg: false,
+            default: Argv.default.ignoreSchemaPaths,
+            description: "The json schema paths that will be ignored",
+        })
         .option("concurrency", {
             type: "number",
             description: "Limit the number of jobs that run simultaneously",
