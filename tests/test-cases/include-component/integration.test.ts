@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("include-component no component template file (protocol: https)", async () => {
+test("include-component no component template file (protocol: https)", async () => {
     initSpawnSpy([WhenStatics.mockGitRemoteHttp]);
 
     const writeStreams = new WriteStreamsMock();
@@ -24,7 +24,7 @@ test.concurrent("include-component no component template file (protocol: https)"
     }
 });
 
-test.concurrent("include-component component (protocol: https)", async () => {
+test("include-component component (protocol: https)", async () => {
     initSpawnSpy([WhenStatics.mockGitRemoteHttp]);
 
     const writeStreams = new WriteStreamsMock();
@@ -68,7 +68,7 @@ test-latest:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test.concurrent("include-component local component", async () => {
+test("include-component local component", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({

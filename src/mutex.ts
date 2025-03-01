@@ -1,6 +1,6 @@
 export class Mutex {
 
-    private static locks = new Set();
+    private static readonly locks = new Set();
 
     private static async waitForLock (key: string) {
         return new Promise<void>((resolve) => {

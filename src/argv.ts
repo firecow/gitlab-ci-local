@@ -25,10 +25,11 @@ export class Argv {
     static readonly default = {
         "variablesFile": ".gitlab-ci-local-variables.yml",
         "evaluateRuleChanges": true,
+        "ignoreSchemaPaths": [],
     };
 
     map: Map<string, any> = new Map<string, any>();
-    private writeStreams: WriteStreams | undefined;
+    private readonly writeStreams: WriteStreams | undefined;
 
     private async fallbackCwd (args: any) {
         if (args.cwd !== undefined || args.file !== undefined) return;
@@ -56,6 +57,10 @@ export class Argv {
 
         if (argv.defaultImageExplicitlySet && argv.shellExecutorNoImage) {
             writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --default-image does not work with --shell-executor-no-image=true\n`);
+        }
+
+        if (argv.defaultImageExplicitlySet && argv.forceShellExecutor) {
+            writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --default-image does not work with --force-shell-executor=true\n`);
         }
 
         return argv;
@@ -131,6 +136,10 @@ export class Argv {
     get extraHost (): string[] {
         const val = this.map.get("extraHost") ?? [];
         return typeof val == "string" ? val.split(" ") : val;
+    }
+
+    get ignoreSchemaPaths (): string[] {
+        return this.map.get("ignoreSchemaPaths") ?? Argv.default.ignoreSchemaPaths;
     }
 
     get pullPolicy (): string {
@@ -285,6 +294,10 @@ export class Argv {
     get shellExecutorNoImage (): boolean {
         // TODO: default to false in 5.x.x
         return this.map.get("shellExecutorNoImage") ?? true;
+    }
+
+    get forceShellExecutor (): boolean {
+        return this.map.get("forceShellExecutor") ?? false;
     }
 
     get defaultImage (): string {

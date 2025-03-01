@@ -82,6 +82,7 @@ export class Parser {
             Validator.jsonSchemaValidation({
                 pathToExpandedGitLabCi,
                 gitLabCiConfig: parser.gitlabData,
+                argv,
             });
             if (argv.childPipelineDepth == 0) writeStreams.stderr(chalk`{grey json schema validated in ${prettyHrtime(process.hrtime(time))}}\n`);
         }
@@ -184,7 +185,7 @@ export class Parser {
                     baseName: jobName,
                     globalVariables: gitlabData.variables,
                     pipelineIid: pipelineIid,
-                    predefinedVariables,
+                    predefinedVariables: {...predefinedVariables}, // NOTE: pass by value because predefinedVariables is mutated in the constructor
                     gitData,
                     variablesFromFiles,
                     matrixVariables: parallelMatrixVariables,

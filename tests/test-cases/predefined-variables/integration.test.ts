@@ -17,6 +17,7 @@ const mockDate = "2020-01-05T00:00:00Z";
 const envVars: {[key: string]: string} = {
     CI: "true",
     CI_API_V4_URL: "https://gitlab.com/api/v4",
+    CI_BUILDS_DIR: "/builds",
     CI_COMMIT_BRANCH: "master",
     CI_COMMIT_DESCRIPTION: "More commit text",
     CI_COMMIT_MESSAGE: "Commit Title",
@@ -50,7 +51,7 @@ const envVars: {[key: string]: string} = {
     CI_PIPELINE_IID: "0",
     CI_PIPELINE_SOURCE: "push",
     CI_PIPELINE_URL: "https://gitlab.com/GCL/predefined-variables/pipelines/0",
-    CI_PROJECT_DIR: "/gcl-builds",
+    CI_PROJECT_DIR: "/builds/GCL/predefined-variables",
     CI_PROJECT_ID: "1217",
     CI_PROJECT_NAME: "predefined-variables",
     CI_PROJECT_NAMESPACE: "GCL",
@@ -70,13 +71,14 @@ const envVars: {[key: string]: string} = {
     CI_SERVER_URL: "https://gitlab.com",
     CI_TEMPLATE_REGISTRY_HOST: "registry.gitlab.com",
     FF_DISABLE_UMASK_FOR_DOCKER_EXECUTOR: "false",
+    GCL_PROJECT_DIR_ON_HOST: "", // this will get dynamicly filled
     GITLAB_CI: "false",
     GITLAB_USER_EMAIL: "test@test.com",
     GITLAB_USER_ID: "990",
     GITLAB_USER_LOGIN: "test",
     GITLAB_USER_NAME: "Testersen",
-    OLDPWD: "/gcl-builds",
-    PWD: "/gcl-builds",
+    OLDPWD: "/builds/GCL/predefined-variables",
+    PWD: "/builds/GCL/predefined-variables",
 };
 
 
@@ -118,6 +120,8 @@ describe("predefined-variables", () => {
             noColor: true,
         }, writeStreams);
 
+        envVars["GCL_PROJECT_DIR_ON_HOST"] = `${process.cwd()}/tests/test-cases/predefined-variables`;
+
         let expected = "";
         Object.keys(envVars).forEach(key => {
             expected += `test-job > ${key}=${envVars[key]}\n`;
@@ -141,6 +145,8 @@ CI_SERVER_SHELL_SSH_PORT: 8022
             job: ["test-job"],
             noColor: true,
         }, writeStreams);
+
+        envVars["GCL_PROJECT_DIR_ON_HOST"] = `${process.cwd()}/tests/test-cases/predefined-variables`;
 
         envVars["CI_API_V4_URL"] = "https://gitlab.com:8443/api/v4";
         envVars["CI_JOB_URL"] = `https://gitlab.com:8443/GCL/predefined-variables/-/jobs/${mockJobId}`;

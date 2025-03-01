@@ -115,3 +115,21 @@ test("2 dynamic pipeline with concurrency set to 1", async () => {
     ).join("\n");
     expect(filteredStdout).toEqual(expected);
 });
+
+test("trigger:include:local should support variable substitution", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: cwd,
+        file: ".gitlab-ci-8.yml",
+        noColor: true,
+    }, writeStreams);
+
+    const expected = `	[trigger] -> job $ echo yay variable substitution works
+	[trigger] -> job > yay variable substitution works`;
+
+    const filteredStdout = writeStreams.stdoutLines.filter(f =>
+        f.startsWith("	[trigger] -> job >")
+            || f.startsWith("	[trigger] -> job $")
+    ).join("\n");
+    expect(filteredStdout).toEqual(expected);
+});

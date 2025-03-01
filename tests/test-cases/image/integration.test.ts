@@ -18,7 +18,10 @@ test.concurrent("image <test job>", async () => {
         cwd: "tests/test-cases/image",
         job: ["test job"],
     }, writeStreams);
-    const expected = [chalk`{blueBright test job} {greenBright >} Test something`];
+
+    const projectDirOnHost = `${process.cwd()}/tests/test-cases/image`;
+
+    const expected = [chalk`{blueBright test job} {greenBright >} Test something ${projectDirOnHost}`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
@@ -33,7 +36,7 @@ test.concurrent("image <test-entrypoint>", async () => {
     const expected = [
         chalk`{blueBright test-entrypoint} {greenBright >} Hello from 'firecow/gitlab-ci-local-test-image' image entrypoint`,
         chalk`{blueBright test-entrypoint} {greenBright >} I am epic multiline value`,
-        chalk`{blueBright test-entrypoint} {greenBright >} /gcl-builds`,
+        chalk`{blueBright test-entrypoint} {greenBright >} /builds/gcl/test-project`,
         chalk`{blueBright test-entrypoint} {greenBright >} Test Entrypoint`,
         chalk`{blueBright test-entrypoint} {greenBright >} I'm a test file`,
     ];
@@ -101,7 +104,7 @@ test.concurrent("image <issue-206>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright issue-206} {redBright >} Error: open /gcl-builds/hugo: no such file or directory`,
+        chalk`{blueBright issue-206} {redBright >} Error: open /builds/gcl/test-project/hugo: no such file or directory`,
     ];
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 });

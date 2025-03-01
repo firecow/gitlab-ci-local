@@ -1,0 +1,6 @@
+---
+job:
+  environment:
+    name: review/$CI_JOB_STAGE/deploy     # =>  review/job/deploy
+  script:
+    - echo 'deploy staging'

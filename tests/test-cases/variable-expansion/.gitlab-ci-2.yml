@@ -1,0 +1,10 @@
+---
+job:
+  rules:
+    - variables:
+        PIPELINE_ENVIRONMENT: test
+  image: alpine
+  environment:
+    name: $PIPELINE_ENVIRONMENT  # expects this to be expanded to `test`
+  script:
+    - echo $PIPELINE_ENVIRONMENT

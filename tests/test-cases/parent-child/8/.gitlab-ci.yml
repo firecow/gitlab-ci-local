@@ -1,0 +1,5 @@
+---
+job:
+  image: busybox
+  script:
+    - echo yay variable substitution works

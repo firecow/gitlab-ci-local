@@ -27,6 +27,10 @@ type ExpandWith = {
 };
 
 export class Utils {
+    static bashMulti (scripts: string[], cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode: number}> {
+        return execa(scripts.join(" && \\"), {shell: "bash", cwd});
+    }
+
     static bash (shellScript: string, cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode: number}> {
         return execa(shellScript, {shell: "bash", cwd});
     }
@@ -118,28 +122,29 @@ export class Utils {
     }
 
     static expandVariables (variables: {[key: string]: string}) {
+        const _variables = {...variables}; // copy by value to prevent mutating the original input
         let expandedAnyVariables, i = 0;
         do {
             assert(i < 100, "Recursive variable expansion reached 100 iterations");
             expandedAnyVariables = false;
-            for (const [k, v] of Object.entries(variables)) {
-                const envsWithoutSelf = {...variables};
+            for (const [k, v] of Object.entries(_variables)) {
+                const envsWithoutSelf = {..._variables};
                 delete envsWithoutSelf[k];
                 // If the $$'s are converted to single $'s now, then the next
-                // iteration, they might be interpreted as variables, even
+                // iteration, they might be interpreted as _variables, even
                 // though they were *explicitly* escaped. To work around this,
                 // leave the '$$'s as the same value, then only unescape them at
                 // the very end.
-                variables[k] = Utils.expandTextWith(v, {
+                _variables[k] = Utils.expandTextWith(v, {
                     unescape: "$$",
                     variable: (name) => envsWithoutSelf[name] ?? "",
                 });
-                expandedAnyVariables ||= variables[k] !== v;
+                expandedAnyVariables ||= _variables[k] !== v;
             }
             i++;
         } while (expandedAnyVariables);
 
-        return variables;
+        return _variables;
     }
 
     static unscape$$Variables (variables: {[key: string]: string}) {
@@ -224,17 +229,20 @@ export class Utils {
             }
             const _rhs = JSON.stringify(rhs); // JSON.stringify for escaping `"`
             const containsNonEscapedSlash = /(?<!\\)\//.test(_rhs);
-            assert(!containsNonEscapedSlash, `Error attempting to evaluate the following rules:
-  rules:
-    - if: '${expandedEvalStr}'
-as rhs contains unescaped \`/\``);
-            return `.match(new RE2JS(${_rhs}, "${flags}")) ${_operator} null${remainingTokens}`;
+            const assertMsg = [
+                "Error attempting to evaluate the following rules:",
+                "  rules:",
+                `    - if: '${expandedEvalStr}'`,
+                "as rhs contains unescaped quote",
+            ];
+            assert(!containsNonEscapedSlash, assertMsg.join("\n"));
+            return `.match(new REJS2(${_rhs}, "${flags}")) ${_operator} null${remainingTokens}`;
         });
 
         // Scenario when RHS is surrounded by single/double-quotes
         // https://regexr.com/85t0g
-        const pattern2 = /\s*(?<operator>(?:=~)|(?:!~))\s*(?<quote_type>["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
-        evalStr = evalStr.replace(pattern2, (_, operator, _quote_type, rhs) => {
+        const pattern2 = /\s*(?<operator>=~|!~)\s*(["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
+        evalStr = evalStr.replace(pattern2, (_, operator, __, rhs) => {
             let _operator;
             switch (operator) {
                 case "=~":
@@ -247,8 +255,11 @@ as rhs contains unescaped \`/\``);
                     throw operator;
             }
 
-            assert((/\/(.*)\/([\w]*)/.test(rhs)), (`RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!
-Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...`));
+            const assertMsg = [
+                "RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!",
+                "Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...",
+            ];
+            assert((/\/(.*)\/(\w*)/.test(rhs)), assertMsg.join("\n"));
 
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
@@ -269,15 +280,16 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
             res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
             delete (global as any).RE2JS; // Cleanup
         } catch (err) {
-            assert(false, (`
-Error attempting to evaluate the following rules:
-  rules:
-    - if: '${expandedEvalStr}'
-as
-\`\`\`javascript
-${evalStr}
-\`\`\`
-`));
+            const assertMsg = [
+                "Error attempting to evaluate the following rules:",
+                "  rules:",
+                `    - if: '${expandedEvalStr}'`,
+                "as",
+                "```javascript",
+                `${evalStr}`,
+                "```",
+            ];
+            assert(false, assertMsg.join("\n"));
         }
         return Boolean(res);
     }
@@ -285,6 +297,9 @@ ${evalStr}
     static evaluateRuleExist (cwd: string, ruleExists: string[] | undefined): boolean {
         if (ruleExists === undefined) return true;
         for (const pattern of ruleExists) {
+            if (pattern == "") {
+                continue;
+            }
             if (globby.sync(pattern, {dot: true, cwd}).length > 0) {
                 return true;
             }
@@ -299,8 +314,8 @@ ${evalStr}
         if (!Array.isArray(ruleChanges)) ruleChanges = ruleChanges.paths;
 
         // NOTE: https://docs.gitlab.com/ee/ci/yaml/#ruleschanges
-        //       Glob patterns are interpreted with Ruby's [File.fnmatch](https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch)
-        //       with the flags File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB.
+        //   Glob patterns are interpreted with Ruby's [File.fnmatch](https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch)
+        //   with the flags File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB.
         return micromatch.some(GitData.changedFiles(`origin/${defaultBranch}`), ruleChanges, {
             nonegate: true,
             noextglob: true,
@@ -364,10 +379,6 @@ ${evalStr}
                 Utils.switchStatementExhaustiveCheck(protocol);
             }
         }
-    }
-
-    static trimSuffix (str: string, suffix: string) {
-        return str.endsWith(suffix) ? str.slice(0, -suffix.length) : str;
     }
 
     static switchStatementExhaustiveCheck (param: never): never {

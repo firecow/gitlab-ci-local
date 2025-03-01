@@ -129,14 +129,25 @@ export class ParserIncludes {
                 }
             } else if (value["component"]) {
                 const {domain, port, projectPath, componentName, ref} = this.parseIncludeComponent(value["component"]);
-                // converts component to project
-                const files = [`${componentName}.yml`, `${componentName}/template.yml`, null];
+                // converts component to project. gitlab allows two different file path ways to include a component
+                let files = [`${componentName}.yml`, `${componentName}/template.yml`, null];
+                const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && ref === gitData.commit.SHA;
+
+                // If a file is present locally, keep only that one in the files array to avoid downloading the other one that never exists
+                if (!argv.fetchIncludes) {
+                    for (const f of files) {
+                        const localFileName = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${projectPath}/${ref}/${f}`;
+                        if (fs.existsSync(localFileName)) {
+                            files = [f];
+                            break;
+                        }
+                    }
+                }
 
                 for (const f of files) {
                     assert(f !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the files [${files}] must exist in \`${domain}` +
                                         (port ? `:${port}` : "") + `/${projectPath}\``);
 
-                    const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && ref === gitData.commit.SHA;
                     if (isLocalComponent) {
                         const localComponentInclude = `${cwd}/${f}`;
                         if (!(await fs.pathExists(localComponentInclude))) {
@@ -147,7 +158,9 @@ export class ParserIncludes {
                         includeDatas = includeDatas.concat(await this.init(content, opts));
                         break;
                     } else {
-                        if (!(await Utils.remoteFileExist(cwd, f, ref, domain, projectPath, gitData.remote.schema, gitData.remote.port))) {
+                        const localFileName = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${projectPath}/${ref}/${f}`;
+                        // Check remotely only if the file does not exist locally
+                        if (!fs.existsSync(localFileName) && !(await Utils.remoteFileExist(cwd, f, ref, domain, projectPath, gitData.remote.schema, gitData.remote.port))) {
                             continue;
                         }
 
@@ -160,8 +173,8 @@ export class ParserIncludes {
                             },
                         };
                         includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
+                        break;
                     }
-                    break;
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
@@ -263,18 +276,15 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
 
                 const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
-                await Utils.bash(`
-                    cd ${cwd}/${stateDir} \\
-                        && git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 \\
-                                ${remote.schema}://${remote.host}:${remote.port}/${project}.git \\
-                                ${cwd}/${target}.${ext} \\
-                        && cd ${cwd}/${target}.${ext} \\
-                        && git sparse-checkout set --no-cone ${normalizedFile} \\
-                        && git checkout \\
-                        && cd ${cwd}/${stateDir} \\
-                        && cp ${cwd}/${target}.${ext}/${normalizedFile} \\
-                              ${cwd}/${target}/${normalizedFile}
-                    `, cwd);
+                await Utils.bashMulti([
+                    `cd ${cwd}/${stateDir}`,
+                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${cwd}/${target}.${ext}`,
+                    `cd ${cwd}/${target}.${ext}`,
+                    `git sparse-checkout set --no-cone ${normalizedFile}`,
+                    "git checkout",
+                    `cd ${cwd}/${stateDir}`,
+                    `cp ${cwd}/${target}.${ext}/${normalizedFile} ${cwd}/${target}/${normalizedFile}`,
+                ], cwd);
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
                 await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}/`, cwd);

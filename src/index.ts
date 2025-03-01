@@ -25,7 +25,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
     const yparser = yargs(process.argv.slice(2));
     yparser.parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
-        .version("4.56.0")
+        .version("4.57.0")
         .wrap(yparser.terminalWidth?.())
         .command({
             handler: async (argv) => {
@@ -172,6 +172,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Enable artifact isolation for shell-executor jobs",
             requiresArg: false,
         })
+        .option("force-shell-executor", {
+            type: "boolean",
+            description: "Forces all jobs to be executed using the shell executor. (Only use this option for trusted job)",
+            requiresArg: false,
+        })
         .option("shell-executor-no-image", {
             type: "boolean",
             description: "Whether to use shell executor when no image is specified.",
@@ -261,6 +266,12 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             type: "boolean",
             description: "Whether to enable json schema validation",
             requiresArg: false,
+        })
+        .option("ignore-schema-paths", {
+            type: "array",
+            requiresArg: false,
+            default: Argv.default.ignoreSchemaPaths,
+            description: "The json schema paths that will be ignored",
         })
         .option("concurrency", {
             type: "number",

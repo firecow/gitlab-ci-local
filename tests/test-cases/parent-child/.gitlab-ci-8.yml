@@ -1,0 +1,7 @@
+---
+trigger:
+  variables:
+    PROJECT_DIR: "8"
+  trigger:
+    include:
+      - local: $PROJECT_DIR/.gitlab-ci.yml
