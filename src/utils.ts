@@ -234,8 +234,8 @@ as rhs contains unescaped \`/\``);
 
         // Scenario when RHS is surrounded by single/double-quotes
         // https://regexr.com/85t0g
-        const pattern2 = /\s*(?<operator>(?:=~)|(?:!~))\s*(?<quote_type>["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
-        evalStr = evalStr.replace(pattern2, (_, operator, _quote_type, rhs) => {
+        const pattern2 = /\s*(?<operator>=~|!~)\s*(?<quote_type>["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
+        evalStr = evalStr.replace(pattern2, (_, operator, __, rhs) => {
             let _operator;
             switch (operator) {
                 case "=~":
@@ -248,7 +248,7 @@ as rhs contains unescaped \`/\``);
                     throw operator;
             }
 
-            assert((/\/(.*)\/([\w]*)/.test(rhs)), (`RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!
+            assert((/\/(.*)\/(\w*)/.test(rhs)), (`RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!
 Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...`));
 
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
@@ -368,10 +368,6 @@ ${evalStr}
                 Utils.switchStatementExhaustiveCheck(protocol);
             }
         }
-    }
-
-    static trimSuffix (str: string, suffix: string) {
-        return str.endsWith(suffix) ? str.slice(0, -suffix.length) : str;
     }
 
     static switchStatementExhaustiveCheck (param: never): never {

@@ -15,7 +15,7 @@ const downloadFile = (url: string): Promise<Buffer> => {
             .get(url, (response) => {
                 const statusCode = response.statusCode;
                 assert(statusCode);
-                if (statusCode >= 300 && statusCode < 400 && response.headers && response.headers.location) {
+                if (statusCode >= 300 && statusCode < 400 && response?.headers?.location) {
                     downloadFile(response.headers.location).then(resolve, reject);
                     return;
                 }

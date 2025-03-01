@@ -29,7 +29,7 @@ export class Argv {
     };
 
     map: Map<string, any> = new Map<string, any>();
-    private writeStreams: WriteStreams | undefined;
+    private readonly writeStreams: WriteStreams | undefined;
 
     private async fallbackCwd (args: any) {
         if (args.cwd !== undefined || args.file !== undefined) return;
