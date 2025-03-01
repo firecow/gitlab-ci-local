@@ -234,7 +234,7 @@ as rhs contains unescaped \`/\``);
 
         // Scenario when RHS is surrounded by single/double-quotes
         // https://regexr.com/85t0g
-        const pattern2 = /\s*(?<operator>=~|!~)\s*(?<quote_type>["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
+        const pattern2 = /\s*(?<operator>=~|!~)\s*(["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
         evalStr = evalStr.replace(pattern2, (_, operator, __, rhs) => {
             let _operator;
             switch (operator) {
@@ -248,8 +248,11 @@ as rhs contains unescaped \`/\``);
                     throw operator;
             }
 
-            assert((/\/(.*)\/(\w*)/.test(rhs)), (`RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!
-Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...`));
+            const assertMsg = [
+                "RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!",
+                "Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...",
+            ];
+            assert((/\/(.*)\/(\w*)/.test(rhs)), assertMsg.join("\n"));
 
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
@@ -270,15 +273,16 @@ Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-f
             res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
             delete (global as any).RE2; // Cleanup
         } catch (err) {
-            assert(false, (`
-Error attempting to evaluate the following rules:
-  rules:
-    - if: '${expandedEvalStr}'
-as
-\`\`\`javascript
-${evalStr}
-\`\`\`
-`));
+            const assertMsg = [
+                "Error attempting to evaluate the following rules:",
+                "  rules:",
+                `    - if: '${expandedEvalStr}'`,
+                "as",
+                "```javascript",
+                `${evalStr}`,
+                "```",
+            ];
+            assert(false, assertMsg.join("\n"));
         }
         return Boolean(res);
     }
@@ -303,8 +307,8 @@ ${evalStr}
         if (!Array.isArray(ruleChanges)) ruleChanges = ruleChanges.paths;
 
         // NOTE: https://docs.gitlab.com/ee/ci/yaml/#ruleschanges
-        //       Glob patterns are interpreted with Ruby's [File.fnmatch](https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch)
-        //       with the flags File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB.
+        //   Glob patterns are interpreted with Ruby's [File.fnmatch](https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch)
+        //   with the flags File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB.
         return micromatch.some(GitData.changedFiles(`origin/${defaultBranch}`), ruleChanges, {
             nonegate: true,
             noextglob: true,
