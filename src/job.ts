@@ -109,10 +109,6 @@ export class Job {
         variables?: boolean | string[];
     };
 
-    private readonly _globalVariables: {[key: string]: string} = {};
-
-    readonly variablesForDownstreamPipeline: {[key: string]: string} = {};
-    private readonly _variables: {[key: string]: string} = {};
     private _dotenvVariables: {[key: string]: string} = {};
     private _prescriptsExitCode: number | null = null;
     private _afterScriptsExitCode = 0;
@@ -120,17 +116,18 @@ export class Job {
     private _running = false;
     private _containerId: string | null = null;
     private _serviceNetworkId: string | null = null;
-    private _containerVolumeNames: string[] = [];
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
     private _producers: {name: string; dotenv: string | null}[] | null = null;
     private _jobNamePad: number | null = null;
     private _ciProjectDir: string | null = null;
-
-    private _containersToClean: string[] = [];
-    private _filesToRm: string[] = [];
     private _startTime?: [number, number];
     private _endTime?: [number, number];
 
+    private readonly _filesToRm: string[] = [];
+    private readonly _globalVariables: {[key: string]: string} = {};
+    private readonly _variables: {[key: string]: string} = {};
+    private readonly _containersToClean: string[] = [];
+    private readonly _containerVolumeNames: string[] = [];
     private readonly jobData: any;
     private readonly writeStreams: WriteStreams;
 

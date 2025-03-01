@@ -175,7 +175,6 @@ export class ParserIncludes {
                         includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
                         break;
                     }
-                    break;
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
