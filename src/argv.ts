@@ -81,7 +81,21 @@ export class Argv {
             const config = dotenv.parse(fs.readFileSync(potentialDotenvFilepath));
             for (const [key, value] of Object.entries(config)) {
                 const argKey = camelCase(key);
-                if (argv[argKey] == null) {
+
+                // Special handle KEY=VALUE variable keys
+                if (argKey === "variable") {
+                    let currentVal = argv[argKey];
+                    if (currentVal == null) {
+                        currentVal = [];
+                        this.map.set(argKey, currentVal);
+                    }
+                    if (!Array.isArray(currentVal)) {
+                        continue;
+                    }
+                    for (const pair of value.split(" ")) {
+                        currentVal.unshift(pair);
+                    }
+                } else if (argv[argKey] == null) {
                     // Work around `dotenv.parse` limitation https://github.com/motdotla/dotenv/issues/51#issuecomment-552559070
                     if (value === "true") this.map.set(argKey, true);
                     else if (value === "false") this.map.set(argKey, false);
