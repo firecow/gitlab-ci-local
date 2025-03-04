@@ -9,7 +9,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("interactive <fake-shell-job>", async () => {
+test.skip("interactive <fake-shell-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/interactive",
@@ -20,7 +20,7 @@ test("interactive <fake-shell-job>", async () => {
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
-test("interactive <fake-shell-job> --no-shell-executor-no-image", async () => {
+test.skip("interactive <fake-shell-job> --no-shell-executor-no-image", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({

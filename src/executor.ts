@@ -2,18 +2,17 @@ import chalk from "chalk";
 import {Job} from "./job.js";
 import assert, {AssertionError} from "assert";
 import {Argv} from "./argv.js";
-import pMap from "p-map";
+import {runMultipleJobs} from "./multi-job-runner.js";
 
 export class Executor {
 
     static async runLoop (argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]) {
-        let startCandidates = [];
+        let startCandidates: Job[] = [];
 
         do {
             startCandidates = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
             if (startCandidates.length > 0) {
-                const mapper = async (startCandidate: Job) => startCandidate.start();
-                await pMap(startCandidates, mapper, {concurrency: argv.concurrency ?? startCandidates.length});
+                await runMultipleJobs(startCandidates, {concurrency: argv.concurrency ?? startCandidates.length});
             }
         } while (startCandidates.length > 0);
     }
