@@ -986,6 +986,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += `--cpus=${cpuConfig} `;
             }
 
+            if (this.argv.gpus) {
+                dockerCmd += `--gpus ${this.argv.gpus} --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 `;
+            }
+
             // host and none networks have to be specified using --network, since they cannot be used with
             // `docker network connect`.
             for (const network of this.argv.network) {
@@ -1577,6 +1581,10 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         if (this.argv.shmSize != undefined) {
             dockerCmd += `--shm-size=${this.argv.shmSize} `;
+        }
+
+        if (this.argv.gpus) {
+            dockerCmd += `--gpus ${this.argv.gpus} --ipc=host --ulimit memlock=-1 --ulimit stack=67108864`;
         }
 
         for (const volume of this.argv.volume) {

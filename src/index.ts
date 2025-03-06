@@ -366,6 +366,11 @@ process.on("SIGUSR2", async () => {
             description: "The name, without the architecture, of a gitlab hosted runner to emulate. See here: https://docs.gitlab.com/ee/ci/runners/hosted_runners/linux.html#machine-types-available-for-linux---x86-64",
             choices: GitlabRunnerPresetValues,
         })
+        .option("gpus", {
+            type: "string",
+            description: "A list of GPU indexes or 'all'",
+            requiresArg: true,
+        })
         .option("color", {
             requiresArg: false,
             default: true,
