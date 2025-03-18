@@ -1,0 +1,7 @@
+---
+include:
+  - local: '/.gitlab-ci-input-template.yml'
+    inputs:
+      boolean_input: false
+stages:
+  - test

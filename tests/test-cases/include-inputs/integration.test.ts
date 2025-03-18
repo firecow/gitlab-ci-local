@@ -224,10 +224,11 @@ test_job:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("include-inputs for type boolean", async () => {
+test("include-inputs for type boolean (truthy)", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-inputs/input-templates/types/boolean",
+        file: ".gitlab-ci-1.yml",
         preview: true,
         jsonSchemaValidation: true, // this test depends on the json schema validation, do not set to false
     }, writeStreams);
@@ -240,6 +241,27 @@ stages:
 scan-website:
   script:
     - echo true`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
+test("include-inputs for type boolean (falsy)", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-inputs/input-templates/types/boolean",
+        file: ".gitlab-ci-2.yml",
+        preview: true,
+        jsonSchemaValidation: true, // this test depends on the json schema validation, do not set to false
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+scan-website:
+  script:
+    - echo false`;
 
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
