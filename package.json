@@ -47,6 +47,7 @@
     "yargs": "17.x.x"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin-ts": "4.x.x",
     "@types/base64url": "2.x.x",
     "@types/camelcase": "5.x.x",
     "@types/checksum": "0.1.x",
@@ -59,19 +60,18 @@
     "@types/pretty-hrtime": "1.x.x",
     "@types/split2": "4.x.x",
     "@types/yargs": "17.x.x",
-    "@typescript-eslint/eslint-plugin": "7.x.x",
-    "@typescript-eslint/parser": "7.x.x",
     "@yao-pkg/pkg": "^6.0.0",
     "axios-mock-adapter": "2.x",
     "depcheck": "1.x.x",
     "esbuild": "0.25.x",
-    "eslint": "8.x.x",
+    "eslint": "9.x.x",
     "jest": "29.x.x",
     "jest-when": "3.x.x",
     "nodemon": "3.x.x",
     "ts-jest": "29.x.x",
     "tsx": "4.x.x",
-    "typescript": "5.x.x"
+    "typescript": "5.x.x",
+    "typescript-eslint": "8.x.x"
   },
   "engines": {
     "node": ">=18"
@@ -84,53 +84,6 @@
     "scripts": [
       "src/**/*.js"
     ]
-  },
-  "eslintConfig": {
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint"
-    ],
-    "ignorePatterns": [
-      "*.js"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended"
-    ],
-    "rules": {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/semi": "error",
-      "@typescript-eslint/quotes": "error",
-      "@typescript-eslint/comma-dangle": [
-        "error",
-        "always-multiline"
-      ],
-      "@typescript-eslint/object-curly-spacing": "error",
-      "@typescript-eslint/space-before-function-paren": "error",
-      "@typescript-eslint/space-before-blocks": "error",
-      "@typescript-eslint/space-infix-ops": "error",
-      "@typescript-eslint/member-delimiter-style": "error",
-      "@typescript-eslint/indent": [
-        "error",
-        4
-      ],
-      "@typescript-eslint/type-annotation-spacing": [
-        "error"
-      ],
-      "@typescript-eslint/func-call-spacing": [
-        "error"
-      ],
-      "@typescript-eslint/comma-spacing": [
-        "error"
-      ],
-      "keyword-spacing": "error",
-      "space-in-parens": "error",
-      "no-trailing-spaces": "error",
-      "no-multi-spaces": "error",
-      "arrow-spacing": "error",
-      "key-spacing": "error"
-    }
   },
   "jest": {
     "extensionsToTreatAsEsm": [

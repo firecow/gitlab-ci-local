@@ -238,7 +238,6 @@ export class ParserIncludes {
 
     static parseIncludeComponent (component: string): {domain: string; port: string; projectPath: string; componentName: string; ref: string} {
         assert(!component.includes("://"), `This GitLab CI configuration is invalid: component: \`${component}\` should not contain protocol`);
-        // eslint-disable-next-line no-useless-escape
         const pattern = /(?<domain>[^/:\s]+)(:(?<port>\d+))?\/(?<projectPath>.+)\/(?<componentName>[^@]+)@(?<ref>.+)/; // https://regexr.com/7v7hm
         const gitRemoteMatch = pattern.exec(component);
 
