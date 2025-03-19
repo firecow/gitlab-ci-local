@@ -111,7 +111,7 @@ test("2 dynamic pipeline with concurrency set to 1", async () => {
         f.startsWith("	[dynamic-pipeline-1] -> child >")
             || f.startsWith("	[dynamic-pipeline-1] -> child $")
             || f.startsWith("	[dynamic-pipeline-2] -> child >")
-            || f.startsWith("	[dynamic-pipeline-2] -> child $")
+            || f.startsWith("	[dynamic-pipeline-2] -> child $"),
     ).join("\n");
     expect(filteredStdout).toEqual(expected);
 });
@@ -129,7 +129,7 @@ test("trigger:include:local should support variable substitution", async () => {
 
     const filteredStdout = writeStreams.stdoutLines.filter(f =>
         f.startsWith("	[trigger] -> job >")
-            || f.startsWith("	[trigger] -> job $")
+            || f.startsWith("	[trigger] -> job $"),
     ).join("\n");
     expect(filteredStdout).toEqual(expected);
 });

@@ -553,7 +553,7 @@ export class Job {
         } else if (Array.isArray(this.inherit.variables)) {
             const inheritVariables = this.inherit.variables;
             return Object.fromEntries(
-                Object.entries(this._globalVariables).filter(([k]) => inheritVariables.includes(k))
+                Object.entries(this._globalVariables).filter(([k]) => inheritVariables.includes(k)),
             );
         }
         return this._globalVariables;
@@ -648,7 +648,7 @@ export class Job {
                     const {stdout, stderr} = await Utils.spawn([this.argv.containerExecutable, "logs", serviceContainerId]);
                     await fs.ensureFile(serviceContainerLogFile);
                     await fs.promises.writeFile(serviceContainerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
-                })
+                }),
             );
         }
 
@@ -1313,11 +1313,11 @@ export class Job {
         // Won't print if jobStatus is "success" because that will be printed via the `printFinishedString()`
         if (this.jobStatus === "warning") {
             writeStreams.stderr(
-                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }\n`
+                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }\n`,
             );
         } else if (this.jobStatus === "failed") {
             writeStreams.stderr(
-                chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} }\n`
+                chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} }\n`,
             );
         }
     }
@@ -1328,7 +1328,7 @@ export class Job {
 
         if (code !== 0) {
             writeStreams.stderr(
-                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} } after_script\n`
+                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} } after_script\n`,
             );
         }
     }

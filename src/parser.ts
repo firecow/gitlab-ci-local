@@ -136,14 +136,14 @@ export class Parser {
         // Check job variables for invalid hash of key value pairs, and cast numbers to strings
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             assert(jobData.when !== "never",
-                chalk`This GitLab CI configuration is invalid: jobs:${jobName} when:never can only be used in a rules section or workflow:rules`
+                chalk`This GitLab CI configuration is invalid: jobs:${jobName} when:never can only be used in a rules section or workflow:rules`,
             );
             for (const [key, _value] of Object.entries(jobData.variables || {})) {
                 let value = _value;
                 if (value === null) value = ""; // variable's values are nullable
                 assert(
                     typeof value === "string" || typeof value === "number" || typeof value === "boolean",
-                    chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${value}`
+                    chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${value}`,
                 );
                 jobData.variables[key] = String(value);
             }
@@ -153,7 +153,7 @@ export class Parser {
                 for (const [key, value] of Object.entries(service.variables || {})) {
                     assert(
                         typeof value === "string" || typeof value === "number" || typeof value === "boolean",
-                        chalk`{blueBright ${jobName}.services[${i}]} has invalid variables hash of key value pairs. ${key}=${value}`
+                        chalk`{blueBright ${jobName}.services[${i}]} has invalid variables hash of key value pairs. ${key}=${value}`,
                     );
                     jobData.services[i].variables[key] = String(value);
                 }

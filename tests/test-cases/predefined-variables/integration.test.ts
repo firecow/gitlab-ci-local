@@ -93,7 +93,7 @@ beforeAll(() => {
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
     jobIdSpy = jest.spyOn(
         Job.prototype as any,
-        "generateJobId"
+        "generateJobId",
     );
     jobIdSpy.mockReturnValue(mockJobId);
 

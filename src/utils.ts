@@ -110,7 +110,7 @@ export class Utils {
                     assert(name, "unexpected unset capture group");
                     return `${expandWith.variable(name)}`;
                 }
-            }
+            },
         );
     }
 
