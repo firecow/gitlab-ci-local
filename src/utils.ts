@@ -279,7 +279,7 @@ export class Utils {
             (global as any).RE2 = RE2; // Assign RE2 to the global object
             res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
             delete (global as any).RE2; // Cleanup
-        } catch (err) {
+        } catch {
             const assertMsg = [
                 "Error attempting to evaluate the following rules:",
                 "  rules:",
@@ -371,7 +371,7 @@ export class Utils {
                 try {
                     const {status} = await axios.get(`${protocol}://${domain}:${port}/${projectPath}/-/raw/${ref}/${file}`);
                     return (status === 200);
-                } catch (e) {
+                } catch {
                     return false;
                 }
             }

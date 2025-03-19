@@ -1071,7 +1071,7 @@ export class Job {
         }
         try {
             await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
-        } catch (e: any) {
+        } catch {
             await actualPull();
         }
     }

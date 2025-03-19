@@ -311,7 +311,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                             done(jobNames);
                         });
                 }
-            } catch (e) {
+            } catch {
                 return ["Parser-Failed!"];
             }
 
