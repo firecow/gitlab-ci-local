@@ -364,17 +364,17 @@ export class Job {
             return prettyHrtime(this._endTime);
         }
 
-        return this._startTime
-            ? prettyHrtime(process.hrtime(this._startTime))
-            : "0 ms";
+        return this._startTime ?
+            prettyHrtime(process.hrtime(this._startTime)) :
+            "0 ms";
     }
 
     get formattedJobName () {
         let prefix = "";
         if (this.argv.childPipelineDepth > 0) prefix = "\t".repeat(this.argv.childPipelineDepth) + `[${this.argv.variable.GCL_TRIGGERER}] -> `;
-        const timestampPrefix = this.argv.showTimestamps
-            ? `[${dateFormatter.format(new Date())} ${this.prettyDuration.padStart(7)}] `
-            : "";
+        const timestampPrefix = this.argv.showTimestamps ?
+            `[${dateFormatter.format(new Date())} ${this.prettyDuration.padStart(7)}] ` :
+            "";
 
         // [16:33:19 1.37 min] my-job     > hello world
         return chalk`${timestampPrefix}{blueBright ${prefix}${this.name.padEnd(this.jobNamePad)}}`;
@@ -510,9 +510,9 @@ export class Job {
         await this.fetchTriggerInclude();
         const variablesForDownstreamPipeline = Object.entries({...this.globalVariables, ...this.jobData.variables}).map(([key, value]) => `${key}=${value}`);
 
-        const gclTriggerer = this.argv.variable["GCL_TRIGGERER"]
-            ? `${this.argv.variable["GCL_TRIGGERER"]} -> ${this.name}`
-            : this.name;
+        const gclTriggerer = this.argv.variable["GCL_TRIGGERER"] ?
+            `${this.argv.variable["GCL_TRIGGERER"]} -> ${this.name}` :
+            this.name;
         await handler({
             ...Object.fromEntries(this.argv.map),
             file: `${this.argv.stateDir}/includes/triggers/${this.name}.yml`,
@@ -1230,9 +1230,9 @@ export class Job {
         }
         cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
         const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, expanded);
-        const reportDotenvs: string[] | null = (typeof reportDotenv === "string") // normalize to string[] for easier handling
-            ? [reportDotenv]
-            : reportDotenv;
+        const reportDotenvs: string[] | null = (typeof reportDotenv === "string") ? // normalize to string[] for easier handling
+            [reportDotenv] :
+            reportDotenv;
         if (reportDotenvs != null) {
             reportDotenvs.forEach((reportDotenv) => {
                 cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;

@@ -336,10 +336,10 @@ export class Parser {
                                 // NOTE: This behaves slightly differently from gitlab.com. I can't come up with practical use case so i don't think it's worth the effort to mimic this
                                 return firstTwoChar + JSON.stringify(JSON.stringify(inputValue)).slice(1, -1) + lastChar;
                             case "string":
-                                return firstTwoChar
-                                    + JSON.stringify(inputValue) // ensure a valid json string
-                                        .slice(1, -1) // remove the surrounding "
-                                    + lastChar;
+                                return firstTwoChar +
+                                    JSON.stringify(inputValue) // ensure a valid json string
+                                        .slice(1, -1) + // remove the surrounding "
+                                    lastChar;
 
                             case "number":
                             case "boolean":

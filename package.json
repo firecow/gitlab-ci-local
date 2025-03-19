@@ -47,6 +47,8 @@
     "yargs": "17.x.x"
   },
   "devDependencies": {
+    "@eslint/js": "9.x.x",
+    "@stylistic/eslint-plugin-js": "4.x.x",
     "@stylistic/eslint-plugin-ts": "4.x.x",
     "@types/base64url": "2.x.x",
     "@types/camelcase": "5.x.x",

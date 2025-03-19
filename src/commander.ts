@@ -72,9 +72,9 @@ export class Commander {
             throw new AssertionError({message: chalk`{blueBright ${jobArgs.join(",")}} could not be found`});
         }
 
-        const starters = argv.onlyNeeds
-            ? potentialStarters.filter(p => !jobArgs.includes(p.name))
-            : potentialStarters;
+        const starters = argv.onlyNeeds ?
+            potentialStarters.filter(p => !jobArgs.includes(p.name)) :
+            potentialStarters;
 
         await Executor.runLoop(argv, Array.from(jobSet), stages, starters);
         await Commander.printReport({

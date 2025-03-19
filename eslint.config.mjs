@@ -1,6 +1,7 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import stylisticTs from "@stylistic/eslint-plugin-ts";
+import stylisticJs from "@stylistic/eslint-plugin-js";
 
 export default tseslint.config(
     eslint.configs.recommended,
@@ -14,6 +15,7 @@ export default tseslint.config(
     {
         plugins: {
             "@stylistic/ts": stylisticTs,
+            "@stylistic/js": stylisticJs,
         },
         rules: {
             "@typescript-eslint/no-explicit-any": "off",
@@ -33,6 +35,7 @@ export default tseslint.config(
                 "error",
                 4,
             ],
+            "@stylistic/js/operator-linebreak": ["error", "after"],
             "@stylistic/ts/type-annotation-spacing": [ "error" ],
             "@stylistic/ts/func-call-spacing": [
                 "error",
