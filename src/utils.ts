@@ -294,8 +294,12 @@ export class Utils {
         return Boolean(res);
     }
 
-    static evaluateRuleExist (cwd: string, ruleExists: string[] | undefined): boolean {
+    static evaluateRuleExist (cwd: string, ruleExists: string[] | {paths: string[]} | undefined): boolean {
         if (ruleExists === undefined) return true;
+
+        // Normalize rules:exists:paths to rules:exists
+        if (!Array.isArray(ruleExists)) ruleExists = ruleExists.paths;
+
         for (const pattern of ruleExists) {
             if (pattern == "") {
                 continue;

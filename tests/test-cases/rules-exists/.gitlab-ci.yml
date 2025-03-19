@@ -7,6 +7,15 @@ executed-job-file:
     - exists:
         - exists.file
 
+executed-job-paths:
+  stage: build
+  script:
+    - echo "rules:exists:paths works!"
+  rules:
+    - exists:
+        paths:
+          - exists.file
+
 executed-job-dir:
   stage: build
   script:
