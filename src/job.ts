@@ -364,17 +364,17 @@ export class Job {
             return prettyHrtime(this._endTime);
         }
 
-        return this._startTime
-            ? prettyHrtime(process.hrtime(this._startTime))
-            : "0 ms";
+        return this._startTime ?
+            prettyHrtime(process.hrtime(this._startTime)) :
+            "0 ms";
     }
 
     get formattedJobName () {
         let prefix = "";
         if (this.argv.childPipelineDepth > 0) prefix = "\t".repeat(this.argv.childPipelineDepth) + `[${this.argv.variable.GCL_TRIGGERER}] -> `;
-        const timestampPrefix = this.argv.showTimestamps
-            ? `[${dateFormatter.format(new Date())} ${this.prettyDuration.padStart(7)}] `
-            : "";
+        const timestampPrefix = this.argv.showTimestamps ?
+            `[${dateFormatter.format(new Date())} ${this.prettyDuration.padStart(7)}] ` :
+            "";
 
         // [16:33:19 1.37 min] my-job     > hello world
         return chalk`${timestampPrefix}{blueBright ${prefix}${this.name.padEnd(this.jobNamePad)}}`;
@@ -510,9 +510,9 @@ export class Job {
         await this.fetchTriggerInclude();
         const variablesForDownstreamPipeline = Object.entries({...this.globalVariables, ...this.jobData.variables}).map(([key, value]) => `${key}=${value}`);
 
-        const gclTriggerer = this.argv.variable["GCL_TRIGGERER"]
-            ? `${this.argv.variable["GCL_TRIGGERER"]} -> ${this.name}`
-            : this.name;
+        const gclTriggerer = this.argv.variable["GCL_TRIGGERER"] ?
+            `${this.argv.variable["GCL_TRIGGERER"]} -> ${this.name}` :
+            this.name;
         await handler({
             ...Object.fromEntries(this.argv.map),
             file: `${this.argv.stateDir}/includes/triggers/${this.name}.yml`,
@@ -553,7 +553,7 @@ export class Job {
         } else if (Array.isArray(this.inherit.variables)) {
             const inheritVariables = this.inherit.variables;
             return Object.fromEntries(
-                Object.entries(this._globalVariables).filter(([k]) => inheritVariables.includes(k))
+                Object.entries(this._globalVariables).filter(([k]) => inheritVariables.includes(k)),
             );
         }
         return this._globalVariables;
@@ -648,7 +648,7 @@ export class Job {
                     const {stdout, stderr} = await Utils.spawn([this.argv.containerExecutable, "logs", serviceContainerId]);
                     await fs.ensureFile(serviceContainerLogFile);
                     await fs.promises.writeFile(serviceContainerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
-                })
+                }),
             );
         }
 
@@ -1071,7 +1071,7 @@ export class Job {
         }
         try {
             await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
-        } catch (e: any) {
+        } catch {
             await actualPull();
         }
     }
@@ -1230,9 +1230,9 @@ export class Job {
         }
         cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
         const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, expanded);
-        const reportDotenvs: string[] | null = (typeof reportDotenv === "string") // normalize to string[] for easier handling
-            ? [reportDotenv]
-            : reportDotenv;
+        const reportDotenvs: string[] | null = (typeof reportDotenv === "string") ? // normalize to string[] for easier handling
+            [reportDotenv] :
+            reportDotenv;
         if (reportDotenvs != null) {
             reportDotenvs.forEach((reportDotenv) => {
                 cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
@@ -1313,11 +1313,11 @@ export class Job {
         // Won't print if jobStatus is "success" because that will be printed via the `printFinishedString()`
         if (this.jobStatus === "warning") {
             writeStreams.stderr(
-                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }\n`
+                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }\n`,
             );
         } else if (this.jobStatus === "failed") {
             writeStreams.stderr(
-                chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} }\n`
+                chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} }\n`,
             );
         }
     }
@@ -1328,7 +1328,7 @@ export class Job {
 
         if (code !== 0) {
             writeStreams.stderr(
-                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} } after_script\n`
+                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} } after_script\n`,
             );
         }
     }

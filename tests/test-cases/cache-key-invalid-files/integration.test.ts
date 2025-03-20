@@ -19,7 +19,7 @@ test.concurrent("cache-key-invalid-files <issue-910-three> --shell-isolation", a
             file: ".gitlab-ci-three.yml",
             needs: false,
             shellIsolation: true,
-        }, writeStreams)
+        }, writeStreams),
     ).rejects.toThrow(AssertionError);
 });
 
@@ -33,6 +33,6 @@ test.concurrent("cache-key-invalid-files <issue-910-empty> --shell-isolation", a
             file: ".gitlab-ci-empty.yml",
             needs: false,
             shellIsolation: true,
-        }, writeStreams)
+        }, writeStreams),
     ).rejects.toThrow(AssertionError);
 });

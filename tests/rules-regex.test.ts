@@ -14,7 +14,7 @@ beforeEach(async () => {
     import.meta.jest.clearAllMocks();
 });
 
-/* eslint-disable @typescript-eslint/quotes */
+/* eslint-disable @stylistic/ts/quotes */
 const tests = [
     {
         rule: '"Hello World" =~ "/hello world/i"',
@@ -114,7 +114,7 @@ const tests = [
         evalResult: false,
     },
 ];
-/* eslint-enable @typescript-eslint/quotes */
+/* eslint-enable @stylistic/ts/quotes */
 
 describe("gitlab rules regex", () => {
     tests.filter(t => !t.expectedErrSubStr)

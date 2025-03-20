@@ -46,7 +46,7 @@ test("include-inputs required inputs", async () => {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toContain("This GitLab CI configuration is invalid:");
         expect(e.message).toContain(
-            chalk`\`{blueBright required_inputs}\` input: required value has not been provided`
+            chalk`\`{blueBright required_inputs}\` input: required value has not been provided`,
         );
         return;
     }
@@ -65,7 +65,7 @@ test("include-inputs unknown interpolation key (TypeError)", async () => {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toContain("This GitLab CI configuration is invalid:");
         expect(e.message).toContain(
-            chalk`unknown interpolation key: \`foo\`.`
+            chalk`unknown interpolation key: \`foo\`.`,
         );
         return;
     }
@@ -84,7 +84,7 @@ test("include-inputs unknown interpolation key (AssertionError)", async () => {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toContain("This GitLab CI configuration is invalid:");
         expect(e.message).toContain(
-            chalk`unknown interpolation key: \`foo\`.`
+            chalk`unknown interpolation key: \`foo\`.`,
         );
         return;
     }
@@ -272,7 +272,7 @@ test("include-inputs inputs validation for unsupported type", async () => {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toContain("This GitLab CI configuration is invalid:");
         expect(e.message).toContain(
-            chalk`header:spec:inputs:{blueBright unsupported_type_input} input type unknown value: {blueBright foo}.`
+            chalk`header:spec:inputs:{blueBright unsupported_type_input} input type unknown value: {blueBright foo}.`,
         );
         return;
     }
@@ -291,7 +291,7 @@ test("include-inputs options validation", async () => {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toContain("This GitLab CI configuration is invalid:");
         expect(e.message).toContain(
-            chalk`\`{blueBright options_input}\` input: \`{blueBright fizz}\` cannot be used because it is not in the list of allowed options.`
+            chalk`\`{blueBright options_input}\` input: \`{blueBright fizz}\` cannot be used because it is not in the list of allowed options.`,
         );
         return;
     }

@@ -11,7 +11,7 @@ async function isInGitRepository () {
     try {
         await Utils.spawn(["git", "rev-parse", "--is-inside-work-tree"]);
         return true;
-    } catch (err: any) {
+    } catch {
         return false;
     }
 }
