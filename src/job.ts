@@ -605,7 +605,7 @@ export class Job {
             let chownOpt = "0:0";
             let chmodOpt = "a+rw";
             if (!this.argv.umask) {
-                const {stdout} = await Utils.spawn(["docker", "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
+                const {stdout} = await Utils.spawn([this.argv.containerExecutable, "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
                 chownOpt = stdout;
                 if (chownOpt == "0:0") {
                     chmodOpt = "g-w";
@@ -624,7 +624,7 @@ export class Job {
             await Utils.spawn([this.argv.containerExecutable, "start", "--attach", containerId], argv.cwd);
             await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", containerId], argv.cwd);
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to ${this.argv.containerExecutable} volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         if (this.services?.length) {
