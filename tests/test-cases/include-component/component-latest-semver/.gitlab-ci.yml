@@ -1,0 +1,9 @@
+---
+include:
+  # https://gitlab.com/explore/catalog/components/go
+  - component: gitlab.com/components/go/full-pipeline@~latest
+
+stages:
+  - format
+  - build
+  - test
