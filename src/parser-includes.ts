@@ -9,6 +9,7 @@ import {Parser} from "./parser.js";
 import axios from "axios";
 import globby from "globby";
 import path from "path";
+import semver from "semver";
 
 type ParserIncludesInitOptions = {
     argv: Argv;
@@ -128,10 +129,9 @@ export class ParserIncludes {
                     includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
                 }
             } else if (value["component"]) {
-                const {domain, port, projectPath, componentName, ref} = this.parseIncludeComponent(value["component"]);
+                const {domain, port, projectPath, componentName, ref, isLocalComponent} = this.parseIncludeComponent(value["component"], gitData);
                 // converts component to project. gitlab allows two different file path ways to include a component
                 let files = [`${componentName}.yml`, `${componentName}/template.yml`, null];
-                const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && ref === gitData.commit.SHA;
 
                 // If a file is present locally, keep only that one in the files array to avoid downloading the other one that never exists
                 if (!argv.fetchIncludes) {
@@ -236,18 +236,47 @@ export class ParserIncludes {
         };
     }
 
-    static parseIncludeComponent (component: string): {domain: string; port: string; projectPath: string; componentName: string; ref: string} {
+    static parseIncludeComponent (component: string, gitData: GitData): {domain: string; port: string; projectPath: string; componentName: string; ref: string; isLocalComponent: boolean} {
         assert(!component.includes("://"), `This GitLab CI configuration is invalid: component: \`${component}\` should not contain protocol`);
         const pattern = /(?<domain>[^/:\s]+)(:(?<port>\d+))?\/(?<projectPath>.+)\/(?<componentName>[^@]+)@(?<ref>.+)/; // https://regexr.com/7v7hm
         const gitRemoteMatch = pattern.exec(component);
 
         if (gitRemoteMatch?.groups == null) throw new Error(`This is a bug, please create a github issue if this is something you're expecting to work. input: ${component}`);
+
+        const {domain, projectPath, port} = gitRemoteMatch.groups;
+        let ref = gitRemoteMatch.groups["ref"];
+        const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && ref === gitData.commit.SHA;
+
+        if (!isLocalComponent) {
+            const semanticVersionRangesPattern = /^\d+(\.\d+)?$/;
+            if (ref == "~latest" || semanticVersionRangesPattern.test(ref)) {
+                // https://docs.gitlab.com/ci/components/#semantic-version-ranges
+                let stdout;
+                try {
+                    stdout = Utils.syncSpawn(["git", "ls-remote", "--tags", `git@${domain}:${projectPath}`]).stdout;
+                } catch {
+                    stdout = Utils.syncSpawn(["git", "ls-remote", "--tags", `https://${domain}:${port ?? 443}/${projectPath}.git`]).stdout;
+                }
+                assert(stdout);
+                const tags = stdout
+                    .split("\n")
+                    .map((line) => {
+                        return line
+                            .split("\t")[1]
+                            .split("/")[2];
+                    });
+                const _ref = resolveSemanticVersionRange(ref, tags);
+                assert(_ref, `This GitLab CI configuration is invalid: component: \`${component}\` - The ref (${ref}) is invalid`);
+                ref = _ref;
+            }
+        }
         return {
-            domain: gitRemoteMatch.groups["domain"],
-            port: gitRemoteMatch.groups["port"],
-            projectPath: gitRemoteMatch.groups["projectPath"],
+            domain: domain,
+            port: port,
+            projectPath: projectPath,
             componentName: `templates/${gitRemoteMatch.groups["componentName"]}`,
-            ref: gitRemoteMatch.groups["ref"],
+            ref: ref,
+            isLocalComponent: isLocalComponent,
         };
     }
 
@@ -297,4 +326,22 @@ export class ParserIncludes {
 export function validateIncludeLocal (filePath: string) {
     assert(!filePath.startsWith("./"), `\`${filePath}\` for include:local is invalid. Gitlab does not support relative path (ie. cannot start with \`./\`).`);
     assert(!filePath.includes(".."), `\`${filePath}\` for include:local is invalid. Gitlab does not support directory traversal.`);
+}
+
+export function resolveSemanticVersionRange (range: string, gitTags: string[]) {
+    /** sorted list of tags thats compliant to semantic version where index 0 is the latest */
+    const sanitizedSemverTags = semver.rsort(
+        gitTags.filter(s => semver.valid(s)),
+    );
+
+    const found = sanitizedSemverTags.find(t => {
+        if (range == "~latest") {
+            const semverParsed = semver.parse(t);
+            assert(semverParsed);
+            return (semverParsed.prerelease.length == 0 && semverParsed.build.length == 0);
+        } else {
+            return semver.satisfies(t, range);
+        }
+    });
+    return found;
 }
