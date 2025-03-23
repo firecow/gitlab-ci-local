@@ -1,0 +1,13 @@
+---
+include:
+  - component: gitlab.com/components/go/full-pipeline@0.3
+    inputs:
+      stage_format: format-override
+      stage_build: build-override
+      stage_test: test-override
+      go_version: latest
+
+stages:
+  - format-override
+  - build-override
+  - test-override
