@@ -266,6 +266,11 @@ export class Argv {
         return this.map.get("fetchIncludes") ?? false;
     }
 
+    get includeGlobDot (): boolean {
+        // TODO: default to false in 5.x.x
+        return this.map.get("includeGlobDot") ?? true;
+    }
+
     get mountCache (): boolean {
         return this.map.get("mountCache") ?? false;
     }

@@ -237,6 +237,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "The maximum number of includes",
             requiresArg: false,
         })
+        .option("include-glob-dot", {
+            type: "boolean",
+            description: "Allow include patterns to match entries that begin with a period (.) Note that an explicit dot in a portion of the pattern will always match dot files.",
+            requiresArg: false,
+        })
         .option("artifacts-to-source", {
             type: "boolean",
             description: "Copy the generated artifacts into cwd",

@@ -1484,7 +1484,7 @@ export class Job {
     }
 
     private async fetchTriggerInclude () {
-        const {cwd, stateDir} = this.argv;
+        const {cwd, stateDir, includeGlobDot} = this.argv;
 
         fs.mkdirpSync(`${cwd}/${stateDir}/includes/triggers`);
 
@@ -1494,7 +1494,10 @@ export class Job {
             if (include["local"]) {
                 const expandedInclude = Utils.expandText(include["local"], this._variables);
                 validateIncludeLocal(expandedInclude);
-                const files = await globby(expandedInclude.replace(/^\//, ""), {dot: true, cwd});
+                const files = await globby(expandedInclude.replace(/^\//, ""), {
+                    dot: includeGlobDot,
+                    cwd,
+                });
                 if (files.length == 0) {
                     throw new AssertionError({message: `Local include file \`${include["local"]}\` specified in \`.${this.name}\` cannot be found!`});
                 }

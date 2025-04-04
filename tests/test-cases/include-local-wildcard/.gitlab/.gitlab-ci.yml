@@ -1,0 +1,5 @@
+---
+job:
+  stage: build
+  script:
+    - echo "job executed!"
