@@ -575,6 +575,7 @@ export class Job {
         this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
         const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));
         const imageName = this.imageName(expanded);
+        const helperImageName = argv.helperImage;
         const safeJobName = this.safeJobName;
 
         const outputLogFilePath = `${argv.cwd}/${argv.stateDir}/output/${safeJobName}.log`;
@@ -611,8 +612,11 @@ export class Job {
                     chmodOpt = "g-w";
                 }
             }
+            if (helperImageName) {
+                await this.pullImage(writeStreams, helperImageName);
+            }
             const {stdout: containerId} = await Utils.spawn([
-                this.argv.containerExecutable, "create", "--user=0:0", `--volume=${buildVolumeName}:${this.ciProjectDir}`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
+                this.argv.containerExecutable, "create", "--user=0:0", `--volume=${buildVolumeName}:${this.ciProjectDir}`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, `${helperImageName}`,
                 ...["sh", "-c", `chown ${chownOpt} -R ${this.ciProjectDir} && chmod ${chmodOpt} -R ${this.ciProjectDir} && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`],
             ], argv.cwd);
             this._containersToClean.push(containerId);
@@ -1278,11 +1282,12 @@ export class Job {
         const safeJobName = this.safeJobName;
         const buildVolumeName = this.buildVolumeName;
         const cwd = this.argv.cwd;
+        const helperImageName = this.argv.helperImage;
 
         await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName(this._variables)) {
-            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
+            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${cmd}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
             await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);

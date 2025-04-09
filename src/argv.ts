@@ -318,6 +318,10 @@ export class Argv {
         return this.map.get("defaultImage") ?? "docker.io/ruby:3.1";
     }
 
+    get helperImage (): string {
+        return this.map.get("helperImage") ?? "docker.io/firecow/gitlab-ci-local-util:latest";
+    }
+
     get defaultImageExplicitlySet (): boolean {
         return this.map.get("defaultImage") ?? false;
     }
