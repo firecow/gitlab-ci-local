@@ -18,6 +18,7 @@ type ParserIncludesInitOptions = {
     writeStreams: WriteStreams;
     gitData: GitData;
     fetchIncludes: boolean;
+    includeGlobDot: boolean;
     variables: {[key: string]: string};
     expandVariables: boolean;
     maximumIncludes: number;
@@ -52,7 +53,7 @@ export class ParserIncludes {
         );
         let includeDatas: any[] = [];
         const promises = [];
-        const {stateDir, cwd, fetchIncludes, gitData, expandVariables} = opts;
+        const {stateDir, cwd, fetchIncludes, includeGlobDot, gitData, expandVariables} = opts;
 
         const include = this.expandInclude(gitlabData?.include, opts.variables);
 
@@ -68,7 +69,10 @@ export class ParserIncludes {
             }
             if (value["local"]) {
                 validateIncludeLocal(value["local"]);
-                const files = await globby(value["local"].replace(/^\//, ""), {dot: true, cwd});
+                const files = await globby(value["local"].replace(/^\//, ""), {
+                    dot: includeGlobDot,
+                    cwd,
+                });
                 if (files.length == 0) {
                     throw new AssertionError({message: `Local include file cannot be found ${value["local"]}`});
                 }
@@ -97,7 +101,10 @@ export class ParserIncludes {
                 }
             }
             if (value["local"]) {
-                const files = await globby([value["local"].replace(/^\//, "")], {dot: true, cwd});
+                const files = await globby([value["local"].replace(/^\//, "")], {
+                    dot: includeGlobDot,
+                    cwd,
+                });
                 for (const localFile of files) {
                     const content = await Parser.loadYaml(`${cwd}/${localFile}`, {inputs: value.inputs || {}}, expandVariables);
                     includeDatas = includeDatas.concat(await this.init(content, opts));
