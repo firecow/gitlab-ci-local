@@ -10,6 +10,7 @@ import axios from "axios";
 import globby from "globby";
 import path from "path";
 import semver from "semver";
+import RE2 from "re2";
 
 type ParserIncludesInitOptions = {
     argv: Argv;
@@ -66,13 +67,7 @@ export class ParserIncludes {
                     continue;
                 }
             }
-            if (value["local"]) {
-                validateIncludeLocal(value["local"]);
-                const files = await globby(value["local"].replace(/^\//, ""), {dot: true, cwd});
-                if (files.length == 0) {
-                    throw new AssertionError({message: `Local include file cannot be found ${value["local"]}`});
-                }
-            } else if (value["file"]) {
+            if (value["file"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
                     promises.push(this.downloadIncludeProjectFile(cwd, stateDir, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes));
                 }
@@ -97,9 +92,13 @@ export class ParserIncludes {
                 }
             }
             if (value["local"]) {
-                const files = await globby([value["local"].replace(/^\//, "")], {dot: true, cwd});
+                validateIncludeLocal(value["local"]);
+                const files = resolveIncludeLocal(value["local"], cwd);
+                if (files.length == 0) {
+                    throw new AssertionError({message: `Local include file cannot be found ${value["local"]}`});
+                }
                 for (const localFile of files) {
-                    const content = await Parser.loadYaml(`${cwd}/${localFile}`, {inputs: value.inputs || {}}, expandVariables);
+                    const content = await Parser.loadYaml(localFile, {inputs: value.inputs || {}}, expandVariables);
                     includeDatas = includeDatas.concat(await this.init(content, opts));
                 }
             } else if (value["project"]) {
@@ -321,6 +320,18 @@ export class ParserIncludes {
             throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }\n${e}`});
         }
     }
+
+    static readonly memoLocalRepoFiles = (() => {
+        const cache = new Map<string, string[]>();
+        return (path: string) => {
+            let result = cache.get(path);
+            if (typeof result !== "undefined") return result;
+
+            result = globby.sync(path, {dot: true, gitignore: true});
+            cache.set(path, result);
+            return result;
+        };
+    })();
 }
 
 export function validateIncludeLocal (filePath: string) {
@@ -344,4 +355,25 @@ export function resolveSemanticVersionRange (range: string, gitTags: string[]) {
         }
     });
     return found;
+}
+
+export function resolveIncludeLocal (pattern: string, cwd: string) {
+    const repoFiles = ParserIncludes.memoLocalRepoFiles(cwd);
+
+    if (!pattern.startsWith("/")) pattern = `/${pattern}`; // Ensure pattern starts with `/`
+    pattern = `${cwd}${pattern}`;
+
+    // escape all special regex metacharacters
+    pattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    // `**` matches anything
+    const anything = ".*?";
+    pattern = pattern.replace(/\\\*\\\*/g, anything);
+
+    // `*` matches anything except for `/`
+    const anything_but_not_slash = "([^/])*?";
+    pattern = pattern.replace(/\\\*/g, anything_but_not_slash);
+
+    const re2 = new RE2(`^${pattern}`);
+    return repoFiles.filter((f: any) => re2.test(f));
 }
