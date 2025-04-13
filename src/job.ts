@@ -15,8 +15,7 @@ import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunner
 import {handler} from "./handler.js";
 import * as yaml from "js-yaml";
 import {Parser} from "./parser.js";
-import globby from "globby";
-import {validateIncludeLocal} from "./parser-includes.js";
+import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
 import terminalLink from "terminal-link";
 
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
@@ -1499,13 +1498,13 @@ export class Job {
             if (include["local"]) {
                 const expandedInclude = Utils.expandText(include["local"], this._variables);
                 validateIncludeLocal(expandedInclude);
-                const files = await globby(expandedInclude.replace(/^\//, ""), {dot: true, cwd});
+                const files = resolveIncludeLocal(expandedInclude, cwd);
                 if (files.length == 0) {
                     throw new AssertionError({message: `Local include file \`${include["local"]}\` specified in \`.${this.name}\` cannot be found!`});
                 }
 
                 for (const file of files) {
-                    const content = await Parser.loadYaml(`${cwd}/${file}`, {});
+                    const content = await Parser.loadYaml(file, {});
                     contents = {
                         ...contents,
                         ...content,
