@@ -1,0 +1,6 @@
+---
+job:
+  script:
+    - echo
+  needs:
+    - job

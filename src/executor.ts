@@ -98,6 +98,7 @@ export class Executor {
                 if (j.when === "manual" && !manuals.includes(j.name)) {
                     throw new AssertionError({message: chalk`{blueBright ${j.name}} is when:manual, its needed by {blueBright ${job.name}}, and not specified in --manual`});
                 }
+                assert(job.name !== j.name, chalk`This GitLab CI configuration is invalid: The pipeline has circular dependencies: self-dependency: {blueBright ${need.job}}.`);
                 toWaitFor.push(j);
             }
         }
