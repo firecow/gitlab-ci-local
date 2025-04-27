@@ -16,6 +16,7 @@ import {handler} from "./handler.js";
 import * as yaml from "js-yaml";
 import {Parser} from "./parser.js";
 import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
+import globby from "globby";
 import terminalLink from "terminal-link";
 
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
@@ -470,7 +471,22 @@ export class Job {
         return this.jobData["cache"] || [];
     }
 
-    public async getUniqueCacheName (cwd: string, expanded: {[key: string]: string}, key: any) {
+    public async getUniqueCacheName (cwd: string, expanded: {[key: string]: string}, cacheIndex: number) {
+        const getCachePrefix = (index: number) => {
+            const prefix = this.jobData["cache"][index]["key"]["prefix"];
+            if (prefix) {
+                return `${index}_${Utils.expandText(prefix, expanded)}-`;
+            };
+
+            const filenames = this.jobData["cache"][index]["key"]["files"].map((p: string) => {
+                const expandP = Utils.expandText(p, expanded);
+                return expandP.split(".")[0];
+            }).join("_");
+            return `${index}_${filenames}-`;
+        };
+
+        const key = this.jobData["cache"][cacheIndex].key;
+
         if (typeof key === "string" || key == null) {
             return Utils.expandText(key ?? "default", expanded);
         }
@@ -482,7 +498,7 @@ export class Job {
             }
             return `${cwd}/${path}`;
         });
-        return "md-" + await Utils.checksumFiles(cwd, files);
+        return getCachePrefix(cacheIndex) + await Utils.checksumFiles(cwd, files);
     }
 
     get beforeScripts (): string[] {
@@ -747,8 +763,8 @@ export class Job {
         if (this.imageName(expanded) && !this.argv.mountCache) return [];
 
         const cmd: string[] = [];
-        for (const c of this.cache) {
-            const uniqueCacheName = await this.getUniqueCacheName(this.argv.cwd, expanded, c.key);
+        for (const [index, c] of this.cache.entries()) {
+            const uniqueCacheName = await this.getUniqueCacheName(this.argv.cwd, expanded, index);
             c.paths.forEach((p) => {
                 const path = Utils.expandText(p, expanded);
                 writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright mounting cache} for path ${path}\n`);
@@ -1116,11 +1132,11 @@ export class Job {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
 
-        for (const c of this.cache) {
+        for (const [index, c] of this.cache.entries()) {
             if (!["pull", "pull-push"].includes(c.policy)) return;
 
             const time = process.hrtime();
-            const cacheName = await this.getUniqueCacheName(cwd, expanded, c.key);
+            const cacheName = await this.getUniqueCacheName(cwd, expanded, index);
             const cacheFolder = `${cwd}/${stateDir}/cache/${cacheName}`;
             if (!await fs.pathExists(cacheFolder)) {
                 continue;
@@ -1177,30 +1193,56 @@ export class Job {
         const cachePath = this.imageName(expanded) ? "/cache" : "../../cache";
 
         let time, endTime;
-        for (const c of this.cache) {
+        for (const [index, c] of this.cache.entries()) {
             if (!["push", "pull-push"].includes(c.policy)) return;
             if ("on_success" === c.when && this.jobStatus !== "success") return;
             if ("on_failure" === c.when && this.jobStatus === "success") return;
-            const cacheName = await this.getUniqueCacheName(cwd, expanded, c.key);
+            const cacheName = await this.getUniqueCacheName(cwd, expanded, index);
+
+            let paths = "";
             for (const path of c.paths) {
-                time = process.hrtime();
-                const expandedPath = Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
-                let cmd = "shopt -s globstar nullglob dotglob\n";
-                cmd += `mkdir -p ${cachePath}/${cacheName}\n`;
-                cmd += `rsync -Ra ${expandedPath} ${cachePath}/${cacheName}/. || true\n`;
+                if (!Utils.isSubpath(path, this.argv.cwd, this.argv.cwd)) continue;
 
-                await Mutex.exclusive(cacheName, async () => {
-                    await this.copyOut(cmd, stateDir, "cache", []);
-                });
-                endTime = process.hrtime(time);
-
-                const readdir = await fs.readdir(`${this.argv.cwd}/${stateDir}/cache/${cacheName}`);
-                if (readdir.length === 0) {
-                    writeStreams.stdout(chalk`${this.formattedJobName} {yellow !! no cache was copied for ${path} !!}\n`);
-                } else {
-                    writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright exported cache ${expandedPath} '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
-                }
+                paths += " " + Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
             }
+
+            time = process.hrtime();
+            let cmd = "shopt -s globstar nullglob dotglob\n";
+            cmd += `mkdir -p ${cachePath}/${cacheName}\n`;
+            cmd += `rsync -Ra ${paths} ${cachePath}/${cacheName}/. || true\n`;
+
+            await Mutex.exclusive(cacheName, async () => {
+                await this.copyOut(cmd, stateDir, "cache", []);
+            });
+            endTime = process.hrtime(time);
+
+            for (const _path of c.paths) {
+                if (!Utils.isSubpath(_path, this.argv.cwd, this.argv.cwd)) {
+                    writeStreams.stdout(chalk`{yellow WARNING: processPath: artifact path is not a subpath of project directory: ${_path}}\n`);
+                    continue;
+                }
+
+                let path = _path;
+                if (globby.hasMagic(path) && !path.endsWith("*")) {
+                    path = `${path}/**`;
+                }
+
+                let numOfFiles = globby.sync(path, {
+                    dot: true,
+                    onlyFiles: false,
+                    cwd: `${this.argv.cwd}/${stateDir}/cache/${cacheName}`,
+                }).length;
+
+                if (numOfFiles == 0) {
+                    writeStreams.stdout(chalk`{yellow WARNING: ${path}: no matching files. Ensure that the artifact path is relative to the working directory}\n`);
+                    continue;
+                }
+
+                if (!globby.hasMagic(path)) numOfFiles++; // add one because the pattern itself is a folder
+
+                writeStreams.stdout(`${_path}: found ${numOfFiles} artifact files and directories\n`);
+            }
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright cache created in '${stateDir}/cache/${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
     }
 

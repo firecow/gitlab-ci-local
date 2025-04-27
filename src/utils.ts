@@ -328,6 +328,25 @@ export class Utils {
         });
     }
 
+    static isSubpath (lhs: string, rhs: string, cwd: string = process.cwd()) {
+        let absLhs = "";
+        if (path.isAbsolute(lhs)) {
+            absLhs = lhs;
+        } else {
+            absLhs = path.resolve(cwd, lhs);
+        }
+
+        let absRhs = "";
+        if (path.isAbsolute(rhs)) {
+            absRhs = rhs;
+        } else {
+            absRhs = path.resolve(cwd, rhs);
+        }
+
+        const relative = path.relative(absRhs, absLhs);
+        return !relative.startsWith("..");
+    }
+
     static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
         await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
