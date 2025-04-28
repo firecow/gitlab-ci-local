@@ -1,0 +1,26 @@
+---
+development-cache:
+  image: busybox
+  script:
+    - mkdir -p cached
+    - echo "development" > cached/value.txt
+  cache:
+    paths:
+      - cached/
+    key:
+      prefix: development
+      files:
+        - Dockerfile
+
+production-cache:
+  image: busybox
+  script:
+    - mkdir -p cached
+    - echo "production" > cached/value.txt
+  cache:
+    paths:
+      - cached/
+    key:
+      prefix: production
+      files:
+        - Dockerfile
