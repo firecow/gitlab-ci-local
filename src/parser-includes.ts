@@ -103,29 +103,37 @@ export class ParserIncludes {
                 }
             } else if (value["project"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
-                    const fileDoc = await Parser.loadYaml(
-                        `${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`
-                        , {inputs: value.inputs || {}}
-                        , expandVariables);
-                    // Expand local includes inside a "project"-like include
-                    fileDoc["include"] = this.expandInclude(fileDoc["include"], opts.variables);
-                    fileDoc["include"].forEach((inner: any, i: number) => {
-                        if (!inner["local"]) return;
-                        if (inner["rules"]) {
-                            const rulesResult = Utils.getRulesResult({argv, cwd: opts.cwd, variables: opts.variables, rules: inner["rules"]}, gitData);
-                            if (rulesResult.when === "never") {
-                                return;
+                    let filesPath = `${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`;
+                    let filePaths= resolveIncludeLocal(filesPath, cwd)
+                    for (const filePath of filePaths) {
+                        const fileDoc = await Parser.loadYaml(filePath
+                            , {inputs: value.inputs || {}}
+                            , expandVariables);
+                        // Expand local includes inside a "project"-like include
+                        fileDoc["include"] = this.expandInclude(fileDoc["include"], opts.variables);
+                        fileDoc["include"].forEach((inner: any, i: number) => {
+                            if (!inner["local"]) return;
+                            if (inner["rules"]) {
+                                const rulesResult = Utils.getRulesResult({
+                                    argv,
+                                    cwd: opts.cwd,
+                                    variables: opts.variables,
+                                    rules: inner["rules"]
+                                }, gitData);
+                                if (rulesResult.when === "never") {
+                                    return;
+                                }
                             }
-                        }
-                        fileDoc["include"][i] = {
-                            project: value["project"],
-                            file: inner["local"].replace(/^\//, ""),
-                            ref: value["ref"],
-                            inputs: inner.inputs || {},
-                        };
-                    });
+                            fileDoc["include"][i] = {
+                                project: value["project"],
+                                file: inner["local"].replace(/^\//, ""),
+                                ref: value["ref"],
+                                inputs: inner.inputs || {},
+                            };
+                        });
 
-                    includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
+                        includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
+                    }
                 }
             } else if (value["component"]) {
                 const {domain, port, projectPath, componentName, ref, isLocalComponent} = this.parseIncludeComponent(value["component"], gitData);

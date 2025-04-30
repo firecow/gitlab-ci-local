@@ -1,0 +1,6 @@
+---
+configs-deploy-job-1:
+  stage: deploy
+  script:
+    - echo "Deploy something"
+
