@@ -1,0 +1,5 @@
+---
+configs-test-job-1:
+  stage: test
+  script:
+    - echo "Test something"
