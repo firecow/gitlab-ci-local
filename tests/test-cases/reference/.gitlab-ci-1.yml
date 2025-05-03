@@ -1,0 +1,15 @@
+---
+.somevariables:
+  variables:
+    HESTHEST: ponypony
+
+
+.something:
+  variables: !reference [.somevariables, variables]
+
+test-job:
+  extends: [.something]
+  variables:
+    NICENESS: byrdalos
+  script:
+    - echo ${NICENESS}
