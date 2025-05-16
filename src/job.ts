@@ -476,7 +476,7 @@ export class Job {
             const prefix = this.jobData["cache"][index]["key"]["prefix"];
             if (prefix) {
                 return `${index}_${Utils.expandText(prefix, expanded)}-`;
-            };
+            }
 
             const filenames = this.jobData["cache"][index]["key"]["files"].map((p: string) => {
                 const expandP = Utils.expandText(p, expanded);
@@ -805,6 +805,8 @@ export class Job {
         if (scripts.length === 0 || scripts[0] == null) return 0;
 
         if (message.length > 0) writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright ${message}}\n`);
+
+        await fs.remove(`${cwd}/${stateDir}/artifacts/${safeJobName}`);
 
         // Copy git tracked files to build folder if shell isolation enabled.
         if (!imageName && this.argv.shellIsolation) {
