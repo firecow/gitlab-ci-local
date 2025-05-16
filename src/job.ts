@@ -1013,8 +1013,14 @@ export class Job {
                 cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
                 cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
             }
-            void cp.on("exit", (code) => resolve(code ?? 0));
-            void cp.on("error", (err) => reject(err));
+            void cp.on("exit", (code) => {
+                clearTimeout(this._longRunningSilentTimeout);
+                return resolve(code ?? 0);},
+            );
+            void cp.on("error", (err) => {
+                clearTimeout(this._longRunningSilentTimeout);
+                return reject(err);
+            });
 
             if (imageName) {
                 cp.stdin?.end(". /gcl-cmd");
