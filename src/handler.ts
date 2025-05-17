@@ -67,7 +67,6 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
         if (argv.needs || argv.onlyNeeds) {
-            await fs.remove(`${cwd}/${stateDir}/artifacts`);
             await state.incrementPipelineIid(cwd, stateDir);
         }
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
@@ -88,7 +87,6 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     } else {
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
-        if (childPipelineDepth == 0) await fs.remove(`${cwd}/${stateDir}/artifacts`);
         await state.incrementPipelineIid(cwd, stateDir);
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
