@@ -845,6 +845,10 @@ export class Job {
                 dockerCmd += "--user 0:0 ";
             }
 
+            if (this.argv.userns != undefined) {
+                dockerCmd += `--userns=${this.argv.userns} `;
+            }
+
             if (this.argv.containerMacAddress) {
                 dockerCmd += `--mac-address "${this.argv.containerMacAddress}" `;
             }
@@ -1403,6 +1407,10 @@ export class Job {
 
         if (this.argv.umask) {
             dockerCmd += "--user 0:0 ";
+        }
+
+        if (this.argv.userns != undefined) {
+            dockerCmd += `--userns=${this.argv.userns} `;
         }
 
         if (this.argv.privileged) {

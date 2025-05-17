@@ -202,6 +202,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Sets docker user to 0:0",
             requiresArg: false,
         })
+        .option("userns", {
+            type: "string",
+            description: "Set docker executor userns option",
+            requiresArg: false,
+        })
         .option("privileged", {
             type: "boolean",
             description: "Set docker executor to privileged mode",
