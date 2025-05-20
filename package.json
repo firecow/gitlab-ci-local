@@ -4,7 +4,7 @@
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.59.0",
+  "version": "4.60.0",
   "scripts": {
     "esbuild": "esbuild src/index.ts --outfile=bin/index.cjs --bundle --platform=node --format=cjs --minify --external:yargs --external:re2 --sourcemap=inline",
     "pkg-linux": "npx tsx scripts/install-re2-bin.ts --platform linux --platform-arch=x64 && pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
