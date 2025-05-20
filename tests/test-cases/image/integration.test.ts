@@ -135,3 +135,17 @@ test.concurrent("pull invalid image", async () => {
 
     await cleanupJobResources(jobs);
 });
+
+test.concurrent("no variable substitution in entrpoint", async () => {
+    const writeStreams = new WriteStreamsMock();
+
+    await handler({
+        cwd: "tests/test-cases/image",
+        job: ["image-entrypoint-with-variables"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright image-entrypoint-with-variables} {greenBright >} success`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});

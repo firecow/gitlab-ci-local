@@ -53,6 +53,10 @@ export class Utils {
         });
     }
 
+    static safeBashString (s: string) {
+        return `'${s.replace(/'/g, "'\"'\"'")}'`; // replaces `'` with `'"'"'`
+    }
+
     static forEachRealJob (gitlabData: any, callback: (jobName: string, jobData: any) => void) {
         for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
             if (Job.illegalJobNames.has(jobName) || jobName[0].startsWith(".")) {

@@ -911,11 +911,7 @@ export class Job {
             }
 
             if (this.imageEntrypoint) {
-                if (this.imageEntrypoint[0] == "") {
-                    dockerCmd += "--entrypoint '' ";
-                } else {
-                    dockerCmd += `--entrypoint ${this.imageEntrypoint[0]} `;
-                }
+                dockerCmd += `--entrypoint ${Utils.safeBashString(this.imageEntrypoint[0])} `;
             }
 
             dockerCmd += `${(await this.mountCacheCmd(writeStreams, expanded)).join(" ")} `;
@@ -923,7 +919,7 @@ export class Job {
 
             if (this.imageEntrypoint?.length ?? 0 > 1) {
                 this.imageEntrypoint?.slice(1).forEach((e) => {
-                    dockerCmd += `"${e}" `;
+                    dockerCmd += `${Utils.safeBashString(e)} `;
                 });
             }
 
@@ -1446,11 +1442,7 @@ export class Job {
 
         const serviceEntrypoint = service.entrypoint;
         if (serviceEntrypoint) {
-            if (serviceEntrypoint[0] == "") {
-                dockerCmd += "--entrypoint '' ";
-            } else {
-                dockerCmd += `--entrypoint ${serviceEntrypoint[0]} `;
-            }
+            dockerCmd += `--entrypoint ${Utils.safeBashString(serviceEntrypoint[0])} `;
         }
         dockerCmd += `--volume ${this.buildVolumeName}:${this.ciProjectDir} `;
         dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
@@ -1469,9 +1461,7 @@ export class Job {
 
         if (serviceEntrypoint?.length ?? 0 > 1) {
             serviceEntrypoint?.slice(1).forEach((e) => {
-                dockerCmd += `'${e
-                    .replace(/'/g, "'\"'\"'") // replaces `'` with `'"'"'`
-                }' `;
+                dockerCmd += `${Utils.safeBashString(e)} `;
             });
         }
         (service.command ?? []).forEach((e) => dockerCmd += `"${e.replace(/\$/g, "\\$")}" `);
