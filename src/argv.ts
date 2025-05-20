@@ -207,6 +207,10 @@ export class Argv {
         return this.map.get("umask") ?? true;
     }
 
+    get userns (): string | undefined {
+        return this.map.get("userns");
+    }
+
     get privileged (): boolean {
         return this.map.get("privileged") ?? false;
     }
