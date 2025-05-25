@@ -63,3 +63,17 @@ image-user:
       user: nobody
   script:
     - id -u
+
+image-entrypoint-with-variables:
+  variables:
+    FOO: BAR
+  image:
+    name: alpine
+    entrypoint:
+      - sh
+      - -c
+      - |
+        if [ -z "$FOO" ]; then >&2 echo FOO is not defined in entrypoint; exit 1; fi
+        sh "$@"
+  script:
+    - echo "success"
