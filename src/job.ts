@@ -1216,8 +1216,8 @@ export class Job {
 
             time = process.hrtime();
             let cmd = "shopt -s globstar nullglob dotglob\n";
-            cmd += `mkdir -p ${cachePath}/${cacheName}\n`;
-            cmd += `rsync -Ra ${paths} ${cachePath}/${cacheName}/. || true\n`;
+            cmd += `mkdir -p ${Utils.safeBashString(cachePath + "/" + cacheName)}\n`;
+            cmd += `rsync -Ra ${paths} ${Utils.safeBashString(cachePath + "/" + cacheName + "/.")} || true\n`;
 
             await Mutex.exclusive(cacheName, async () => {
                 await this.copyOut(cmd, stateDir, "cache", []);
@@ -1336,7 +1336,7 @@ export class Job {
         await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName(this._variables)) {
-            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${cmd}"`, cwd);
+            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${cmd.replace(/"/g, "\\\"")}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
             await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);

@@ -45,3 +45,21 @@ test("cache-key-files <cache-key-file file dont exist>", async () => {
     const expected = "cache-key-file file dont exist cache created in '.gitlab-ci-local/cache/0_no-such-file-18bbe9d7603e540e28418cf4a072938ac477a2c1'";
     expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
 });
+
+test("cache-key-files file containing `*` should not crash", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/cache-key-files",
+        file: ".gitlab-ci-1.yml",
+        noColor: true,
+    }, writeStreams);
+});
+
+test("cache-key-files file containing `'` should not crash", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/cache-key-files",
+        file: ".gitlab-ci-2.yml",
+        noColor: true,
+    }, writeStreams);
+});

@@ -1,0 +1,11 @@
+---
+test:
+  image: bash
+  cache:
+    paths:
+      - fakepackage.json
+    key:
+      files:
+        - fake*
+  script:
+    - echo "Wiiiii"
