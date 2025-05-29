@@ -219,7 +219,11 @@ export class ParserIncludes {
 
         for (const entry of include) {
             for (const [key, value] of Object.entries(entry)) {
-                entry[key] = Utils.expandText(value, variables);
+                if (Array.isArray(value)) {
+                    entry[key] = value.map((v) => Utils.expandText(v, variables));
+                } else {
+                    entry[key] = Utils.expandText(value, variables);
+                }
             }
         }
 
