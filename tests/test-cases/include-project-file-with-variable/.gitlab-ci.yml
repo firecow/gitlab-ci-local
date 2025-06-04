@@ -1,0 +1,5 @@
+---
+include:
+  - project: test-group/gitlab-ci-local-test
+    file:
+      - $FILE_NAME.yml
