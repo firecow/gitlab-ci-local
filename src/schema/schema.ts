@@ -1,35 +1,45 @@
 export const schema = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://gitlab.com/.gitlab-ci.yml",
-    "markdownDescription": "Gitlab has a built-in solution for doing CI called Gitlab CI. It is configured by supplying a file called `.gitlab-ci.yml`, which will list all the jobs that are going to run for the project. A full list of all options can be found [here](https://docs.gitlab.com/ee/ci/yaml). [Learn More](https://docs.gitlab.com/ee/ci/index.html).",
+    "markdownDescription": "GitLab has a built-in solution for doing CI called GitLab CI. It is configured by supplying a file called `.gitlab-ci.yml`, which will list all the jobs that are going to run for the project. A full list of all options can be found [here](https://docs.gitlab.com/ci/yaml/). [Learn More](https://docs.gitlab.com/ci/).",
     "type": "object",
     "properties": {
         "$schema": {
             "type": "string",
             "format": "uri",
         },
+        "spec": {
+            "type": "object",
+            "markdownDescription": "Specification for pipeline configuration. Must be declared at the top of a configuration file, in a header section separated from the rest of the configuration with `---`. [Learn More](https://docs.gitlab.com/ci/yaml/#spec).",
+            "properties": {
+                "inputs": {
+                    "$ref": "#/definitions/inputParameters",
+                },
+            },
+            "additionalProperties": false,
+        },
         "image": {
             "$ref": "#/definitions/image",
-            "markdownDescription": "Defining `image` globally is deprecated. Use [`default`](https://docs.gitlab.com/ee/ci/yaml/#default) instead. [Learn more](https://docs.gitlab.com/ee/ci/yaml/#globally-defined-image-services-cache-before_script-after_script).",
+            "markdownDescription": "Defining `image` globally is deprecated. Use [`default`](https://docs.gitlab.com/ci/yaml/#default) instead. [Learn more](https://docs.gitlab.com/ci/yaml/#globally-defined-image-services-cache-before_script-after_script).",
         },
         "services": {
             "$ref": "#/definitions/services",
-            "markdownDescription": "Defining `services` globally is deprecated. Use [`default`](https://docs.gitlab.com/ee/ci/yaml/#default) instead. [Learn more](https://docs.gitlab.com/ee/ci/yaml/#globally-defined-image-services-cache-before_script-after_script).",
+            "markdownDescription": "Defining `services` globally is deprecated. Use [`default`](https://docs.gitlab.com/ci/yaml/#default) instead. [Learn more](https://docs.gitlab.com/ci/yaml/#globally-defined-image-services-cache-before_script-after_script).",
         },
         "before_script": {
             "$ref": "#/definitions/before_script",
-            "markdownDescription": "Defining `before_script` globally is deprecated. Use [`default`](https://docs.gitlab.com/ee/ci/yaml/#default) instead. [Learn more](https://docs.gitlab.com/ee/ci/yaml/#globally-defined-image-services-cache-before_script-after_script).",
+            "markdownDescription": "Defining `before_script` globally is deprecated. Use [`default`](https://docs.gitlab.com/ci/yaml/#default) instead. [Learn more](https://docs.gitlab.com/ci/yaml/#globally-defined-image-services-cache-before_script-after_script).",
         },
         "after_script": {
             "$ref": "#/definitions/after_script",
-            "markdownDescription": "Defining `after_script` globally is deprecated. Use [`default`](https://docs.gitlab.com/ee/ci/yaml/#default) instead. [Learn more](https://docs.gitlab.com/ee/ci/yaml/#globally-defined-image-services-cache-before_script-after_script).",
+            "markdownDescription": "Defining `after_script` globally is deprecated. Use [`default`](https://docs.gitlab.com/ci/yaml/#default) instead. [Learn more](https://docs.gitlab.com/ci/yaml/#globally-defined-image-services-cache-before_script-after_script).",
         },
         "variables": {
             "$ref": "#/definitions/globalVariables",
         },
         "cache": {
             "$ref": "#/definitions/cache",
-            "markdownDescription": "Defining `cache` globally is deprecated. Use [`default`](https://docs.gitlab.com/ee/ci/yaml/#default) instead. [Learn more](https://docs.gitlab.com/ee/ci/yaml/#globally-defined-image-services-cache-before_script-after_script).",
+            "markdownDescription": "Defining `cache` globally is deprecated. Use [`default`](https://docs.gitlab.com/ci/yaml/#default) instead. [Learn more](https://docs.gitlab.com/ci/yaml/#globally-defined-image-services-cache-before_script-after_script).",
         },
         "!reference": {
             "$ref": "#/definitions/!reference",
@@ -84,7 +94,7 @@ export const schema = {
         },
         "stages": {
             "type": "array",
-            "markdownDescription": "Groups jobs into stages. All jobs in one stage must complete before next stage is executed. Defaults to ['build', 'test', 'deploy']. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#stages).",
+            "markdownDescription": "Groups jobs into stages. All jobs in one stage must complete before next stage is executed. Defaults to ['build', 'test', 'deploy']. [Learn More](https://docs.gitlab.com/ci/yaml/#stages).",
             "default": [
                 "build",
                 "test",
@@ -107,7 +117,7 @@ export const schema = {
             "minItems": 1,
         },
         "include": {
-            "markdownDescription": "Can be `IncludeItem` or `IncludeItem[]`. Each `IncludeItem` will be a string, or an object with properties for the method if including external YAML file. The external content will be fetched, included and evaluated along the `.gitlab-ci.yml`. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#include).",
+            "markdownDescription": "Can be `IncludeItem` or `IncludeItem[]`. Each `IncludeItem` will be a string, or an object with properties for the method if including external YAML file. The external content will be fetched, included and evaluated along the `.gitlab-ci.yml`. [Learn More](https://docs.gitlab.com/ci/yaml/#include).",
             "oneOf": [
                 {
                     "$ref": "#/definitions/include_item",
@@ -122,7 +132,7 @@ export const schema = {
         },
         "pages": {
             "$ref": "#/definitions/job",
-            "markdownDescription": "A special job used to upload static sites to Gitlab pages. Requires a `public/` directory with `artifacts.path` pointing to it. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#pages).",
+            "markdownDescription": "A special job used to upload static sites to GitLab pages. Requires a `public/` directory with `artifacts.path` pointing to it. [Learn More](https://docs.gitlab.com/ci/yaml/#pages).",
         },
         "workflow": {
             "type": "object",
@@ -200,12 +210,12 @@ export const schema = {
                 "object",
                 "null",
             ],
-            "markdownDescription": "Used to specify a list of files and directories that should be attached to the job if it succeeds. Artifacts are sent to Gitlab where they can be downloaded. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifacts).",
+            "markdownDescription": "Used to specify a list of files and directories that should be attached to the job if it succeeds. Artifacts are sent to GitLab where they can be downloaded. [Learn More](https://docs.gitlab.com/ci/yaml/#artifacts).",
             "additionalProperties": false,
             "properties": {
                 "paths": {
                     "type": "array",
-                    "markdownDescription": "A list of paths to files/folders that should be included in the artifact. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactspaths).",
+                    "markdownDescription": "A list of paths to files/folders that should be included in the artifact. [Learn More](https://docs.gitlab.com/ci/yaml/#artifactspaths).",
                     "items": {
                         "type": "string",
                     },
@@ -213,7 +223,7 @@ export const schema = {
                 },
                 "exclude": {
                     "type": "array",
-                    "markdownDescription": "A list of paths to files/folders that should be excluded in the artifact. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactsexclude).",
+                    "markdownDescription": "A list of paths to files/folders that should be excluded in the artifact. [Learn More](https://docs.gitlab.com/ci/yaml/#artifactsexclude).",
                     "items": {
                         "type": "string",
                     },
@@ -221,19 +231,19 @@ export const schema = {
                 },
                 "expose_as": {
                     "type": "string",
-                    "markdownDescription": "Can be used to expose job artifacts in the merge request UI. GitLab will add a link <expose_as> to the relevant merge request that points to the artifact. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactsexpose_as).",
+                    "markdownDescription": "Can be used to expose job artifacts in the merge request UI. GitLab will add a link <expose_as> to the relevant merge request that points to the artifact. [Learn More](https://docs.gitlab.com/ci/yaml/#artifactsexpose_as).",
                 },
                 "name": {
                     "type": "string",
-                    "markdownDescription": "Name for the archive created on job success. Can use variables in the name, e.g. '$CI_JOB_NAME' [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactsname).",
+                    "markdownDescription": "Name for the archive created on job success. Can use variables in the name, e.g. '$CI_JOB_NAME' [Learn More](https://docs.gitlab.com/ci/yaml/#artifactsname).",
                 },
                 "untracked": {
                     "type": "boolean",
-                    "markdownDescription": "Whether to add all untracked files (along with 'artifacts.paths') to the artifact. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactsuntracked).",
+                    "markdownDescription": "Whether to add all untracked files (along with 'artifacts.paths') to the artifact. [Learn More](https://docs.gitlab.com/ci/yaml/#artifactsuntracked).",
                     "default": false,
                 },
                 "when": {
-                    "markdownDescription": "Configure when artifacts are uploaded depended on job status. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactswhen).",
+                    "markdownDescription": "Configure when artifacts are uploaded depended on job status. [Learn More](https://docs.gitlab.com/ci/yaml/#artifactswhen).",
                     "default": "on_success",
                     "type": "string",
                     "enum": [
@@ -243,7 +253,7 @@ export const schema = {
                     ],
                 },
                 "access": {
-                    "markdownDescription": "Configure who can access the artifacts. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactsaccess).",
+                    "markdownDescription": "Configure who can access the artifacts. [Learn More](https://docs.gitlab.com/ci/yaml/#artifactsaccess).",
                     "default": "all",
                     "type": "string",
                     "enum": [
@@ -254,12 +264,12 @@ export const schema = {
                 },
                 "expire_in": {
                     "type": "string",
-                    "markdownDescription": "How long artifacts should be kept. They are saved 30 days by default. Artifacts that have expired are removed periodically via cron job. Supports a wide variety of formats, e.g. '1 week', '3 mins 4 sec', '2 hrs 20 min', '2h20min', '6 mos 1 day', '47 yrs 6 mos and 4d', '3 weeks and 2 days'. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactsexpire_in).",
+                    "markdownDescription": "How long artifacts should be kept. They are saved 30 days by default. Artifacts that have expired are removed periodically via cron job. Supports a wide variety of formats, e.g. '1 week', '3 mins 4 sec', '2 hrs 20 min', '2h20min', '6 mos 1 day', '47 yrs 6 mos and 4d', '3 weeks and 2 days'. [Learn More](https://docs.gitlab.com/ci/yaml/#artifactsexpire_in).",
                     "default": "30 days",
                 },
                 "reports": {
                     "type": "object",
-                    "markdownDescription": "Reports will be uploaded as artifacts, and often displayed in the Gitlab UI, such as in merge requests. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#artifactsreports).",
+                    "markdownDescription": "Reports will be uploaded as artifacts, and often displayed in the GitLab UI, such as in merge requests. [Learn More](https://docs.gitlab.com/ci/yaml/#artifactsreports).",
                     "additionalProperties": false,
                     "properties": {
                         "annotations": {
@@ -362,11 +372,11 @@ export const schema = {
                         },
                         "cyclonedx": {
                             "$ref": "#/definitions/string_file_list",
-                            "markdownDescription": "Path to file or list of files with cyclonedx report(s). [Learn More](https://docs.gitlab.com/ee/ci/yaml/artifacts_reports.html#artifactsreportscyclonedx).",
+                            "markdownDescription": "Path to file or list of files with cyclonedx report(s). [Learn More](https://docs.gitlab.com/ci/yaml/artifacts_reports/#artifactsreportscyclonedx).",
                         },
                         "load_performance": {
                             "$ref": "#/definitions/string_file_list",
-                            "markdownDescription": "Path to file or list of files with load performance testing report(s). [Learn More](https://docs.gitlab.com/ee/ci/yaml/artifacts_reports.html#artifactsreportsload_performance).",
+                            "markdownDescription": "Path to file or list of files with load performance testing report(s). [Learn More](https://docs.gitlab.com/ci/yaml/artifacts_reports/#artifactsreportsload_performance).",
                         },
                         "repository_xray": {
                             "$ref": "#/definitions/string_file_list",
@@ -388,6 +398,156 @@ export const schema = {
                     },
                 },
             ],
+        },
+        "inputParameters": {
+            "type": "object",
+            "markdownDescription": "Define parameters that can be populated in reusable CI/CD configuration files when added to a pipeline. [Learn More](https://docs.gitlab.com/ci/inputs/).",
+            "patternProperties": {
+                ".*": {
+                    "markdownDescription": "**Input Configuration**\n\nAvailable properties:\n- `type`: string (default), array, boolean, or number\n- `description`: Human-readable explanation of the parameter (supports Markdown)\n- `options`: List of allowed values\n- `default`: Value to use when not specified (makes input optional)\n- `regex`: Pattern that string values must match",
+                    "oneOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "markdownDescription": "Force a specific input type. Defaults to 'string' when not specified. [Learn More](https://docs.gitlab.com/ci/inputs/#input-types).",
+                                    "enum": [
+                                        "array",
+                                        "boolean",
+                                        "number",
+                                        "string",
+                                    ],
+                                    "default": "string",
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "markdownDescription": "Give a description to a specific input. The description does not affect the input, but can help people understand the input details or expected values. Supports markdown.",
+                                    "maxLength": 1024,
+                                },
+                                "options": {
+                                    "type": "array",
+                                    "markdownDescription": "Specify a list of allowed values for an input.",
+                                    "items": {
+                                        "oneOf": [
+                                            {
+                                                "type": "string",
+                                            },
+                                            {
+                                                "type": "number",
+                                            },
+                                            {
+                                                "type": "boolean",
+                                            },
+                                        ],
+                                    },
+                                },
+                                "regex": {
+                                    "type": "string",
+                                    "markdownDescription": "Specify a regular expression that the input must match. Only impacts inputs with a `type` of `string`.",
+                                },
+                                "default": {
+                                    "markdownDescription": "Define default values for inputs when not specified. When you specify a default, the inputs are no longer mandatory.",
+                                },
+                            },
+                            "allOf": [
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "type": {
+                                                "enum": [
+                                                    "string",
+                                                ],
+                                            },
+                                        },
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "default": {
+                                                "type": [
+                                                    "string",
+                                                    "null",
+                                                ],
+                                            },
+                                        },
+                                    },
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "type": {
+                                                "enum": [
+                                                    "number",
+                                                ],
+                                            },
+                                        },
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "default": {
+                                                "type": [
+                                                    "number",
+                                                    "null",
+                                                ],
+                                            },
+                                        },
+                                    },
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "type": {
+                                                "enum": [
+                                                    "boolean",
+                                                ],
+                                            },
+                                        },
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "default": {
+                                                "type": [
+                                                    "boolean",
+                                                    "null",
+                                                ],
+                                            },
+                                        },
+                                    },
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "type": {
+                                                "enum": [
+                                                    "array",
+                                                ],
+                                            },
+                                        },
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "default": {
+                                                "oneOf": [
+                                                    {
+                                                        "type": "array",
+                                                    },
+                                                    {
+                                                        "type": "null",
+                                                    },
+                                                ],
+                                            },
+                                        },
+                                    },
+                                },
+                            ],
+                            "additionalProperties": false,
+                        },
+                        {
+                            "type": "null",
+                        },
+                    ],
+                },
+            },
         },
         "include_item": {
             "oneOf": [
@@ -427,7 +587,7 @@ export const schema = {
                     "additionalProperties": false,
                     "properties": {
                         "project": {
-                            "description": "Path to the project, e.g. `group/project`, or `group/sub-group/project` [Learn more](https://docs.gitlab.com/ee/ci/yaml/index.html#includefile).",
+                            "description": "Path to the project, e.g. `group/project`, or `group/sub-group/project` [Learn more](https://docs.gitlab.com/ci/yaml/#includeproject).",
                             "type": "string",
                         },
                         "ref": {
@@ -510,6 +670,10 @@ export const schema = {
                             "type": "string",
                             "format": "uri-reference",
                         },
+                        "integrity": {
+                            "description": "SHA256 integrity hash of the remote file content.",
+                            "type": "string",
+                        },
                         "rules": {
                             "$ref": "#/definitions/includeRules",
                         },
@@ -539,7 +703,7 @@ export const schema = {
                 },
                 {
                     "type": "object",
-                    "description": "Specifies the docker image to use for the job or globally for all jobs. Job configuration takes precedence over global setting. Requires a certain kind of Gitlab runner executor.",
+                    "description": "Specifies the docker image to use for the job or globally for all jobs. Job configuration takes precedence over global setting. Requires a certain kind of GitLab runner executor.",
                     "additionalProperties": false,
                     "properties": {
                         "name": {
@@ -554,7 +718,7 @@ export const schema = {
                         },
                         "docker": {
                             "type": "object",
-                            "markdownDescription": "Options to pass to Runners Docker Executor. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#imagedocker)",
+                            "markdownDescription": "Options to pass to Runners Docker Executor. [Learn More](https://docs.gitlab.com/ci/yaml/#imagedocker)",
                             "additionalProperties": false,
                             "properties": {
                                 "platform": {
@@ -570,8 +734,24 @@ export const schema = {
                                 },
                             },
                         },
+                        "kubernetes": {
+                            "type": "object",
+                            "markdownDescription": "Options to pass to Runners Kubernetes Executor. [Learn More](https://docs.gitlab.com/ci/yaml/#imagekubernetes)",
+                            "additionalProperties": false,
+                            "properties": {
+                                "user": {
+                                    "type": [
+                                        "string",
+                                        "integer",
+                                    ],
+                                    "minLength": 1,
+                                    "maxLength": 255,
+                                    "description": "Username or UID to use for the container. It also supports the UID:GID format.",
+                                },
+                            },
+                        },
                         "pull_policy": {
-                            "markdownDescription": "Specifies how to pull the image in Runner. It can be one of `always`, `never` or `if-not-present`. The default value is `always`. [Learn more](https://docs.gitlab.com/ee/ci/yaml/#imagepull_policy).",
+                            "markdownDescription": "Specifies how to pull the image in Runner. It can be one of `always`, `never` or `if-not-present`. The default value is `always`. [Learn more](https://docs.gitlab.com/ci/yaml/#imagepull_policy).",
                             "default": "always",
                             "oneOf": [
                                 {
@@ -603,11 +783,11 @@ export const schema = {
                     ],
                 },
             ],
-            "markdownDescription": "Specifies the docker image to use for the job or globally for all jobs. Job configuration takes precedence over global setting. Requires a certain kind of Gitlab runner executor. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#image).",
+            "markdownDescription": "Specifies the docker image to use for the job or globally for all jobs. Job configuration takes precedence over global setting. Requires a certain kind of GitLab runner executor. [Learn More](https://docs.gitlab.com/ci/yaml/#image).",
         },
         "services": {
             "type": "array",
-            "markdownDescription": "Similar to `image` property, but will link the specified services to the `image` container. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#services).",
+            "markdownDescription": "Similar to `image` property, but will link the specified services to the `image` container. [Learn More](https://docs.gitlab.com/ci/yaml/#services).",
             "items": {
                 "oneOf": [
                     {
@@ -627,7 +807,7 @@ export const schema = {
                             },
                             "entrypoint": {
                                 "type": "array",
-                                "markdownDescription": "Command or script that should be executed as the container's entrypoint. It will be translated to Docker's --entrypoint option while creating the container. The syntax is similar to Dockerfile's ENTRYPOINT directive, where each shell token is a separate string in the array. [Learn More](https://docs.gitlab.com/ee/ci/services/index.html#available-settings-for-services)",
+                                "markdownDescription": "Command or script that should be executed as the container's entrypoint. It will be translated to Docker's --entrypoint option while creating the container. The syntax is similar to Dockerfile's ENTRYPOINT directive, where each shell token is a separate string in the array. [Learn More](https://docs.gitlab.com/ci/services/#available-settings-for-services)",
                                 "minItems": 1,
                                 "items": {
                                     "type": "string",
@@ -635,7 +815,7 @@ export const schema = {
                             },
                             "docker": {
                                 "type": "object",
-                                "markdownDescription": "Options to pass to Runners Docker Executor. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#servicesdocker)",
+                                "markdownDescription": "Options to pass to Runners Docker Executor. [Learn More](https://docs.gitlab.com/ci/yaml/#servicesdocker)",
                                 "additionalProperties": false,
                                 "properties": {
                                     "platform": {
@@ -651,8 +831,24 @@ export const schema = {
                                     },
                                 },
                             },
+                            "kubernetes": {
+                                "type": "object",
+                                "markdownDescription": "Options to pass to Runners Kubernetes Executor. [Learn More](https://docs.gitlab.com/ci/yaml/#imagekubernetes)",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "user": {
+                                        "type": [
+                                            "string",
+                                            "integer",
+                                        ],
+                                        "minLength": 1,
+                                        "maxLength": 255,
+                                        "description": "Username or UID to use for the container. It also supports the UID:GID format.",
+                                    },
+                                },
+                            },
                             "pull_policy": {
-                                "markdownDescription": "Specifies how to pull the image in Runner. It can be one of `always`, `never` or `if-not-present`. The default value is `always`. [Learn more](https://docs.gitlab.com/ee/ci/yaml/#servicespull_policy).",
+                                "markdownDescription": "Specifies how to pull the image in Runner. It can be one of `always`, `never` or `if-not-present`. The default value is `always`. [Learn more](https://docs.gitlab.com/ci/yaml/#servicespull_policy).",
                                 "default": "always",
                                 "oneOf": [
                                     {
@@ -680,7 +876,7 @@ export const schema = {
                             },
                             "command": {
                                 "type": "array",
-                                "markdownDescription": "Command or script that should be used as the container's command. It will be translated to arguments passed to Docker after the image's name. The syntax is similar to Dockerfile's CMD directive, where each shell token is a separate string in the array. [Learn More](https://docs.gitlab.com/ee/ci/services/index.html#available-settings-for-services)",
+                                "markdownDescription": "Command or script that should be used as the container's command. It will be translated to arguments passed to Docker after the image's name. The syntax is similar to Dockerfile's CMD directive, where each shell token is a separate string in the array. [Learn More](https://docs.gitlab.com/ci/services/#available-settings-for-services)",
                                 "minItems": 1,
                                 "items": {
                                     "type": "string",
@@ -688,12 +884,12 @@ export const schema = {
                             },
                             "alias": {
                                 "type": "string",
-                                "markdownDescription": "Additional alias that can be used to access the service from the job's container. Read Accessing the services for more information. [Learn More](https://docs.gitlab.com/ee/ci/services/index.html#available-settings-for-services)",
+                                "markdownDescription": "Additional alias that can be used to access the service from the job's container. Read Accessing the services for more information. [Learn More](https://docs.gitlab.com/ci/services/#available-settings-for-services)",
                                 "minLength": 1,
                             },
                             "variables": {
                                 "$ref": "#/definitions/jobVariables",
-                                "markdownDescription": "Additional environment variables that are passed exclusively to the service. Service variables cannot reference themselves. [Learn More](https://docs.gitlab.com/ee/ci/services/index.html#available-settings-for-services)",
+                                "markdownDescription": "Additional environment variables that are passed exclusively to the service. Service variables cannot reference themselves. [Learn More](https://docs.gitlab.com/ci/services/#available-settings-for-services)",
                             },
                         },
                         "required": [
@@ -735,14 +931,14 @@ export const schema = {
         },
         "identity": {
             "type": "string",
-            "markdownDescription": "Sets a workload identity (experimental), allowing automatic authentication with the external system. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#identity).",
+            "markdownDescription": "Sets a workload identity (experimental), allowing automatic authentication with the external system. [Learn More](https://docs.gitlab.com/ci/yaml/#identity).",
             "enum": [
                 "google_cloud",
             ],
         },
         "secrets": {
             "type": "object",
-            "markdownDescription": "Defines secrets to be injected as environment variables. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#secrets).",
+            "markdownDescription": "Defines secrets to be injected as environment variables. [Learn More](https://docs.gitlab.com/ci/yaml/#secrets).",
             "patternProperties": {
                 ".*": {
                     "type": "object",
@@ -751,7 +947,7 @@ export const schema = {
                             "oneOf": [
                                 {
                                     "type": "string",
-                                    "markdownDescription": "The secret to be fetched from Vault (e.g. 'production/db/password@ops' translates to secret 'ops/data/production/db', field `password`). [Learn More](https://docs.gitlab.com/ee/ci/yaml/#secretsvault)",
+                                    "markdownDescription": "The secret to be fetched from Vault (e.g. 'production/db/password@ops' translates to secret 'ops/data/production/db', field `password`). [Learn More](https://docs.gitlab.com/ci/yaml/#secretsvault)",
                                 },
                                 {
                                     "type": "object",
@@ -850,7 +1046,7 @@ export const schema = {
                         "file": {
                             "type": "boolean",
                             "default": true,
-                            "markdownDescription": "Configures the secret to be stored as either a file or variable type CI/CD variable. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#secretsfile)",
+                            "markdownDescription": "Configures the secret to be stored as either a file or variable type CI/CD variable. [Learn More](https://docs.gitlab.com/ci/yaml/#secretsfile)",
                         },
                         "token": {
                             "type": "string",
@@ -944,18 +1140,18 @@ export const schema = {
         },
         "before_script": {
             "$ref": "#/definitions/optional_script",
-            "markdownDescription": "Defines scripts that should run *before* the job. Can be set globally or per job. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#before_script).",
+            "markdownDescription": "Defines scripts that should run *before* the job. Can be set globally or per job. [Learn More](https://docs.gitlab.com/ci/yaml/#before_script).",
         },
         "after_script": {
             "$ref": "#/definitions/optional_script",
-            "markdownDescription": "Defines scripts that should run *after* the job. Can be set globally or per job. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#after_script).",
+            "markdownDescription": "Defines scripts that should run *after* the job. Can be set globally or per job. [Learn More](https://docs.gitlab.com/ci/yaml/#after_script).",
         },
         "rules": {
             "type": [
                 "array",
                 "null",
             ],
-            "markdownDescription": "Rules allows for an array of individual rule objects to be evaluated in order, until one matches and dynamically provides attributes to the job. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#rules).",
+            "markdownDescription": "Rules allows for an array of individual rule objects to be evaluated in order, until one matches and dynamically provides attributes to the job. [Learn More](https://docs.gitlab.com/ci/yaml/#rules).",
             "items": {
                 "anyOf": [
                     {
@@ -1010,7 +1206,7 @@ export const schema = {
                 "array",
                 "null",
             ],
-            "markdownDescription": "You can use rules to conditionally include other configuration files. [Learn More](https://docs.gitlab.com/ee/ci/yaml/includes.html#use-rules-with-include).",
+            "markdownDescription": "You can use rules to conditionally include other configuration files. [Learn More](https://docs.gitlab.com/ci/yaml/includes/#use-rules-with-include).",
             "items": {
                 "anyOf": [
                     {
@@ -1027,7 +1223,7 @@ export const schema = {
                                 "$ref": "#/definitions/exists",
                             },
                             "when": {
-                                "markdownDescription": "Use `when: never` to exclude the configuration file if the condition matches. [Learn More](https://docs.gitlab.com/ee/ci/yaml/includes.html#include-with-rulesif).",
+                                "markdownDescription": "Use `when: never` to exclude the configuration file if the condition matches. [Learn More](https://docs.gitlab.com/ci/yaml/includes/#include-with-rulesif).",
                                 "oneOf": [
                                     {
                                         "type": "string",
@@ -1059,7 +1255,7 @@ export const schema = {
         },
         "workflowName": {
             "type": "string",
-            "markdownDescription": "Defines the pipeline name. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#workflowname).",
+            "markdownDescription": "Defines the pipeline name. [Learn More](https://docs.gitlab.com/ci/yaml/#workflowname).",
             "minLength": 1,
             "maxLength": 255,
         },
@@ -1078,7 +1274,7 @@ export const schema = {
                     ],
                 },
                 "on_new_commit": {
-                    "markdownDescription": "Configure the behavior of the auto-cancel redundant pipelines feature. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#workflowauto_cancelon_new_commit)",
+                    "markdownDescription": "Configure the behavior of the auto-cancel redundant pipelines feature. [Learn More](https://docs.gitlab.com/ci/yaml/#workflowauto_cancelon_new_commit)",
                     "type": "string",
                     "enum": [
                         "conservative",
@@ -1089,7 +1285,7 @@ export const schema = {
             },
         },
         "globalVariables": {
-            "markdownDescription": "Defines default variables for all jobs. Job level property overrides global variables. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#variables).",
+            "markdownDescription": "Defines default variables for all jobs. Job level property overrides global variables. [Learn More](https://docs.gitlab.com/ci/yaml/#variables).",
             "type": "object",
             "patternProperties": {
                 ".*": {
@@ -1106,7 +1302,7 @@ export const schema = {
                             "properties": {
                                 "value": {
                                     "type": "string",
-                                    "markdownDescription": "Default value of the variable. If used with `options`, `value` must be included in the array. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#variablesvalue)",
+                                    "markdownDescription": "Default value of the variable. If used with `options`, `value` must be included in the array. [Learn More](https://docs.gitlab.com/ci/yaml/#variablesvalue)",
                                 },
                                 "options": {
                                     "type": "array",
@@ -1115,15 +1311,15 @@ export const schema = {
                                     },
                                     "minItems": 1,
                                     "uniqueItems": true,
-                                    "markdownDescription": "A list of predefined values that users can select from in the **Run pipeline** page when running a pipeline manually. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#variablesoptions)",
+                                    "markdownDescription": "A list of predefined values that users can select from in the **Run pipeline** page when running a pipeline manually. [Learn More](https://docs.gitlab.com/ci/yaml/#variablesoptions)",
                                 },
                                 "description": {
                                     "type": "string",
-                                    "markdownDescription": "Explains what the variable is used for, what the acceptable values are. Variables with `description` are prefilled when running a pipeline manually. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#variablesdescription).",
+                                    "markdownDescription": "Explains what the variable is used for, what the acceptable values are. Variables with `description` are prefilled when running a pipeline manually. [Learn More](https://docs.gitlab.com/ci/yaml/#variablesdescription).",
                                 },
                                 "expand": {
                                     "type": "boolean",
-                                    "markdownDescription": "If the variable is expandable or not. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#variablesexpand).",
+                                    "markdownDescription": "If the variable is expandable or not. [Learn More](https://docs.gitlab.com/ci/yaml/#variablesexpand).",
                                 },
                             },
                             "additionalProperties": false,
@@ -1133,7 +1329,7 @@ export const schema = {
             },
         },
         "jobVariables": {
-            "markdownDescription": "Defines variables for a job. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#variables).",
+            "markdownDescription": "Defines variables for a job. [Learn More](https://docs.gitlab.com/ci/yaml/#variables).",
             "type": "object",
             "patternProperties": {
                 ".*": {
@@ -1153,7 +1349,7 @@ export const schema = {
                                 },
                                 "expand": {
                                     "type": "boolean",
-                                    "markdownDescription": "Defines if the variable is expandable or not. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#variablesexpand).",
+                                    "markdownDescription": "Defines if the variable is expandable or not. [Learn More](https://docs.gitlab.com/ci/yaml/#variablesexpand).",
                                 },
                             },
                             "additionalProperties": false,
@@ -1163,7 +1359,7 @@ export const schema = {
             },
         },
         "rulesVariables": {
-            "markdownDescription": "Defines variables for a rule result. [Learn More](https://docs.gitlab.com/ee/ci/yaml/index.html#rulesvariables).",
+            "markdownDescription": "Defines variables for a rule result. [Learn More](https://docs.gitlab.com/ci/yaml/#rulesvariables).",
             "type": "object",
             "patternProperties": {
                 ".*": {
@@ -1177,10 +1373,10 @@ export const schema = {
         },
         "if": {
             "type": "string",
-            "markdownDescription": "Expression to evaluate whether additional attributes should be provided to the job. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#rulesif).",
+            "markdownDescription": "Expression to evaluate whether additional attributes should be provided to the job. [Learn More](https://docs.gitlab.com/ci/yaml/#rulesif).",
         },
         "changes": {
-            "markdownDescription": "Additional attributes will be provided to job if any of the provided paths matches a modified file. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#ruleschanges).",
+            "markdownDescription": "Additional attributes will be provided to job if any of the provided paths matches a modified file. [Learn More](https://docs.gitlab.com/ci/yaml/#ruleschanges).",
             "anyOf": [
                 {
                     "type": "object",
@@ -1211,7 +1407,7 @@ export const schema = {
             ],
         },
         "exists": {
-            "markdownDescription": "Additional attributes will be provided to job if any of the provided paths matches an existing file in the repository. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#rulesexists).",
+            "markdownDescription": "Additional attributes will be provided to job if any of the provided paths matches an existing file in the repository. [Learn More](https://docs.gitlab.com/ci/yaml/#rulesexists).",
             "anyOf": [
                 {
                     "type": "array",
@@ -1268,16 +1464,16 @@ export const schema = {
         },
         "timeout": {
             "type": "string",
-            "markdownDescription": "Allows you to configure a timeout for a specific job (e.g. `1 minute`, `1h 30m 12s`). [Learn More](https://docs.gitlab.com/ee/ci/yaml/index.html#timeout).",
+            "markdownDescription": "Allows you to configure a timeout for a specific job (e.g. `1 minute`, `1h 30m 12s`). [Learn More](https://docs.gitlab.com/ci/yaml/#timeout).",
             "minLength": 1,
         },
         "start_in": {
             "type": "string",
-            "markdownDescription": "Used in conjunction with 'when: delayed' to set how long to delay before starting a job. e.g. '5', 5 seconds, 30 minutes, 1 week, etc. [Learn More](https://docs.gitlab.com/ee/ci/jobs/job_control.html#run-a-job-after-a-delay).",
+            "markdownDescription": "Used in conjunction with 'when: delayed' to set how long to delay before starting a job. e.g. '5', 5 seconds, 30 minutes, 1 week, etc. [Learn More](https://docs.gitlab.com/ci/jobs/job_control/#run-a-job-after-a-delay).",
             "minLength": 1,
         },
         "rulesNeeds": {
-            "markdownDescription": "Use needs in rules to update job needs for specific conditions. When a condition matches a rule, the job's needs configuration is completely replaced with the needs in the rule. [Learn More](https://docs.gitlab.com/ee/ci/yaml/index.html#rulesneeds).",
+            "markdownDescription": "Use needs in rules to update job needs for specific conditions. When a condition matches a rule, the job's needs configuration is completely replaced with the needs in the rule. [Learn More](https://docs.gitlab.com/ci/yaml/#rulesneeds).",
             "type": "array",
             "items": {
                 "oneOf": [
@@ -1310,7 +1506,7 @@ export const schema = {
             },
         },
         "allow_failure": {
-            "markdownDescription": "Allow job to fail. A failed job does not cause the pipeline to fail. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#allow_failure).",
+            "markdownDescription": "Allow job to fail. A failed job does not cause the pipeline to fail. [Learn More](https://docs.gitlab.com/ci/yaml/#allow_failure).",
             "oneOf": [
                 {
                     "description": "Setting this option to true will allow the job to fail while still letting the pipeline pass.",
@@ -1354,9 +1550,6 @@ export const schema = {
             "description": "Splits up a single job into multiple that run in parallel. Provides `CI_NODE_INDEX` and `CI_NODE_TOTAL` environment variables to the jobs.",
             "oneOf": [
                 {
-                    "type": "null",
-                },
-                {
                     "type": "integer",
                     "description": "Creates N instances of the job that run in parallel.",
                     "default": 0,
@@ -1391,7 +1584,7 @@ export const schema = {
             ],
         },
         "parallel_matrix": {
-            "description": "Use the `needs:parallel:matrix` keyword to specify parallelized jobs needed to be completed for the job to run. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#needsparallelmatrix)",
+            "description": "Use the `needs:parallel:matrix` keyword to specify parallelized jobs needed to be completed for the job to run. [Learn More](https://docs.gitlab.com/ci/yaml/#needsparallelmatrix)",
             "oneOf": [
                 {
                     "type": "object",
@@ -1421,7 +1614,7 @@ export const schema = {
             ],
         },
         "when": {
-            "markdownDescription": "Describes the conditions for when to run the job. Defaults to 'on_success'. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#when).",
+            "markdownDescription": "Describes the conditions for when to run the job. Defaults to 'on_success'. [Learn More](https://docs.gitlab.com/ci/yaml/#when).",
             "default": "on_success",
             "type": "string",
             "enum": [
@@ -1434,7 +1627,7 @@ export const schema = {
             ],
         },
         "cache": {
-            "markdownDescription": "Use `cache` to specify a list of files and directories to cache between jobs. You can only use paths that are in the local working copy. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cache)",
+            "markdownDescription": "Use `cache` to specify a list of files and directories to cache between jobs. You can only use paths that are in the local working copy. [Learn More](https://docs.gitlab.com/ci/yaml/#cache)",
             "oneOf": [
                 {
                     "$ref": "#/definitions/cache_item",
@@ -1451,7 +1644,7 @@ export const schema = {
             "type": "object",
             "properties": {
                 "key": {
-                    "markdownDescription": "Use the `cache:key` keyword to give each cache a unique identifying key. All jobs that use the same cache key use the same cache, including in different pipelines. Must be used with `cache:path`, or nothing is cached. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cachekey).",
+                    "markdownDescription": "Use the `cache:key` keyword to give each cache a unique identifying key. All jobs that use the same cache key use the same cache, including in different pipelines. Must be used with `cache:path`, or nothing is cached. [Learn More](https://docs.gitlab.com/ci/yaml/#cachekey).",
                     "oneOf": [
                         {
                             "type": "string",
@@ -1460,7 +1653,7 @@ export const schema = {
                             "type": "object",
                             "properties": {
                                 "files": {
-                                    "markdownDescription": "Use the `cache:key:files` keyword to generate a new key when one or two specific files change. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cachekeyfiles)",
+                                    "markdownDescription": "Use the `cache:key:files` keyword to generate a new key when one or two specific files change. [Learn More](https://docs.gitlab.com/ci/yaml/#cachekeyfiles)",
                                     "type": "array",
                                     "items": {
                                         "type": "string",
@@ -1469,7 +1662,7 @@ export const schema = {
                                     "maxItems": 2,
                                 },
                                 "prefix": {
-                                    "markdownDescription": "Use `cache:key:prefix` to combine a prefix with the SHA computed for `cache:key:files`. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cachekeyprefix)",
+                                    "markdownDescription": "Use `cache:key:prefix` to combine a prefix with the SHA computed for `cache:key:files`. [Learn More](https://docs.gitlab.com/ci/yaml/#cachekeyprefix)",
                                     "type": "string",
                                 },
                             },
@@ -1478,14 +1671,14 @@ export const schema = {
                 },
                 "paths": {
                     "type": "array",
-                    "markdownDescription": "Use the `cache:paths` keyword to choose which files or directories to cache. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cachepaths)",
+                    "markdownDescription": "Use the `cache:paths` keyword to choose which files or directories to cache. [Learn More](https://docs.gitlab.com/ci/yaml/#cachepaths)",
                     "items": {
                         "type": "string",
                     },
                 },
                 "policy": {
                     "type": "string",
-                    "markdownDescription": "Determines the strategy for downloading and updating the cache. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cachepolicy)",
+                    "markdownDescription": "Determines the strategy for downloading and updating the cache. [Learn More](https://docs.gitlab.com/ci/yaml/#cachepolicy)",
                     "default": "pull-push",
                 },
                 "unprotect": {
@@ -1495,12 +1688,12 @@ export const schema = {
                 },
                 "untracked": {
                     "type": "boolean",
-                    "markdownDescription": "Use `untracked: true` to cache all files that are untracked in your Git repository. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cacheuntracked)",
+                    "markdownDescription": "Use `untracked: true` to cache all files that are untracked in your Git repository. [Learn More](https://docs.gitlab.com/ci/yaml/#cacheuntracked)",
                     "default": false,
                 },
                 "when": {
                     "type": "string",
-                    "markdownDescription": "Defines when to save the cache, based on the status of the job. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#cachewhen).",
+                    "markdownDescription": "Defines when to save the cache, based on the status of the job. [Learn More](https://docs.gitlab.com/ci/yaml/#cachewhen).",
                     "default": "on_success",
                     "enum": [
                         "on_success",
@@ -1547,7 +1740,7 @@ export const schema = {
                                 "enum": [
                                     "external",
                                 ],
-                                "description": "When using CI services other than Gitlab",
+                                "description": "When using CI services other than GitLab",
                             },
                             {
                                 "enum": [
@@ -1577,7 +1770,7 @@ export const schema = {
                                 "enum": [
                                     "web",
                                 ],
-                                "description": "For pipelines created using *Run pipeline* button in Gitlab UI (under your project's *Pipelines*).",
+                                "description": "For pipelines created using *Run pipeline* button in GitLab UI (under your project's *Pipelines*).",
                             },
                         ],
                     },
@@ -1611,7 +1804,7 @@ export const schema = {
                         },
                         "variables": {
                             "type": "array",
-                            "markdownDescription": "Filter job by checking comparing values of CI/CD variables. [Learn More](https://docs.gitlab.com/ee/ci/jobs/job_control.html#cicd-variable-expressions).",
+                            "markdownDescription": "Filter job by checking comparing values of CI/CD variables. [Learn More](https://docs.gitlab.com/ci/jobs/job_control/#cicd-variable-expressions).",
                             "items": {
                                 "type": "string",
                             },
@@ -1628,7 +1821,7 @@ export const schema = {
             ],
         },
         "retry": {
-            "markdownDescription": "Retry a job if it fails. Can be a simple integer or object definition. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#retry).",
+            "markdownDescription": "Retry a job if it fails. Can be a simple integer or object definition. [Learn More](https://docs.gitlab.com/ci/yaml/#retry).",
             "oneOf": [
                 {
                     "$ref": "#/definitions/retry_max",
@@ -1641,7 +1834,7 @@ export const schema = {
                             "$ref": "#/definitions/retry_max",
                         },
                         "when": {
-                            "markdownDescription": "Either a single or array of error types to trigger job retry. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#retrywhen).",
+                            "markdownDescription": "Either a single or array of error types to trigger job retry. [Learn More](https://docs.gitlab.com/ci/yaml/#retrywhen).",
                             "oneOf": [
                                 {
                                     "$ref": "#/definitions/retry_errors",
@@ -1655,7 +1848,7 @@ export const schema = {
                             ],
                         },
                         "exit_codes": {
-                            "markdownDescription": "Either a single or array of exit codes to trigger job retry on. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#retryexit_codes).",
+                            "markdownDescription": "Either a single or array of exit codes to trigger job retry on. [Learn More](https://docs.gitlab.com/ci/yaml/#retryexit_codes).",
                             "oneOf": [
                                 {
                                     "description": "Retry when the job exit code is included in the array's values.",
@@ -1741,12 +1934,63 @@ export const schema = {
         },
         "interruptible": {
             "type": "boolean",
-            "markdownDescription": "Interruptible is used to indicate that a job should be canceled if made redundant by a newer pipeline run. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#interruptible).",
+            "markdownDescription": "Interruptible is used to indicate that a job should be canceled if made redundant by a newer pipeline run. [Learn More](https://docs.gitlab.com/ci/yaml/#interruptible).",
             "default": false,
         },
         "inputs": {
-            "markdownDescription": "Used to pass input values to included templates or components. [Learn More](https://docs.gitlab.com/ee/ci/yaml/inputs.html#set-input-values-when-using-include).",
+            "markdownDescription": "Used to pass input values to included templates, components, downstream pipelines, or child pipelines. [Learn More](https://docs.gitlab.com/ci/inputs/).",
             "type": "object",
+            "patternProperties": {
+                "^[a-zA-Z0-9_-]+$": {
+                    "description": "Input parameter value that matches parameter names defined in spec:inputs of the included configuration.",
+                    "oneOf": [
+                        {
+                            "type": "string",
+                            "maxLength": 1024,
+                        },
+                        {
+                            "type": "number",
+                        },
+                        {
+                            "type": "boolean",
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "oneOf": [
+                                    {
+                                        "type": "string",
+                                    },
+                                    {
+                                        "type": "number",
+                                    },
+                                    {
+                                        "type": "boolean",
+                                    },
+                                    {
+                                        "type": "object",
+                                        "additionalProperties": true,
+                                    },
+                                    {
+                                        "type": "array",
+                                        "items": {
+                                            "additionalProperties": true,
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                        {
+                            "type": "object",
+                            "additionalProperties": true,
+                        },
+                        {
+                            "type": "null",
+                        },
+                    ],
+                },
+            },
+            "additionalProperties": false,
         },
         "job": {
             "allOf": [
@@ -1794,7 +2038,7 @@ export const schema = {
                 },
                 "script": {
                     "$ref": "#/definitions/script",
-                    "markdownDescription": "Shell scripts executed by the Runner. The only required property of jobs. Be careful with special characters (e.g. `:`, `{`, `}`, `&`) and use single or double quotes to avoid issues. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#script)",
+                    "markdownDescription": "Shell scripts executed by the Runner. The only required property of jobs. Be careful with special characters (e.g. `:`, `{`, `}`, `&`) and use single or double quotes to avoid issues. [Learn More](https://docs.gitlab.com/ci/yaml/#script)",
                 },
                 "run": {
                     "$ref": "#/definitions/steps",
@@ -1938,7 +2182,7 @@ export const schema = {
                     "$ref": "#/definitions/start_in",
                 },
                 "manual_confirmation": {
-                    "markdownDescription": "Describes the Custom confirmation message for a manual job [Learn More](https://docs.gitlab.com/ee/ci/yaml/#when).",
+                    "markdownDescription": "Describes the Custom confirmation message for a manual job [Learn More](https://docs.gitlab.com/ci/yaml/#when).",
                     "type": "string",
                 },
                 "dependencies": {
@@ -1968,7 +2212,7 @@ export const schema = {
                                 },
                                 "url": {
                                     "type": "string",
-                                    "description": "When set, this will expose buttons in various places for the current environment in Gitlab, that will take you to the defined URL.",
+                                    "description": "When set, this will expose buttons in various places for the current environment in GitLab, that will take you to the defined URL.",
                                     "format": "uri",
                                 },
                                 "on_stop": {
@@ -1988,11 +2232,11 @@ export const schema = {
                                 },
                                 "auto_stop_in": {
                                     "type": "string",
-                                    "description": "The amount of time it should take before Gitlab will automatically stop the environment. Supports a wide variety of formats, e.g. '1 week', '3 mins 4 sec', '2 hrs 20 min', '2h20min', '6 mos 1 day', '47 yrs 6 mos and 4d', '3 weeks and 2 days'.",
+                                    "description": "The amount of time it should take before GitLab will automatically stop the environment. Supports a wide variety of formats, e.g. '1 week', '3 mins 4 sec', '2 hrs 20 min', '2h20min', '6 mos 1 day', '47 yrs 6 mos and 4d', '3 weeks and 2 days'.",
                                 },
                                 "kubernetes": {
                                     "type": "object",
-                                    "description": "Used to configure the kubernetes deployment for this environment. This is currently not supported for kubernetes clusters that are managed by Gitlab.",
+                                    "description": "Used to configure the kubernetes deployment for this environment. This is currently not supported for kubernetes clusters that are managed by GitLab.",
                                     "properties": {
                                         "namespace": {
                                             "type": "string",
@@ -2001,7 +2245,7 @@ export const schema = {
                                         },
                                         "agent": {
                                             "type": "string",
-                                            "description": "Specifies the Gitlab Agent for Kubernetes. The format is `path/to/agent/project:agent-name`.",
+                                            "description": "Specifies the GitLab Agent for Kubernetes. The format is `path/to/agent/project:agent-name`.",
                                         },
                                         "flux_resource_path": {
                                             "type": "string",
@@ -2139,11 +2383,11 @@ export const schema = {
                     "description": "Limit job concurrency. Can be used to ensure that the Runner will not run certain jobs simultaneously.",
                 },
                 "trigger": {
-                    "markdownDescription": "Trigger allows you to define downstream pipeline trigger. When a job created from trigger definition is started by GitLab, a downstream pipeline gets created. [Learn More](https://docs.gitlab.com/ee/ci/yaml/index.html#trigger).",
+                    "markdownDescription": "Trigger allows you to define downstream pipeline trigger. When a job created from trigger definition is started by GitLab, a downstream pipeline gets created. [Learn More](https://docs.gitlab.com/ci/yaml/#trigger).",
                     "oneOf": [
                         {
                             "type": "object",
-                            "markdownDescription": "Trigger a multi-project pipeline. [Learn More](https://docs.gitlab.com/ee/ci/pipelines/multi_project_pipelines.html#specify-a-downstream-pipeline-branch).",
+                            "markdownDescription": "Trigger a multi-project pipeline. [Learn More](https://docs.gitlab.com/ci/pipelines/downstream_pipelines/#multi-project-pipelines).",
                             "additionalProperties": false,
                             "properties": {
                                 "project": {
@@ -2160,6 +2404,9 @@ export const schema = {
                                     "enum": [
                                         "depend",
                                     ],
+                                },
+                                "inputs": {
+                                    "$ref": "#/definitions/inputs",
                                 },
                                 "forward": {
                                     "description": "Specify what to forward to the downstream pipeline.",
@@ -2190,7 +2437,7 @@ export const schema = {
                         },
                         {
                             "type": "object",
-                            "description": "Trigger a child pipeline. [Learn More](https://docs.gitlab.com/ee/ci/pipelines/parent_child_pipelines.html).",
+                            "description": "Trigger a child pipeline. [Learn More](https://docs.gitlab.com/ci/pipelines/downstream_pipelines/#parent-child-pipelines).",
                             "additionalProperties": false,
                             "properties": {
                                 "include": {
@@ -2355,17 +2602,17 @@ export const schema = {
                             },
                         },
                         {
-                            "markdownDescription": "Path to the project, e.g. `group/project`, or `group/sub-group/project`. [Learn More](https://docs.gitlab.com/ee/ci/yaml/index.html#trigger).",
+                            "markdownDescription": "Path to the project, e.g. `group/project`, or `group/sub-group/project`. [Learn More](https://docs.gitlab.com/ci/yaml/#trigger).",
                             "type": "string",
                         },
                     ],
                 },
                 "inherit": {
                     "type": "object",
-                    "markdownDescription": "Controls inheritance of globally-defined defaults and variables. Boolean values control inheritance of all default: or variables: keywords. To inherit only a subset of default: or variables: keywords, specify what you wish to inherit. Anything not listed is not inherited. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#inherit).",
+                    "markdownDescription": "Controls inheritance of globally-defined defaults and variables. Boolean values control inheritance of all default: or variables: keywords. To inherit only a subset of default: or variables: keywords, specify what you wish to inherit. Anything not listed is not inherited. [Learn More](https://docs.gitlab.com/ci/yaml/#inherit).",
                     "properties": {
                         "default": {
-                            "markdownDescription": "Whether to inherit all globally-defined defaults or not. Or subset of inherited defaults. [Learn more](https://docs.gitlab.com/ee/ci/yaml/#inheritdefault).",
+                            "markdownDescription": "Whether to inherit all globally-defined defaults or not. Or subset of inherited defaults. [Learn more](https://docs.gitlab.com/ci/yaml/#inheritdefault).",
                             "oneOf": [
                                 {
                                     "type": "boolean",
@@ -2391,7 +2638,7 @@ export const schema = {
                             ],
                         },
                         "variables": {
-                            "markdownDescription": "Whether to inherit all globally-defined variables or not. Or subset of inherited variables. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#inheritvariables).",
+                            "markdownDescription": "Whether to inherit all globally-defined variables or not. Or subset of inherited variables. [Learn More](https://docs.gitlab.com/ci/yaml/#inheritvariables).",
                             "oneOf": [
                                 {
                                     "type": "boolean",
@@ -2408,7 +2655,7 @@ export const schema = {
                     "additionalProperties": false,
                 },
                 "publish": {
-                    "description": "A path to a directory that contains the files to be published with Pages",
+                    "description": "Deprecated. Use `pages.publish` instead. A path to a directory that contains the files to be published with Pages.",
                     "type": "string",
                 },
                 "pages": {
@@ -2423,7 +2670,11 @@ export const schema = {
                                 },
                                 "expire_in": {
                                     "type": "string",
-                                    "markdownDescription": "How long the deployment should be active. Deployments that have expired are no longer available on the web. Supports a wide variety of formats, e.g. '1 week', '3 mins 4 sec', '2 hrs 20 min', '2h20min', '6 mos 1 day', '47 yrs 6 mos and 4d', '3 weeks and 2 days'. Set to 'never' to prevent extra deployments from expiring. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#pagesexpire_in).",
+                                    "markdownDescription": "How long the deployment should be active. Deployments that have expired are no longer available on the web. Supports a wide variety of formats, e.g. '1 week', '3 mins 4 sec', '2 hrs 20 min', '2h20min', '6 mos 1 day', '47 yrs 6 mos and 4d', '3 weeks and 2 days'. Set to 'never' to prevent extra deployments from expiring. [Learn More](https://docs.gitlab.com/ci/yaml/#pagesexpire_in).",
+                                },
+                                "publish": {
+                                    "type": "string",
+                                    "markdownDescription": "A path to a directory that contains the files to be published with Pages.",
                                 },
                             },
                         },
@@ -2465,7 +2716,7 @@ export const schema = {
         "tags": {
             "type": "array",
             "minItems": 1,
-            "markdownDescription": "Used to select runners from the list of available runners. A runner must have all tags listed here to run the job. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#tags).",
+            "markdownDescription": "Used to select runners from the list of available runners. A runner must have all tags listed here to run the job. [Learn More](https://docs.gitlab.com/ci/yaml/#tags).",
             "items": {
                 "anyOf": [
                     {
@@ -2484,11 +2735,11 @@ export const schema = {
         },
         "hooks": {
             "type": "object",
-            "markdownDescription": "Specifies lists of commands to execute on the runner at certain stages of job execution. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#hooks).",
+            "markdownDescription": "Specifies lists of commands to execute on the runner at certain stages of job execution. [Learn More](https://docs.gitlab.com/ci/yaml/#hooks).",
             "properties": {
                 "pre_get_sources_script": {
                     "$ref": "#/definitions/optional_script",
-                    "markdownDescription": "Specifies a list of commands to execute on the runner before updating the Git repository and any submodules. [Learn More](https://docs.gitlab.com/ee/ci/yaml/#hookspre_get_sources_script).",
+                    "markdownDescription": "Specifies a list of commands to execute on the runner before updating the Git repository and any submodules. [Learn More](https://docs.gitlab.com/ci/yaml/#hookspre_get_sources_script).",
                 },
             },
             "additionalProperties": false,
@@ -2520,7 +2771,10 @@ export const schema = {
                                     "type": "string",
                                 },
                                 {
-                                    "$ref": "#/definitions/stepReference",
+                                    "$ref": "#/definitions/stepGitReference",
+                                },
+                                {
+                                    "$ref": "#/definitions/stepOciReference",
                                 },
                             ],
                         },
@@ -2529,31 +2783,6 @@ export const schema = {
                 {
                     "description": "Run a sequence of steps.",
                     "oneOf": [
-                        {
-                            "type": "object",
-                            "additionalProperties": false,
-                            "required": [
-                                "steps",
-                            ],
-                            "properties": {
-                                "env": {
-                                    "$ref": "#/definitions/stepNamedStrings",
-                                },
-                                "steps": {
-                                    "description": "Deprecated. Use `run` instead.",
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/definitions/step",
-                                    },
-                                },
-                                "outputs": {
-                                    "$ref": "#/definitions/stepNamedValues",
-                                },
-                                "delegate": {
-                                    "type": "string",
-                                },
-                            },
-                        },
                         {
                             "type": "object",
                             "additionalProperties": false,
@@ -2672,36 +2901,94 @@ export const schema = {
             },
             "additionalProperties": false,
         },
-        "stepReference": {
+        "stepGitReference": {
             "type": "object",
-            "description": "Git a reference to a step in a Git repository.",
+            "description": "GitReference is a reference to a step in a Git repository.",
             "additionalProperties": false,
             "required": [
                 "git",
             ],
             "properties": {
                 "git": {
-                    "$ref": "#/definitions/stepGitReference",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "url",
+                        "rev",
+                    ],
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                        },
+                        "dir": {
+                            "type": "string",
+                        },
+                        "rev": {
+                            "type": "string",
+                        },
+                        "file": {
+                            "type": "string",
+                        },
+                    },
                 },
             },
         },
-        "stepGitReference": {
+        "stepOciReference": {
             "type": "object",
-            "description": "GitReference is a reference to a step in a Git repository containing the full set of configuration options.",
+            "description": "OCIReference is a reference to a step hosted in an OCI repository.",
             "additionalProperties": false,
             "required": [
-                "url",
-                "rev",
+                "oci",
             ],
             "properties": {
-                "url": {
-                    "type": "string",
-                },
-                "dir": {
-                    "type": "string",
-                },
-                "rev": {
-                    "type": "string",
+                "oci": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "registry",
+                        "repository",
+                        "tag",
+                    ],
+                    "properties": {
+                        "registry": {
+                            "type": "string",
+                            "description": "The <host>[:<port>] of the container registry server.",
+                            "examples": [
+                                "registry.gitlab.com",
+                            ],
+                        },
+                        "repository": {
+                            "type": "string",
+                            "description": "A path within the registry containing related OCI images. Typically the namespace, project, and image name.",
+                            "examples": [
+                                "my_group/my_project/image",
+                            ],
+                        },
+                        "tag": {
+                            "type": "string",
+                            "description": "A pointer to the image manifest hosted in the OCI repository.",
+                            "examples": [
+                                "latest",
+                                "1",
+                                "1.5",
+                                "1.5.0",
+                            ],
+                        },
+                        "dir": {
+                            "type": "string",
+                            "description": "A directory inside the OCI image where the step can be found.",
+                            "examples": [
+                                "/my_steps/hello_world",
+                            ],
+                        },
+                        "file": {
+                            "type": "string",
+                            "description": "The name of the file that defines the step, defaults to step.yml.",
+                            "examples": [
+                                "step.yml",
+                            ],
+                        },
+                    },
                 },
             },
         },
