@@ -374,6 +374,6 @@ export function resolveIncludeLocal (pattern: string, cwd: string) {
     const anything_but_not_slash = "([^/])*?";
     pattern = pattern.replace(/\\\*/g, anything_but_not_slash);
 
-    const re2 = new RE2JS(`^${pattern}`, RE2JS.DOTALL);
+    const re2 = RE2JS.compile(`^${pattern}`);
     return repoFiles.filter((f: any) => re2.matches(f));
 }
