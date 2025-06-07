@@ -1,3 +1,4 @@
+import "./global.js";
 import {RE2JS} from "re2js";
 import chalk from "chalk";
 import {Job, JobRule} from "./job.js";
@@ -240,7 +241,8 @@ export class Utils {
                 "as rhs contains unescaped quote",
             ];
             assert(!containsNonEscapedSlash, assertMsg.join("\n"));
-            return `.match(new REJS2(${_rhs}, "${flags}")) ${_operator} null${remainingTokens}`;
+            const flagsBinary = 0; // TODO: fix
+            return `.matchRE2JS(RE2JS.compile(${_rhs}, ${flagsBinary})) ${_operator} null${remainingTokens}`;
         });
 
         // Scenario when RHS is surrounded by single/double-quotes
@@ -267,9 +269,10 @@ export class Utils {
 
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
-                return `new RE2JS("${pattern}", "${flags}")`;
+                const flagsBinary = 0; // TODO: fix
+                return `RE2JS.compile("${pattern}", ${flagsBinary})`;
             });
-            return `.match(${_rhs}) ${_operator} null`;
+            return `.matchRE2JS(${_rhs}) ${_operator} null`;
         });
 
         // Convert all null.match functions to false
@@ -283,7 +286,7 @@ export class Utils {
             (global as any).RE2JS = RE2JS; // Assign RE2JS to the global object
             res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
             delete (global as any).RE2JS; // Cleanup
-        } catch (err) {
+        } catch {
             const assertMsg = [
                 "Error attempting to evaluate the following rules:",
                 "  rules:",
