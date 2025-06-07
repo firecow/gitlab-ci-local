@@ -9,6 +9,7 @@ export default tseslint.config(
     {
         ignores: [
             "**/*.js",
+            "**/*.cjs",
             ".gitlab-ci-local",
         ],
     },
