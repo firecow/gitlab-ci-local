@@ -1,3 +1,4 @@
+import "../src/global.js";
 import {Argv} from "../src/argv";
 import {Utils} from "../src/utils";
 import {GitData} from "../src/git-data";
@@ -18,62 +19,62 @@ beforeEach(async () => {
 const tests = [
     {
         rule: '"Hello World" =~ "/hello world/i"',
-        jsExpression: '"Hello World".match(new RE2JS("hello world", "i")) != null',
+        jsExpression: '"Hello World".matchRE2JS(RE2JS.compile("hello world", 1)) != null',
         evalResult: true,
     },
     {
         rule: '"Hello World" =~ /hello world/i',
-        jsExpression: '"Hello World".match(new RE2JS("hello world", "i")) != null',
+        jsExpression: '"Hello World".matchRE2JS(RE2JS.compile("hello world", 1)) != null',
         evalResult: true,
     },
     {
         rule: '"Hello World" =~ /Hello (?i)world/',
-        jsExpression: '"Hello World".match(new RE2JS("Hello (?i)world", "")) != null',
+        jsExpression: '"Hello World".matchRE2JS(RE2JS.compile("Hello (?i)world", 0)) != null',
         evalResult: true,
     },
     {
         rule: '"1.11" =~ /^([[:digit:]]+(.[[:digit:]]+)*|latest)$/',
-        jsExpression: '"1.11".match(new RE2JS("^([[:digit:]]+(.[[:digit:]]+)*|latest)$", "")) != null',
+        jsExpression: '"1.11".matchRE2JS(RE2JS.compile("^([[:digit:]]+(.[[:digit:]]+)*|latest)$", 0)) != null',
         evalResult: true,
     },
     {
         rule: '"foo" !~ /foo/',
-        jsExpression: '"foo".match(new RE2JS("foo", "")) == null',
+        jsExpression: '"foo".matchRE2JS(RE2JS.compile("foo", 0)) == null',
         evalResult: false,
     },
     {
         rule: '"foo" =~ /foo/',
-        jsExpression: '"foo".match(new RE2JS("foo", "")) != null',
+        jsExpression: '"foo".matchRE2JS(RE2JS.compile("foo", 0)) != null',
         evalResult: true,
     },
     {
         rule: '"foo"=~ /foo/',
-        jsExpression: '"foo".match(new RE2JS("foo", "")) != null',
+        jsExpression: '"foo".matchRE2JS(RE2JS.compile("foo", 0)) != null',
         evalResult: true,
     },
     {
         rule: '"foo"=~/foo/',
-        jsExpression: '"foo".match(new RE2JS("foo", "")) != null',
+        jsExpression: '"foo".matchRE2JS(RE2JS.compile("foo", 0)) != null',
         evalResult: true,
     },
     {
         rule: '"foo"=~  /foo/',
-        jsExpression: '"foo".match(new RE2JS("foo", "")) != null',
+        jsExpression: '"foo".matchRE2JS(RE2JS.compile("foo", 0)) != null',
         evalResult: true,
     },
     {
         rule: '"foo" =~ "/foo/"',
-        jsExpression: '"foo".match(new RE2JS("foo", "")) != null',
+        jsExpression: '"foo".matchRE2JS(RE2JS.compile("foo", 0)) != null',
         evalResult: true,
     },
     {
         rule: '"test/url" =~ "/test/ur/"',
-        jsExpression: '"test/url".match(new RE2JS("test/ur", "")) != null',
+        jsExpression: '"test/url".matchRE2JS(RE2JS.compile("test/ur", 0)) != null',
         evalResult: true,
     },
     {
         rule: '"test/url" =~ "/test\\/ur/"',
-        jsExpression: '"test/url".match(new RE2JS("test\\/ur", "")) != null',
+        jsExpression: '"test/url".matchRE2JS(RE2JS.compile("test\\/ur", 0)) != null',
         evalResult: true,
     },
     {
@@ -82,7 +83,7 @@ const tests = [
     },
     {
         rule: '"master" =~ /master$/',
-        jsExpression: '"master".match(new RE2JS("master$", "")) != null',
+        jsExpression: '"master".matchRE2JS(RE2JS.compile("master$", 0)) != null',
         evalResult: true,
     },
     {
@@ -95,7 +96,7 @@ const tests = [
     },
     {
         rule: '"23" =~ /1234/',
-        jsExpression: '"23".match(new RE2JS("1234", "")) != null',
+        jsExpression: '"23".matchRE2JS(RE2JS.compile("1234", 0)) != null',
         evalResult: false,
     },
     {
@@ -105,12 +106,12 @@ const tests = [
     },
     {
         rule: '($CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^perf_.*$/)',
-        jsExpression: '(false)', // (null.match(new RE2JS("^perf_.*$", "")) != null => (false)
+        jsExpression: '(false)', // (null.matchRE2JS(RE2JS.compile("^perf_.*$", 0)) != null => (false)
         evalResult: false,
     },
     {
         rule: '("qwerty" =~ /^perf_.*$/)',
-        jsExpression: '("qwerty".match(new RE2JS("^perf_.*$", "")) != null)',
+        jsExpression: '("qwerty".matchRE2JS(RE2JS.compile("^perf_.*$", 0)) != null)',
         evalResult: false,
     },
 ];

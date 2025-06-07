@@ -210,6 +210,20 @@ export class Utils {
         if (ruleIf === undefined) return true;
         let evalStr = ruleIf;
 
+        const flagsToBinary = (flags: string): number => {
+            let binary = 0;
+            if (flags.includes("i")) {
+                binary |= RE2JS.CASE_INSENSITIVE;
+            }
+            if (flags.includes("g")) {
+                binary |= RE2JS.DOTALL;
+            }
+            if (flags.includes("m")) {
+                binary |= RE2JS.MULTILINE;
+            }
+            return binary;
+        };
+
         // Expand all variables
         evalStr = this.expandTextWith(evalStr, {
             unescape: JSON.stringify("$"),
@@ -241,7 +255,7 @@ export class Utils {
                 "as rhs contains unescaped quote",
             ];
             assert(!containsNonEscapedSlash, assertMsg.join("\n"));
-            const flagsBinary = 0; // TODO: fix
+            const flagsBinary = flagsToBinary(flags);
             return `.matchRE2JS(RE2JS.compile(${_rhs}, ${flagsBinary})) ${_operator} null${remainingTokens}`;
         });
 
@@ -269,7 +283,7 @@ export class Utils {
 
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
-                const flagsBinary = 0; // TODO: fix
+                const flagsBinary = flagsToBinary(flags);
                 return `RE2JS.compile("${pattern}", ${flagsBinary})`;
             });
             return `.matchRE2JS(${_rhs}) ${_operator} null`;
