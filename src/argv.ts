@@ -11,7 +11,7 @@ async function isInGitRepository () {
     try {
         await Utils.spawn(["git", "rev-parse", "--is-inside-work-tree"]);
         return true;
-    } catch (err: any) {
+    } catch {
         return false;
     }
 }
@@ -81,7 +81,21 @@ export class Argv {
             const config = dotenv.parse(fs.readFileSync(potentialDotenvFilepath));
             for (const [key, value] of Object.entries(config)) {
                 const argKey = camelCase(key);
-                if (argv[argKey] == null) {
+
+                // Special handle KEY=VALUE variable keys
+                if (argKey === "variable") {
+                    let currentVal = argv[argKey];
+                    if (currentVal == null) {
+                        currentVal = [];
+                        this.map.set(argKey, currentVal);
+                    }
+                    if (!Array.isArray(currentVal)) {
+                        continue;
+                    }
+                    for (const pair of value.split(" ")) {
+                        currentVal.unshift(pair);
+                    }
+                } else if (argv[argKey] == null) {
                     // Work around `dotenv.parse` limitation https://github.com/motdotla/dotenv/issues/51#issuecomment-552559070
                     if (value === "true") this.map.set(argKey, true);
                     else if (value === "false") this.map.set(argKey, false);
@@ -193,6 +207,10 @@ export class Argv {
         return this.map.get("umask") ?? true;
     }
 
+    get userns (): string | undefined {
+        return this.map.get("userns");
+    }
+
     get privileged (): boolean {
         return this.map.get("privileged") ?? false;
     }
@@ -302,6 +320,10 @@ export class Argv {
 
     get defaultImage (): string {
         return this.map.get("defaultImage") ?? "docker.io/ruby:3.1";
+    }
+
+    get helperImage (): string {
+        return this.map.get("helperImage") ?? "docker.io/firecow/gitlab-ci-local-util:latest";
     }
 
     get defaultImageExplicitlySet (): boolean {

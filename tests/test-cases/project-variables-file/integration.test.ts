@@ -17,7 +17,7 @@ afterAll(() => {
     fs.removeSync(path.join(cwd, emptyFileVariable));
 });
 
-test.concurrent("project-variables-file <test-job>", async () => {
+test("project-variables-file <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
@@ -27,6 +27,22 @@ test.concurrent("project-variables-file <test-job>", async () => {
     const expected = [
         chalk`{blueBright test-job} {greenBright >} Y`,
         chalk`{blueBright test-job} {greenBright >} Recursive CI/CD`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test("project-variables-file <issue-1508>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: cwd,
+        job: ["issue-1508"],
+        variable: ["XDEBUG_MODE=debug,develop"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright issue-1508} {greenBright >} minikube`,
+        chalk`{blueBright issue-1508} {greenBright >} /root/.kube/config`,
+        chalk`{blueBright issue-1508} {greenBright >} debug,develop`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

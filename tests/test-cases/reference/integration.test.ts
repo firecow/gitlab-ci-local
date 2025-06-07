@@ -152,3 +152,56 @@ test("should not support 11 level deep", async () => {
     }
     throw new Error("Error is expected but not thrown/caught");
 });
+
+it("should merge values", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        preview: true,
+        file: ".gitlab-ci-1.yml",
+        cwd: "tests/test-cases/reference",
+    }, writeStreams);
+
+    const expected = `
+---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+test-job:
+  variables:
+    HESTHEST: ponypony
+    NICENESS: byrdalos
+  script:
+    - echo \${NICENESS}
+`;
+
+    expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
+});
+
+it("should have a lower precedence than a local scope", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        preview: true,
+        file: ".gitlab-ci-2.yml",
+        cwd: "tests/test-cases/reference",
+    }, writeStreams);
+
+    const expected = `
+---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+test-job:
+  variables:
+    NICENESS: byrdalos
+  script:
+    - echo \${NICENESS}
+`;
+
+    expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
+});

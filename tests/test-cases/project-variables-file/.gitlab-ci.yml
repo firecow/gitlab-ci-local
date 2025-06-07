@@ -12,3 +12,9 @@ test-job:
     - echo "$FUNNY3"
   environment:
     name: $ENV
+
+issue-1508:
+  script:
+    - echo $KUBE_CONTEXT
+    - echo $KUBECONFIG
+    - echo $XDEBUG_MODE

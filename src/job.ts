@@ -15,8 +15,8 @@ import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunner
 import {handler} from "./handler.js";
 import * as yaml from "js-yaml";
 import {Parser} from "./parser.js";
+import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
 import globby from "globby";
-import {validateIncludeLocal} from "./parser-includes.js";
 import terminalLink from "terminal-link";
 
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
@@ -364,17 +364,17 @@ export class Job {
             return prettyHrtime(this._endTime);
         }
 
-        return this._startTime
-            ? prettyHrtime(process.hrtime(this._startTime))
-            : "0 ms";
+        return this._startTime ?
+            prettyHrtime(process.hrtime(this._startTime)) :
+            "0 ms";
     }
 
     get formattedJobName () {
         let prefix = "";
         if (this.argv.childPipelineDepth > 0) prefix = "\t".repeat(this.argv.childPipelineDepth) + `[${this.argv.variable.GCL_TRIGGERER}] -> `;
-        const timestampPrefix = this.argv.showTimestamps
-            ? `[${dateFormatter.format(new Date())} ${this.prettyDuration.padStart(7)}] `
-            : "";
+        const timestampPrefix = this.argv.showTimestamps ?
+            `[${dateFormatter.format(new Date())} ${this.prettyDuration.padStart(7)}] ` :
+            "";
 
         // [16:33:19 1.37 min] my-job     > hello world
         return chalk`${timestampPrefix}{blueBright ${prefix}${this.name.padEnd(this.jobNamePad)}}`;
@@ -471,7 +471,22 @@ export class Job {
         return this.jobData["cache"] || [];
     }
 
-    public async getUniqueCacheName (cwd: string, expanded: {[key: string]: string}, key: any) {
+    public async getUniqueCacheName (cwd: string, expanded: {[key: string]: string}, cacheIndex: number) {
+        const getCachePrefix = (index: number) => {
+            const prefix = this.jobData["cache"][index]["key"]["prefix"];
+            if (prefix) {
+                return `${index}_${Utils.expandText(prefix, expanded)}-`;
+            }
+
+            const filenames = this.jobData["cache"][index]["key"]["files"].map((p: string) => {
+                const expandP = Utils.expandText(p, expanded);
+                return expandP.split(".")[0];
+            }).join("_");
+            return `${index}_${filenames}-`;
+        };
+
+        const key = this.jobData["cache"][cacheIndex].key;
+
         if (typeof key === "string" || key == null) {
             return Utils.expandText(key ?? "default", expanded);
         }
@@ -483,7 +498,7 @@ export class Job {
             }
             return `${cwd}/${path}`;
         });
-        return "md-" + await Utils.checksumFiles(cwd, files);
+        return getCachePrefix(cacheIndex) + await Utils.checksumFiles(cwd, files);
     }
 
     get beforeScripts (): string[] {
@@ -510,9 +525,9 @@ export class Job {
         await this.fetchTriggerInclude();
         const variablesForDownstreamPipeline = Object.entries({...this.globalVariables, ...this.jobData.variables}).map(([key, value]) => `${key}=${value}`);
 
-        const gclTriggerer = this.argv.variable["GCL_TRIGGERER"]
-            ? `${this.argv.variable["GCL_TRIGGERER"]} -> ${this.name}`
-            : this.name;
+        const gclTriggerer = this.argv.variable["GCL_TRIGGERER"] ?
+            `${this.argv.variable["GCL_TRIGGERER"]} -> ${this.name}` :
+            this.name;
         await handler({
             ...Object.fromEntries(this.argv.map),
             file: `${this.argv.stateDir}/includes/triggers/${this.name}.yml`,
@@ -553,7 +568,7 @@ export class Job {
         } else if (Array.isArray(this.inherit.variables)) {
             const inheritVariables = this.inherit.variables;
             return Object.fromEntries(
-                Object.entries(this._globalVariables).filter(([k]) => inheritVariables.includes(k))
+                Object.entries(this._globalVariables).filter(([k]) => inheritVariables.includes(k)),
             );
         }
         return this._globalVariables;
@@ -575,6 +590,7 @@ export class Job {
         this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
         const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));
         const imageName = this.imageName(expanded);
+        const helperImageName = argv.helperImage;
         const safeJobName = this.safeJobName;
 
         const outputLogFilePath = `${argv.cwd}/${argv.stateDir}/output/${safeJobName}.log`;
@@ -605,14 +621,17 @@ export class Job {
             let chownOpt = "0:0";
             let chmodOpt = "a+rw";
             if (!this.argv.umask) {
-                const {stdout} = await Utils.spawn(["docker", "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
+                const {stdout} = await Utils.spawn([this.argv.containerExecutable, "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
                 chownOpt = stdout;
                 if (chownOpt == "0:0") {
                     chmodOpt = "g-w";
                 }
             }
+            if (helperImageName) {
+                await this.pullImage(writeStreams, helperImageName);
+            }
             const {stdout: containerId} = await Utils.spawn([
-                this.argv.containerExecutable, "create", "--user=0:0", `--volume=${buildVolumeName}:${this.ciProjectDir}`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, "docker.io/firecow/gitlab-ci-local-util",
+                this.argv.containerExecutable, "create", "--user=0:0", `--volume=${buildVolumeName}:${this.ciProjectDir}`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, `${helperImageName}`,
                 ...["sh", "-c", `chown ${chownOpt} -R ${this.ciProjectDir} && chmod ${chmodOpt} -R ${this.ciProjectDir} && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`],
             ], argv.cwd);
             this._containersToClean.push(containerId);
@@ -624,7 +643,7 @@ export class Job {
             await Utils.spawn([this.argv.containerExecutable, "start", "--attach", containerId], argv.cwd);
             await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", containerId], argv.cwd);
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to docker volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to ${this.argv.containerExecutable} volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         if (this.services?.length) {
@@ -648,7 +667,7 @@ export class Job {
                     const {stdout, stderr} = await Utils.spawn([this.argv.containerExecutable, "logs", serviceContainerId]);
                     await fs.ensureFile(serviceContainerLogFile);
                     await fs.promises.writeFile(serviceContainerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
-                })
+                }),
             );
         }
 
@@ -674,10 +693,12 @@ export class Job {
 
         if (!this.argv.cleanup) return;
 
-        try {
-            await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", ...this._containersToClean]);
-        } catch (e) {
-            assert(e instanceof Error, "e is not instanceof Error");
+        if (this._containersToClean.length > 0) {
+            try {
+                await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", ...this._containersToClean]);
+            } catch (e) {
+                assert(e instanceof Error, "e is not instanceof Error");
+            }
         }
 
         if (this._serviceNetworkId) {
@@ -688,10 +709,12 @@ export class Job {
             }
         }
 
-        try {
-            await Utils.spawn([this.argv.containerExecutable, "volume", "rm", ...this._containerVolumeNames]);
-        } catch (e) {
-            assert(e instanceof Error, "e is not instanceof Error");
+        if (this._containerVolumeNames.length > 0) {
+            try {
+                await Utils.spawn([this.argv.containerExecutable, "volume", "rm", ...this._containerVolumeNames]);
+            } catch (e) {
+                assert(e instanceof Error, "e is not instanceof Error");
+            }
         }
 
         const rmPromises = [];
@@ -740,8 +763,8 @@ export class Job {
         if (this.imageName(expanded) && !this.argv.mountCache) return [];
 
         const cmd: string[] = [];
-        for (const c of this.cache) {
-            const uniqueCacheName = await this.getUniqueCacheName(this.argv.cwd, expanded, c.key);
+        for (const [index, c] of this.cache.entries()) {
+            const uniqueCacheName = await this.getUniqueCacheName(this.argv.cwd, expanded, index);
             c.paths.forEach((p) => {
                 const path = Utils.expandText(p, expanded);
                 writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright mounting cache} for path ${path}\n`);
@@ -783,6 +806,8 @@ export class Job {
 
         if (message.length > 0) writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright ${message}}\n`);
 
+        await fs.remove(`${cwd}/${stateDir}/artifacts/${safeJobName}`);
+
         // Copy git tracked files to build folder if shell isolation enabled.
         if (!imageName && this.argv.shellIsolation) {
             await Utils.rsyncTrackedFiles(cwd, stateDir, `${safeJobName}`);
@@ -818,6 +843,10 @@ export class Job {
 
             if (this.argv.umask) {
                 dockerCmd += "--user 0:0 ";
+            }
+
+            if (this.argv.userns != undefined) {
+                dockerCmd += `--userns=${this.argv.userns} `;
             }
 
             if (this.argv.containerMacAddress) {
@@ -882,11 +911,7 @@ export class Job {
             }
 
             if (this.imageEntrypoint) {
-                if (this.imageEntrypoint[0] == "") {
-                    dockerCmd += "--entrypoint '' ";
-                } else {
-                    dockerCmd += `--entrypoint ${this.imageEntrypoint[0]} `;
-                }
+                dockerCmd += `--entrypoint ${Utils.safeBashString(this.imageEntrypoint[0])} `;
             }
 
             dockerCmd += `${(await this.mountCacheCmd(writeStreams, expanded)).join(" ")} `;
@@ -894,7 +919,7 @@ export class Job {
 
             if (this.imageEntrypoint?.length ?? 0 > 1) {
                 this.imageEntrypoint?.slice(1).forEach((e) => {
-                    dockerCmd += `"${e}" `;
+                    dockerCmd += `${Utils.safeBashString(e)} `;
                 });
             }
 
@@ -990,11 +1015,17 @@ export class Job {
                 cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
                 cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
             }
-            void cp.on("exit", (code) => resolve(code ?? 0));
-            void cp.on("error", (err) => reject(err));
+            void cp.on("exit", (code) => {
+                clearTimeout(this._longRunningSilentTimeout);
+                return resolve(code ?? 0);},
+            );
+            void cp.on("error", (err) => {
+                clearTimeout(this._longRunningSilentTimeout);
+                return reject(err);
+            });
 
             if (imageName) {
-                cp.stdin?.end("/gcl-cmd");
+                cp.stdin?.end(". /gcl-cmd");
             } else {
                 cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}_${this.jobId}`);
             }
@@ -1071,7 +1102,7 @@ export class Job {
         }
         try {
             await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
-        } catch (e: any) {
+        } catch {
             await actualPull();
         }
     }
@@ -1109,11 +1140,11 @@ export class Job {
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
 
-        for (const c of this.cache) {
+        for (const [index, c] of this.cache.entries()) {
             if (!["pull", "pull-push"].includes(c.policy)) return;
 
             const time = process.hrtime();
-            const cacheName = await this.getUniqueCacheName(cwd, expanded, c.key);
+            const cacheName = await this.getUniqueCacheName(cwd, expanded, index);
             const cacheFolder = `${cwd}/${stateDir}/cache/${cacheName}`;
             if (!await fs.pathExists(cacheFolder)) {
                 continue;
@@ -1170,30 +1201,56 @@ export class Job {
         const cachePath = this.imageName(expanded) ? "/cache" : "../../cache";
 
         let time, endTime;
-        for (const c of this.cache) {
+        for (const [index, c] of this.cache.entries()) {
             if (!["push", "pull-push"].includes(c.policy)) return;
             if ("on_success" === c.when && this.jobStatus !== "success") return;
             if ("on_failure" === c.when && this.jobStatus === "success") return;
-            const cacheName = await this.getUniqueCacheName(cwd, expanded, c.key);
+            const cacheName = await this.getUniqueCacheName(cwd, expanded, index);
+
+            let paths = "";
             for (const path of c.paths) {
-                time = process.hrtime();
-                const expandedPath = Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
-                let cmd = "shopt -s globstar nullglob dotglob\n";
-                cmd += `mkdir -p ${cachePath}/${cacheName}\n`;
-                cmd += `rsync -Ra ${expandedPath} ${cachePath}/${cacheName}/. || true\n`;
+                if (!Utils.isSubpath(path, this.argv.cwd, this.argv.cwd)) continue;
 
-                await Mutex.exclusive(cacheName, async () => {
-                    await this.copyOut(cmd, stateDir, "cache", []);
-                });
-                endTime = process.hrtime(time);
-
-                const readdir = await fs.readdir(`${this.argv.cwd}/${stateDir}/cache/${cacheName}`);
-                if (readdir.length === 0) {
-                    writeStreams.stdout(chalk`${this.formattedJobName} {yellow !! no cache was copied for ${path} !!}\n`);
-                } else {
-                    writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright exported cache ${expandedPath} '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
-                }
+                paths += " " + Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
             }
+
+            time = process.hrtime();
+            let cmd = "shopt -s globstar nullglob dotglob\n";
+            cmd += `mkdir -p ${Utils.safeBashString(cachePath + "/" + cacheName)}\n`;
+            cmd += `rsync -Ra ${paths} ${Utils.safeBashString(cachePath + "/" + cacheName + "/.")} || true\n`;
+
+            await Mutex.exclusive(cacheName, async () => {
+                await this.copyOut(cmd, stateDir, "cache", []);
+            });
+            endTime = process.hrtime(time);
+
+            for (const _path of c.paths) {
+                if (!Utils.isSubpath(_path, this.argv.cwd, this.argv.cwd)) {
+                    writeStreams.stdout(chalk`{yellow WARNING: processPath: artifact path is not a subpath of project directory: ${_path}}\n`);
+                    continue;
+                }
+
+                let path = _path;
+                if (globby.hasMagic(path) && !path.endsWith("*")) {
+                    path = `${path}/**`;
+                }
+
+                let numOfFiles = globby.sync(path, {
+                    dot: true,
+                    onlyFiles: false,
+                    cwd: `${this.argv.cwd}/${stateDir}/cache/${cacheName}`,
+                }).length;
+
+                if (numOfFiles == 0) {
+                    writeStreams.stdout(chalk`{yellow WARNING: ${path}: no matching files. Ensure that the artifact path is relative to the working directory}\n`);
+                    continue;
+                }
+
+                if (!globby.hasMagic(path)) numOfFiles++; // add one because the pattern itself is a folder
+
+                writeStreams.stdout(`${_path}: found ${numOfFiles} artifact files and directories\n`);
+            }
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright cache created in '${stateDir}/cache/${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
     }
 
@@ -1230,9 +1287,9 @@ export class Job {
         }
         cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
         const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, expanded);
-        const reportDotenvs: string[] | null = (typeof reportDotenv === "string") // normalize to string[] for easier handling
-            ? [reportDotenv]
-            : reportDotenv;
+        const reportDotenvs: string[] | null = (typeof reportDotenv === "string") ? // normalize to string[] for easier handling
+            [reportDotenv] :
+            reportDotenv;
         if (reportDotenvs != null) {
             reportDotenvs.forEach((reportDotenv) => {
                 cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
@@ -1274,11 +1331,12 @@ export class Job {
         const safeJobName = this.safeJobName;
         const buildVolumeName = this.buildVolumeName;
         const cwd = this.argv.cwd;
+        const helperImageName = this.argv.helperImage;
 
         await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName(this._variables)) {
-            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} docker.io/firecow/gitlab-ci-local-util bash -c "${cmd}"`, cwd);
+            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${cmd.replace(/"/g, "\\\"")}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
             await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
@@ -1313,11 +1371,11 @@ export class Job {
         // Won't print if jobStatus is "success" because that will be printed via the `printFinishedString()`
         if (this.jobStatus === "warning") {
             writeStreams.stderr(
-                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }\n`
+                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }\n`,
             );
         } else if (this.jobStatus === "failed") {
             writeStreams.stderr(
-                chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} }\n`
+                chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} }\n`,
             );
         }
     }
@@ -1328,7 +1386,7 @@ export class Job {
 
         if (code !== 0) {
             writeStreams.stderr(
-                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} } after_script\n`
+                chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} } after_script\n`,
             );
         }
     }
@@ -1345,6 +1403,10 @@ export class Job {
 
         if (this.argv.umask) {
             dockerCmd += "--user 0:0 ";
+        }
+
+        if (this.argv.userns != undefined) {
+            dockerCmd += `--userns=${this.argv.userns} `;
         }
 
         if (this.argv.privileged) {
@@ -1380,11 +1442,7 @@ export class Job {
 
         const serviceEntrypoint = service.entrypoint;
         if (serviceEntrypoint) {
-            if (serviceEntrypoint[0] == "") {
-                dockerCmd += "--entrypoint '' ";
-            } else {
-                dockerCmd += `--entrypoint ${serviceEntrypoint[0]} `;
-            }
+            dockerCmd += `--entrypoint ${Utils.safeBashString(serviceEntrypoint[0])} `;
         }
         dockerCmd += `--volume ${this.buildVolumeName}:${this.ciProjectDir} `;
         dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
@@ -1403,9 +1461,7 @@ export class Job {
 
         if (serviceEntrypoint?.length ?? 0 > 1) {
             serviceEntrypoint?.slice(1).forEach((e) => {
-                dockerCmd += `'${e
-                    .replace(/'/g, "'\"'\"'") // replaces `'` with `'"'"'`
-                }' `;
+                dockerCmd += `${Utils.safeBashString(e)} `;
             });
         }
         (service.command ?? []).forEach((e) => dockerCmd += `"${e.replace(/\$/g, "\\$")}" `);
@@ -1490,13 +1546,13 @@ export class Job {
             if (include["local"]) {
                 const expandedInclude = Utils.expandText(include["local"], this._variables);
                 validateIncludeLocal(expandedInclude);
-                const files = await globby(expandedInclude.replace(/^\//, ""), {dot: true, cwd});
+                const files = resolveIncludeLocal(expandedInclude, cwd);
                 if (files.length == 0) {
                     throw new AssertionError({message: `Local include file \`${include["local"]}\` specified in \`.${this.name}\` cannot be found!`});
                 }
 
                 for (const file of files) {
-                    const content = await Parser.loadYaml(`${cwd}/${file}`, {});
+                    const content = await Parser.loadYaml(file, {});
                     contents = {
                         ...contents,
                         ...content,

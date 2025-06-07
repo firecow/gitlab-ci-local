@@ -32,7 +32,7 @@ const getLastSegment = (path: string): string => {
 const safeJsonPointer = <T>({object, pnter, fallback}: {object: any; pnter: string; fallback: T}): T => {
     try {
         return pointer.get(object, pnter) ?? fallback;
-    } catch (err) {
+    } catch {
         return fallback;
     }
 };

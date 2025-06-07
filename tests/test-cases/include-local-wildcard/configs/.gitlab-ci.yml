@@ -1,0 +1,4 @@
+---
+configs/.gitlab-ci.yml:
+  script:
+    - echo hello world

@@ -4,19 +4,58 @@ variables:
 
 produce-cache:
   stage: build
-  image: docker.io/library/alpine
+  image: busybox
   cache:
     key: $VALUE
-    paths: [.cache]
-  script: mkdir -p .cache && touch .cache/file1
+    paths:
+      - .cache
+      - .cache/
+      - .cache/*
+      - .cache/**
+      - .cache2/*/bar
+      - .cache2/**/bar
+      - .cache3
+      - /tmp
+  script:
+    - |
+      # creating 4 files/folder that should match .cache
+      mkdir -p .cache
+      touch .cache/file1
+      touch .cache/file2
+      touch .cache/.hiddenfile
+
+    - |
+      # creating 4 files/folder that should match .cache2/*/bar
+      mkdir -p .cache2/foo/bar
+      touch .cache2/foo/bar/file1
+      touch .cache2/foo/bar/file2
+      touch .cache2/foo/bar/.hiddenfile
+
+    - |
+      # creating files in .cache2 which should not match .cache2/*.bar
+      touch .cache2/a
+      touch .cache2/b
+      mkdir -p .cache2/foo/bazz
+      touch .cache2/foo/bazz/a
 
 consume-cache:
   stage: test
-  image: docker.io/library/alpine
+  image: busybox
   needs: [produce-cache]
   dependencies: [produce-cache]  # testing the absence of artifacts
   cache:
     key: maven
     paths: [.cache]
     policy: pull
-  script: if [ ! -f .cache/file1 ]; then exit 1; fi
+  script:
+    - test -f .cache/file1
+    - test -f .cache/file2
+    - test -f .cache/.hiddenfile
+
+    - test -f .cache2/foo/bar/file1
+    - test -f .cache2/foo/bar/file2
+    - test -f .cache2/foo/bar/.hiddenfile
+
+    - "! test -f .cache2/a"
+    - "! test -f .cache2/b"
+    - "! test -f .cache2/foo/bazz/a"

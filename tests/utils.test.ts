@@ -182,3 +182,57 @@ describe("evaluateRuleChanges", () => {
         });
     });
 });
+
+describe("isSubPath where process.cwd() have been mocked to return /home/user/gitlab-ci-local", () => {
+    beforeAll(() => {
+        const spy = import.meta.jest.spyOn(process, "cwd");
+        spy.mockReturnValue("/home/user/gitlab-ci-local");
+    });
+
+    const tests: {
+        input: [string, string, string?];
+        expected: boolean;
+    }[] = [
+        {
+            input: ["/tmp", "foo"],
+            expected: false,
+        },
+        {
+            input: ["../bar", "foo"],
+            expected: false,
+        },
+        {
+            input: ["../gitlab-ci-local", "."],
+            expected: true,
+        },
+        {
+            input: ["../gitlab-ci-local", "/home/user/gitlab-ci-local"],
+            expected: true,
+        },
+        {
+            input: ["../gitlab-ci-local", "/gitlab-ci-local"],
+            expected: false,
+        },
+        {
+            input: ["../////gitlab-ci-local", "."],
+            expected: true,
+        },
+        {
+            input: ["cache/*/foo", "cache"],
+            expected: true,
+        },
+        {
+            input: ["cache", "cache/*/foo"],
+            expected: false,
+        },
+        {
+            input: ["key-files", "/home/user/gitlab-ci-local", "/home/user/gitlab-ci-local"],
+            expected: true,
+        },
+    ];
+    tests.forEach(({input, expected}) => {
+        test(`isSubpath("${input[0]}", "${input[1]}") => ${expected}`, () => {
+            expect(Utils.isSubpath(...input)).toBe(expected);
+        });
+    });
+});

@@ -4,12 +4,12 @@
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
   "main": "src/index.js",
   "bin": "src/index.js",
-  "version": "4.57.0",
+  "version": "4.60.1",
   "scripts": {
-    "esbuild": "esbuild src/index.ts --outfile=bin/index.cjs --bundle --platform=node --format=cjs --minify --external:yargs --sourcemap=inline",
-    "pkg-linux": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
-    "pkg-macos": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
-    "pkg-win": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
+    "esbuild": "esbuild src/index.ts --outfile=bin/index.cjs --bundle --platform=node --format=cjs --minify --external:yargs --external:re2 --sourcemap=inline",
+    "pkg-linux": "npx tsx scripts/install-re2-bin.ts --platform linux --platform-arch=x64 && pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
+    "pkg-macos": "npx tsx scripts/install-re2-bin.ts --platform darwin --platform-arch=x64 && pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
+    "pkg-win": "npx tsx scripts/install-re2-bin.ts --platform win32 --platform-arch=x64 && pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
     "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win && npm ci",
     "cleanup": "git clean -fX tests/ && git clean -fX src/",
     "build": " npm run cleanup && tsc",
@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "ajv": "8.x.x",
-    "axios": "1.7.9",
+    "axios": "1.9.0",
     "base64url": "3.x.x",
     "camelcase": "6.x.x",
     "chalk": "4.x.x",
@@ -41,12 +41,16 @@
     "object-traversal": "1.x.x",
     "p-map": "4.x.x",
     "pretty-hrtime": "1.x.x",
-    "re2js": "0.4.x",
+    "re2": "^1.21.4",
+    "semver": "7.x.x",
     "split2": "4.x.x",
-    "terminal-link": "2.x.x",
+    "terminal-link": "4.0.0",
     "yargs": "17.x.x"
   },
   "devDependencies": {
+    "@eslint/js": "9.x.x",
+    "@stylistic/eslint-plugin-js": "4.x.x",
+    "@stylistic/eslint-plugin-ts": "4.x.x",
     "@types/base64url": "2.x.x",
     "@types/camelcase": "5.x.x",
     "@types/checksum": "0.1.x",
@@ -57,21 +61,21 @@
     "@types/micromatch": "4.x.x",
     "@types/node": "22.x",
     "@types/pretty-hrtime": "1.x.x",
+    "@types/semver": "7.x.x",
     "@types/split2": "4.x.x",
     "@types/yargs": "17.x.x",
-    "@typescript-eslint/eslint-plugin": "7.x.x",
-    "@typescript-eslint/parser": "7.x.x",
-    "@yao-pkg/pkg": "6.x.x",
+    "@yao-pkg/pkg": "^6.0.0",
     "axios-mock-adapter": "2.x",
     "depcheck": "1.x.x",
     "esbuild": "0.25.x",
-    "eslint": "8.x.x",
+    "eslint": "9.x.x",
     "jest": "29.x.x",
     "jest-when": "3.x.x",
     "nodemon": "3.x.x",
     "ts-jest": "29.x.x",
     "tsx": "4.x.x",
-    "typescript": "5.x.x"
+    "typescript": "5.x.x",
+    "typescript-eslint": "8.x.x"
   },
   "engines": {
     "node": ">=18"
@@ -84,53 +88,6 @@
     "scripts": [
       "src/**/*.js"
     ]
-  },
-  "eslintConfig": {
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint"
-    ],
-    "ignorePatterns": [
-      "*.js"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended"
-    ],
-    "rules": {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/semi": "error",
-      "@typescript-eslint/quotes": "error",
-      "@typescript-eslint/comma-dangle": [
-        "error",
-        "always-multiline"
-      ],
-      "@typescript-eslint/object-curly-spacing": "error",
-      "@typescript-eslint/space-before-function-paren": "error",
-      "@typescript-eslint/space-before-blocks": "error",
-      "@typescript-eslint/space-infix-ops": "error",
-      "@typescript-eslint/member-delimiter-style": "error",
-      "@typescript-eslint/indent": [
-        "error",
-        4
-      ],
-      "@typescript-eslint/type-annotation-spacing": [
-        "error"
-      ],
-      "@typescript-eslint/func-call-spacing": [
-        "error"
-      ],
-      "@typescript-eslint/comma-spacing": [
-        "error"
-      ],
-      "keyword-spacing": "error",
-      "space-in-parens": "error",
-      "no-trailing-spaces": "error",
-      "no-multi-spaces": "error",
-      "arrow-spacing": "error",
-      "key-spacing": "error"
-    }
   },
   "jest": {
     "extensionsToTreatAsEsm": [

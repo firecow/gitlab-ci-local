@@ -40,7 +40,12 @@ export function jobExtends (gitlabData: any) {
 export function reference (gitlabData: any, recurseData: any) {
     for (const [key, value] of Object.entries<any>(recurseData || {})) {
         if (value?.referenceData) {
-            recurseData[key] = getSubDataByReference(gitlabData, value.referenceData);
+            if (Object.keys(value).length > 1) {
+                recurseData[key] = {...getSubDataByReference(gitlabData, value.referenceData), ...recurseData[key]};
+                delete recurseData[key].referenceData;
+            } else {
+                recurseData[key] = getSubDataByReference(gitlabData, value.referenceData);
+            }
         } else if (typeof value === "object") {
             reference(gitlabData, value);
         }
@@ -204,9 +209,9 @@ export function inheritDefault (gitlabData: any) {
             continue;
         }
 
-        const keywordsToInheritFrom = (Array.isArray(jobData.inherit?.default))
-            ? jobData.inherit.default
-            : ["artifacts", "cache", "services", "image", "before_script", "after_script"];
+        const keywordsToInheritFrom = (Array.isArray(jobData.inherit?.default)) ?
+            jobData.inherit.default :
+            ["artifacts", "cache", "services", "image", "before_script", "after_script"];
 
         for (const keyword of keywordsToInheritFrom) {
             if (gitlabData.default[keyword] !== undefined) jobData[keyword] = jobData[keyword] ?? gitlabData.default[keyword];

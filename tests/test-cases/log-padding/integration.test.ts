@@ -18,10 +18,10 @@ async function verifyLogs ({maxJobNamePadding, expectedJobNamePadding}: {maxJobN
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
-        chalk`{blueBright short-name${" ".repeat(expectedJobNamePadding)}} {greenBright >} short-name\n`
+        chalk`{blueBright short-name${" ".repeat(expectedJobNamePadding)}} {greenBright >} short-name\n`,
     );
     expect(writeStreams.stdoutLines.join("\n")).toContain(
-        chalk`{blueBright my-job-with-a-very-long-long-long-long-name} {greenBright >} long-name\n`
+        chalk`{blueBright my-job-with-a-very-long-long-long-long-name} {greenBright >} long-name\n`,
     );
 }
 
@@ -50,7 +50,7 @@ test("logs - log padding should only take needs and targeted jobs into account",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
-        chalk`{blueBright short-name with needs         } {greenBright >} short-name with needs\n`
+        chalk`{blueBright short-name with needs         } {greenBright >} short-name with needs\n`,
     );
 });
 
@@ -63,6 +63,6 @@ test("logs - log padding should only take targeted jobs into account", async () 
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
-        chalk`{blueBright short-name} {greenBright >} short-name\n`
+        chalk`{blueBright short-name} {greenBright >} short-name\n`,
     );
 });

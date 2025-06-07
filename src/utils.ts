@@ -53,6 +53,10 @@ export class Utils {
         });
     }
 
+    static safeBashString (s: string) {
+        return `'${s.replace(/'/g, "'\"'\"'")}'`; // replaces `'` with `'"'"'`
+    }
+
     static forEachRealJob (gitlabData: any, callback: (jobName: string, jobData: any) => void) {
         for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
             if (Job.illegalJobNames.has(jobName) || jobName[0].startsWith(".")) {
@@ -110,7 +114,7 @@ export class Utils {
                     assert(name, "unexpected unset capture group");
                     return `${expandWith.variable(name)}`;
                 }
-            }
+            },
         );
     }
 
@@ -294,8 +298,12 @@ export class Utils {
         return Boolean(res);
     }
 
-    static evaluateRuleExist (cwd: string, ruleExists: string[] | undefined): boolean {
+    static evaluateRuleExist (cwd: string, ruleExists: string[] | {paths: string[]} | undefined): boolean {
         if (ruleExists === undefined) return true;
+
+        // Normalize rules:exists:paths to rules:exists
+        if (!Array.isArray(ruleExists)) ruleExists = ruleExists.paths;
+
         for (const pattern of ruleExists) {
             if (pattern == "") {
                 continue;
@@ -322,6 +330,25 @@ export class Utils {
             posix: false,
             dot: true,
         });
+    }
+
+    static isSubpath (lhs: string, rhs: string, cwd: string = process.cwd()) {
+        let absLhs = "";
+        if (path.isAbsolute(lhs)) {
+            absLhs = lhs;
+        } else {
+            absLhs = path.resolve(cwd, lhs);
+        }
+
+        let absRhs = "";
+        if (path.isAbsolute(rhs)) {
+            absRhs = rhs;
+        } else {
+            absRhs = path.resolve(cwd, rhs);
+        }
+
+        const relative = path.relative(absRhs, absLhs);
+        return !relative.startsWith("..");
     }
 
     static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
@@ -371,7 +398,7 @@ export class Utils {
                 try {
                     const {status} = await axios.get(`${protocol}://${domain}:${port}/${projectPath}/-/raw/${ref}/${file}`);
                     return (status === 200);
-                } catch (e) {
+                } catch {
                     return false;
                 }
             }

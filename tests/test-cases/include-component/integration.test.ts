@@ -68,6 +68,107 @@ test-latest:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
+test("include-component component (protocol: https) (minor semver)", async () => {
+    initSpawnSpy([WhenStatics.mockGitRemoteHttp]);
+
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-component/component-minor-semver",
+        preview: true,
+    }, writeStreams);
+
+
+    const expected = `---
+stages:
+  - .pre
+  - format-override
+  - build-override
+  - test-override
+  - .post
+format-latest:
+  image:
+    name: golang:latest
+  stage: format-override
+  script:
+    - go fmt $(go list ./... | grep -v /vendor/)
+    - go vet $(go list ./... | grep -v /vendor/)
+build-latest:
+  image:
+    name: golang:latest
+  stage: build-override
+  script:
+    - mkdir -p mybinaries
+    - go build -o mybinaries ./...
+  artifacts:
+    paths:
+      - mybinaries
+test-latest:
+  image:
+    name: golang:latest
+  stage: test-override
+  script:
+    - go test -race $(go list ./... | grep -v /vendor/)`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
+test("include-component component (protocol: https) (major semver)", async () => {
+    initSpawnSpy([WhenStatics.mockGitRemoteHttp]);
+
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-component/component-minor-semver",
+        preview: true,
+    }, writeStreams);
+
+
+    const expected = `---
+stages:
+  - .pre
+  - format-override
+  - build-override
+  - test-override
+  - .post
+format-latest:
+  image:
+    name: golang:latest
+  stage: format-override
+  script:
+    - go fmt $(go list ./... | grep -v /vendor/)
+    - go vet $(go list ./... | grep -v /vendor/)
+build-latest:
+  image:
+    name: golang:latest
+  stage: build-override
+  script:
+    - mkdir -p mybinaries
+    - go build -o mybinaries ./...
+  artifacts:
+    paths:
+      - mybinaries
+test-latest:
+  image:
+    name: golang:latest
+  stage: test-override
+  script:
+    - go test -race $(go list ./... | grep -v /vendor/)`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
+test("include-component component (protocol: https) (~latest semver)", async () => {
+    initSpawnSpy([WhenStatics.mockGitRemoteHttp]);
+
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-component/component-latest-semver",
+        preview: true,
+    }, writeStreams);
+
+    // Should not throw error
+    // NOTE: potentially this test might be flaky as we're pulling the latest gitlab component
+});
+
 test("include-component local component", async () => {
     const writeStreams = new WriteStreamsMock();
 

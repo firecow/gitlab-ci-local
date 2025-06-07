@@ -25,7 +25,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
     const yparser = yargs(process.argv.slice(2));
     yparser.parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
-        .version("4.57.0")
+        .version("4.60.1")
         .wrap(yparser.terminalWidth?.())
         .command({
             handler: async (argv) => {
@@ -187,6 +187,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "When using --shell-executor-no-image=false which image to be used for the container. Defaults to docker.io/ruby:3.1 if not set.",
             requiresArg: false,
         })
+        .option("helper-image", {
+            type: "string",
+            description: "When using --shell-executor-no-image=false which image to be used for the utils container. Defaults to docker.io/firecow/gitlab-ci-local-util:latest if not set.",
+            requiresArg: false,
+        })
         .option("mount-cache", {
             type: "boolean",
             description: "Enable docker mount based caching",
@@ -195,6 +200,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         .option("umask", {
             type: "boolean",
             description: "Sets docker user to 0:0",
+            requiresArg: false,
+        })
+        .option("userns", {
+            type: "string",
+            description: "Set docker executor userns option",
             requiresArg: false,
         })
         .option("privileged", {
@@ -311,7 +321,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                             done(jobNames);
                         });
                 }
-            } catch (e) {
+            } catch {
                 return ["Parser-Failed!"];
             }
 

@@ -1,0 +1,4 @@
+---
+configs/subfolder/.gitlab-ci.yml:
+  script:
+    - echo hello world

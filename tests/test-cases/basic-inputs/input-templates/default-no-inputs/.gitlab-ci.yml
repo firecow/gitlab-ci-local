@@ -1,0 +1,26 @@
+---
+spec:
+  inputs:
+    default_input_string:
+      type: string
+      default: string
+    default_input_number:
+      default: 1
+      type: number
+    default_input_boolean:
+      default: true
+      type: boolean
+    default_input_array:
+      type: array
+      default:
+        - alice
+        - bob
+---
+stages:
+  - test
+scan-website:
+  script:
+    - echo $[[ inputs.default_input_string ]]
+    - echo $[[ inputs.default_input_number ]]
+    - echo $[[ inputs.default_input_boolean ]]
+    - $[[ inputs.default_input_array ]]
