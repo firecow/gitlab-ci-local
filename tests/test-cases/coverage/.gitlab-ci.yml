@@ -9,3 +9,8 @@ import.meta.jest:
   coverage: /All files.*?\|.*?\|.*?([\d\.]+)/
   script:
     - echo "All files            |    99.3 |    97.91 |     100 |     100 |                   "
+
+pcre regex:
+  coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
+  script:
+    - echo "TOTAL                        18      0   100%"
