@@ -81,7 +81,11 @@ export class Utils {
     static async getCoveragePercent (cwd: string, stateDir: string, coverageRegex: string, jobName: string) {
         const content = await fs.readFile(`${cwd}/${stateDir}/output/${jobName}.log`, "utf8");
 
-        const regex = new RegExp(coverageRegex.replace(/^\//, "").replace(/\/$/, ""), "gm");
+        const regex = new RE2(
+            coverageRegex
+                .replace(/^\//, "")
+                .replace(/\/$/, "")
+            , "gm");
         const matches = Array.from(content.matchAll(regex));
         if (matches.length === 0) return "0";
 
