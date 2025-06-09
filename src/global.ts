@@ -11,7 +11,7 @@ String.prototype.matchRE2JS = function (o: RE2JS): Array<string> | null {
     while (matcher.find()) {
         const g = matcher.group();
         if (g == "") continue;
-        results = results == null ? [] : results;
+        results = results ?? [];
         results.push(g);
     }
     return results;
