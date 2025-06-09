@@ -1,4 +1,5 @@
-import RE2 from "re2";
+import "./global.js";
+import {RE2JS} from "re2js";
 import chalk from "chalk";
 import {Job, JobRule} from "./job.js";
 import fs from "fs-extra";
@@ -209,6 +210,20 @@ export class Utils {
         if (ruleIf === undefined) return true;
         let evalStr = ruleIf;
 
+        const flagsToBinary = (flags: string): number => {
+            let binary = 0;
+            if (flags.includes("i")) {
+                binary |= RE2JS.CASE_INSENSITIVE;
+            }
+            if (flags.includes("s")) {
+                binary |= RE2JS.DOTALL;
+            }
+            if (flags.includes("m")) {
+                binary |= RE2JS.MULTILINE;
+            }
+            return binary;
+        };
+
         // Expand all variables
         evalStr = this.expandTextWith(evalStr, {
             unescape: JSON.stringify("$"),
@@ -240,7 +255,8 @@ export class Utils {
                 "as rhs contains unescaped quote",
             ];
             assert(!containsNonEscapedSlash, assertMsg.join("\n"));
-            return `.match(new RE2(${_rhs}, "${flags}")) ${_operator} null${remainingTokens}`;
+            const flagsBinary = flagsToBinary(flags);
+            return `.matchRE2JS(RE2JS.compile(${_rhs}, ${flagsBinary})) ${_operator} null${remainingTokens}`;
         });
 
         // Scenario when RHS is surrounded by single/double-quotes
@@ -267,22 +283,23 @@ export class Utils {
 
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
-                return `new RE2("${pattern}", "${flags}")`;
+                const flagsBinary = flagsToBinary(flags);
+                return `RE2JS.compile("${pattern}", ${flagsBinary})`;
             });
-            return `.match(${_rhs}) ${_operator} null`;
+            return `.matchRE2JS(${_rhs}) ${_operator} null`;
         });
 
         // Convert all null.match functions to false
-        evalStr = evalStr.replace(/null.match\(.+?\)\s*!=\s*null/g, "false");
-        evalStr = evalStr.replace(/null.match\(.+?\)\s*==\s*null/g, "false");
+        evalStr = evalStr.replace(/null.matchRE2JS\(.+?\)\s*!=\s*null/g, "false");
+        evalStr = evalStr.replace(/null.matchRE2JS\(.+?\)\s*==\s*null/g, "false");
 
         evalStr = evalStr.trim();
 
         let res;
         try {
-            (global as any).RE2 = RE2; // Assign RE2 to the global object
+            (global as any).RE2JS = RE2JS; // Assign RE2JS to the global object
             res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
-            delete (global as any).RE2; // Cleanup
+            delete (global as any).RE2JS; // Cleanup
         } catch {
             const assertMsg = [
                 "Error attempting to evaluate the following rules:",

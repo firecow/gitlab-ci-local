@@ -10,7 +10,7 @@ import axios from "axios";
 import globby from "globby";
 import path from "path";
 import semver from "semver";
-import RE2 from "re2";
+import {RE2JS} from "re2js";
 
 type ParserIncludesInitOptions = {
     argv: Argv;
@@ -374,6 +374,6 @@ export function resolveIncludeLocal (pattern: string, cwd: string) {
     const anything_but_not_slash = "([^/])*?";
     pattern = pattern.replace(/\\\*/g, anything_but_not_slash);
 
-    const re2 = new RE2(`^${pattern}`);
-    return repoFiles.filter((f: any) => re2.test(f));
+    const re2js = RE2JS.compile(`^${pattern}`);
+    return repoFiles.filter((f: any) => re2js.matches(f));
 }
