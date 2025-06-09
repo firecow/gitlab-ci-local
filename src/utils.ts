@@ -215,7 +215,7 @@ export class Utils {
             if (flags.includes("i")) {
                 binary |= RE2JS.CASE_INSENSITIVE;
             }
-            if (flags.includes("g")) {
+            if (flags.includes("s")) {
                 binary |= RE2JS.DOTALL;
             }
             if (flags.includes("m")) {
