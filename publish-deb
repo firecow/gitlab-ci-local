@@ -37,6 +37,3 @@ mv "bin/gitlab-ci-local_${VERSION}_amd64.deb" "ppa/"
 (cd ppa && apt-ftparchive release . > Release)
 (cd ppa && gpg --default-key "madsjon@gmail.com" -abs -o - Release > Release.gpg)
 (cd ppa && gpg --default-key "madsjon@gmail.com" --clearsign -o - Release > InRelease)
-
-rm -f ppa/ppa.zip
-(cd ppa && zip -r ppa.zip .)
