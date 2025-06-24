@@ -29,3 +29,15 @@ test("coverage <import.meta.jest>", async () => {
     const expected = [chalk`{black.bgGreenBright  PASS } {blueBright import.meta.jest} 97.91% {gray coverage}`];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test("coverage <pcre regex>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/coverage",
+        job: ["pcre regex"],
+        noColor: true,
+    }, writeStreams);
+
+    const expected = [chalk`{black.bgGreenBright  PASS } {blueBright pcre regex} 100% {gray coverage}`];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
