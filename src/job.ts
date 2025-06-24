@@ -3,19 +3,19 @@ import * as dotenv from "dotenv";
 import fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
 import split2 from "split2";
-import {Utils} from "./utils.js";
-import {WriteStreams} from "./write-streams.js";
-import {GitData} from "./git-data.js";
-import assert, {AssertionError} from "assert";
-import {Mutex} from "./mutex.js";
-import {Argv} from "./argv.js";
+import { Utils } from "./utils.js";
+import { WriteStreams } from "./write-streams.js";
+import { GitData } from "./git-data.js";
+import assert, { AssertionError } from "assert";
+import { Mutex } from "./mutex.js";
+import { Argv } from "./argv.js";
 import execa from "execa";
-import {CICDVariable} from "./variables-from-files.js";
-import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues} from "./gitlab-preset.js";
-import {handler} from "./handler.js";
+import { CICDVariable } from "./variables-from-files.js";
+import { GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues } from "./gitlab-preset.js";
+import { handler } from "./handler.js";
 import * as yaml from "js-yaml";
-import {Parser} from "./parser.js";
-import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
+import { Parser } from "./parser.js";
+import { resolveIncludeLocal, validateIncludeLocal } from "./parser-includes.js";
 import globby from "globby";
 import terminalLink from "terminal-link";
 
@@ -590,6 +590,7 @@ export class Job {
         this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
         const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));
         const imageName = this.imageName(expanded);
+        const imagePlatform = this.imagePlatform(expanded);
         const helperImageName = argv.helperImage;
         const safeJobName = this.safeJobName;
 
@@ -602,7 +603,7 @@ export class Job {
         }
 
         if (imageName) {
-            await this.pullImage(writeStreams, imageName);
+            await this.pullImage(writeStreams, imageName, imagePlatform);
 
             const buildVolumeName = this.buildVolumeName;
             const tmpVolumeName = this.tmpVolumeName;
@@ -858,6 +859,11 @@ export class Job {
                 dockerCmd += `--user ${imageUser} `;
             }
 
+            const imagePlatform = this.imagePlatform(expanded);
+            if (imagePlatform) {
+                dockerCmd += `--platform ${imagePlatform} `;
+            }
+
             if (this.argv.containerEmulate) {
                 const runnerName: string = this.argv.containerEmulate;
 
@@ -1057,6 +1063,13 @@ export class Job {
         return Utils.expandText(image["docker"]["user"], vars);
     }
 
+    private imagePlatform (vars: {[key: string]: string} = {}): string | null {
+        const image = this.jobData["image"];
+        if (!image) return null;
+        if (!image["docker"]) return null;
+        return Utils.expandText(image["docker"]["platform"], vars);
+    }
+
     get imageEntrypoint (): string[] | null {
         const image = this.jobData["image"];
 
@@ -1085,12 +1098,15 @@ export class Job {
         }
     }
 
-    private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
+    private async pullImage (writeStreams: WriteStreams, imageToPull: string, imagePlatform?: string | null) {
         const pullPolicy = this.argv.pullPolicy;
         const actualPull = async () => {
             await this.validateCiDependencyProxyServerAuthentication(imageToPull);
             const time = process.hrtime();
-            await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull]);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulling} ${imageToPull}${imagePlatform ? ` (${imagePlatform})` : ""}\n`);
+
+            const platform = imagePlatform ? ["--platform", imagePlatform] : [];
+            await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull, ...platform]);
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
