@@ -199,7 +199,7 @@ export class Utils {
         for (const rule of opt.rules) {
             if (!Utils.evaluateRuleIf(rule.if, opt.variables)) continue;
             if (!Utils.evaluateRuleExist(opt.cwd, rule.exists)) continue;
-            if (evaluateRuleChanges && !Utils.evaluateRuleChanges(gitData.branches.default, rule.changes)) continue;
+            if (evaluateRuleChanges && !Utils.evaluateRuleChanges(gitData.branches.default, rule.changes, opt.cwd)) continue;
 
             when = rule.when ? rule.when : jobWhen;
             allowFailure = rule.allow_failure ?? allowFailure;
@@ -337,7 +337,7 @@ export class Utils {
         return false;
     }
 
-    static evaluateRuleChanges (defaultBranch: string, ruleChanges: string[] | {paths: string[]} | undefined): boolean {
+    static evaluateRuleChanges (defaultBranch: string, ruleChanges: string[] | {paths: string[]} | undefined, cwd: string): boolean {
         if (ruleChanges === undefined) return true;
 
         // Normalize rules:changes:paths to rules:changes
@@ -346,7 +346,7 @@ export class Utils {
         // NOTE: https://docs.gitlab.com/ee/ci/yaml/#ruleschanges
         //   Glob patterns are interpreted with Ruby's [File.fnmatch](https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch)
         //   with the flags File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB.
-        return micromatch.some(GitData.changedFiles(`origin/${defaultBranch}`), ruleChanges, {
+        return micromatch.some(GitData.changedFiles(`origin/${defaultBranch}`, cwd), ruleChanges, {
             nonegate: true,
             noextglob: true,
             posix: false,
