@@ -94,7 +94,7 @@ export class ParserIncludes {
                 validateIncludeLocal(value["local"]);
                 const files = await resolveIncludeLocal(value["local"], cwd);
                 if (files.length == 0) {
-                    throw new AssertionError({message: `Local include file cannot be found ${cwd}${value["local"]}`});
+                    throw new AssertionError({message: `Local include file cannot be found ${value["local"]}`});
                 }
                 for (const localFile of files) {
                     const content = await Parser.loadYaml(localFile, {inputs: value.inputs ?? {}}, expandVariables);
