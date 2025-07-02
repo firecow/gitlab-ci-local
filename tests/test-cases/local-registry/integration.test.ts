@@ -42,6 +42,7 @@ test("local-registry login <oci>", async () => {
         cwd: "tests/test-cases/local-registry",
         job: ["registry-login-oci"],
         registry: true,
+        privileged: true,
     }, writeStreams);
 
 
