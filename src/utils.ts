@@ -466,7 +466,7 @@ export class Utils {
                 "-x509", "-days", "365",
                 "-out", `/certs/${this.gclRegistryPrefix}.crt`,
                 "-subj", `/CN=${this.gclRegistryPrefix}`,
-                "-addext", `subjectAltName=DNS:${this.gclRegistryPrefix}`
+                "-addext", `subjectAltName=DNS:${this.gclRegistryPrefix}`,
             ];
             const generateCertsInPlace = [
                 argv.containerExecutable, "run", "--rm", "-v", `${gclRegistryCertVol}:/certs`, "--entrypoint", "sh", "alpine/openssl", "-c",
@@ -474,7 +474,7 @@ export class Utils {
                     "openssl", ...opensslArgs,
                     "&&", "mkdir", "-p", `/certs/${this.gclRegistryPrefix}`,
                     "&&", "cp", `/certs/${this.gclRegistryPrefix}.crt`, `/certs/${this.gclRegistryPrefix}/ca.crt`,
-                ].join(" ")
+                ].join(" "),
             ];
             await Utils.spawn(generateCertsInPlace);
         }
@@ -505,7 +505,7 @@ export class Utils {
             "-e", "REGISTRY_HTTP_ADDR=0.0.0.0:443",
             "-e", `REGISTRY_HTTP_TLS_CERTIFICATE=/certs/${this.gclRegistryPrefix}.crt`,
             "-e", `REGISTRY_HTTP_TLS_KEY=/certs/${this.gclRegistryPrefix}.key`,
-            "registry"
+            "registry",
         ]);
     }
 

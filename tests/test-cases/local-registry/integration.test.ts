@@ -8,7 +8,7 @@ test("local-registry ci variables", async () => {
     await handler({
         cwd: "tests/test-cases/local-registry",
         job: ["registry-variables"],
-        registry: true
+        registry: true,
     }, writeStreams);
 
     const expected = [
@@ -25,7 +25,7 @@ test("local-registry login <docker>", async () => {
     await handler({
         cwd: "tests/test-cases/local-registry",
         job: ["registry-login-docker"],
-        registry: true
+        registry: true,
     }, writeStreams);
 
 
@@ -41,7 +41,7 @@ test("local-registry login <oci>", async () => {
     await handler({
         cwd: "tests/test-cases/local-registry",
         job: ["registry-login-oci"],
-        registry: true
+        registry: true,
     }, writeStreams);
 
 
