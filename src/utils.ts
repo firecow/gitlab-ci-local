@@ -434,4 +434,82 @@ export class Utils {
         // https://dev.to/babak/exhaustive-type-checking-with-typescript-4l3f
         throw new Error(`Unhandled case ${param}`);
     }
+
+    static async dockerVolumeFileExists (containerExecutable: string, path: string, volume: string): Promise<boolean> {
+        try {
+            await Utils.spawn([containerExecutable, "run", "--rm", "-v", `${volume}:/mnt/vol`, "alpine", "ls", `/mnt/vol/${path}`]);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    static gclRegistryPrefix: string = "registry.gcl.local";
+    static async startDockerRegistry (argv: Argv): Promise<void> {
+        const gclRegistryCertVol = `${this.gclRegistryPrefix}.certs`;
+        const gclRegistryDataVol = `${this.gclRegistryPrefix}.data`;
+        const gclRegistryNet = `${this.gclRegistryPrefix}.net`;
+
+        // create cert volume
+        try {
+            await Utils.spawn(`${argv.containerExecutable} volume create ${gclRegistryCertVol}`.split(" "));
+        } catch (err) {
+            if (err instanceof Error && "exitCode" in err && err.exitCode !== 125)
+                throw err;
+        }
+
+        // create self-signed cert/key files for https support
+        if (!await this.dockerVolumeFileExists(argv.containerExecutable, `${this.gclRegistryPrefix}.crt`, gclRegistryCertVol)) {
+            const opensslArgs = [
+                "req", "-newkey", "rsa:4096", "-nodes", "-sha256",
+                "-keyout", `/certs/${this.gclRegistryPrefix}.key`,
+                "-x509", "-days", "365",
+                "-out", `/certs/${this.gclRegistryPrefix}.crt`,
+                "-subj", `/CN=${this.gclRegistryPrefix}`,
+                "-addext", `subjectAltName=DNS:${this.gclRegistryPrefix}`
+            ];
+            const generateCertsInPlace = [
+                argv.containerExecutable, "run", "--rm", "-v", `${gclRegistryCertVol}:/certs`, "--entrypoint", "sh", "alpine/openssl", "-c",
+                [
+                    "openssl", ...opensslArgs,
+                    "&&", "mkdir", "-p", `/certs/${this.gclRegistryPrefix}`,
+                    "&&", "cp", `/certs/${this.gclRegistryPrefix}.crt`, `/certs/${this.gclRegistryPrefix}/ca.crt`,
+                ].join(" ")
+            ];
+            await Utils.spawn(generateCertsInPlace);
+        }
+
+        // create data volume
+        try {
+            await Utils.spawn([argv.containerExecutable, "volume", "create", gclRegistryDataVol]);
+        } catch (err) {
+            // rethrow error if not 'already exists' (exitCode 125)
+            if (err instanceof Error && "exitCode" in err && err.exitCode !== 125)
+                throw err;
+        }
+
+        // create network
+        try {
+            await Utils.spawn([argv.containerExecutable, "network", "create", gclRegistryNet]);
+        } catch (err) {
+            if (err instanceof Error && "exitCode" in err && err.exitCode !== 125)
+                throw err;
+        }
+
+        await Utils.spawn([argv.containerExecutable, "rm", "-f", this.gclRegistryPrefix]);
+        await Utils.spawn([
+            argv.containerExecutable, "run", "-d", "--name", this.gclRegistryPrefix,
+            "--network", gclRegistryNet,
+            "--volume", `${gclRegistryDataVol}:/var/lib/registry`,
+            "--volume", `${gclRegistryCertVol}:/certs:ro`,
+            "-e", "REGISTRY_HTTP_ADDR=0.0.0.0:443",
+            "-e", `REGISTRY_HTTP_TLS_CERTIFICATE=/certs/${this.gclRegistryPrefix}.crt`,
+            "-e", `REGISTRY_HTTP_TLS_KEY=/certs/${this.gclRegistryPrefix}.key`,
+            "registry"
+        ]);
+    }
+
+    static async stopDockerRegistry (containerExecutable: string): Promise<void> {
+        await Utils.spawn([containerExecutable, "rm", "-f", this.gclRegistryPrefix]);
+    }
 }

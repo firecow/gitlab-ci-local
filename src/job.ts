@@ -893,6 +893,15 @@ export class Job {
                 dockerCmd += `--network ${this._serviceNetworkId} --network-alias build `;
             }
 
+            if (this.argv.registry) {
+                dockerCmd += `--network ${Utils.gclRegistryPrefix}.net `;
+                dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
+                dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/docker/certs.d:ro `;
+                expanded["CI_REGISTRY"] = Utils.gclRegistryPrefix;
+                expanded["CI_REGISTRY_USER"] = expanded["CI_REGISTRY_USER"] ?? `${Utils.gclRegistryPrefix}.user`;
+                expanded["CI_REGISTRY_PASSWORD"] = expanded["CI_REGISTRY_PASSWORD"] ?? `${Utils.gclRegistryPrefix}.password`;
+            }
+
             dockerCmd += `--volume ${buildVolumeName}:${this.ciProjectDir} `;
             dockerCmd += `--volume ${tmpVolumeName}:${this.fileVariablesDir} `;
             dockerCmd += `--workdir ${this.ciProjectDir} `;
