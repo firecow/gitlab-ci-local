@@ -454,7 +454,7 @@ export class Utils {
         try {
             await Utils.spawn(`${argv.containerExecutable} volume create ${gclRegistryCertVol}`.split(" "));
         } catch (err) {
-            if (err instanceof Error && "exitCode" in err && err.exitCode !== 125)
+            if (err instanceof Error && !err.message.endsWith("already exists"))
                 throw err;
         }
 
@@ -483,8 +483,7 @@ export class Utils {
         try {
             await Utils.spawn([argv.containerExecutable, "volume", "create", gclRegistryDataVol]);
         } catch (err) {
-            // rethrow error if not 'already exists' (exitCode 125)
-            if (err instanceof Error && "exitCode" in err && err.exitCode !== 125)
+            if (err instanceof Error && !err.message.endsWith("already exists"))
                 throw err;
         }
 
@@ -492,7 +491,7 @@ export class Utils {
         try {
             await Utils.spawn([argv.containerExecutable, "network", "create", gclRegistryNet]);
         } catch (err) {
-            if (err instanceof Error && "exitCode" in err && err.exitCode !== 125)
+            if (err instanceof Error && !err.message.includes("already exists"))
                 throw err;
         }
 
