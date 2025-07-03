@@ -323,7 +323,7 @@ export class Job {
             predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
         }
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
-        predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
+        predefinedVariables["CI_REGISTRY"] = predefinedVariables["CI_REGISTRY"] = this.argv.registry ? Utils.gclRegistryPrefix : `local-registry.${this.gitData.remote.host}`;
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${predefinedVariables["CI_PROJECT_PATH"].toLowerCase()}`;
         return predefinedVariables;
     }
@@ -829,6 +829,11 @@ export class Job {
             });
         }
 
+        if (this.argv.registry) {
+            expanded["CI_REGISTRY_USER"] = expanded["CI_REGISTRY_USER"] ?? `${Utils.gclRegistryPrefix}.user`;
+            expanded["CI_REGISTRY_PASSWORD"] = expanded["CI_REGISTRY_PASSWORD"] ?? `${Utils.gclRegistryPrefix}.password`;
+        }
+
         this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (imageName && !this._containerId) {
@@ -897,9 +902,6 @@ export class Job {
                 dockerCmd += `--network ${Utils.gclRegistryPrefix}.net `;
                 dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
                 dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/docker/certs.d:ro `;
-                expanded["CI_REGISTRY"] = Utils.gclRegistryPrefix;
-                expanded["CI_REGISTRY_USER"] = expanded["CI_REGISTRY_USER"] ?? `${Utils.gclRegistryPrefix}.user`;
-                expanded["CI_REGISTRY_PASSWORD"] = expanded["CI_REGISTRY_PASSWORD"] ?? `${Utils.gclRegistryPrefix}.password`;
             }
 
             dockerCmd += `--volume ${buildVolumeName}:${this.ciProjectDir} `;
