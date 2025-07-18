@@ -31,7 +31,7 @@
     "chalk": "4.x.x",
     "checksum": "1.x.x",
     "deep-extend": "0.6.x",
-    "dotenv": "16.x.x",
+    "dotenv": "16.6.0",
     "execa": "5.x.x",
     "fs-extra": "11.x.x",
     "globby": "11.x.x",
