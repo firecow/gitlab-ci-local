@@ -3,6 +3,6 @@
     "express": "^4.21.2"
   },
   "devDependencies": {
-    "npm-check-updates": "^10.2.5"
+    "npm-check-updates": "^18.0.1"
   }
 }
