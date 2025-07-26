@@ -158,9 +158,16 @@ export class ParserIncludes {
                         break;
                     } else {
                         const localFileName = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${projectPath}/${ref}/${f}`;
-                        // Check remotely only if the file does not exist locally
-                        if (!fs.existsSync(localFileName) && !(await Utils.remoteFileExist(cwd, f, ref, domain, projectPath, gitData.remote.schema, gitData.remote.port))) {
+                        const fileExists = fs.existsSync(localFileName);
+                        // If the file already has been downloaded, skip it
+                        if (fileExists) {
                             continue;
+                        }
+
+                        // Check remotely only if the file does not exist locally
+                        const remoteFileExists = await Utils.remoteFileExist(cwd, f, ref, domain, projectPath, gitData.remote.schema, gitData.remote.port);
+                        if (!remoteFileExists) { 
+                            continue
                         }
 
                         const fileDoc = {
