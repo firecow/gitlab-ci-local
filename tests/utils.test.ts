@@ -178,7 +178,7 @@ describe("evaluateRuleChanges", () => {
         test.concurrent(`${t.description} \t\t [input: ${t.input} pattern: ${t.pattern} hasChanges: ${t.hasChanges}]`, () => {
             const spy = import.meta.jest.spyOn(GitData, "changedFiles");
             spy.mockReturnValue(t.input);
-            expect(Utils.evaluateRuleChanges("origin/master", t.pattern)).toBe(t.hasChanges);
+            expect(Utils.evaluateRuleChanges("origin/master", t.pattern, ".")).toBe(t.hasChanges);
         });
     });
 });

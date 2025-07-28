@@ -80,8 +80,8 @@ export class GitData {
         }
     }
 
-    static changedFiles (defaultBranch: string) {
-        return Utils.syncSpawn(["git", "diff", "--name-only", defaultBranch]).stdout.split("\n");
+    static changedFiles (defaultBranch: string, cwd: string) {
+        return Utils.syncSpawn(["git", "diff", "--name-only", defaultBranch], cwd).stdout.split("\n");
     }
 
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
