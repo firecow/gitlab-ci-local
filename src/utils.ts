@@ -434,4 +434,12 @@ export class Utils {
         // https://dev.to/babak/exhaustive-type-checking-with-typescript-4l3f
         throw new Error(`Unhandled case ${param}`);
     }
+
+    static async getTrackedFiles (cwd: string): Promise<string[]> {
+        const lsFilesRes = await Utils.bash("git ls-files --deduplicate", cwd);
+        if (lsFilesRes.exitCode != 0) {
+            throw new Error(`Failed to list tracked files in ${cwd}: ${lsFilesRes.stderr}`);
+        }
+        return lsFilesRes.stdout.split("\n");
+    }
 }

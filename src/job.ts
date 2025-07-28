@@ -1546,7 +1546,7 @@ export class Job {
             if (include["local"]) {
                 const expandedInclude = Utils.expandText(include["local"], this._variables);
                 validateIncludeLocal(expandedInclude);
-                const files = resolveIncludeLocal(expandedInclude, cwd);
+                const files = await resolveIncludeLocal(expandedInclude, cwd);
                 if (files.length == 0) {
                     throw new AssertionError({message: `Local include file \`${include["local"]}\` specified in \`.${this.name}\` cannot be found!`});
                 }
