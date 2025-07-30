@@ -14,8 +14,10 @@ test.concurrent("cache-directives <test-job> --shell-isolation --needs", async (
     await handler({
         cwd: "tests/test-cases/cache-directives",
         job: ["test-job"],
+        noColor: true,
         shellIsolation: true,
     }, writeStreams);
 
     await expect(fs.pathExists("tests/test-cases/cache-directives/.gitlab-ci-local/cache/default/cache/file1.txt")).resolves.toBe(true);
+    expect(writeStreams.stdoutLines.join("\n")).toContain("cache/**.txt: found 1 artifact files and directories");
 });

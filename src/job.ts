@@ -1224,7 +1224,8 @@ export class Job {
             });
             endTime = process.hrtime(time);
 
-            for (const _path of c.paths) {
+            for (const __path of c.paths) {
+                const _path = Utils.expandText(__path, expanded);
                 if (!Utils.isSubpath(_path, this.argv.cwd, this.argv.cwd)) {
                     writeStreams.stdout(chalk`{yellow WARNING: processPath: artifact path is not a subpath of project directory: ${_path}}\n`);
                     continue;
