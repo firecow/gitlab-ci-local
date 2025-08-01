@@ -251,10 +251,10 @@ export class Parser {
         let index = 0;
         if (expandVariables) {
             for (const line of fileSplit) {
-                interactiveMatch = !interactiveMatch ? /#\s?@\s?[Ii]nteractive/.exec(line) : interactiveMatch;
-                injectSSHAgent = !injectSSHAgent ? /#\s?@\s?[Ii]njectSSHAgent/.exec(line) : injectSSHAgent;
-                noArtifactsToSourceMatch = !noArtifactsToSourceMatch ? /#\s?@\s?NoArtifactsToSource/i.exec(line) : noArtifactsToSourceMatch;
-                descriptionMatch = !descriptionMatch ? /#\s?@\s?[Dd]escription (?<description>.*)/.exec(line) : descriptionMatch;
+                interactiveMatch = interactiveMatch ?? /#\s?@\s?[Ii]nteractive/.exec(line);
+                injectSSHAgent = injectSSHAgent ?? /#\s?@\s?[Ii]njectSSHAgent/.exec(line);
+                noArtifactsToSourceMatch = noArtifactsToSourceMatch ?? /#\s?@\s?NoArtifactsToSource/i.exec(line);
+                descriptionMatch = descriptionMatch ?? /#\s?@\s?[Dd]escription (?<description>.*)/.exec(line);
 
                 const jobMatch = /\w:/.exec(line);
                 if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
