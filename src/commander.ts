@@ -223,7 +223,7 @@ export class Commander {
 
         const renderLine = (job: Job) => {
             const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job);
-            const allowFailure = job.allowFailure ? "true " : "false";
+            const allowFailure = job.allowFailure ? "true " : "false ";
             let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
             jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
             if (needs) {
