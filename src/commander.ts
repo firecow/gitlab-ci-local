@@ -268,7 +268,7 @@ export class Commander {
         writeStreams.stdout("name;description;stage;when;allowFailure;needs\n");
         jobs.forEach((job) => {
             const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job).join(",") ?? [];
-            writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure};[${needs}]\n`);
+            writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure ? "true " : "false"};[${needs}]\n`);
         });
     }
 
