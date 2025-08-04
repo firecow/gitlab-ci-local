@@ -6,7 +6,7 @@ import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "assert";
 import chalk from "chalk";
 import {Parser} from "./parser.js";
-import axios from "axios";
+import axios, {AxiosRequestConfig} from "axios";
 import path from "path";
 import semver from "semver";
 import {RE2JS} from "re2js";
@@ -286,8 +286,18 @@ export class ParserIncludes {
         const fsUrl = Utils.fsUrl(url);
         try {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
-            if (await fs.pathExists(target) && !fetchIncludes) return;
-            const res = await axios.get(url, {headers: {"User-Agent": "gitlab-ci-local"}});
+            if ((await fs.pathExists(target)) && !fetchIncludes) return;
+            const axiosConfig: AxiosRequestConfig = {headers: {"User-Agent": "gitlab-ci-local"}};
+            const proxyEnv = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+            if (proxyEnv) {
+                const proxyUrl = new URL(proxyEnv);
+                axiosConfig.proxy = {
+                    host: proxyUrl.hostname,
+                    port: proxyUrl.port ? parseInt(proxyUrl.port, 10) : 8080,
+                    protocol: proxyUrl.protocol.replace(":", ""),
+                };
+            }
+            const res = await axios.get(url, axiosConfig);
             await fs.outputFile(target, res.data);
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});
