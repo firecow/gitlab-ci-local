@@ -286,7 +286,7 @@ export class ParserIncludes {
         const fsUrl = Utils.fsUrl(url);
         try {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
-            if ((await fs.pathExists(target)) && !fetchIncludes) return;
+            if (await fs.pathExists(target) && !fetchIncludes) return;
             const axiosConfig: AxiosRequestConfig = {
                 headers: {"User-Agent": "gitlab-ci-local"},
                 ...Utils.getAxiosProxyConfig(),
