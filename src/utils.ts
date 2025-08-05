@@ -418,18 +418,7 @@ export class Utils {
             case "http":
             case "https": {
                 try {
-                    let axiosConfig: AxiosRequestConfig = {};
-                    const proxyEnv = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
-                    if (proxyEnv) {
-                        const proxyUrl = new URL(proxyEnv);
-                        axiosConfig = {
-                            proxy: {
-                                host: proxyUrl.hostname,
-                                port: proxyUrl.port ? parseInt(proxyUrl.port, 10) : 8080,
-                                protocol: proxyUrl.protocol.replace(":", ""),
-                            },
-                        };
-                    }
+                    const axiosConfig: AxiosRequestConfig = Utils.getAxiosProxyConfig();
                     const {status} = await axios.get(
                         `${protocol}://${domain}:${port}/${projectPath}/-/raw/${ref}/${file}`,
                         axiosConfig,
@@ -456,5 +445,20 @@ export class Utils {
             throw new Error(`Failed to list tracked files in ${cwd}: ${lsFilesRes.stderr}`);
         }
         return lsFilesRes.stdout.split("\n");
+    }
+
+    static getAxiosProxyConfig (): AxiosRequestConfig {
+        const proxyEnv = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+        if (proxyEnv) {
+            const proxyUrl = new URL(proxyEnv);
+            return {
+                proxy: {
+                    host: proxyUrl.hostname,
+                    port: proxyUrl.port ? parseInt(proxyUrl.port, 10) : 8080,
+                    protocol: proxyUrl.protocol.replace(":", ""),
+                },
+            };
+        }
+        return {};
     }
 }
