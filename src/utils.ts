@@ -11,7 +11,7 @@ import {CICDVariable} from "./variables-from-files.js";
 import {GitData, GitSchema} from "./git-data.js";
 import globby from "globby";
 import micromatch from "micromatch";
-import axios from "axios";
+import axios, {AxiosRequestConfig} from "axios";
 import path from "path";
 import {Argv} from "./argv.js";
 
@@ -418,7 +418,11 @@ export class Utils {
             case "http":
             case "https": {
                 try {
-                    const {status} = await axios.get(`${protocol}://${domain}:${port}/${projectPath}/-/raw/${ref}/${file}`);
+                    const axiosConfig: AxiosRequestConfig = Utils.getAxiosProxyConfig();
+                    const {status} = await axios.get(
+                        `${protocol}://${domain}:${port}/${projectPath}/-/raw/${ref}/${file}`,
+                        axiosConfig,
+                    );
                     return (status === 200);
                 } catch {
                     return false;
@@ -441,5 +445,20 @@ export class Utils {
             throw new Error(`Failed to list tracked files in ${cwd}: ${lsFilesRes.stderr}`);
         }
         return lsFilesRes.stdout.split("\n");
+    }
+
+    static getAxiosProxyConfig (): AxiosRequestConfig {
+        const proxyEnv = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+        if (proxyEnv) {
+            const proxyUrl = new URL(proxyEnv);
+            return {
+                proxy: {
+                    host: proxyUrl.hostname,
+                    port: proxyUrl.port ? parseInt(proxyUrl.port, 10) : 8080,
+                    protocol: proxyUrl.protocol.replace(":", ""),
+                },
+            };
+        }
+        return {};
     }
 }
