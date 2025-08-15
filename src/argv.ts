@@ -6,6 +6,7 @@ import camelCase from "camelcase";
 import {Utils} from "./utils.js";
 import {WriteStreams} from "./write-streams.js";
 import chalk from "chalk";
+import {VALID_PIPELINE_SOURCES, SCHEDULE_NAME_CONSTRAINTS} from "./constants.js";
 
 async function isInGitRepository () {
     try {
@@ -177,6 +178,45 @@ export class Argv {
         return variables;
     }
 
+    get environmentVariables (): {[key: string]: string} {
+        const variables: {[key: string]: string} = {};
+
+        // Merge CI_* environment variables
+        for (const [key, value] of Object.entries(process.env)) {
+            if (key.startsWith("CI_") || key === "SCHEDULE_NAME") {
+                if (value !== undefined) {
+                    // Validate CI_PIPELINE_SOURCE if present
+                    if (key === "CI_PIPELINE_SOURCE") {
+                        if (!VALID_PIPELINE_SOURCES.includes(value as any)) {
+                            console.warn(`Warning: Invalid CI_PIPELINE_SOURCE value: "${value}". Valid options are: ${VALID_PIPELINE_SOURCES.join(", ")}`);
+                        }
+                    }
+
+                    // Validate SCHEDULE_NAME if present
+                    if (key === "SCHEDULE_NAME") {
+                        if ((value as string).trim().length === 0) {
+                            console.warn("Warning: SCHEDULE_NAME environment variable is empty");
+                        } else if ((value as string).length > SCHEDULE_NAME_CONSTRAINTS.MAX_LENGTH) {
+                            console.warn(`Warning: SCHEDULE_NAME is very long (${(value as string).length} characters)`);
+                        }
+                        
+                        // Check for invalid characters
+                        const invalidChars = SCHEDULE_NAME_CONSTRAINTS.INVALID_CHARS.filter(char => 
+                            (value as string).includes(char)
+                        );
+                        if (invalidChars.length > 0) {
+                            console.warn(`Warning: SCHEDULE_NAME contains invalid characters: ${invalidChars.join(", ")}`);
+                        }
+                    }
+
+                    variables[key] = value;
+                }
+            }
+        }
+
+        return variables;
+    }
+
     get unsetVariables (): string[] {
         return this.map.get("unsetVariable") ?? [];
     }
@@ -268,6 +308,14 @@ export class Argv {
 
     get fetchIncludes (): boolean {
         return this.map.get("fetchIncludes") ?? false;
+    }
+
+    get pipelineSource (): string {
+        return this.map.get("pipelineSource") ?? "push";
+    }
+
+    get scheduleName (): string | undefined {
+        return this.map.get("scheduleName");
     }
 
     get mountCache (): boolean {

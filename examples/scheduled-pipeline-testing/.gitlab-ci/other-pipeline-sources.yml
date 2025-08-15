@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2025, Timo Pallach (timo@pallach.de).
+
+# Other pipeline source components
+# This file demonstrates different pipeline source types
+
+merge-request-job:
+  stage: test
+  script:
+    - echo "Running merge request specific tests"
+    - echo "Pipeline source: $CI_PIPELINE_SOURCE"
+    - echo "Merge request ID: $CI_MERGE_REQUEST_IID"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - when: never
+
+trigger-job:
+  stage: build
+  script:
+    - echo "Running downstream pipeline job"
+    - echo "Pipeline source: $CI_PIPELINE_SOURCE"
+    - echo "Triggered by: $CI_PIPELINE_TRIGGER_ID"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+      when: always
+    - when: never
+
+multi-project-job:
+  stage: deploy
+  script:
+    - echo "Running multi-project pipeline job"
+    - echo "Pipeline source: $CI_PIPELINE_SOURCE"
+    - echo "Project path: $CI_PROJECT_PATH"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: always
+    - when: never

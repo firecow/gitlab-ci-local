@@ -10,13 +10,14 @@ type PredefinedVariablesOpts = {
 
 export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesOpts): {[name: string]: string} {
 
-    const _variables = {...envMatchedVariables, ...argv.variable};
+    const _variables = {...envMatchedVariables, ...argv.variable, ...argv.environmentVariables};
 
     // precedence:
-    // 1. cli option
-    // 2. gitlab variables files
-    // 3. values derieved implicitly from `git remote -v`
-    // 4. default value
+    // 1. environment variables (CI_*, SCHEDULE_NAME)
+    // 2. cli option
+    // 3. gitlab variables files
+    // 4. values derieved implicitly from `git remote -v`
+    // 5. default value
     const CI_SERVER_PROTOCOL = _variables["CI_SERVER_PROTOCOL"] ?? ((gitData.remote.schema === "http" || gitData.remote.schema === "https") ? gitData.remote.schema : "https");
     const CI_SERVER_PORT = _variables["CI_SERVER_PORT"] ?? ((gitData.remote.schema === "http" || gitData.remote.schema === "https") ? gitData.remote.port : "443");
     const CI_SERVER_SHELL_SSH_PORT = _variables["CI_SERVER_SHELL_SSH_PORT"] ?? ((gitData.remote.schema === "ssh") ? gitData.remote.port : "22");
@@ -27,7 +28,7 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
     const CI_PROJECT_NAMESPACE = gitData.remote.group;
     const CI_DEPENDENCY_PROXY_SERVER = CI_SERVER_FQDN.includes(":") ? CI_SERVER_FQDN : `${CI_SERVER_HOST}:${CI_SERVER_PORT}`;
 
-    const predefinedVariables: {[key: string]: string} = {
+    const predefinedVariables: {[name: string]: string} = {
         CI: "true",
         GITLAB_USER_LOGIN: gitData.user["GITLAB_USER_LOGIN"],
         GITLAB_USER_EMAIL: gitData.user["GITLAB_USER_EMAIL"],
@@ -53,7 +54,7 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
         CI_COMMIT_MESSAGE: "Commit Title\nMore commit text", // Full commit message
         CI_COMMIT_DESCRIPTION: "More commit text",
         CI_DEFAULT_BRANCH: gitData.branches.default,
-        CI_PIPELINE_SOURCE: "push",
+        CI_PIPELINE_SOURCE: _variables["CI_PIPELINE_SOURCE"] ?? argv.pipelineSource,
         CI_SERVER_FQDN: CI_SERVER_FQDN,
         CI_SERVER_HOST: CI_SERVER_HOST,
         CI_SERVER_PORT: CI_SERVER_PORT,
@@ -70,7 +71,17 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
         CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX: `${CI_DEPENDENCY_PROXY_SERVER}/${CI_PROJECT_ROOT_NAMESPACE}/dependency_proxy/containers`,
         CI_DEPENDENCY_PROXY_SERVER: CI_DEPENDENCY_PROXY_SERVER,
         CI_DEPENDENCY_PROXY_USER: "gitlab-ci-token",
+
+        // Additional variables for scheduled pipelines
+        CI_PIPELINE_ID: "12345",
+        CI_PIPELINE_IID: "123",
+        CI_PIPELINE_URL: `${CI_SERVER_URL}/${gitData.remote.group}/${gitData.remote.project}/-/pipelines/${_variables["CI_PIPELINE_ID"] ?? "12345"}`,
     };
+
+    // Add SCHEDULE_NAME if provided via CLI or environment
+    if (argv.scheduleName || _variables["SCHEDULE_NAME"]) {
+        predefinedVariables.SCHEDULE_NAME = _variables["SCHEDULE_NAME"] ?? argv.scheduleName;
+    }
 
     // Delete variables the user intentionally wants unset
     for (const unsetVariable of argv.unsetVariables) {

@@ -10,6 +10,7 @@ import {Argv} from "./argv.js";
 import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job.js";
 import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
+import {VALID_PIPELINE_SOURCES, SCHEDULE_NAME_CONSTRAINTS} from "./constants.js";
 
 const jobs: Job[] = [];
 
@@ -241,6 +242,38 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             type: "boolean",
             description: "Fetch all external includes one more time",
             requiresArg: false,
+        })
+        .option("pipeline-source", {
+            type: "string",
+            description: "Simulate different pipeline sources (push, schedule, merge_request, web, api, external, chat, manual, etc.)",
+            requiresArg: true,
+            default: "push",
+            choices: VALID_PIPELINE_SOURCES,
+            coerce: (arg: string) => {
+                if (!VALID_PIPELINE_SOURCES.includes(arg as any)) {
+                    throw new Error(`Invalid pipeline source: "${arg}". Valid options are: ${VALID_PIPELINE_SOURCES.join(", ")}`);
+                }
+                return arg;
+            },
+        })
+        .option("schedule-name", {
+            type: "string",
+            description: "Simulate specific schedule names for scheduled pipelines (e.g., 'Daily OpenBSD Snapshot Check', 'npm Dependency Update')",
+            requiresArg: true,
+            coerce: (arg: string) => {
+                if (arg.trim().length === 0) {
+                    throw new Error("Schedule name cannot be empty. Please provide a valid schedule name.");
+                }
+                if (arg.length > SCHEDULE_NAME_CONSTRAINTS.MAX_LENGTH) {
+                    throw new Error(`Schedule name is too long (${arg.length} characters). Maximum length is ${SCHEDULE_NAME_CONSTRAINTS.MAX_LENGTH} characters.`);
+                }
+                // Check for potentially problematic characters
+                const invalidChars = SCHEDULE_NAME_CONSTRAINTS.INVALID_CHARS.filter(char => arg.includes(char));
+                if (invalidChars.length > 0) {
+                    throw new Error(`Schedule name contains invalid characters: ${invalidChars.join(", ")}. Please use only valid characters.`);
+                }
+                return arg.trim();
+            },
         })
         .option("maximum-includes", {
             type: "number",

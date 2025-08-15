@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2025, Timo Pallach (timo@pallach.de).
+
+# Scheduled pipeline components
+# This file is included when CI_PIPELINE_SOURCE == "schedule"
+
+scheduled-maintenance-job:
+  stage: prepare
+  script:
+    - echo "Running scheduled maintenance tasks"
+    - echo "Pipeline source: $CI_PIPELINE_SOURCE"
+    - echo "Schedule name: $SCHEDULE_NAME"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - when: never
+
+daily-check-job:
+  stage: test
+  script:
+    - echo "Running daily health checks"
+    - echo "Pipeline source: $CI_PIPELINE_SOURCE"
+    - echo "Schedule name: $SCHEDULE_NAME"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_NAME == "Daily Check"
+      when: always
+    - when: never
+
+weekly-cleanup-job:
+  stage: deploy
+  script:
+    - echo "Running weekly cleanup tasks"
+    - echo "Pipeline source: $CI_PIPELINE_SOURCE"
+    - echo "Schedule name: $SCHEDULE_NAME"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_NAME == "Weekly Cleanup"
+      when: always
+    - when: never

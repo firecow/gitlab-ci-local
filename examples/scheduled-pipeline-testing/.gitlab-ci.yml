@@ -1,0 +1,156 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2025, Timo Pallach (timo@pallach.de).
+
+# Example GitLab CI configuration demonstrating scheduled pipeline testing
+# This file shows how to use conditional includes and complex rules
+
+stages:
+  - prepare
+  - build
+  - test
+  - deploy
+
+# Example jobs that demonstrate different pipeline behaviors
+standard-job:
+  stage: test
+  script:
+    - echo "This job runs in standard pipelines (push, merge_request_event)"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+      when: always
+    - when: never
+
+scheduled-job:
+  stage: test
+  script:
+    - echo "This job runs in scheduled pipelines"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - when: never
+
+schedule-specific-job:
+  stage: test
+  script:
+    - echo "This job runs only for specific schedules"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_NAME == "Daily Check"
+      when: always
+    - when: never
+
+always-job:
+  stage: test
+  script:
+    - echo "This job always runs regardless of pipeline source"
+  rules:
+    - when: always
+
+# Example jobs for different pipeline sources
+web-triggered-job:
+  stage: test
+  script:
+    - echo "This job runs when triggered via web interface"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: always
+    - when: never
+
+api-triggered-job:
+  stage: test
+  script:
+    - echo "This job runs when triggered via API"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "api"
+      when: always
+    - when: never
+
+external-job:
+  stage: test
+  script:
+    - echo "This job runs when triggered via external CI services"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "external"
+      when: always
+    - when: never
+
+merge-request-job:
+  stage: test
+  script:
+    - echo "This job runs when triggered via merge request"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - when: never
+
+trigger-job:
+  stage: build
+  script:
+    - echo "This job runs when triggered via downstream pipeline"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+      when: always
+    - when: never
+
+pipeline-job:
+  stage: deploy
+  script:
+    - echo "This job runs when triggered via multi-project pipeline"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: always
+    - when: never
+
+# Additional pipeline source examples
+external-pull-request-job:
+  stage: test
+  script:
+    - echo "This job runs when triggered via external pull request on GitHub"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "external_pull_request_event"
+      when: always
+    - when: never
+
+ondemand-dast-scan-job:
+  stage: test
+  script:
+    - echo "This job runs when triggered via DAST on-demand scan"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "ondemand_dast_scan"
+      when: always
+    - when: never
+
+ondemand-dast-validation-job:
+  stage: test
+  script:
+    - echo "This job runs when triggered via DAST on-demand validation"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "ondemand_dast_validation"
+      when: always
+    - when: never
+
+parent-pipeline-job:
+  stage: build
+  script:
+    - echo "This job runs when triggered via parent pipeline"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
+      when: always
+    - when: never
+
+security-orchestration-job:
+  stage: deploy
+  script:
+    - echo "This job runs when triggered via security orchestration policy"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "security_orchestration_policy"
+      when: always
+    - when: never
+
+webide-job:
+  stage: test
+  script:
+    - echo "This job runs when triggered via Web IDE"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "webide"
+      when: always
+    - when: never

@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2025, Timo Pallach (timo@pallach.de).
+
+# Standard pipeline components for development and merge requests
+# This file is included when CI_PIPELINE_SOURCE != "schedule"
+
+standard-build-job:
+  stage: build
+  script:
+    - echo "Building standard pipeline components"
+    - echo "Pipeline source: $CI_PIPELINE_SOURCE"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+      when: always
+    - when: never
+
+standard-test-job:
+  stage: test
+  script:
+    - echo "Testing standard pipeline components"
+    - echo "Pipeline source: $CI_PIPELINE_SOURCE"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+      when: always
+    - when: never
+
+standard-deploy-job:
+  stage: deploy
+  script:
+    - echo "Deploying standard pipeline components"
+    - echo "Pipeline source: $CI_PIPELINE_SOURCE"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+      when: always
+    - when: never

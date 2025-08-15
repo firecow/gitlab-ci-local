@@ -26,6 +26,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [docker-swarm-php](./examples/docker-swarm-php)
     * [docker-in-docker-build](./examples/docker-in-docker-build)
     * [docker-in-docker with a local registry](./examples/docker-in-docker-build-with-local-registry)
+    * [scheduled-pipeline-testing](./examples/scheduled-pipeline-testing)
 * [Installation](#installation)
 * [Convenience](#convenience)
     * [CLI options](#cli-options)
@@ -155,6 +156,77 @@ export GCL_MAX_JOB_NAME_PADDING=30 # or --maxJobNamePadding: limit padding aroun
 export GCL_QUIET=true # or --quiet: Suppress all job output
 ```
 
+
+### Pipeline Simulation Options
+
+#### --pipeline-source
+Simulate different pipeline sources for testing complex GitLab CI configurations locally.
+
+**Supported values:**
+- `push` (default) - Standard development pipeline
+- `schedule` - Scheduled pipeline
+- `merge_request_event` - Merge request pipeline  
+- `web` - Web-triggered pipeline
+- `api` - API-triggered pipeline
+- `external` - External pipeline
+- `chat` - Chat-triggered pipeline
+- `external_pull_request_event` - External pull request on GitHub
+- `ondemand_dast_scan` - DAST on-demand scan pipelines
+- `ondemand_dast_validation` - DAST on-demand validation pipelines
+- `parent_pipeline` - Parent/child pipeline triggers
+- `pipeline` - Multi-project pipelines
+- `security_orchestration_policy` - Scheduled scan execution policies
+- `trigger` - Downstream pipeline triggers
+- `webide` - Web IDE pipelines
+
+**Examples:**
+```bash
+# Test scheduled pipeline behavior
+gitlab-ci-local --pipeline-source schedule --list
+
+# Test merge request pipeline
+gitlab-ci-local --pipeline-source merge_request_event --list
+
+# Test downstream pipeline
+gitlab-ci-local --pipeline-source trigger --list
+
+# Test multi-project pipeline
+gitlab-ci-local --pipeline-source pipeline --list
+
+# Test external pull request
+gitlab-ci-local --pipeline-source external_pull_request_event --list
+
+# Test DAST scan
+gitlab-ci-local --pipeline-source ondemand_dast_scan --list
+
+# Test parent pipeline
+gitlab-ci-local --pipeline-source parent_pipeline --list
+
+# Test Web IDE
+gitlab-ci-local --pipeline-source webide --list
+```
+
+**Validation:**
+The tool validates pipeline source values and provides clear error messages for invalid options. All values are restricted to the official GitLab CI pipeline sources.
+
+#### --schedule-name
+Specify the exact schedule name for testing scheduled pipelines. This is particularly useful for testing complex conditional logic in scheduled pipelines.
+
+**Examples:**
+```bash
+# Test specific npm dependency update schedule
+gitlab-ci-local --pipeline-source schedule --schedule-name "npm Dependency Update" --list
+
+# Test OpenBSD snapshot schedule
+gitlab-ci-local --pipeline-source schedule --schedule-name "Daily OpenBSD Snapshot Check" --list
+```
+
+**Validation:**
+Schedule names are validated for:
+- Non-empty values
+- Maximum length of 255 characters
+- Invalid filesystem characters (`< > : " \ | ? *`)
+- Clear error messages for validation failures
 ### List Pipeline Jobs
 
 Sometimes there is the need of knowing which jobs will be added before actually executing the pipeline.
@@ -208,6 +280,56 @@ build-job;"";build;on_success;true;[test-job]
 deploy-job;"";deploy;never;false;[build-job]
 ```
 
+
+## Testing Complex Pipeline Scenarios
+
+### Enhanced Error Handling & Validation
+
+GitLab CI Local now includes comprehensive validation for pipeline simulation options:
+
+- **Pipeline Source Validation**: Restricts values to official GitLab CI pipeline sources (15 supported types)
+- **Schedule Name Validation**: Ensures schedule names meet filesystem and length requirements
+- **Clear Error Messages**: Provides actionable feedback for invalid inputs
+- **Environment Variable Support**: Automatically detects and validates `CI_PIPELINE_SOURCE` and `SCHEDULE_NAME` from environment
+- **Constants-Based Validation**: Uses centralized constants for maintainable validation logic
+
+**Error Handling Examples:**
+```bash
+# Invalid pipeline source
+gitlab-ci-local --pipeline-source invalid_source --list
+# Error: Invalid pipeline source: "invalid_source". Valid options are: push, schedule, merge_request_event, web, api, external, chat, external_pull_request_event, ondemand_dast_scan, ondemand_dast_validation, parent_pipeline, pipeline, security_orchestration_policy, trigger, webide
+
+# Invalid schedule name
+gitlab-ci-local --pipeline-source schedule --schedule-name "invalid<name" --list
+# Error: Schedule name contains invalid characters: <. Please use only valid characters.
+```
+
+GitLab CI Local now supports testing complex pipeline configurations including:
+
+- **Scheduled Pipelines**: Test pipelines triggered by GitLab schedules
+- **Conditional Includes**: Test complex `rules` and conditional logic
+- **Pipeline Source Simulation**: Test different pipeline trigger types
+- **Environment Variable Handling**: Test CI_* and SCHEDULE_NAME variables
+
+### Example: Testing Scheduled Pipeline with Conditional Logic
+
+```bash
+# Test a scheduled pipeline that has complex conditional includes
+gitlab-ci-local --pipeline-source schedule --schedule-name "Daily Check" --list
+
+# Compare with standard development pipeline
+gitlab-ci-local --pipeline-source push --list
+```
+
+### Example: Testing Complex Rules
+
+```bash
+# Test specific schedule names
+gitlab-ci-local --pipeline-source schedule --schedule-name "npm Dependency Update" --list
+gitlab-ci-local --pipeline-source schedule --schedule-name "Daily OpenBSD Snapshot Check" --list
+```
+
+See the [scheduled-pipeline-testing](./examples/scheduled-pipeline-testing) example for comprehensive usage patterns.
 ## Quirks
 
 ### Tracked Files
