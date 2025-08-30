@@ -294,9 +294,8 @@ export class Utils {
             return `.matchRE2JS(${_rhs}) ${_operator} null`;
         });
 
-        // Convert all null.match functions to false
         evalStr = evalStr.replace(/null.matchRE2JS\(.+?\)\s*!=\s*null/g, "false");
-        evalStr = evalStr.replace(/null.matchRE2JS\(.+?\)\s*==\s*null/g, "false");
+        evalStr = evalStr.replace(/null.matchRE2JS\(.+?\)\s*==\s*null/g, "true");
 
         evalStr = evalStr.trim();
 
