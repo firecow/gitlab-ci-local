@@ -75,7 +75,7 @@ jobs:
       - run: npm ci
       - name: Run Tests
         run: npm run coverage
-      - uses: sonarsource/sonarqube-scan-action@v5.3.0
+      - uses: sonarsource/sonarqube-scan-action@v5.3.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
