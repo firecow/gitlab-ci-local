@@ -1487,6 +1487,7 @@ export class Job {
     private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceIndex: number, serviceContainerLogFile: string) {
         const serviceAlias = service.alias;
         const serviceName = service.name;
+        const waitImageName = this.argv.waitImage;
 
         const {stdout} = await Utils.spawn([this.argv.containerExecutable, "image", "inspect", serviceName]);
         const imageInspect = JSON.parse(stdout);
@@ -1511,7 +1512,7 @@ export class Job {
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
                 const containerName = `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`;
-                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, "docker.io/sumina46/wait-for-it", `${uniqueAlias}:${portNum}`, "-t", "30"];
+                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${uniqueAlias}:${portNum}`, "-t", "30"];
                 this._containersToClean.push(containerName);
                 return Utils.spawn(spawnCmd);
             }));
