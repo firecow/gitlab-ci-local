@@ -217,6 +217,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Set docker executor to privileged mode",
             requiresArg: false,
         })
+        .option("device", {
+            type: "string",
+            description: "Set docker executor device option",
+            requiresArg: false,
+        })
         .option("ulimit", {
             type: "number",
             description: "Set docker executor ulimit",

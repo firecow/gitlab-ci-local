@@ -215,6 +215,12 @@ export class Argv {
         return this.map.get("privileged") ?? false;
     }
 
+    get device (): string | null {
+        const device = this.map.get("device");
+        if (!device) return null;
+        return device;
+    }
+
     get ulimit (): string | null {
         const ulimit = this.map.get("ulimit");
         if (!ulimit) return null;
