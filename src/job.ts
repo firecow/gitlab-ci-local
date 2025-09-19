@@ -837,6 +837,10 @@ export class Job {
                 dockerCmd += "--privileged ";
             }
 
+            if (this.argv.device) {
+                dockerCmd += `--device=${this.argv.device} `;
+            }
+
             if (this.argv.ulimit !== null) {
                 dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
             }
@@ -1412,6 +1416,10 @@ export class Job {
 
         if (this.argv.privileged) {
             dockerCmd += "--privileged ";
+        }
+
+        if (this.argv.device) {
+            dockerCmd += `--device=${this.argv.device} `;
         }
 
         if (this.argv.ulimit !== null) {
