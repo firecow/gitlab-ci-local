@@ -837,8 +837,8 @@ export class Job {
                 dockerCmd += "--privileged ";
             }
 
-            if (this.argv.device) {
-                dockerCmd += `--device=${this.argv.device} `;
+            for (const device of this.argv.device) {
+                dockerCmd += `--device ${device} `;
             }
 
             if (this.argv.ulimit !== null) {
@@ -1418,8 +1418,8 @@ export class Job {
             dockerCmd += "--privileged ";
         }
 
-        if (this.argv.device) {
-            dockerCmd += `--device=${this.argv.device} `;
+        for (const device of this.argv.device) {
+            dockerCmd += `--device ${device} `;
         }
 
         if (this.argv.ulimit !== null) {
