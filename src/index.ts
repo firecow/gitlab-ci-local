@@ -218,8 +218,8 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             requiresArg: false,
         })
         .option("device", {
-            type: "string",
-            description: "Set docker executor device option",
+            type: "array",
+            description: "Add devices to docker executor",
             requiresArg: false,
         })
         .option("ulimit", {
