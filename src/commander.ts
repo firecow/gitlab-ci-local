@@ -291,6 +291,17 @@ export class Commander {
                     }
                 }
             }
+
+            if (job.dependencies) {
+                for (const dependency of job.dependencies) {
+                    if (!activeJobNames.has(dependency)) {
+                        missingDependencies.push({
+                            job: job.name,
+                            missing: dependency,
+                        });
+                    }
+                }
+            }
         }
 
         if (missingDependencies.length > 0) {

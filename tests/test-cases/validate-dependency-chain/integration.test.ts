@@ -49,4 +49,15 @@ describe("validate-dependency-chain", () => {
             variable: ["RUN_SINGLE=alpine-guest"],
         }, writeStreams)).rejects.toThrow("Dependency chain validation will fail with event: RUN_SINGLE=alpine-guest");
     });
+
+    test("should fail when dependencies keyword references missing artifact jobs", async () => {
+        const writeStreams = new WriteStreamsMock();
+
+        await expect(handler({
+            cwd: "tests/test-cases/validate-dependency-chain",
+            list: true,
+            validateDependencyChain: true,
+            variable: ["TEST_DEPENDENCIES=true"],
+        }, writeStreams)).rejects.toThrow("Dependency chain validation will fail with event: TEST_DEPENDENCIES=true");
+    });
 });
