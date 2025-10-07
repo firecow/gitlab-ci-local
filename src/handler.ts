@@ -56,12 +56,12 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         Commander.runList(parser, writeStreams, argv.listAll);
 
         if (argv.validateDependencyChain) {
-            const isValid = Commander.validateDependencyChain(parser, writeStreams, argv)
+            const isValid = Commander.validateDependencyChain(parser, writeStreams);
             if (!isValid) {
                 const variableStrings = Object.entries(argv.variable)
                     .map(([key, value]) => `${key}=${value}`)
-                    .join(" "); 
-                throw new assert.AssertionError({ message: `Dependency chain validation will fail with event: ${variableStrings}` });
+                    .join(" ");
+                throw new assert.AssertionError({message: `Dependency chain validation will fail with event: ${variableStrings}`});
             }
         }
     } else if (argv.listJson) {

@@ -1,0 +1,33 @@
+---
+alpine-guest:
+  image: nginxinc/nginx-unprivileged:alpine3.18
+  needs: ["alpine-root"]
+  script:
+    - stat -c "%a %n %u %g" one.txt
+    - stat -c "%a %n %u %g" script.sh
+  rules:
+    - if: '$RUN_ALL == "true"'
+    - if: '$RUN_SINGLE == "alpine-root"'
+    - if: '$RUN_SINGLE == "alpine-guest"'
+
+alpine-root:
+  needs: ["kaniko-root"]
+  image: nginx:alpine3.18
+  rules:
+    - if: '$RUN_ALL == "true"'
+    - if: '$RUN_SINGLE == "alpine-root"'
+    - if: '$RUN_SINGLE == "alpine-guest"'
+      when: never
+  script:
+    - stat -c "%a %n %u %g" one.txt
+    - stat -c "%a %n %u %g" script.sh
+
+kaniko-root:
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.0-debug
+    entrypoint: [""]
+  rules:
+    - if: '$RUN_ALL == "true"'
+  script:
+    - stat -c "%a %n %u %g" one.txt
+    - stat -c "%a %n %u %g" script.sh

@@ -272,16 +272,16 @@ export class Commander {
         });
     }
 
-    static validateDependencyChain (parser: Parser, writeStreams: WriteStreams, argv: any): boolean {
-        const allJobs = [...parser.jobs.values()];
+    static validateDependencyChain (parser: Parser, writeStreams: WriteStreams): boolean {
+        const allJobs = parser.jobs;
         const activeJobs = allJobs.filter(j => j.when !== "never");
         const activeJobNames = new Set(activeJobs.map(job => job.name));
         const missingDependencies: {job: string; missing: string}[] = [];
-        
+
         for (const job of activeJobs) {
             if (job.needs) {
                 const localNeeds = job.needs.filter(n => !n.project && !n.pipeline);
-                
+
                 for (const need of localNeeds) {
                     if (!activeJobNames.has(need.job)) {
                         missingDependencies.push({
@@ -292,16 +292,15 @@ export class Commander {
                 }
             }
         }
-                
+
         if (missingDependencies.length > 0) {
 
-            
             for (const dep of missingDependencies) {
                 writeStreams.stderr(chalk`  {yellow ${dep.job}} needs {red ${dep.missing}} which does not exist\n`);
-            }            
+            }
             return false;
         }
-        
+
         writeStreams.stdout(chalk`{green ✓ All job dependencies are valid}\n`);
         return true;
     }
