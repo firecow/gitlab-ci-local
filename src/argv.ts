@@ -266,6 +266,10 @@ export class Argv {
         return this.map.get("preview") ?? false;
     }
 
+    get validateDependencyChain (): boolean {
+        return this.map.get("validateDependencyChain") ?? false;
+    }
+
     get shellIsolation (): boolean {
         // TODO: default to true in 5.x.x
         return this.map.get("shellIsolation") ?? false;

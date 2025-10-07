@@ -54,6 +54,16 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         Commander.runList(parser, writeStreams, argv.listAll);
+
+        if (argv.validateDependencyChain) {
+            const isValid = Commander.validateDependencyChain(parser, writeStreams, argv)
+            if (!isValid) {
+                const variableStrings = Object.entries(argv.variable)
+                    .map(([key, value]) => `${key}=${value}`)
+                    .join(" "); 
+                throw new assert.AssertionError({ message: `Dependency chain validation will fail with event: ${variableStrings}` });
+            }
+        }
     } else if (argv.listJson) {
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);

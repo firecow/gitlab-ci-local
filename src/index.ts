@@ -95,6 +95,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "List job information in csv format, when:never included",
             requiresArg: false,
         })
+        .option("validate-dependency-chain", {
+            type: "boolean",
+            description: "Validate that all local jobs referenced in 'needs' are defined in the current pipeline (excludes external project/pipeline dependencies)",
+            requiresArg: false,
+        })
         .option("preview", {
             type: "boolean",
             description: "Print YML with defaults, includes, extends and reference's expanded",
