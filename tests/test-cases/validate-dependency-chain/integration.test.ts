@@ -36,7 +36,7 @@ describe("validate-dependency-chain", () => {
             list: true,
             validateDependencyChain: true,
             variable: ["RUN_SINGLE=alpine-root"],
-        }, writeStreams)).rejects.toThrow("Dependency chain validation will fail with event: RUN_SINGLE=alpine-root");
+        }, writeStreams)).rejects.toThrow(chalk`{blueBright kaniko-root} is when:never, but its needed by {blueBright alpine-root}`);
     });
 
     test("should fail when dependency chain is broken due to a job that never runs", async () => {
@@ -47,7 +47,7 @@ describe("validate-dependency-chain", () => {
             list: true,
             validateDependencyChain: true,
             variable: ["RUN_SINGLE=alpine-guest"],
-        }, writeStreams)).rejects.toThrow("Dependency chain validation will fail with event: RUN_SINGLE=alpine-guest");
+        }, writeStreams)).rejects.toThrow(chalk`{blueBright alpine-root} is when:never, but its needed by {blueBright alpine-guest}`);
     });
 
     test("should fail when dependencies keyword references missing artifact jobs", async () => {
@@ -58,6 +58,6 @@ describe("validate-dependency-chain", () => {
             list: true,
             validateDependencyChain: true,
             variable: ["TEST_DEPENDENCIES=true"],
-        }, writeStreams)).rejects.toThrow("Dependency chain validation will fail with event: TEST_DEPENDENCIES=true");
+        }, writeStreams)).rejects.toThrow(chalk`{blueBright build-job-2} is when:never, but its depended on by {blueBright broken-dependencies-job}`);
     });
 });
