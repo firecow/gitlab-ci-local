@@ -69,7 +69,6 @@ export class Executor {
         while (waitForLoopArray.length > 0) {
             const loopJob = waitForLoopArray.pop();
             assert(loopJob != null, "Job not found in getPastToWaitFor, should be impossible!");
-            console.log(chalk`Getting jobs to wait for for {blueBright ${loopJob.name}}`);
             if (loopJob.needs) {
                 const neededToWaitFor = this.getNeededToWaitFor(jobs, manuals, loopJob);
                 waitForLoopArray.push(...neededToWaitFor);
