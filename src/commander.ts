@@ -272,47 +272,12 @@ export class Commander {
         });
     }
 
-    static validateDependencyChain (parser: Parser, writeStreams: WriteStreams): boolean {
+    static validateDependencyChain (parser: Parser) {
         const allJobs = parser.jobs;
+        // This is only the jobs that will actually run
         const activeJobs = allJobs.filter(j => j.when !== "never");
-        const activeJobNames = new Set(activeJobs.map(job => job.name));
-        const missingDependencies: {job: string; missing: string}[] = [];
-
-        for (const job of activeJobs) {
-            if (job.needs) {
-                const localNeeds = job.needs.filter(n => !n.project && !n.pipeline);
-
-                for (const need of localNeeds) {
-                    if (!activeJobNames.has(need.job)) {
-                        missingDependencies.push({
-                            job: job.name,
-                            missing: need.job,
-                        });
-                    }
-                }
-            }
-
-            if (job.dependencies) {
-                for (const dependency of job.dependencies) {
-                    if (!activeJobNames.has(dependency)) {
-                        missingDependencies.push({
-                            job: job.name,
-                            missing: dependency,
-                        });
-                    }
-                }
-            }
-        }
-
-        if (missingDependencies.length > 0) {
-
-            for (const dep of missingDependencies) {
-                writeStreams.stderr(chalk`  {yellow ${dep.job}} needs {red ${dep.missing}} which does not exist\n`);
-            }
-            return false;
-        }
-
-        writeStreams.stdout(chalk`{green ✓ All job dependencies are valid}\n`);
-        return true;
+        const stages = parser.stages;
+        // This will throw an assertion errror if the dependency chain is broken on specific events without having to run the full pipeline
+        Executor.getStartCandidates(allJobs, stages, activeJobs, []);
     }
 }

@@ -4,6 +4,7 @@ import assert, {AssertionError} from "assert";
 import {Argv} from "./argv.js";
 import pMap from "p-map";
 
+
 export class Executor {
 
     static async runLoop (argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]) {
@@ -69,7 +70,9 @@ export class Executor {
         while (waitForLoopArray.length > 0) {
             const loopJob = waitForLoopArray.pop();
             assert(loopJob != null, "Job not found in getPastToWaitFor, should be impossible!");
-            if (loopJob.needs) {
+            console.log(`Checking dependencies for job: ${loopJob.name}`);
+            if (loopJob.needs || loopJob.dependencies) {
+                console.log(`Checking dependencies for job: ${loopJob.name}`);
                 const neededToWaitFor = this.getNeededToWaitFor(jobs, manuals, loopJob);
                 waitForLoopArray.push(...neededToWaitFor);
             } else {
@@ -85,8 +88,21 @@ export class Executor {
 
     static getNeededToWaitFor (jobs: ReadonlyArray<Job>, manuals: string[], job: Job) {
         const toWaitFor = [];
-        assert(job.needs != null, chalk`${job.name}.needs cannot be null in getNeededToWaitFor`);
-        for (const need of job.needs) {
+        const allDependentJobs: Array<{job: string; optional?: boolean}> = [];
+
+        if (job.needs) {
+            allDependentJobs.push(...job.needs);
+        }
+
+        if (job.dependencies) {
+            for (const dependency of job.dependencies) {
+                // optional dependencies are not a thing in GitLab CI, so we mark them all as non-optional
+                allDependentJobs.push({job: dependency, optional: false});
+            }
+        }
+
+        assert(allDependentJobs.length > 0, chalk`${job.name} has no needs or dependencies in getNeededToWaitFor`);
+        for (const need of allDependentJobs) {
             const baseJobs = jobs.filter(j => j.baseName === need.job);
             for (const j of baseJobs) {
                 if (j.when === "never" && !need.optional) {

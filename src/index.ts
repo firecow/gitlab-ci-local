@@ -97,7 +97,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         })
         .option("validate-dependency-chain", {
             type: "boolean",
-            description: "Validate that all local jobs referenced in 'needs' are defined in the current pipeline (excludes external project/pipeline dependencies)",
+            description: "Validate that jobs needed or dependent by active jobs are also active without actually running the jobs",
             requiresArg: false,
         })
         .option("preview", {
