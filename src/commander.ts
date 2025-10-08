@@ -281,7 +281,7 @@ export class Commander {
         Executor.getStartCandidates(allJobs, stages, activeJobs, []);
 
         const activeJobNames = new Set(activeJobs.map(job => job.name));
-        // this willl throw an assertion error if the dependency chain is broken due to dependencies keyword (a job depending on artifacts from a job that will never run)
+        // This willl throw an assertion error if the dependency chain is broken due to dependencies keyword (a job depending on artifacts from a job that will never run)
         for (const job of activeJobs) {
             if (job.dependencies) {
                 for (const dependency of job.dependencies) {
