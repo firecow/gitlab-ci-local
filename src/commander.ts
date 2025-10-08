@@ -277,11 +277,11 @@ export class Commander {
         // This is only the jobs that will actually run
         const activeJobs = allJobs.filter(j => j.when !== "never");
         const stages = parser.stages;
-        // This will throw an assertion errror if the dependency chain is broke due to needs keyword on specific events without having to run the full pipeline
+        // This will throw an assertion errror if the dependency chain is broken due to needs keyword on specific events without having to run the full pipeline
         Executor.getStartCandidates(allJobs, stages, activeJobs, []);
 
         const activeJobNames = new Set(activeJobs.map(job => job.name));
-        // This willl throw an assertion error if the dependency chain is broken due to dependencies keyword (a job depending on artifacts from a job that will never run)
+        // This willl throw an assertion error if the dependency chain is broken due to dependencies keyword (a job depending on artifacts from a job that will never run) without having to run the full pipeline
         for (const job of activeJobs) {
             if (job.dependencies) {
                 for (const dependency of job.dependencies) {
