@@ -72,7 +72,6 @@ export class Executor {
             assert(loopJob != null, "Job not found in getPastToWaitFor, should be impossible!");
             console.log(`Checking dependencies for job: ${loopJob.name}`);
             if (loopJob.needs || loopJob.dependencies) {
-                console.log(`Checking dependencies for job: ${loopJob.name}`);
                 const neededToWaitFor = this.getNeededToWaitFor(jobs, manuals, loopJob);
                 waitForLoopArray.push(...neededToWaitFor);
             } else {
