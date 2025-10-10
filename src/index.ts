@@ -97,7 +97,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         })
         .option("validate-dependency-chain", {
             type: "boolean",
-            description: "Validate that jobs needed or dependent by active jobs are also active without actually running the jobs",
+            description: "Validate that jobs needed or dependent by active jobs under specified conditions are also active without actually running the jobs. If validation fails, use --list flag to see which jobs will run under specified conditions",
             requiresArg: false,
         })
         .option("preview", {

@@ -13,7 +13,6 @@ describe("validate-dependency-chain", () => {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/validate-dependency-chain",
-            list: true,
             validateDependencyChain: true,
             variable: ["RUN_ALL=true"],
         }, writeStreams);
@@ -33,7 +32,6 @@ describe("validate-dependency-chain", () => {
 
         await expect(handler({
             cwd: "tests/test-cases/validate-dependency-chain",
-            list: true,
             validateDependencyChain: true,
             variable: ["RUN_SINGLE=alpine-root"],
         }, writeStreams)).rejects.toThrow(chalk`{blueBright kaniko-root} is when:never, but its needed by {blueBright alpine-root}`);
@@ -44,7 +42,6 @@ describe("validate-dependency-chain", () => {
 
         await expect(handler({
             cwd: "tests/test-cases/validate-dependency-chain",
-            list: true,
             validateDependencyChain: true,
             variable: ["RUN_SINGLE=alpine-guest"],
         }, writeStreams)).rejects.toThrow(chalk`{blueBright alpine-root} is when:never, but its needed by {blueBright alpine-guest}`);
@@ -55,7 +52,6 @@ describe("validate-dependency-chain", () => {
 
         await expect(handler({
             cwd: "tests/test-cases/validate-dependency-chain",
-            list: true,
             validateDependencyChain: true,
             variable: ["TEST_DEPENDENCIES=true"],
         }, writeStreams)).rejects.toThrow(chalk`{blueBright build-job-2} is when:never, but its depended on by {blueBright broken-dependencies-job}`);
