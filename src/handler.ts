@@ -54,6 +54,11 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         Commander.runList(parser, writeStreams, argv.listAll);
+    } else if (argv.validateDependencyChain) {
+        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
+        parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
+        Commander.validateDependencyChain(parser);
+        writeStreams.stdout(chalk`{green ✓ All job dependencies are valid}\n`);
     } else if (argv.listJson) {
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
