@@ -59,7 +59,7 @@
     "@types/jest-when": "3.x.x",
     "@types/js-yaml": "4.x.x",
     "@types/micromatch": "4.x.x",
-    "@types/node": "22.x",
+    "@types/node": "24.x",
     "@types/pretty-hrtime": "1.x.x",
     "@types/semver": "7.x.x",
     "@types/split2": "4.x.x",
