@@ -1,0 +1,8 @@
+{
+  "pkg": {
+    "assets": [
+      "package.json",
+      "bin/locales/*.json"
+    ]
+  }
+}
