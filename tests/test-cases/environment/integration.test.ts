@@ -30,12 +30,28 @@ test("environment <deploy-stage-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright deploy-stage-job} {greenBright >} stage-domain`,
+        chalk`{blueBright deploy-stage-job} {greenBright >} stage-domain-ip33nk`,
         chalk`{blueBright deploy-stage-job} {greenBright >} Stage Domain`,
         chalk`{blueBright deploy-stage-job} {greenBright >} http://stage.domain.com`,
         chalk`{blueBright deploy-stage-job} {greenBright >} stop`,
         chalk`{blueBright deploy-stage-job} {greenBright >} production`,
         chalk`{blueBright deploy-stage-job} environment: \{ name: {bold Stage Domain}, url: {bold http://stage.domain.com} \}`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+
+});
+
+test("environment <deploy-stage-job-with-expansion>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/environment",
+        job: ["deploy-stage-job-with-expansion"],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright deploy-stage-job-with-expansion} {greenBright >} stage-domain-foob-yafktx`,
+        chalk`{blueBright deploy-stage-job-with-expansion} {greenBright >} stage-domain-foobar-long-string`,
+        chalk`{blueBright deploy-stage-job-with-expansion} environment: \{ name: {bold stage-domain-foobar-long-string} \}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 
