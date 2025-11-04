@@ -18,7 +18,7 @@ import {Parser} from "./parser.js";
 import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
 import globby from "globby";
 import terminalLink from "terminal-link";
-import * as crypto from 'crypto';
+import * as crypto from "crypto";
 
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
 interface JobOptions {
