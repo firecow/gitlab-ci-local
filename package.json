@@ -27,7 +27,7 @@
     "ajv": "8.x.x",
     "axios": "1.13.2",
     "base64url": "3.x.x",
-    "camelcase": "6.x.x",
+    "camelcase": "9.x",
     "chalk": "4.x.x",
     "checksum": "1.x.x",
     "deep-extend": "0.6.x",
