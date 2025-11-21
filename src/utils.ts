@@ -513,15 +513,15 @@ export class Utils {
                 "--network", gclRegistryNet,
                 "--entrypoint", "sh",
                 "curlimages/curl",
-                "-c", `until [ "$(curl -s -o /dev/null -k -w "%{http_code}" https://${this.gclRegistryPrefix}:443)" = "200" ]; do sleep 1; done;`
+                "-c", `until [ "$(curl -s -o /dev/null -k -w "%{http_code}" https://${this.gclRegistryPrefix}:443)" = "200" ]; do sleep 1; done;`,
             ], {
-                timeout: 4000
+                timeout: 4000,
             });
         } catch (err) {
-            if ((err as ExecaError).timedOut) {
-                throw 'local docker registry port check timed out';
-            }
             await this.stopDockerRegistry(argv.containerExecutable);
+            if ((err as ExecaError).timedOut) {
+                throw "local docker registry port check timed out";
+            }
             throw err;
         }
     }
