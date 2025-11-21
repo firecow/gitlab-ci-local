@@ -5,7 +5,7 @@ import {Job, JobRule} from "./job.js";
 import fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
-import execa from "execa";
+import execa, {ExecaError} from "execa";
 import assert from "assert";
 import {CICDVariable} from "./variables-from-files.js";
 import {GitData, GitSchema} from "./git-data.js";
@@ -506,6 +506,24 @@ export class Utils {
             "-e", `REGISTRY_HTTP_TLS_KEY=/certs/${this.gclRegistryPrefix}.key`,
             "registry",
         ]);
+
+        try {
+            await execa(argv.containerExecutable, [
+                "run", "--rm",
+                "--network", gclRegistryNet,
+                "--entrypoint", "sh",
+                "curlimages/curl",
+                "-c", `until [ "$(curl -s -o /dev/null -k -w "%{http_code}" https://${this.gclRegistryPrefix}:443)" = "200" ]; do sleep 1; done;`
+            ], {
+                timeout: 4000
+            });
+        } catch (err) {
+            if ((err as ExecaError).timedOut) {
+                throw 'local docker registry port check timed out';
+            }
+            await this.stopDockerRegistry(argv.containerExecutable);
+            throw err;
+        }
     }
 
     static async stopDockerRegistry (containerExecutable: string): Promise<void> {
