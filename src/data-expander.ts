@@ -234,8 +234,13 @@ function normalizeGlobalVariables (gitlabData: any) {
 export function flattenLists (gitlabData: any) {
     traverse(gitlabData, ({parent, key, value, meta}) => {
         if (parent != null && key != null && Array.isArray(value)) {
-            parent[key] = value.flat(9);
-            assert(!parent[key].some(Array.isArray), chalk`This Gitlab CI configuration is invalid: {blueBright ${meta.nodePath}} config should be string or a nested array of strings up to 10 level deep`);
+            assert(!value.flat(9).some(Array.isArray), chalk`This Gitlab CI configuration is invalid: {blueBright ${meta.nodePath}} config should be string or a nested array of strings up to 10 level deep`);
         }
     }, {cycleHandling: true});
+
+    traverse(gitlabData, ({parent, key, value}) => {
+        if (parent != null && key != null && Array.isArray(value)) {
+            parent[key] = value.flat(9);
+        }
+    }, {cycleHandling: false});
 }

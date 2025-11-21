@@ -215,6 +215,11 @@ export class Argv {
         return this.map.get("privileged") ?? false;
     }
 
+    get device (): string[] {
+        const val = this.map.get("device") ?? [];
+        return typeof val == "string" ? val.split(" ") : val;
+    }
+
     get ulimit (): string | null {
         const ulimit = this.map.get("ulimit");
         if (!ulimit) return null;
@@ -259,6 +264,10 @@ export class Argv {
 
     get preview (): boolean {
         return this.map.get("preview") ?? false;
+    }
+
+    get validateDependencyChain (): boolean {
+        return this.map.get("validateDependencyChain") ?? false;
     }
 
     get shellIsolation (): boolean {
@@ -320,6 +329,10 @@ export class Argv {
 
     get defaultImage (): string {
         return this.map.get("defaultImage") ?? "docker.io/ruby:3.1";
+    }
+
+    get waitImage (): string {
+        return this.map.get("waitImage") ?? "docker.io/sumina46/wait-for-it:latest";
     }
 
     get helperImage (): string {

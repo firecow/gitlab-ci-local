@@ -59,11 +59,12 @@ export class GitData {
 
         try {
             await Promise.all(promises);
-        } catch (e) {
+        } catch (e: any) {
             if (e instanceof AssertionError) {
                 return writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
             }
             writeStreams.stderr(chalk`{yellow Using fallback git commit data}\n`);
+            writeStreams.stderr(chalk`{yellow   ${e.message}\n}`);
         }
     }
 
@@ -73,15 +74,17 @@ export class GitData {
             this.branches.default = gitRemoteDefaultBranch.replace("origin/", "");
         } catch (e: any) {
             if (e.stderr === "fatal: ref refs/remotes/origin/HEAD is not a symbolic ref") {
-                writeStreams.stderr(chalk`{yellow Unable to retrieve default remote branch, falling back to \`${this.branches.default}\`. The default remote branch can be set via \`git remote set-head origin <default_branch>\`}`);
+                writeStreams.stderr(chalk`{yellow Unable to retrieve default remote branch, falling back to \`${this.branches.default}\`. The default remote branch can be set via \`git remote set-head origin <default_branch>\`\n}`);
+                writeStreams.stderr(chalk`{yellow   ${e.message}\n}`);
             } else {
                 writeStreams.stderr(chalk`{yellow Unable to retrieve default remote branch, falling back to \`${this.branches.default}\`.\n}`);
+                writeStreams.stderr(chalk`{yellow   ${e.message}\n}`);
             }
         }
     }
 
-    static changedFiles (defaultBranch: string) {
-        return Utils.syncSpawn(["git", "diff", "--name-only", defaultBranch]).stdout.split("\n");
+    static changedFiles (defaultBranch: string, cwd: string) {
+        return Utils.syncSpawn(["git", "diff", "--name-only", defaultBranch], cwd).stdout.split("\n");
     }
 
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
@@ -138,12 +141,13 @@ export class GitData {
                 this.remote.schema = "git";
                 this.remote.port = port;
             }
-        } catch (e) {
+        } catch (e: any) {
             if (e instanceof AssertionError) {
                 writeStreams.stderr(chalk`{yellow ${e.message}}\n`);
                 return;
             }
             writeStreams.stderr(chalk`{yellow Using fallback git remote data}\n`);
+            writeStreams.stderr(chalk`{yellow   ${e.message}\n}`);
         }
     }
 
@@ -152,8 +156,9 @@ export class GitData {
 
         const gitUsernamePromise = Utils.spawn(["git", "config", "user.name"], cwd).then(({stdout}) => {
             this.user.GITLAB_USER_NAME = stdout.trimEnd();
-        }).catch(() => {
+        }).catch((e) => {
             writeStreams.stderr(chalk`{yellow Using fallback git user.name}\n`);
+            writeStreams.stderr(chalk`{yellow   ${e.message}\n}`);
         });
         promises.push(gitUsernamePromise);
 
@@ -161,15 +166,17 @@ export class GitData {
             const email = stdout.trimEnd();
             this.user.GITLAB_USER_EMAIL = email;
             this.user.GITLAB_USER_LOGIN = email.replace(/@.*/, "");
-        }).catch(() => {
+        }).catch((e) => {
             writeStreams.stderr(chalk`{yellow Using fallback git user.email}\n`);
+            writeStreams.stderr(chalk`{yellow   ${e.message}\n}`);
         });
         promises.push(gitEmailPromise);
 
         const osUidPromise = Utils.spawn(["id", "-u"], cwd).then(({stdout}) => {
             this.user.GITLAB_USER_ID = stdout.trimEnd();
-        }).catch(() => {
+        }).catch((e) => {
             writeStreams.stderr(chalk`{yellow Using fallback linux user id}\n`);
+            writeStreams.stderr(chalk`{yellow   ${e.message}\n}`);
         });
         promises.push(osUidPromise);
 

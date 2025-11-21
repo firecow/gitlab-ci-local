@@ -16,7 +16,7 @@ jobs:
   yamllint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ibiqlik/action-yamllint@v3
         with:
           strict: true
@@ -24,12 +24,12 @@ jobs:
   smoke-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
-      - uses: actions/cache@v4.2.3
+      - uses: actions/cache@v4.3.0
         with:
           path: ${{ env.PKG_CACHE_PATH }}
           key: pkg-cache-${{ matrix.node-version }}
@@ -43,10 +43,10 @@ jobs:
   eslint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
@@ -54,10 +54,10 @@ jobs:
   unused-deps:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
       - run: npx depcheck --ignores depcheck
@@ -65,17 +65,17 @@ jobs:
   jest:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4.4.0
+      - uses: actions/setup-node@v6.0.0
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
       - name: Run Tests
         run: npm run coverage
-      - uses: sonarsource/sonarqube-scan-action@v5.2.0
+      - uses: sonarsource/sonarqube-scan-action@v6.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -91,15 +91,15 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: 'typescript'
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+      uses: github/codeql-action/autobuild@v4
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4

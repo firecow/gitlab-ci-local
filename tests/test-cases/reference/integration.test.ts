@@ -205,3 +205,32 @@ test-job:
 
     expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
 });
+
+it("should have a lower precedence than a local scope", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        preview: true,
+        file: ".gitlab-ci-3.yml",
+        cwd: "tests/test-cases/reference",
+    }, writeStreams);
+
+    const expected = `
+---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+test-job:
+  variables:
+    MY_VAR: MY_VAL
+  rules:
+    - if: $MY_VAR == "MY_VAL"
+      when: always
+  script:
+    - echo "hello world job"
+`;
+
+    expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
+});

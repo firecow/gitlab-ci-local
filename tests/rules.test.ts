@@ -38,7 +38,7 @@ test("Negated regex on undef var", () => {
     ];
     const variables = {};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
 });
 
 test("GITLAB_CI fail and fallback", () => {

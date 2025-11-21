@@ -18,6 +18,7 @@ import {Parser} from "./parser.js";
 import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
 import globby from "globby";
 import terminalLink from "terminal-link";
+import * as crypto from "crypto";
 
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
 interface JobOptions {
@@ -207,7 +208,12 @@ export class Job {
         // Find environment matched variables
         if (this.environment && expandVariables) {
             const expanded = Utils.expandVariables(this._variables);
+            const envNameBeforeExpansion = this.environment.name;
             this.environment.name = Utils.expandText(this.environment.name, expanded);
+            if (this.environment.name !== envNameBeforeExpansion) {
+                // Regenerate CI_ENVIRONMENT_SLUG based on env name if it changed after expansion
+                predefinedVariables["CI_ENVIRONMENT_SLUG"] = this._generateEnvironmentSlug(this.environment.name);
+            }
             this.environment.url = Utils.expandText(this.environment.url, expanded);
         }
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
@@ -314,7 +320,7 @@ export class Job {
         predefinedVariables["CI_JOB_URL"] = `${predefinedVariables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/-/jobs/${this.jobId}`; // Changes on rerun.
         predefinedVariables["CI_PIPELINE_URL"] = `${predefinedVariables["CI_SERVER_URL"]}/${gitData.remote.group}/${gitData.remote.project}/pipelines/${this.pipelineIid}`;
         predefinedVariables["CI_ENVIRONMENT_NAME"] = this.environment?.name ?? "";
-        predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name?.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 23).replace(/-$/, "").toLowerCase() ?? "";
+        predefinedVariables["CI_ENVIRONMENT_SLUG"] = this.environment?.name ? this._generateEnvironmentSlug(this.environment.name) : "";
         predefinedVariables["CI_ENVIRONMENT_URL"] = this.environment?.url ?? "";
         predefinedVariables["CI_ENVIRONMENT_TIER"] = this.environment?.deployment_tier ?? "";
         predefinedVariables["CI_ENVIRONMENT_ACTION"] = this.environment?.action ?? "";
@@ -326,6 +332,57 @@ export class Job {
         predefinedVariables["CI_REGISTRY"] = predefinedVariables["CI_REGISTRY"] = this.argv.registry ? Utils.gclRegistryPrefix : `local-registry.${this.gitData.remote.host}`;
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${predefinedVariables["CI_PROJECT_PATH"].toLowerCase()}`;
         return predefinedVariables;
+    }
+
+    /**
+     * Generates a compliant slug for an environment name.
+     * See: https://gitlab.com/gitlab-org/gitlab/-/blob/fc31e7ac344e53ebae182ea1dca183bdc0e2ea71/lib/gitlab/slug/environment.rb
+     *
+     * The slug:
+     * - Contains only lowercase letters (a-z), numbers (0-9), and '-'.
+     * - Begins with a letter.
+     * - Has a maximum length of 24 characters.
+     * - Does not end with '-'.
+     *
+     * @param name The original environment name.
+     * @returns A compliant environment slug.
+     */
+    private _generateEnvironmentSlug (name: string): string {
+        // 1. Lowercase, replace non-alphanumeric with '-', and squeeze repeating '-'
+        let slug = name
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "-")
+            .replace(/-+/g, "-");
+
+        // 2. Must start with a letter
+        if (!/^[a-z]/.test(slug)) {
+            slug = `env-${slug}`;
+        }
+
+        // 3. If it's too long or was modified, shorten and add a hash suffix
+        if (slug.length > 24 || slug !== name) {
+            // Truncate to 17 chars (leaving room for '-' + 6-char hash)
+            slug = slug.slice(0, 17);
+
+            // Ensure it ends with a dash before adding the suffix
+            if (!slug.endsWith("-")) {
+                slug += "-";
+            }
+
+            // Create the 6-char suffix from a hash of the *original* name
+            const hexHash = crypto
+                .createHash("sha256")
+                .update(name)
+                .digest("hex");
+
+            // Use BigInt for safe conversion from hex -> base36
+            const suffix = BigInt(`0x${hexHash}`).toString(36).slice(-6);
+
+            return slug + suffix;
+        }
+
+        // 4. If it was short and unmodified, just ensure it doesn't end with '-'
+        return slug.replace(/-$/, "");
     }
 
     get jobStatus () {
@@ -842,6 +899,10 @@ export class Job {
                 dockerCmd += "--privileged ";
             }
 
+            for (const device of this.argv.device) {
+                dockerCmd += `--device ${device} `;
+            }
+
             if (this.argv.ulimit !== null) {
                 dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
             }
@@ -1235,7 +1296,8 @@ export class Job {
             });
             endTime = process.hrtime(time);
 
-            for (const _path of c.paths) {
+            for (const __path of c.paths) {
+                const _path = Utils.expandText(__path, expanded);
                 if (!Utils.isSubpath(_path, this.argv.cwd, this.argv.cwd)) {
                     writeStreams.stdout(chalk`{yellow WARNING: processPath: artifact path is not a subpath of project directory: ${_path}}\n`);
                     continue;
@@ -1424,6 +1486,10 @@ export class Job {
             dockerCmd += "--privileged ";
         }
 
+        for (const device of this.argv.device) {
+            dockerCmd += `--device ${device} `;
+        }
+
         if (this.argv.ulimit !== null) {
             dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
         }
@@ -1497,6 +1563,7 @@ export class Job {
     private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceIndex: number, serviceContainerLogFile: string) {
         const serviceAlias = service.alias;
         const serviceName = service.name;
+        const waitImageName = this.argv.waitImage;
 
         const {stdout} = await Utils.spawn([this.argv.containerExecutable, "image", "inspect", serviceName]);
         const imageInspect = JSON.parse(stdout);
@@ -1521,7 +1588,7 @@ export class Job {
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
                 const containerName = `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`;
-                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, "docker.io/sumina46/wait-for-it", `${uniqueAlias}:${portNum}`, "-t", "30"];
+                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${uniqueAlias}:${portNum}`, "-t", "30"];
                 this._containersToClean.push(containerName);
                 return Utils.spawn(spawnCmd);
             }));
@@ -1557,7 +1624,7 @@ export class Job {
             if (include["local"]) {
                 const expandedInclude = Utils.expandText(include["local"], this._variables);
                 validateIncludeLocal(expandedInclude);
-                const files = resolveIncludeLocal(expandedInclude, cwd);
+                const files = await resolveIncludeLocal(expandedInclude, cwd);
                 if (files.length == 0) {
                     throw new AssertionError({message: `Local include file \`${include["local"]}\` specified in \`.${this.name}\` cannot be found!`});
                 }

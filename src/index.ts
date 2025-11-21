@@ -25,7 +25,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
     const yparser = yargs(process.argv.slice(2));
     yparser.parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
-        .version("4.61.0")
+        .version("4.63.0")
         .wrap(yparser.terminalWidth?.())
         .command({
             handler: async (argv) => {
@@ -93,6 +93,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         .option("list-csv-all", {
             type: "boolean",
             description: "List job information in csv format, when:never included",
+            requiresArg: false,
+        })
+        .option("validate-dependency-chain", {
+            type: "boolean",
+            description: "Validate that jobs needed or dependent by active jobs under specified conditions are also active without actually running the jobs. Uses fail-fast approach - stops at first validation error for both 'needs' and 'dependencies' keywords. If validation fails, use --list flag to see which jobs will run under specified conditions",
             requiresArg: false,
         })
         .option("preview", {
@@ -187,6 +192,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "When using --shell-executor-no-image=false which image to be used for the container. Defaults to docker.io/ruby:3.1 if not set.",
             requiresArg: false,
         })
+        .option("wait-image", {
+            type: "string",
+            description: "Which image to be used for the wait container. Defaults to docker.io/sumina46/wait-for-it:latest if not set.",
+            requiresArg: false,
+        })
         .option("helper-image", {
             type: "string",
             description: "When using --shell-executor-no-image=false which image to be used for the utils container. Defaults to docker.io/firecow/gitlab-ci-local-util:latest if not set.",
@@ -210,6 +220,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         .option("privileged", {
             type: "boolean",
             description: "Set docker executor to privileged mode",
+            requiresArg: false,
+        })
+        .option("device", {
+            type: "array",
+            description: "Add devices to docker executor",
             requiresArg: false,
         })
         .option("ulimit", {

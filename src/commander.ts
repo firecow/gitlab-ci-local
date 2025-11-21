@@ -223,7 +223,7 @@ export class Commander {
 
         const renderLine = (job: Job) => {
             const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job);
-            const allowFailure = job.allowFailure ? "true " : "false";
+            const allowFailure = job.allowFailure ? "true " : "false ";
             let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
             jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
             if (needs) {
@@ -268,8 +268,28 @@ export class Commander {
         writeStreams.stdout("name;description;stage;when;allowFailure;needs\n");
         jobs.forEach((job) => {
             const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job).join(",") ?? [];
-            writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure};[${needs}]\n`);
+            writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure ? "true" : "false"};[${needs}]\n`);
         });
     }
 
+    static validateDependencyChain (parser: Parser) {
+        const allJobs = parser.jobs;
+        // This is only the jobs that will actually run
+        const activeJobs = allJobs.filter(j => j.when !== "never");
+        const stages = parser.stages;
+        // This will throw an assertion errror if the dependency chain is broken due to needs keyword on specific events without having to run the full pipeline
+        Executor.getStartCandidates(allJobs, stages, activeJobs, []);
+
+        const activeJobNames = new Set(activeJobs.map(job => job.name));
+        // This willl throw an assertion error if the dependency chain is broken due to dependencies keyword (a job depending on artifacts from a job that will never run) without having to run the full pipeline
+        for (const job of activeJobs) {
+            if (job.dependencies) {
+                for (const dependency of job.dependencies) {
+                    if (!activeJobNames.has(dependency)) {
+                        throw new AssertionError({message: chalk`{blueBright ${dependency}} is when:never, but its depended on by {blueBright ${job.name}}`});
+                    }
+                }
+            }
+        }
+    }
 }

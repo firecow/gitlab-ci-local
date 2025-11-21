@@ -1,0 +1,22 @@
+---
+.base_template:
+  variables:
+    MY_VAR: MY_VAL
+  rules:
+    - if: $MY_VAR == "MY_VAL"
+      when: always
+
+.job_template1:
+  extends: [.base_template]
+  rules: !reference [.base_template, rules]
+
+.job_template2:
+  extends: [.base_template]
+  rules:
+    - !reference [.base_template, rules]
+
+test-job:
+  extends: [.job_template2]
+  script:
+    - echo "hello world job"
+  rules: !reference [.job_template2, rules]

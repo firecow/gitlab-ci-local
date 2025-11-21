@@ -6,8 +6,7 @@ import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "assert";
 import chalk from "chalk";
 import {Parser} from "./parser.js";
-import axios from "axios";
-import globby from "globby";
+import axios, {AxiosRequestConfig} from "axios";
 import path from "path";
 import semver from "semver";
 import {RE2JS} from "re2js";
@@ -93,7 +92,7 @@ export class ParserIncludes {
             }
             if (value["local"]) {
                 validateIncludeLocal(value["local"]);
-                const files = resolveIncludeLocal(value["local"], cwd);
+                const files = await resolveIncludeLocal(value["local"], cwd);
                 if (files.length == 0) {
                     throw new AssertionError({message: `Local include file cannot be found ${value["local"]}`});
                 }
@@ -288,7 +287,11 @@ export class ParserIncludes {
         try {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
             if (await fs.pathExists(target) && !fetchIncludes) return;
-            const res = await axios.get(url, {headers: {"User-Agent": "gitlab-ci-local"}});
+            const axiosConfig: AxiosRequestConfig = {
+                headers: {"User-Agent": "gitlab-ci-local"},
+                ...Utils.getAxiosProxyConfig(),
+            };
+            const res = await axios.get(url, axiosConfig);
             await fs.outputFile(target, res.data);
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});
@@ -327,11 +330,11 @@ export class ParserIncludes {
 
     static readonly memoLocalRepoFiles = (() => {
         const cache = new Map<string, string[]>();
-        return (path: string) => {
+        return async (path: string) => {
             let result = cache.get(path);
             if (typeof result !== "undefined") return result;
 
-            result = globby.sync(path, {dot: true, gitignore: true});
+            result = (await Utils.getTrackedFiles(path)).map(p => `${path}/${p}`);
             cache.set(path, result);
             return result;
         };
@@ -361,8 +364,8 @@ export function resolveSemanticVersionRange (range: string, gitTags: string[]) {
     return found;
 }
 
-export function resolveIncludeLocal (pattern: string, cwd: string) {
-    const repoFiles = ParserIncludes.memoLocalRepoFiles(cwd);
+export async function resolveIncludeLocal (pattern: string, cwd: string) {
+    const repoFiles = await ParserIncludes.memoLocalRepoFiles(cwd);
 
     if (!pattern.startsWith("/")) pattern = `/${pattern}`; // Ensure pattern starts with `/`
     pattern = `${cwd}${pattern}`;

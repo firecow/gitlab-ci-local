@@ -11,7 +11,7 @@ import {CICDVariable} from "./variables-from-files.js";
 import {GitData, GitSchema} from "./git-data.js";
 import globby from "globby";
 import micromatch from "micromatch";
-import axios from "axios";
+import axios, {AxiosRequestConfig} from "axios";
 import path from "path";
 import {Argv} from "./argv.js";
 
@@ -199,7 +199,7 @@ export class Utils {
         for (const rule of opt.rules) {
             if (!Utils.evaluateRuleIf(rule.if, opt.variables)) continue;
             if (!Utils.evaluateRuleExist(opt.cwd, rule.exists)) continue;
-            if (evaluateRuleChanges && !Utils.evaluateRuleChanges(gitData.branches.default, rule.changes)) continue;
+            if (evaluateRuleChanges && !Utils.evaluateRuleChanges(gitData.branches.default, rule.changes, opt.cwd)) continue;
 
             when = rule.when ? rule.when : jobWhen;
             allowFailure = rule.allow_failure ?? allowFailure;
@@ -294,9 +294,8 @@ export class Utils {
             return `.matchRE2JS(${_rhs}) ${_operator} null`;
         });
 
-        // Convert all null.match functions to false
         evalStr = evalStr.replace(/null.matchRE2JS\(.+?\)\s*!=\s*null/g, "false");
-        evalStr = evalStr.replace(/null.matchRE2JS\(.+?\)\s*==\s*null/g, "false");
+        evalStr = evalStr.replace(/null.matchRE2JS\(.+?\)\s*==\s*null/g, "true");
 
         evalStr = evalStr.trim();
 
@@ -337,7 +336,7 @@ export class Utils {
         return false;
     }
 
-    static evaluateRuleChanges (defaultBranch: string, ruleChanges: string[] | {paths: string[]} | undefined): boolean {
+    static evaluateRuleChanges (defaultBranch: string, ruleChanges: string[] | {paths: string[]} | undefined, cwd: string): boolean {
         if (ruleChanges === undefined) return true;
 
         // Normalize rules:changes:paths to rules:changes
@@ -346,7 +345,7 @@ export class Utils {
         // NOTE: https://docs.gitlab.com/ee/ci/yaml/#ruleschanges
         //   Glob patterns are interpreted with Ruby's [File.fnmatch](https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch)
         //   with the flags File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB.
-        return micromatch.some(GitData.changedFiles(`origin/${defaultBranch}`), ruleChanges, {
+        return micromatch.some(GitData.changedFiles(`origin/${defaultBranch}`, cwd), ruleChanges, {
             nonegate: true,
             noextglob: true,
             posix: false,
@@ -418,7 +417,11 @@ export class Utils {
             case "http":
             case "https": {
                 try {
-                    const {status} = await axios.get(`${protocol}://${domain}:${port}/${projectPath}/-/raw/${ref}/${file}`);
+                    const axiosConfig: AxiosRequestConfig = Utils.getAxiosProxyConfig();
+                    const {status} = await axios.get(
+                        `${protocol}://${domain}:${port}/${projectPath}/-/raw/${ref}/${file}`,
+                        axiosConfig,
+                    );
                     return (status === 200);
                 } catch {
                     return false;
@@ -528,5 +531,28 @@ export class Utils {
 
     static async stopDockerRegistry (containerExecutable: string): Promise<void> {
         await Utils.spawn([containerExecutable, "rm", "-f", this.gclRegistryPrefix]);
+    }
+    
+    static async getTrackedFiles (cwd: string): Promise<string[]> {
+        const lsFilesRes = await Utils.bash("git ls-files --deduplicate", cwd);
+        if (lsFilesRes.exitCode != 0) {
+            throw new Error(`Failed to list tracked files in ${cwd}: ${lsFilesRes.stderr}`);
+        }
+        return lsFilesRes.stdout.split("\n");
+    }
+
+    static getAxiosProxyConfig (): AxiosRequestConfig {
+        const proxyEnv = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+        if (proxyEnv) {
+            const proxyUrl = new URL(proxyEnv);
+            return {
+                proxy: {
+                    host: proxyUrl.hostname,
+                    port: proxyUrl.port ? parseInt(proxyUrl.port, 10) : 8080,
+                    protocol: proxyUrl.protocol.replace(":", ""),
+                },
+            };
+        }
+        return {};
     }
 }

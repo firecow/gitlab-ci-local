@@ -22,3 +22,14 @@ deploy-stage-job:
     url: http://stage.domain.com
     action: stop
     deployment_tier: production
+
+deploy-stage-job-with-expansion:
+  stage: deploy
+  script:
+    - echo "Deploy stage something with expansion"
+    - echo ${CI_ENVIRONMENT_SLUG}
+    - echo ${CI_ENVIRONMENT_NAME}
+  variables:
+    EXPAND_ME: foobar-long-string
+  environment:
+    name: stage-domain-${EXPAND_ME}
