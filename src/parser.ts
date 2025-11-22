@@ -138,14 +138,8 @@ export class Parser {
             assert(jobData.when !== "never",
                 chalk`This GitLab CI configuration is invalid: jobs:${jobName} when:never can only be used in a rules section or workflow:rules`,
             );
-            for (const [key, _value] of Object.entries(jobData.variables || {})) {
-                let value = _value;
-                if (value === null) value = ""; // variable's values are nullable
-                assert(
-                    typeof value === "string" || typeof value === "number" || typeof value === "boolean",
-                    chalk`{blueBright ${jobName}} has invalid variables hash of key value pairs. ${key}=${value}`,
-                );
-                jobData.variables[key] = String(value);
+            for (const [key, value] of Object.entries(jobData.variables ?? {})) {
+                jobData.variables[key] = Utils.normalizeVariables(value);
             }
 
             for (let i = 0; i < (jobData.services ?? []).length; i++) {

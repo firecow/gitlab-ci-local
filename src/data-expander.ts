@@ -221,13 +221,7 @@ export function inheritDefault (gitlabData: any) {
 
 function normalizeGlobalVariables (gitlabData: any) {
     for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
-        if (value === null) {
-            gitlabData.variables[key] = ""; // variable's values are nullable
-        } else if (Utils.isObject(value)) {
-            gitlabData.variables[key] = String(value["value"]);
-        } else {
-            gitlabData.variables[key] = String(value);
-        }
+        gitlabData.variables[key] = Utils.normalizeVariables(value);
     }
 }
 
