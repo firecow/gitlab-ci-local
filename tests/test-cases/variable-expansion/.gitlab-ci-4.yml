@@ -1,0 +1,36 @@
+---
+variables:
+  DEFAULT_VAR_1: "1"
+  DEFAULT_VAR_2:
+    value: 2 $DEFAULT_VAR_1
+    expand: false
+  DEFAULT_VAR_3:
+    value: 3 $DEFAULT_VAR_1
+    expand: true
+  DEFAULT_VAR_4:
+    # expect expand to be true by default
+    value: 4 $DEFAULT_VAR_1
+
+job:
+  stage: build
+  image: busybox
+  variables:
+    JOB_VAR_1: "1"
+    JOB_VAR_2:
+      value: 2 $JOB_VAR_1
+      expand: false
+    JOB_VAR_3:
+      value: 3 $JOB_VAR_1
+      expand: true
+    JOB_VAR_4:
+      # expect expand to be true by default
+      value: 4 $JOB_VAR_1
+  script:
+    - echo $DEFAULT_VAR_1  # 1
+    - echo $DEFAULT_VAR_2  # 2 $DEFAULT_VAR_1
+    - echo $DEFAULT_VAR_3  # 3 1
+    - echo $DEFAULT_VAR_4  # 4 1
+    - echo $JOB_VAR_1  # 1
+    - echo $JOB_VAR_2  # 2 $JOB_VAR_1
+    - echo $JOB_VAR_3  # 3 1
+    - echo $JOB_VAR_4  # 4 1

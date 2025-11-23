@@ -103,3 +103,26 @@ test("should expand variables referencing dotenv artifact variables", async () =
     const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job2 >")).join("\n");
     expect(filteredStdout).toEqual(expected);
 });
+
+test("should support variables:expand", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/variable-expansion",
+        file: ".gitlab-ci-4.yml",
+        noColor: true,
+    }, writeStreams);
+
+    const expected = `
+job > 1
+job > 2 $DEFAULT_VAR_1
+job > 3 1
+job > 4 1
+job > 1
+job > 2 $JOB_VAR_1
+job > 3 1
+job > 4 1
+`;
+
+    const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job >")).join("\n");
+    expect(filteredStdout).toEqual(expected.trim());
+});

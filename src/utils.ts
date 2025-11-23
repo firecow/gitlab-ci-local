@@ -460,4 +460,17 @@ export class Utils {
         }
         return {};
     }
+
+    static normalizeVariables (variable: any) {
+        if (variable === null) {
+            return ""; // variable's values are nullable
+        } else if (Utils.isObject(variable)) {
+            if (variable["expand"] === false) {
+                return String(variable["value"]).replaceAll("$", () => "$$");
+            }
+            return String(variable["value"]);
+        } else {
+            return String(variable);
+        }
+    }
 }
