@@ -329,7 +329,7 @@ export class Job {
             predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
         }
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
-        predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
+        predefinedVariables["CI_REGISTRY"] = predefinedVariables["CI_REGISTRY"] = this.argv.registry ? Utils.gclRegistryPrefix : `local-registry.${this.gitData.remote.host}`;
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${predefinedVariables["CI_PROJECT_PATH"].toLowerCase()}`;
         return predefinedVariables;
     }
@@ -886,6 +886,11 @@ export class Job {
             });
         }
 
+        if (this.argv.registry) {
+            expanded["CI_REGISTRY_USER"] = expanded["CI_REGISTRY_USER"] ?? `${Utils.gclRegistryPrefix}.user`;
+            expanded["CI_REGISTRY_PASSWORD"] = expanded["CI_REGISTRY_PASSWORD"] ?? `${Utils.gclRegistryPrefix}.password`;
+        }
+
         this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (imageName && !this._containerId) {
@@ -952,6 +957,12 @@ export class Job {
             if (this._serviceNetworkId) {
                 // `build` alias: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/27060
                 dockerCmd += `--network ${this._serviceNetworkId} --network-alias build `;
+            }
+
+            if (this.argv.registry) {
+                dockerCmd += `--network ${Utils.gclRegistryPrefix}.net `;
+                dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
+                dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/docker/certs.d:ro `;
             }
 
             dockerCmd += `--volume ${buildVolumeName}:${this.ciProjectDir} `;

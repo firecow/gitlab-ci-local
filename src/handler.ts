@@ -69,6 +69,9 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         Commander.runCsv(parser, writeStreams, argv.listCsvAll);
     } else if (argv.job.length > 0) {
         assert(argv.stage === null, "You cannot use --stage when starting individual jobs");
+        if (argv.registry) {
+            await Utils.startDockerRegistry(argv);
+        }
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
         if (argv.needs || argv.onlyNeeds) {
@@ -82,6 +85,9 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
             writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
         }
     } else if (argv.stage) {
+        if (argv.registry) {
+            await Utils.startDockerRegistry(argv);
+        }
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
@@ -90,6 +96,9 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         await Commander.runJobsInStage(argv, parser, writeStreams);
         writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     } else {
+        if (argv.registry) {
+            await Utils.startDockerRegistry(argv);
+        }
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
         await state.incrementPipelineIid(cwd, stateDir);
@@ -101,5 +110,8 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     }
     writeStreams.flush();
 
+    if (argv.registry) {
+        await Utils.stopDockerRegistry(argv.containerExecutable);
+    }
     return cleanupJobResources(jobs);
 }
