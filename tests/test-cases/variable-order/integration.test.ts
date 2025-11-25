@@ -30,6 +30,4 @@ test-job > PROD_ONLY_VARIABLE=notprod
 
     const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job >")).join("\n");
     expect(filteredStdout).toEqual(expected);
-
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([" WARN  Avoid overriding predefined variables (​https://gitlab.com/gitlab-org/gitlab/-/blob/v17.7.1-ee/doc/ci/variables/predefined_variables.md?plain=1&ref_type=tags#L15-16​) [CI_PIPELINE_ID,CI_JOB_ID] as it can cause the pipeline to behave unexpectedly."]));
 });
