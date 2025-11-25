@@ -277,7 +277,13 @@ export class Job {
         const predefinedVariablesKeys = Object.keys(predefinedVariables);
         const userDefinedVariablesKeys = Object.keys(userDefinedVariables);
 
-        const overridingOfPredefinedVariables = userDefinedVariablesKeys.filter(ele => predefinedVariablesKeys.includes(ele));
+        // Known list of predefined variables that we want to suppress warnings for
+        const whiteListedPredefinedVariablesKeys = [
+            "CI_REGISTRY",
+            "CI_SERVER_PORT",
+            "CI_SERVER_SHELL_SSH_PORT",
+        ];
+        const overridingOfPredefinedVariables = userDefinedVariablesKeys.filter(ele => predefinedVariablesKeys.includes(ele) && !whiteListedPredefinedVariablesKeys.includes(ele));
         if (overridingOfPredefinedVariables.length == 0) {
             return;
         }
