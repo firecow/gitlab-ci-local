@@ -19,6 +19,7 @@ import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
 import globby from "globby";
 import terminalLink from "terminal-link";
 import * as crypto from "crypto";
+import * as path from "path";
 
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
 interface JobOptions {
@@ -687,10 +688,23 @@ export class Job {
             if (helperImageName) {
                 await this.pullImage(writeStreams, helperImageName);
             }
-            const {stdout: containerId} = await Utils.spawn([
-                this.argv.containerExecutable, "create", "--user=0:0", `--volume=${buildVolumeName}:${this.ciProjectDir}`, `--volume=${tmpVolumeName}:${this.fileVariablesDir}`, `${helperImageName}`,
-                ...["sh", "-c", `chown ${chownOpt} -R ${this.ciProjectDir} && chmod ${chmodOpt} -R ${this.ciProjectDir} && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`],
-            ], argv.cwd);
+
+            const helperContainerArgs = [
+                this.argv.containerExecutable, "create", "--user=0:0",
+                `--volume=${buildVolumeName}:${this.ciProjectDir}`,
+                `--volume=${tmpVolumeName}:${this.fileVariablesDir}`,
+            ];
+
+            if (this.argv.caFile) {
+                const caFilePath = path.isAbsolute(this.argv.caFile) ? this.argv.caFile : path.resolve(this.argv.cwd, this.argv.caFile);
+                if (await fs.pathExists(caFilePath)) {
+                    helperContainerArgs.push(`--volume=${caFilePath}:/etc/ssl/certs/ca-certificates.crt:ro`);
+                }
+            }
+
+            helperContainerArgs.push(`${helperImageName}`, "sh", "-c", `chown ${chownOpt} -R ${this.ciProjectDir} && chmod ${chmodOpt} -R ${this.ciProjectDir} && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`);
+
+            const {stdout: containerId} = await Utils.spawn(helperContainerArgs, argv.cwd);
             this._containersToClean.push(containerId);
             if (await fs.pathExists(fileVariablesDir)) {
                 await Utils.spawn([this.argv.containerExecutable, "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
@@ -964,6 +978,17 @@ export class Job {
 
             for (const extraHost of this.argv.extraHost) {
                 dockerCmd += `--add-host=${extraHost} `;
+            }
+
+            if (this.argv.caFile) {
+                const caFilePath = path.isAbsolute(this.argv.caFile) ? this.argv.caFile : path.resolve(this.argv.cwd, this.argv.caFile);
+                if (await fs.pathExists(caFilePath)) {
+                    dockerCmd += `--volume ${caFilePath}:/etc/ssl/certs/ca-certificates.crt:ro `;
+                    expanded["SSL_CERT_FILE"] = "/etc/ssl/certs/ca-certificates.crt";
+                    expanded["SSL_CERT_DIR"] = "/etc/ssl/certs";
+                } else {
+                    writeStreams.stderr(chalk`{yellow WARNING: CA file not found: ${caFilePath}}\n`);
+                }
             }
 
             for (const [key, val] of Object.entries(expanded)) {
@@ -1489,6 +1514,15 @@ export class Job {
 
         for (const extraHost of this.argv.extraHost) {
             dockerCmd += `--add-host=${extraHost} `;
+        }
+
+        if (this.argv.caFile) {
+            const caFilePath = path.isAbsolute(this.argv.caFile) ? this.argv.caFile : path.resolve(this.argv.cwd, this.argv.caFile);
+            if (await fs.pathExists(caFilePath)) {
+                dockerCmd += `--volume ${caFilePath}:/etc/ssl/certs/ca-certificates.crt:ro `;
+                expanded["SSL_CERT_FILE"] = "/etc/ssl/certs/ca-certificates.crt";
+                expanded["SSL_CERT_DIR"] = "/etc/ssl/certs";
+            }
         }
 
         const serviceAlias = service.alias;
