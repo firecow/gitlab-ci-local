@@ -298,6 +298,13 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             default: Argv.default.ignoreSchemaPaths,
             description: "The json schema paths that will be ignored",
         })
+        .option("ignore-predefined-vars", {
+            type: "string",
+            coerce: (v) => v.split(","),
+            requiresArg: false,
+            default: Argv.default.ignorePredefinedVars,
+            describe: "Comma-seperated list of predefined pipeline variables for which warnings should be suppressed",
+        })
         .option("concurrency", {
             type: "number",
             description: "Limit the number of jobs that run simultaneously",

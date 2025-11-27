@@ -219,7 +219,7 @@ export class Job {
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
         const userDefinedVariables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
-        this.discourageOverridingOfPredefinedVariables(predefinedVariables, userDefinedVariables);
+        this.discourageOverridingOfPredefinedVariables(predefinedVariables, userDefinedVariables, argv.ignorePredefinedVars);
 
         // Merge and expand after finding env matched variables
         this._variables = {...predefinedVariables, ...userDefinedVariables};
@@ -273,17 +273,24 @@ export class Job {
     /**
      *  Warn when overriding of predefined variables is detected
      */
-    private discourageOverridingOfPredefinedVariables (predefinedVariables: {[name: string]: string}, userDefinedVariables: {[name: string]: string}) {
+    private discourageOverridingOfPredefinedVariables (predefinedVariables: {[name: string]: string}, userDefinedVariables: {[name: string]: string}, whiteListedPredefinedVariablesKeys: string[]) {
         const predefinedVariablesKeys = Object.keys(predefinedVariables);
         const userDefinedVariablesKeys = Object.keys(userDefinedVariables);
 
-        const overridingOfPredefinedVariables = userDefinedVariablesKeys.filter(ele => predefinedVariablesKeys.includes(ele));
+        const overridingOfPredefinedVariables = userDefinedVariablesKeys.filter(ele => predefinedVariablesKeys.includes(ele) && !whiteListedPredefinedVariablesKeys.includes(ele));
         if (overridingOfPredefinedVariables.length == 0) {
             return;
         }
 
         const linkToGitlab = "https://gitlab.com/gitlab-org/gitlab/-/blob/v17.7.1-ee/doc/ci/variables/predefined_variables.md?plain=1&ref_type=tags#L15-16";
-        this.writeStreams.memoStdout(chalk`{bgYellowBright  WARN } ${terminalLink("Avoid overriding predefined variables", linkToGitlab)} [{bold ${overridingOfPredefinedVariables}}] as it can cause the pipeline to behave unexpectedly.\n`);
+        this.writeStreams.memoStdout(chalk`
+{bgYellowBright  WARN } ${terminalLink("Avoid overriding predefined variables", linkToGitlab)} [{bold ${overridingOfPredefinedVariables}}] as it can cause the pipeline to behave unexpectedly.
+If you know what you're doing and would like to suppress this warning, use one of the following methods:
+\t• via cli options
+\t\t• --ignore-predefined-vars ${overridingOfPredefinedVariables}
+\t• via environment variable
+\t\t• GCL_IGNORE_PREDEFINED_VARS=${overridingOfPredefinedVariables}
+`);
     }
 
     /**

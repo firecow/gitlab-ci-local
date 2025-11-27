@@ -46,7 +46,7 @@ ${e.trimEnd()}
 
 For further troubleshooting, consider either of the following:
 \t• Copy the content of {blueBright ${terminalLink(".gitlab-ci-local/expanded-gitlab-ci.yml", pathToExpandedGitLabCi)}} to the ${terminalLink("pipeline editor", "https://docs.gitlab.com/ee/ci/pipeline_editor/")} to debug it
-\t• Use --ignore-schema-paths= "#/definitions/tags/minItems" --ignore-schema-paths "#/additionalProperties" to partially disable certain validation rule
+\t• Use --ignore-schema-paths "#/definitions/tags/minItems" --ignore-schema-paths "#/additionalProperties" to partially disable certain validation rule
 \t• Use --json-schema-validation=false to disable schema validation (not recommended)}
 `);
     }
