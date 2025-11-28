@@ -153,7 +153,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             requiresArg: false,
         })
         .option("remote-variables", {
-            type: "string",
+            type: "array",
             description: "Fetch variables file from remote location",
             requiresArg: false,
         })
