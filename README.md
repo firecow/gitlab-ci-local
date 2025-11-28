@@ -85,6 +85,14 @@ sudo apt-get install gitlab-ci-local
 Note that the path `/etc/apt/sources.list.d/gitlab-ci-local.list` is used in the file `gitlab-ci-local.list`.
 If you change it in these commands you must also change it in `/etc/apt/sources.list.d/gitlab-ci-local.list`.
 
+### Arch Linux
+
+`gitlab-ci-local` is available for Arch Linux through the [AUR](https://aur.archlinux.org/packages/gitlab-ci-local). Install with your favourite AUR helper.
+
+```
+paru -S gitlab-ci-local
+```
+
 ### NPM
 
 ```bash
