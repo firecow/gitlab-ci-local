@@ -14,6 +14,7 @@ import micromatch from "micromatch";
 import axios, {AxiosRequestConfig} from "axios";
 import path from "path";
 import {Argv} from "./argv.js";
+import {MIMEType} from "node:util";
 
 type RuleResultOpt = {
     argv: Argv;
@@ -418,11 +419,15 @@ export class Utils {
             case "https": {
                 try {
                     const axiosConfig: AxiosRequestConfig = Utils.getAxiosProxyConfig();
-                    const {status} = await axios.get(
+                    const {status, headers} = await axios.get(
                         `${protocol}://${domain}:${port}/${projectPath}/-/raw/${ref}/${file}`,
                         axiosConfig,
                     );
-                    return (status === 200);
+                    const mimeType = new MIMEType(headers["content-type"]);
+                    return (
+                        status === 200 &&
+                        (mimeType.type === "text" && mimeType.subtype === "plain") // handles scenario where self-hosted gitlab returns statuscode 200 when file does not exist
+                    );
                 } catch {
                     return false;
                 }
