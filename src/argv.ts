@@ -165,7 +165,7 @@ export class Argv {
         return this.map.get("pullPolicy") ?? "if-not-present";
     }
 
-    get remoteVariables (): Array<string> {
+    get remoteVariables (): string[] {
         return this.map.get("remoteVariables");
     }
 
