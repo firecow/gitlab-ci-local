@@ -7,7 +7,7 @@ import {Argv} from "./argv.js";
 import assert from "assert";
 import {Utils} from "./utils.js";
 import dotenv from "dotenv";
-import deepmerge from "deepmerge";
+import deepExtend from "deep-extend";
 
 export interface CICDVariable {
     type: "file" | "variable";
@@ -41,7 +41,11 @@ export class VariablesFromFiles {
                 const file = match.groups?.file;
                 const ref = match.groups?.ref;
                 const res = await Utils.bash(`set -eou pipefail; git archive --remote=${url} ${ref} ${file} | tar -xO ${file}`, cwd);
-                remoteFileData = deepmerge.all([remoteFileData, yaml.load(`${res.stdout}`)]);
+                const loadedYaml = yaml.load(`${res.stdout}`);
+                // Check if loadedYaml is an object
+                if (typeof loadedYaml === "object" && loadedYaml !== null) {
+                    remoteFileData = deepExtend(remoteFileData, loadedYaml);
+                }
             }
         }
 
