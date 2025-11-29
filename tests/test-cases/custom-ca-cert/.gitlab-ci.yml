@@ -1,0 +1,9 @@
+---
+test-ca-cert:
+  image: alpine:latest
+  script:
+    - echo "Testing CA certificate mounting"
+    - test -f /etc/ssl/certs/ca-certificates.crt && echo "CA cert file exists" || echo "CA cert file NOT found"
+    - echo "SSL_CERT_FILE=$SSL_CERT_FILE"
+    - echo "SSL_CERT_DIR=$SSL_CERT_DIR"
+    - cat /etc/ssl/certs/ca-certificates.crt | head -3

@@ -247,6 +247,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Add extra docker host entries",
             requiresArg: false,
         })
+        .option("ca-file", {
+            type: "string",
+            description: "Path to custom CA certificate file to mount in containers",
+            requiresArg: false,
+        })
         .option("pull-policy", {
             type: "string",
             description: "Set image pull-policy (always or if-not-present)",
