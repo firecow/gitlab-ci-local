@@ -80,9 +80,9 @@ export class ParserIncludes {
             {
                 // TODO: I'm unhappy about calling parseIncludeComponent twice, as it invokes git ls-remote
                 const {domain, port, projectPath, componentName, ref, isLocalComponent} = this.parseIncludeComponent(value["component"], gitData);
-                if(!isLocalComponent)
+                if (!isLocalComponent)
                 {
-                    promises.push(this.downloadIncludeComponent(cwd, stateDir,domain, port, projectPath, ref, componentName, gitData, fetchIncludes));
+                    promises.push(this.downloadIncludeComponent(cwd, stateDir, domain, port, projectPath, ref, componentName, gitData, fetchIncludes));
                 }
             }
 
@@ -140,11 +140,11 @@ export class ParserIncludes {
                 // converts component to project. gitlab allows two different file path ways to include a component
                 const files = [`${componentName}.yml`, `${componentName}/template.yml`];
 
-                let file = null
+                let file = null;
                 for (const f of files) {
                     let searchPath = `${cwd}/${f}`;
-                    if(!isLocalComponent) {
-                        searchPath = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${projectPath}/${ref}/${f}`;
+                    if (!isLocalComponent) {
+                        searchPath = `${cwd}/${stateDir}/includes/${domain}/${projectPath}/${ref}/${f}`;
                     }
                     if (fs.existsSync(searchPath)) {
                         file = searchPath;
@@ -155,7 +155,7 @@ export class ParserIncludes {
 
                 const fileDoc = await Parser.loadYaml(file, {inputs: value.inputs || {}}, expandVariables);
                 // TODO: think about why the project case expands the inner includes?
-                includeDatas = includeDatas.concat(await this.init(fileDoc, opts));                
+                includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
@@ -236,7 +236,7 @@ export class ParserIncludes {
             if (ref == "~latest" || semanticVersionRangesPattern.test(ref)) {
                 // https://docs.gitlab.com/ci/components/#semantic-version-ranges
                 let stdout;
-                if(gitData.remote.schema == "git" || gitData.remote.schema == "ssh") {
+                if (gitData.remote.schema == "git" || gitData.remote.schema == "ssh") {
                     stdout = Utils.syncSpawn(["git", "ls-remote", "--tags", `git@${domain}:${projectPath}`]).stdout;
                 } else {
                     stdout = Utils.syncSpawn(["git", "ls-remote", "--tags", `${gitData.remote.schema}://${domain}:${port ?? 443}/${projectPath}.git`]).stdout;
@@ -312,11 +312,11 @@ export class ParserIncludes {
 
     static async downloadIncludeComponent (cwd: string, stateDir: string, domain: string, port: string, project: string, ref: string, componentName: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
         const remote = gitData.remote;
-        let files = [`${componentName}.yml`, `${componentName}/template.yml`];
+        const files = [`${componentName}.yml`, `${componentName}/template.yml`];
         try {
             const target = `${stateDir}/includes/${domain}/${project}/${ref}`;
 
-            if(!fetchIncludes && (await fs.pathExists(`${cwd}/${target}/${files[0]}`) || await fs.pathExists(`${cwd}/${target}/${files[1]}`))) return;
+            if (!fetchIncludes && (await fs.pathExists(`${cwd}/${target}/${files[0]}`) || await fs.pathExists(`${cwd}/${target}/${files[1]}`))) return;
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
