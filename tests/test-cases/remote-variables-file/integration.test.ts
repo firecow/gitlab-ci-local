@@ -18,7 +18,7 @@ test.concurrent("remote-variables-file <test-job>", async () => {
     await handler({
         cwd: "tests/test-cases/remote-variables-file",
         job: ["test-job"],
-        remoteVariables: "git@gitlab.com:example/firecow.git=variables.yml=main",
+        remoteVariables: ["git@gitlab.com:example/firecow.git=variables.yml=main"],
     }, writeStreams);
 
     const expected = [

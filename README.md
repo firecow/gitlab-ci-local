@@ -277,6 +277,8 @@ Variables will now appear in your jobs, if project or group matches git remote, 
 
 ### Remote file variables
 
+You can also fetch variable files from remote git repositories. If you need multiple variable files, repeat the `--remote-variables` flag.
+
 ```shell
 gitlab-ci-local --remote-variables git@gitlab.com:firecow/example.git=gitlab-variables.yml=master
 ```

@@ -7,6 +7,7 @@ import {Argv} from "./argv.js";
 import assert from "assert";
 import {Utils} from "./utils.js";
 import dotenv from "dotenv";
+import deepExtend from "deep-extend";
 
 export interface CICDVariable {
     type: "file" | "variable";
@@ -33,13 +34,19 @@ export class VariablesFromFiles {
         let homeFileData: any = {};
 
         if (remoteVariables && !autoCompleting) {
-            const match = /(?<url>git@.*?)=(?<file>.*?)=(?<ref>.*)/.exec(remoteVariables);
-            assert(match != null, "--remote-variables is malformed use 'git@gitlab.com:firecow/example.git=gitlab-variables.yml=master' syntax");
-            const url = match.groups?.url;
-            const file = match.groups?.file;
-            const ref = match.groups?.ref;
-            const res = await Utils.bash(`set -eou pipefail; git archive --remote=${url} ${ref} ${file} | tar -xO ${file}`, cwd);
-            remoteFileData = yaml.load(`${res.stdout}`);
+            for (let i = 0; i < remoteVariables.length; i++) {
+                const match = /(?<url>git@.*?)=(?<file>.*?)=(?<ref>.*)/.exec(remoteVariables[i]);
+                assert(match != null, "--remote-variables is malformed use 'git@gitlab.com:firecow/example.git=gitlab-variables.yml=master' syntax");
+                const url = match.groups?.url;
+                const file = match.groups?.file;
+                const ref = match.groups?.ref;
+                const res = await Utils.bash(`set -eou pipefail; git archive --remote=${url} ${ref} ${file} | tar -xO ${file}`, cwd);
+                const loadedYaml = yaml.load(`${res.stdout}`);
+                // Check if loadedYaml is an object
+                if (typeof loadedYaml === "object" && loadedYaml !== null) {
+                    remoteFileData = deepExtend(remoteFileData, loadedYaml);
+                }
+            }
         }
 
         if (await fs.pathExists(homeVariablesFile)) {
