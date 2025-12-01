@@ -354,7 +354,6 @@ export class ParserIncludes {
                 await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${domain}:${port}/${project}.git ${ref} ${files[0]} ${files[1]} | tar -f - -xC ${target}/`, cwd);
             }
         } catch (e) {
-            console.error(e)
             throw new AssertionError({message: `Component include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
         }
     }
