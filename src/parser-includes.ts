@@ -154,7 +154,24 @@ export class ParserIncludes {
                                     (port ? `:${port}` : "") + `/${projectPath}\``);
 
                 const fileDoc = await Parser.loadYaml(file, {inputs: value.inputs || {}}, expandVariables);
-                // TODO: think about why the project case expands the inner includes?
+                // Expand local includes inside to a "project"-like include
+                fileDoc["include"] = this.expandInclude(fileDoc["include"], opts.variables);
+                fileDoc["include"].forEach((inner: any, i: number) => {
+                    if (!inner["local"]) return;
+                    if (inner["rules"]) {
+                        const rulesResult = Utils.getRulesResult({argv, cwd: opts.cwd, variables: opts.variables, rules: inner["rules"]}, gitData);
+                        if (rulesResult.when === "never") {
+                            return;
+                        }
+                    }
+                    fileDoc["include"][i] = {
+                        project: projectPath,
+                        file: inner["local"].replace(/^\//, ""),
+                        ref: ref,
+                        inputs: inner.inputs || {},
+                    };
+                });
+
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
@@ -330,14 +347,15 @@ export class ParserIncludes {
                     `git sparse-checkout set --no-cone ${files[0]} ${files[1]}`,
                     "git checkout",
                     `cd ${cwd}/${stateDir}`,
-                    `cp -r ${cwd}/${target}.${ext}/templates ${cwd}/${target}`,
+                    `rsync -a --ignore-missing-args ${cwd}/${target}.${ext}/templates ${cwd}/${target}`, // use rsnyc to ignore missing templates/, the check for existence is in a later step
                 ], cwd);
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
                 await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${domain}:${port}/${project}.git ${ref} ${files[0]} ${files[1]} | tar -f - -xC ${target}/`, cwd);
             }
         } catch (e) {
-            throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
+            console.error(e)
+            throw new AssertionError({message: `Component include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
         }
     }
 
