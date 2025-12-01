@@ -23,6 +23,15 @@ type ParserIncludesInitOptions = {
     maximumIncludes: number;
 };
 
+type ParsedComponent = {
+    domain: string;
+    port: string;
+    projectPath: string;
+    name: string;
+    ref: string;
+    isLocal: boolean;
+};
+
 export class ParserIncludes {
     private static count: number = 0;
 
@@ -53,12 +62,14 @@ export class ParserIncludes {
         let includeDatas: any[] = [];
         const promises = [];
         const {stateDir, cwd, fetchIncludes, gitData, expandVariables} = opts;
+        // cache the parsed component, because parseIncludeComponent is expensive and we would call it twice otherwise
+        const componentParseCache = new Map<number, ParsedComponent>();
 
         const include = this.expandInclude(gitlabData?.include, opts.variables);
 
         this.normalizeTriggerInclude(gitlabData, opts);
         // Find files to fetch from remote and place in .gitlab-ci-local/includes
-        for (const value of include) {
+        for (const [index, value] of include.entries()) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
                 const rulesResult = Utils.getRulesResult({argv, cwd, rules: include_rules, variables: opts.variables}, gitData);
@@ -76,13 +87,12 @@ export class ParserIncludes {
                 promises.push(this.downloadIncludeRemote(cwd, stateDir, url, fetchIncludes));
             } else if (value["remote"]) {
                 promises.push(this.downloadIncludeRemote(cwd, stateDir, value["remote"], fetchIncludes));
-            } else if (value["component"])
-            {
-                // TODO: I'm unhappy about calling parseIncludeComponent twice, as it invokes git ls-remote
-                const {domain, port, projectPath, componentName, ref, isLocalComponent} = this.parseIncludeComponent(value["component"], gitData);
-                if (!isLocalComponent)
+            } else if (value["component"]) {
+                const component = this.parseIncludeComponent(value["component"], gitData);
+                componentParseCache.set(index, component);
+                if (!component.isLocal)
                 {
-                    promises.push(this.downloadIncludeComponent(cwd, stateDir, projectPath, ref, componentName, gitData, fetchIncludes));
+                    promises.push(this.downloadIncludeComponent(cwd, stateDir, component.projectPath, component.ref, component.name, gitData, fetchIncludes));
                 }
             }
 
@@ -90,7 +100,7 @@ export class ParserIncludes {
 
         await Promise.all(promises);
 
-        for (const value of include) {
+        for (const [index, value] of include.entries()) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
                 const rulesResult = Utils.getRulesResult({argv, cwd, rules: include_rules, variables: opts.variables}, gitData);
@@ -135,23 +145,23 @@ export class ParserIncludes {
                     includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
                 }
             } else if (value["component"]) {
-                // TODO: I'm unhappy about calling parseIncludeComponent twice, as it invokes git ls-remote
-                const {domain, port, projectPath, componentName, ref, isLocalComponent} = this.parseIncludeComponent(value["component"], gitData);
-                // converts component to project. gitlab allows two different file path ways to include a component
-                const files = [`${componentName}.yml`, `${componentName}/template.yml`];
+                const component = componentParseCache.get(index);
+                assert(component !== undefined, `Internal error, component parse cache missing entry [${index}]`);
+                // gitlab allows two different file path ways to include a component
+                const files = [`${component.name}.yml`, `${component.name}/template.yml`];
 
                 let file = null;
                 for (const f of files) {
                     let searchPath = `${cwd}/${f}`;
-                    if (!isLocalComponent) {
-                        searchPath = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${projectPath}/${ref}/${f}`;
+                    if (!component.isLocal) {
+                        searchPath = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${component.projectPath}/${component.ref}/${f}`;
                     }
                     if (fs.existsSync(searchPath)) {
                         file = searchPath;
                     }
                 }
-                assert(file !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the files [${files}] must exist in \`${domain}` +
-                                    (port ? `:${port}` : "") + `/${projectPath}\``);
+                assert(file !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the files [${files}] must exist in \`${component.domain}` +
+                                    (component.port ? `:${component.port}` : "") + `/${component.projectPath}\``);
 
                 const fileDoc = await Parser.loadYaml(file, {inputs: value.inputs || {}}, expandVariables);
                 // Expand local includes inside to a "project"-like include
@@ -165,9 +175,9 @@ export class ParserIncludes {
                         }
                     }
                     fileDoc["include"][i] = {
-                        project: projectPath,
+                        project: component.projectPath,
                         file: inner["local"].replace(/^\//, ""),
-                        ref: ref,
+                        ref: component.ref,
                         inputs: inner.inputs || {},
                     };
                 });
@@ -237,7 +247,7 @@ export class ParserIncludes {
         };
     }
 
-    static parseIncludeComponent (component: string, gitData: GitData): {domain: string; port: string; projectPath: string; componentName: string; ref: string; isLocalComponent: boolean} {
+    static parseIncludeComponent (component: string, gitData: GitData): ParsedComponent {
         assert(!component.includes("://"), `This GitLab CI configuration is invalid: component: \`${component}\` should not contain protocol`);
         const pattern = /(?<domain>[^/:\s]+)(:(?<port>\d+))?\/(?<projectPath>.+)\/(?<componentName>[^@]+)@(?<ref>.+)/; // https://regexr.com/7v7hm
         const gitRemoteMatch = pattern.exec(component);
@@ -275,9 +285,9 @@ export class ParserIncludes {
             domain: domain,
             port: port,
             projectPath: projectPath,
-            componentName: `templates/${gitRemoteMatch.groups["componentName"]}`,
+            name: `templates/${gitRemoteMatch.groups["componentName"]}`,
             ref: ref,
-            isLocalComponent: isLocalComponent,
+            isLocal: isLocalComponent,
         };
     }
 
