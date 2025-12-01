@@ -82,7 +82,7 @@ export class ParserIncludes {
                 const {domain, port, projectPath, componentName, ref, isLocalComponent} = this.parseIncludeComponent(value["component"], gitData);
                 if (!isLocalComponent)
                 {
-                    promises.push(this.downloadIncludeComponent(cwd, stateDir, domain, port, projectPath, ref, componentName, gitData, fetchIncludes));
+                    promises.push(this.downloadIncludeComponent(cwd, stateDir, projectPath, ref, componentName, gitData, fetchIncludes));
                 }
             }
 
@@ -144,7 +144,7 @@ export class ParserIncludes {
                 for (const f of files) {
                     let searchPath = `${cwd}/${f}`;
                     if (!isLocalComponent) {
-                        searchPath = `${cwd}/${stateDir}/includes/${domain}/${projectPath}/${ref}/${f}`;
+                        searchPath = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${projectPath}/${ref}/${f}`;
                     }
                     if (fs.existsSync(searchPath)) {
                         file = searchPath;
@@ -327,11 +327,11 @@ export class ParserIncludes {
         }
     }
 
-    static async downloadIncludeComponent (cwd: string, stateDir: string, domain: string, port: string, project: string, ref: string, componentName: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
+    static async downloadIncludeComponent (cwd: string, stateDir: string, project: string, ref: string, componentName: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
         const remote = gitData.remote;
         const files = [`${componentName}.yml`, `${componentName}/template.yml`];
         try {
-            const target = `${stateDir}/includes/${domain}/${project}/${ref}`;
+            const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
 
             if (!fetchIncludes && (await fs.pathExists(`${cwd}/${target}/${files[0]}`) || await fs.pathExists(`${cwd}/${target}/${files[1]}`))) return;
 
@@ -342,7 +342,7 @@ export class ParserIncludes {
                 const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
                 await Utils.bashMulti([
                     `cd ${cwd}/${stateDir}`,
-                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${domain}:${port}/${project}.git ${cwd}/${target}.${ext}`,
+                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${cwd}/${target}.${ext}`,
                     `cd ${cwd}/${target}.${ext}`,
                     `git sparse-checkout set --no-cone ${files[0]} ${files[1]}`,
                     "git checkout",
@@ -351,7 +351,7 @@ export class ParserIncludes {
                 ], cwd);
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
-                await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${domain}:${port}/${project}.git ${ref} ${files[0]} ${files[1]} | tar -f - -xC ${target}/`, cwd);
+                await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${files[0]} ${files[1]} | tar -f - -xC ${target}/`, cwd);
             }
         } catch (e) {
             throw new AssertionError({message: `Component include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
