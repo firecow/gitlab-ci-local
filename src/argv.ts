@@ -153,6 +153,10 @@ export class Argv {
         return typeof val == "string" ? val.split(" ") : val;
     }
 
+    get caFile (): string | null {
+        return this.map.get("caFile") ?? null;
+    }
+
     get ignoreSchemaPaths (): string[] {
         return this.map.get("ignoreSchemaPaths") ?? Argv.default.ignoreSchemaPaths;
     }
