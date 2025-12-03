@@ -44,7 +44,7 @@
     "re2js": "1.x.x",
     "semver": "7.x.x",
     "split2": "4.x.x",
-    "terminal-link": "4.0.0",
+    "terminal-link": "5.0.0",
     "yargs": "17.x.x"
   },
   "devDependencies": {
