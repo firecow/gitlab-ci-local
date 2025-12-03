@@ -125,29 +125,13 @@ export class ParserIncludes {
                         , {inputs: value.inputs || {}}
                         , expandVariables);
                     // Expand local includes inside a "project"-like include
-                    fileDoc["include"] = this.expandInclude(fileDoc["include"], opts.variables);
-                    fileDoc["include"].forEach((inner: any, i: number) => {
-                        if (!inner["local"]) return;
-                        if (inner["rules"]) {
-                            const rulesResult = Utils.getRulesResult({argv, cwd: opts.cwd, variables: opts.variables, rules: inner["rules"]}, gitData);
-                            if (rulesResult.when === "never") {
-                                return;
-                            }
-                        }
-                        fileDoc["include"][i] = {
-                            project: value["project"],
-                            file: inner["local"].replace(/^\//, ""),
-                            ref: value["ref"],
-                            inputs: inner.inputs || {},
-                        };
-                    });
-
+                    fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], value["project"], value["ref"], opts);
                     includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
                 }
             } else if (value["component"]) {
                 const component = componentParseCache.get(index);
                 assert(component !== undefined, `Internal error, component parse cache missing entry [${index}]`);
-                // gitlab allows two different file path ways to include a component
+                // Gitlab allows two different file paths to include a component
                 const files = [`${component.name}.yml`, `${component.name}/template.yml`];
 
                 let file = null;
@@ -165,23 +149,7 @@ export class ParserIncludes {
 
                 const fileDoc = await Parser.loadYaml(file, {inputs: value.inputs || {}}, expandVariables);
                 // Expand local includes inside to a "project"-like include
-                fileDoc["include"] = this.expandInclude(fileDoc["include"], opts.variables);
-                fileDoc["include"].forEach((inner: any, i: number) => {
-                    if (!inner["local"]) return;
-                    if (inner["rules"]) {
-                        const rulesResult = Utils.getRulesResult({argv, cwd: opts.cwd, variables: opts.variables, rules: inner["rules"]}, gitData);
-                        if (rulesResult.when === "never") {
-                            return;
-                        }
-                    }
-                    fileDoc["include"][i] = {
-                        project: component.projectPath,
-                        file: inner["local"].replace(/^\//, ""),
-                        ref: component.ref,
-                        inputs: inner.inputs || {},
-                    };
-                });
-
+                fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], component.projectPath, component.ref, opts);
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
@@ -289,6 +257,28 @@ export class ParserIncludes {
             ref: ref,
             isLocal: isLocalComponent,
         };
+    }
+
+    // Expand local includes inside to a "project"-like include
+    static expandInnerLocalIncludes (fileIncludes: any, projectPath: string, ref: string, opts: ParserIncludesInitOptions) {
+        const {argv} = opts;
+        const updatedIncludes = this.expandInclude(fileIncludes, opts.variables);
+        updatedIncludes.forEach((inner: any, i: number) => {
+            if (!inner["local"]) return;
+            if (inner["rules"]) {
+                const rulesResult = Utils.getRulesResult({argv, cwd: opts.cwd, variables: opts.variables, rules: inner["rules"]}, opts.gitData);
+                if (rulesResult.when === "never") {
+                    return;
+                }
+            }
+            updatedIncludes[i] = {
+                project: projectPath,
+                file: inner["local"].replace(/^\//, ""),
+                ref: ref,
+                inputs: inner.inputs || {},
+            };
+        });
+        return updatedIncludes;
     }
 
     static async downloadIncludeRemote (cwd: string, stateDir: string, url: string, fetchIncludes: boolean): Promise<void> {
