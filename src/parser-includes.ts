@@ -350,8 +350,13 @@ export class ParserIncludes {
                     `rsync -a --ignore-missing-args ${cwd}/${target}.${ext}/templates ${cwd}/${target}`, // use rsnyc to ignore missing templates/, the check for existence is in a later step
                 ], cwd);
             } else {
+                // git archive fails if the paths do not exist, to work around this we use a wildcard "templates/component*.yml"
+                // this resolves to either "templates/component.yml" or "templates/component/template.yml"
+                // if both exist "templates/component.yml" should be pulled
+                // Drawback: also pulls all .yml file from templates/component/
+                const componentWildcard = files[0].replace(".yml", "*.yml");
                 await fs.mkdirp(`${cwd}/${target}`);
-                await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${files[0]} ${files[1]} | tar -f - -xC ${target}/`, cwd);
+                await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${componentWildcard} | tar -f - -xC ${target}/`, cwd);
             }
         } catch (e) {
             throw new AssertionError({message: `Component include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
