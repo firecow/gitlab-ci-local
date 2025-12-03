@@ -69,7 +69,7 @@
     "depcheck": "1.x.x",
     "esbuild": "0.27.x",
     "eslint": "9.x.x",
-    "jest": "29.x.x",
+    "jest": "30.x",
     "jest-when": "3.x.x",
     "nodemon": "3.x.x",
     "ts-jest": "29.x.x",
