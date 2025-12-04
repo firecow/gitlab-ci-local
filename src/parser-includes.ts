@@ -300,6 +300,7 @@ export class ParserIncludes {
     static async downloadIncludeProjectFile (cwd: string, stateDir: string, project: string, ref: string, file: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
         const remote = gitData.remote;
         const normalizedFile = file.replace(/^\/+/, "");
+        let tmpDir = null;
         try {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
             if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
@@ -307,16 +308,17 @@ export class ParserIncludes {
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
+                tmpDir = `${cwd}/${target}.${ext}`;
 
                 const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
                 await Utils.bashMulti([
                     `cd ${cwd}/${stateDir}`,
-                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${cwd}/${target}.${ext}`,
-                    `cd ${cwd}/${target}.${ext}`,
+                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${tmpDir}`,
+                    `cd ${tmpDir}`,
                     `git sparse-checkout set --no-cone ${normalizedFile}`,
                     "git checkout",
                     `cd ${cwd}/${stateDir}`,
-                    `cp ${cwd}/${target}.${ext}/${normalizedFile} ${cwd}/${target}/${normalizedFile}`,
+                    `cp ${tmpDir}/${normalizedFile} ${cwd}/${target}/${normalizedFile}`,
                 ], cwd);
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
@@ -324,12 +326,18 @@ export class ParserIncludes {
             }
         } catch (e) {
             throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }\n${e}`});
+        } finally {
+            if (tmpDir !== null) {
+                // always cleanup temporary directory (if created)
+                await fs.rm(tmpDir, {recursive: true, force: true} );
+            }
         }
     }
 
     static async downloadIncludeComponent (cwd: string, stateDir: string, project: string, ref: string, componentName: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
         const remote = gitData.remote;
         const files = [`${componentName}.yml`, `${componentName}/template.yml`];
+        let tmpDir = null;
         try {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
 
@@ -337,29 +345,36 @@ export class ParserIncludes {
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
-                await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`));
+                await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`)); 
+                tmpDir = `${cwd}/${target}.${ext}`;
 
                 const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
                 await Utils.bashMulti([
                     `cd ${cwd}/${stateDir}`,
-                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${cwd}/${target}.${ext}`,
-                    `cd ${cwd}/${target}.${ext}`,
+                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${tmpDir}`,
+                    `cd ${tmpDir}`,
                     `git sparse-checkout set --no-cone ${files[0]} ${files[1]}`,
                     "git checkout",
                     `cd ${cwd}/${stateDir}`,
-                    `rsync -a --ignore-missing-args ${cwd}/${target}.${ext}/templates ${cwd}/${target}`, // use rsnyc to ignore missing templates/, the check for existence is in a later step
+                    `mkdir -p ${tmpDir}/templates`, // create templates subdir (if it doesn't exist), as the check out may not create it
+                    `cp -r ${tmpDir}/templates ${cwd}/${target}/templates`,
                 ], cwd);
             } else {
                 // git archive fails if the paths do not exist, to work around this we use a wildcard "templates/component*.yml"
                 // this resolves to either "templates/component.yml" or "templates/component/template.yml"
-                // if both exist "templates/component.yml" should be pulled
-                // Drawback: also pulls all .yml file from templates/component/
-                const componentWildcard = files[0].replace(".yml", "*.yml");
+                // if both exist "templates/component.yml" will be pulled
+                // Drawback: also pulls all other .yml files from templates/component/ directory
+                const componentWildcard = `${componentName}*.yml`;
                 await fs.mkdirp(`${cwd}/${target}`);
                 await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${componentWildcard} | tar -f - -xC ${target}/`, cwd);
             }
         } catch (e) {
             throw new AssertionError({message: `Component include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
+        } finally {
+            if (tmpDir !== null) {
+                // always cleanup temporary directory (if created)
+                await fs.rm(tmpDir, {recursive: true, force: true} );
+            }
         }
     }
 
