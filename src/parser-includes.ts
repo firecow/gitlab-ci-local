@@ -357,7 +357,7 @@ export class ParserIncludes {
                     "git checkout",
                     `cd ${cwd}/${stateDir}`,
                     `mkdir -p ${tmpDir}/templates`, // create templates subdir (if it doesn't exist), as the check out may not create it
-                    `cp -r ${tmpDir}/templates ${cwd}/${target}/templates`,
+                    `cp -r ${tmpDir}/templates ${cwd}/${target}`,
                 ], cwd);
             } else {
                 // git archive fails if the paths do not exist, to work around this we use a wildcard "templates/component*.yml"
