@@ -329,7 +329,7 @@ export class ParserIncludes {
         } finally {
             if (tmpDir !== null) {
                 // always cleanup temporary directory (if created)
-                await fs.rm(tmpDir, {recursive: true, force: true} );
+                await fs.rm(tmpDir, {recursive: true, force: true});
             }
         }
     }
@@ -345,7 +345,7 @@ export class ParserIncludes {
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
-                await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`)); 
+                await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`));
                 tmpDir = `${cwd}/${target}.${ext}`;
 
                 const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
@@ -373,7 +373,7 @@ export class ParserIncludes {
         } finally {
             if (tmpDir !== null) {
                 // always cleanup temporary directory (if created)
-                await fs.rm(tmpDir, {recursive: true, force: true} );
+                await fs.rm(tmpDir, {recursive: true, force: true});
             }
         }
     }
