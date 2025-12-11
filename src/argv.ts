@@ -359,4 +359,8 @@ export class Argv {
     get childPipelineDepth (): number {
         return this.map.get("childPipelineDepth");
     }
+
+    get registry (): boolean {
+        return this.map.get("registry") ?? false;
+    }
 }
