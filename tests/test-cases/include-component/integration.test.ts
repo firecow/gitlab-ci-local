@@ -20,7 +20,7 @@ test("include-component no component template file (protocol: https)", async () 
         expect(true).toBe(false);
     } catch (e: any) {
         assert(e instanceof AssertionError, `Unexpected error thrown:\n ${e}`);
-        expect(e.message).toBe("This GitLab CI configuration is invalid: component: `gitlab.com/components/go/potato@0.3.1`. One of the files [templates/potato.yml,templates/potato/template.yml,] must exist in `gitlab.com/components/go`");
+        expect(e.message).toBe("This GitLab CI configuration is invalid: component: `gitlab.com/components/go/potato@0.3.1`. One of the files [templates/potato.yml,templates/potato/template.yml] must exist in `gitlab.com/components/go`");
     }
 });
 
