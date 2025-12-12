@@ -13,7 +13,7 @@ export const schema = {
             "markdownDescription": "Specification for pipeline configuration. Must be declared at the top of a configuration file, in a header section separated from the rest of the configuration with `---`. [Learn More](https://docs.gitlab.com/ci/yaml/#spec).",
             "properties": {
                 "inputs": {
-                    "$ref": "#/definitions/inputParameters",
+                    "$ref": "#/definitions/configInputs",
                 },
             },
             "additionalProperties": false,
@@ -403,57 +403,191 @@ export const schema = {
                 },
             ],
         },
-        "inputParameters": {
+        "baseInput": {
             "type": "object",
-            "markdownDescription": "Define parameters that can be populated in reusable CI/CD configuration files when added to a pipeline. [Learn More](https://docs.gitlab.com/ci/inputs/).",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "markdownDescription": "Input type. Defaults to 'string' when not specified.",
+                    "enum": [
+                        "array",
+                        "boolean",
+                        "number",
+                        "string",
+                    ],
+                    "default": "string",
+                },
+                "description": {
+                    "type": "string",
+                    "markdownDescription": "Human-readable explanation of the parameter.",
+                    "maxLength": 1024,
+                },
+                "options": {
+                    "type": "array",
+                    "markdownDescription": "List of allowed values for this input.",
+                    "items": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                            },
+                            {
+                                "type": "number",
+                            },
+                            {
+                                "type": "boolean",
+                            },
+                        ],
+                    },
+                },
+                "regex": {
+                    "type": "string",
+                    "markdownDescription": "Regular expression that string values must match.",
+                },
+                "default": {
+                    "markdownDescription": "Default value for this input.",
+                },
+            },
+            "additionalProperties": false,
+        },
+        "configInputs": {
+            "type": "object",
+            "markdownDescription": "Define input parameters for reusable CI/CD configuration. Config inputs can optionally specify defaults. [Learn More](https://docs.gitlab.com/ci/inputs/).",
             "patternProperties": {
                 ".*": {
-                    "markdownDescription": "**Input Configuration**\n\nAvailable properties:\n- `type`: string (default), array, boolean, or number\n- `description`: Human-readable explanation of the parameter (supports Markdown)\n- `options`: List of allowed values\n- `default`: Value to use when not specified (makes input optional)\n- `regex`: Pattern that string values must match",
                     "oneOf": [
                         {
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "type": "string",
-                                    "markdownDescription": "Force a specific input type. Defaults to 'string' when not specified. [Learn More](https://docs.gitlab.com/ci/inputs/#input-types).",
-                                    "enum": [
-                                        "array",
-                                        "boolean",
-                                        "number",
-                                        "string",
-                                    ],
-                                    "default": "string",
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/baseInput",
                                 },
-                                "description": {
-                                    "type": "string",
-                                    "markdownDescription": "Give a description to a specific input. The description does not affect the input, but can help people understand the input details or expected values. Supports markdown.",
-                                    "maxLength": 1024,
-                                },
-                                "options": {
-                                    "type": "array",
-                                    "markdownDescription": "Specify a list of allowed values for an input.",
-                                    "items": {
-                                        "oneOf": [
-                                            {
-                                                "type": "string",
+                                {
+                                    "properties": {
+                                        "rules": {
+                                            "type": "array",
+                                            "markdownDescription": "Conditional rules for this input.",
+                                            "items": {
+                                                "type": "object",
                                             },
-                                            {
-                                                "type": "number",
-                                            },
-                                            {
-                                                "type": "boolean",
-                                            },
-                                        ],
+                                        },
                                     },
                                 },
-                                "regex": {
-                                    "type": "string",
-                                    "markdownDescription": "Specify a regular expression that the input must match. Only impacts inputs with a `type` of `string`.",
+                                {
+                                    "allOf": [
+                                        {
+                                            "if": {
+                                                "properties": {
+                                                    "type": {
+                                                        "enum": [
+                                                            "string",
+                                                        ],
+                                                    },
+                                                },
+                                            },
+                                            "then": {
+                                                "properties": {
+                                                    "default": {
+                                                        "type": [
+                                                            "string",
+                                                            "null",
+                                                        ],
+                                                    },
+                                                },
+                                            },
+                                        },
+                                        {
+                                            "if": {
+                                                "properties": {
+                                                    "type": {
+                                                        "enum": [
+                                                            "number",
+                                                        ],
+                                                    },
+                                                },
+                                            },
+                                            "then": {
+                                                "properties": {
+                                                    "default": {
+                                                        "type": [
+                                                            "number",
+                                                            "null",
+                                                        ],
+                                                    },
+                                                },
+                                            },
+                                        },
+                                        {
+                                            "if": {
+                                                "properties": {
+                                                    "type": {
+                                                        "enum": [
+                                                            "boolean",
+                                                        ],
+                                                    },
+                                                },
+                                            },
+                                            "then": {
+                                                "properties": {
+                                                    "default": {
+                                                        "type": [
+                                                            "boolean",
+                                                            "null",
+                                                        ],
+                                                    },
+                                                },
+                                            },
+                                        },
+                                        {
+                                            "if": {
+                                                "properties": {
+                                                    "type": {
+                                                        "enum": [
+                                                            "array",
+                                                        ],
+                                                    },
+                                                },
+                                            },
+                                            "then": {
+                                                "properties": {
+                                                    "default": {
+                                                        "oneOf": [
+                                                            {
+                                                                "type": "array",
+                                                            },
+                                                            {
+                                                                "type": "null",
+                                                            },
+                                                        ],
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    ],
                                 },
-                                "default": {
-                                    "markdownDescription": "Define default values for inputs when not specified. When you specify a default, the inputs are no longer mandatory.",
-                                },
-                            },
+                            ],
+                        },
+                        {
+                            "type": "null",
+                        },
+                    ],
+                },
+            },
+        },
+        "jobInputs": {
+            "type": "object",
+            "markdownDescription": "Define input parameters for a job. Job inputs must always include a `default` value. [Learn More](https://docs.gitlab.com/ci/yaml/#inputs).",
+            "maxProperties": 50,
+            "patternProperties": {
+                ".*": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/baseInput",
+                        },
+                        {
+                            "required": [
+                                "default",
+                            ],
+                        },
+                        {
                             "allOf": [
                                 {
                                     "if": {
@@ -468,10 +602,7 @@ export const schema = {
                                     "then": {
                                         "properties": {
                                             "default": {
-                                                "type": [
-                                                    "string",
-                                                    "null",
-                                                ],
+                                                "type": "string",
                                             },
                                         },
                                     },
@@ -489,10 +620,7 @@ export const schema = {
                                     "then": {
                                         "properties": {
                                             "default": {
-                                                "type": [
-                                                    "number",
-                                                    "null",
-                                                ],
+                                                "type": "number",
                                             },
                                         },
                                     },
@@ -510,10 +638,7 @@ export const schema = {
                                     "then": {
                                         "properties": {
                                             "default": {
-                                                "type": [
-                                                    "boolean",
-                                                    "null",
-                                                ],
+                                                "type": "boolean",
                                             },
                                         },
                                     },
@@ -531,23 +656,12 @@ export const schema = {
                                     "then": {
                                         "properties": {
                                             "default": {
-                                                "oneOf": [
-                                                    {
-                                                        "type": "array",
-                                                    },
-                                                    {
-                                                        "type": "null",
-                                                    },
-                                                ],
+                                                "type": "array",
                                             },
                                         },
                                     },
                                 },
                             ],
-                            "additionalProperties": false,
-                        },
-                        {
-                            "type": "null",
                         },
                     ],
                 },
@@ -879,12 +993,8 @@ export const schema = {
                                 ],
                             },
                             "command": {
-                                "type": "array",
                                 "markdownDescription": "Command or script that should be used as the container's command. It will be translated to arguments passed to Docker after the image's name. The syntax is similar to Dockerfile's CMD directive, where each shell token is a separate string in the array. [Learn More](https://docs.gitlab.com/ci/services/#available-settings-for-services)",
-                                "minItems": 1,
-                                "items": {
-                                    "type": "string",
-                                },
+                                "$ref": "#/definitions/script",
                             },
                             "alias": {
                                 "type": "string",
@@ -1072,27 +1182,6 @@ export const schema = {
                                 },
                             ],
                         },
-                        "akeyless": {
-                            "type": "object",
-                            "properties": {
-                                "name": {
-                                    "type": "string",
-                                },
-                                "data_key": {
-                                    "type": "string",
-                                },
-                                "cert_user_name": {
-                                    "type": "string",
-                                },
-                                "public_key_data": {
-                                    "type": "string",
-                                },
-                                "csr_data": {
-                                    "type": "string",
-                                },
-                            },
-                            "additionalProperties": false,
-                        },
                         "file": {
                             "type": "boolean",
                             "default": true,
@@ -1122,11 +1211,6 @@ export const schema = {
                         {
                             "required": [
                                 "aws_secrets_manager",
-                            ],
-                        },
-                        {
-                            "required": [
-                                "akeyless",
                             ],
                         },
                     ],
@@ -1708,7 +1792,16 @@ export const schema = {
                             "type": "object",
                             "properties": {
                                 "files": {
-                                    "markdownDescription": "Use the `cache:key:files` keyword to generate a new key when one or two specific files change. [Learn More](https://docs.gitlab.com/ci/yaml/#cachekeyfiles)",
+                                    "markdownDescription": "Use the `cache:key:files` keyword to generate a new cache key when specified file content changes. Cache keys remain stable across branches with identical file content. [Learn More](https://docs.gitlab.com/ci/yaml/#cachekeyfiles)",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                    },
+                                    "minItems": 1,
+                                    "maxItems": 2,
+                                },
+                                "files_commits": {
+                                    "markdownDescription": "Use the `cache:key:files_commits` keyword to generate a new cache key when the latest commit changes for the specified files. [Learn More](https://docs.gitlab.com/ci/yaml/#cachekeyfiles_commits)",
                                     "type": "array",
                                     "items": {
                                         "type": "string",
@@ -1717,7 +1810,7 @@ export const schema = {
                                     "maxItems": 2,
                                 },
                                 "prefix": {
-                                    "markdownDescription": "Use `cache:key:prefix` to combine a prefix with the SHA computed for `cache:key:files`. [Learn More](https://docs.gitlab.com/ci/yaml/#cachekeyprefix)",
+                                    "markdownDescription": "Use `cache:key:prefix` to combine a prefix with the SHA computed for `cache:key:files` or `cache:key:files_commits`. [Learn More](https://docs.gitlab.com/ci/yaml/#cachekeyprefix)",
                                     "type": "string",
                                 },
                             },
@@ -2088,6 +2181,9 @@ export const schema = {
                 "identity": {
                     "$ref": "#/definitions/identity",
                 },
+                "inputs": {
+                    "$ref": "#/definitions/jobInputs",
+                },
                 "secrets": {
                     "$ref": "#/definitions/secrets",
                 },
@@ -2293,31 +2389,50 @@ export const schema = {
                                     "type": "object",
                                     "description": "Used to configure the kubernetes deployment for this environment. This is currently not supported for kubernetes clusters that are managed by GitLab.",
                                     "properties": {
-                                        "namespace": {
-                                            "type": "string",
-                                            "description": "The kubernetes namespace where this environment should be deployed to.",
-                                            "minLength": 1,
-                                        },
                                         "agent": {
                                             "type": "string",
                                             "description": "Specifies the GitLab Agent for Kubernetes. The format is `path/to/agent/project:agent-name`.",
                                         },
+                                        "namespace": {
+                                            "type": "string",
+                                            "description": "Deprecated. Use `dashboard.namespace` instead. The kubernetes namespace where this environment's dashboard should be deployed to.",
+                                            "minLength": 1,
+                                        },
                                         "flux_resource_path": {
                                             "type": "string",
-                                            "description": "The Flux resource path to associate with this environment. This must be the full resource path. For example, 'helm.toolkit.fluxcd.io/v2/namespaces/gitlab-agent/helmreleases/gitlab-agent'.",
+                                            "description": "Deprecated. Use `dashboard.flux_resource_path` instead. The Flux resource path to associate with this environment. This must be the full resource path. For example, 'helm.toolkit.fluxcd.io/v2/namespaces/gitlab-agent/helmreleases/gitlab-agent'.",
+                                        },
+                                        "managed_resources": {
+                                            "type": "object",
+                                            "description": "Used to configure the managed resources for this environment.",
+                                            "properties": {
+                                                "enabled": {
+                                                    "type": "boolean",
+                                                    "description": "Indicates whether the managed resources are enabled for this environment.",
+                                                    "default": true,
+                                                },
+                                            },
+                                        },
+                                        "dashboard": {
+                                            "type": "object",
+                                            "description": "Used to configure the dashboard for this environment.",
+                                            "properties": {
+                                                "namespace": {
+                                                    "type": "string",
+                                                    "description": "The kubernetes namespace where the dashboard for this environment should be deployed to.",
+                                                    "minLength": 1,
+                                                },
+                                                "flux_resource_path": {
+                                                    "type": "string",
+                                                    "description": "The Flux resource path to associate with this environment. This must be the full resource path. For example, 'helm.toolkit.fluxcd.io/v2/namespaces/gitlab-agent/helmreleases/gitlab-agent'.",
+                                                },
+                                            },
                                         },
                                     },
                                 },
                                 "deployment_tier": {
                                     "type": "string",
                                     "description": "Explicitly specifies the tier of the deployment environment if non-standard environment name is used.",
-                                    "enum": [
-                                        "production",
-                                        "staging",
-                                        "testing",
-                                        "development",
-                                        "other",
-                                    ],
                                 },
                             },
                             "required": [

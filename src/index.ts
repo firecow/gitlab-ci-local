@@ -25,7 +25,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
     const yparser = yargs(process.argv.slice(2));
     yparser.parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
-        .version("4.63.0")
+        .version("4.64.0")
         .wrap(yparser.terminalWidth?.())
         .command({
             handler: async (argv) => {
