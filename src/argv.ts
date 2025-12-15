@@ -97,14 +97,6 @@ export class Argv {
                     for (const pair of value.split(" ")) {
                         currentVal.unshift(pair);
                     }
-                // TODO: Would be better to get list from yargs somehow
-                } else if (["remoteVariables", "device", "network", "volume", "extraHost", "ignoreSchemaPaths", "manual", "unsetVariable"].includes(argKey)) {
-                    let array = this.map.get(argKey);
-                    if (array == null) {
-                        array = [];
-                        this.map.set(argKey, array);
-                    }
-                    this.map.set(argKey, array.concat(value.split(" ")));
                 } else if (argv[argKey] == null) {
                     // Work around `dotenv.parse` limitation https://github.com/motdotla/dotenv/issues/51#issuecomment-552559070
                     if (value === "true") this.map.set(argKey, true);
@@ -149,6 +141,7 @@ export class Argv {
 
     get volume (): string[] {
         const val = this.map.get("volume") ?? [];
+        console.log(val);
         return typeof val == "string" ? val.split(" ") : val;
     }
 
@@ -179,7 +172,8 @@ export class Argv {
     }
 
     get remoteVariables (): string[] {
-        return this.map.get("remoteVariables");
+        const val = this.map.get("remoteVariables") ?? [];
+        return typeof val == "string" ? val.split(" ") : val;
     }
 
     get variable (): {[key: string]: string} {
