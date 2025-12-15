@@ -98,6 +98,7 @@ export class Argv {
                     for (const pair of value.split(" ")) {
                         currentVal.unshift(pair);
                     }
+                // TODO: Would be better to get list from yargs somehow
                 } else if (["remoteVariables", "device", "network", "volume", "extraHost", "ignoreSchemaPaths", "manual", "unsetVariable"].includes(argKey)) {
                     let array = this.map.get(argKey);
                     if (array == null) {
