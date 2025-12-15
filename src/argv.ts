@@ -85,7 +85,9 @@ export class Argv {
 
                 // Special handle KEY=VALUE variable keys
                 if (argKey === "variable") {
+                    console.log("variable", argKey, value);
                     let currentVal = argv[argKey];
+
                     if (currentVal == null) {
                         currentVal = [];
                         this.map.set(argKey, currentVal);
@@ -96,6 +98,13 @@ export class Argv {
                     for (const pair of value.split(" ")) {
                         currentVal.unshift(pair);
                     }
+                } else if (["remoteVariables", "device", "network", "volume", "extraHost", "ignoreSchemaPaths", "manual", "unsetVariable"].includes(argKey)) {
+                    let array = this.map.get(argKey);
+                    if (array == null) {
+                        array = [];
+                        this.map.set(argKey, array);
+                    }
+                    this.map.set(argKey, array.concat(value.split(" ")));
                 } else if (argv[argKey] == null) {
                     // Work around `dotenv.parse` limitation https://github.com/motdotla/dotenv/issues/51#issuecomment-552559070
                     if (value === "true") this.map.set(argKey, true);
@@ -106,6 +115,7 @@ export class Argv {
                 }
             }
         }
+        console.log(this.map);
     }
 
     get cwd (): string {
