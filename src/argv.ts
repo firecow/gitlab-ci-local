@@ -86,7 +86,6 @@ export class Argv {
                 // Special handle KEY=VALUE variable keys
                 if (argKey === "variable") {
                     let currentVal = argv[argKey];
-
                     if (currentVal == null) {
                         currentVal = [];
                         this.map.set(argKey, currentVal);
