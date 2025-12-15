@@ -85,7 +85,6 @@ export class Argv {
 
                 // Special handle KEY=VALUE variable keys
                 if (argKey === "variable") {
-                    console.log("variable", argKey, value);
                     let currentVal = argv[argKey];
 
                     if (currentVal == null) {
@@ -116,7 +115,6 @@ export class Argv {
                 }
             }
         }
-        console.log(this.map);
     }
 
     get cwd (): string {
