@@ -141,7 +141,6 @@ export class Argv {
 
     get volume (): string[] {
         const val = this.map.get("volume") ?? [];
-        console.log(val);
         return typeof val == "string" ? val.split(" ") : val;
     }
 
