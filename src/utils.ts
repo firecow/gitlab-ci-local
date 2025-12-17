@@ -238,7 +238,7 @@ export class Utils {
 
         // Scenario when RHS is a <regex>
         // https://regexr.com/85sjo
-        const pattern1 = /\s*(?<operator>(?:=~)|(?:!~))\s*\/(?<rhs>.*?)\/(?<flags>[igmsuy]*)(\s|$|\))/g;
+        const pattern1 = /\s*(?<operator>(?:=~)|(?:!~))\s*\/(?<rhs>.*?[^\\])\/(?<flags>[igmsuy]*)(\s|$|\))/g;
         evalStr = evalStr.replace(pattern1, (_, operator, rhs, flags, remainingTokens) => {
             let _operator;
             switch (operator) {

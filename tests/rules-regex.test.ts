@@ -114,6 +114,11 @@ const tests = [
         jsExpression: '("qwerty".matchRE2JS(RE2JS.compile("^perf_.*$", 0)) != null)',
         evalResult: false,
     },
+    {
+        rule: `"product-name/v0.0.0+build.0" =~ /^(?:product-name\\/)?v\\d+\\.\\d+\\.\\d+.*/`,
+        jsExpression: "\"product-name/v0.0.0+build.0\".matchRE2JS(RE2JS.compile(\"^(?:product-name\\\\/)?v\\\\d+\\\\.\\\\d+\\\\.\\\\d+.*\", 0)) != null",
+        evalResult: true,
+    },
 ];
 /* eslint-enable @stylistic/ts/quotes */
 
