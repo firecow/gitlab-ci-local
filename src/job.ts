@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import chalk from "chalk-template";
 import * as dotenv from "dotenv";
 import fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";

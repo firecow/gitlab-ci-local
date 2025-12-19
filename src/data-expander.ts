@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import chalk from "chalk-template";
 import deepExtend from "deep-extend";
 import assert, {AssertionError} from "assert";
 import {Job, Need} from "./job.js";

@@ -3,7 +3,7 @@ import {handler} from "../../../src/handler.js";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import assert, {AssertionError} from "assert";
 import {WhenStatics} from "../../mocks/when-statics.js";
-import chalk from "chalk";
+import chalk from "chalk-template";
 import {ParserIncludes} from "../../../src/parser-includes.js";
 
 beforeAll(() => {

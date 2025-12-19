@@ -4,7 +4,7 @@ import fs from "fs-extra";
 import {WriteStreams} from "./write-streams.js";
 import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "assert";
-import chalk from "chalk";
+import chalk from "chalk-template";
 import {Parser} from "./parser.js";
 import axios, {AxiosRequestConfig} from "axios";
 import path from "path";

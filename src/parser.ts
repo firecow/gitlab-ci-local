@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import chalk from "chalk-template";
 import path from "path";
 import deepExtend from "deep-extend";
 import fs from "fs-extra";

@@ -1,6 +1,6 @@
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
-import chalk from "chalk";
+import chalk from "chalk-template";
 
 test("parallel <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();

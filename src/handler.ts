@@ -1,5 +1,5 @@
 import * as yaml from "js-yaml";
-import chalk from "chalk";
+import chalk from "chalk-template";
 import path from "path";
 import fs from "fs-extra";
 import yargs from "yargs";

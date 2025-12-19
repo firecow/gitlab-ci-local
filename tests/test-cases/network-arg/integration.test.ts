@@ -1,7 +1,7 @@
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import {Job, cleanupJobResources} from "../../../src/job.js";
-import chalk from "chalk";
+import chalk from "chalk-template";
 import {initSpawnSpy, initBashSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import assert from "assert";
