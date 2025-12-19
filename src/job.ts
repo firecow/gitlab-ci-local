@@ -16,7 +16,7 @@ import {handler} from "./handler.js";
 import * as yaml from "js-yaml";
 import {Parser} from "./parser.js";
 import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
-import globby from "globby";
+import {globbySync} from "globby";
 import terminalLink from "terminal-link";
 import * as crypto from "crypto";
 import * as path from "path";
@@ -62,6 +62,8 @@ export interface Need {
     pipeline?: string;
     project?: string;
 }
+
+const isGlob = (str: string) => /[*?{}(|)[\]]/.test(str);
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
     year: undefined,
@@ -1325,11 +1327,11 @@ If you know what you're doing and would like to suppress this warning, use one o
                 }
 
                 let path = _path;
-                if (globby.hasMagic(path) && !path.endsWith("*")) {
+                if (isGlob(path) && !path.endsWith("*")) {
                     path = `${path}/**`;
                 }
 
-                let numOfFiles = globby.sync(path, {
+                let numOfFiles = globbySync(path, {
                     dot: true,
                     onlyFiles: false,
                     cwd: `${this.argv.cwd}/${stateDir}/cache/${cacheName}`,
@@ -1340,7 +1342,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                     continue;
                 }
 
-                if (!globby.hasMagic(path)) numOfFiles++; // add one because the pattern itself is a folder
+                if (!isGlob(path)) numOfFiles++; // add one because the pattern itself is a folder
 
                 writeStreams.stdout(`${_path}: found ${numOfFiles} artifact files and directories\n`);
             }

@@ -9,7 +9,7 @@ import execa from "execa";
 import assert from "assert";
 import {CICDVariable} from "./variables-from-files.js";
 import {GitData} from "./git-data.js";
-import globby from "globby";
+import {globbySync} from "globby";
 import micromatch from "micromatch";
 import {AxiosRequestConfig} from "axios";
 import path from "path";
@@ -329,7 +329,7 @@ export class Utils {
             if (pattern == "") {
                 continue;
             }
-            if (globby.sync(pattern, {dot: true, cwd}).length > 0) {
+            if (globbySync(pattern, {dot: true, cwd}).length > 0) {
                 return true;
             }
         }
