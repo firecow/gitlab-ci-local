@@ -5,7 +5,8 @@ import * as path from "path";
 import camelCase from "camelcase";
 import {Utils} from "./utils.js";
 import {WriteStreams} from "./write-streams.js";
-import chalk from "chalk";
+import chalkBase from "chalk";
+import chalk from "chalk-template";
 
 async function isInGitRepository () {
     try {
@@ -69,7 +70,7 @@ export class Argv {
 
     private constructor (argv: any, writeStreams?: WriteStreams) {
         if (argv.noColor) {
-            chalk.level = 0;
+            chalkBase.level = 0;
         }
         this.writeStreams = writeStreams;
         for (const [key, value] of Object.entries(argv)) {

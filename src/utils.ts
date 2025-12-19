@@ -1,6 +1,6 @@
 import "./global.js";
 import {RE2JS} from "re2js";
-import chalk from "chalk";
+import chalk from "chalk-template";
 import {Job, JobRule} from "./job.js";
 import fs from "fs-extra";
 import checksum from "checksum";

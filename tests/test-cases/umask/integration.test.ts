@@ -2,7 +2,7 @@ import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
-import chalk from "chalk";
+import chalk from "chalk-template";
 
 import.meta.jest.setTimeout(60000);
 

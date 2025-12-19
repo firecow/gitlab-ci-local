@@ -1,5 +1,5 @@
 import {WriteStreamsMock} from "../src/write-streams.js";
-import chalk from "chalk";
+import chalk from "chalk-template";
 import {handler} from "../src/handler.js";
 import assert from "assert";
 import {AssertionError} from "assert";

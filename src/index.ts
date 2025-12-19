@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import chalk from "chalk";
+import chalk from "chalk-template";
 import yargs from "yargs";
 import {Parser} from "./parser.js";
 import * as state from "./state.js";

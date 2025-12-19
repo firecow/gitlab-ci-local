@@ -4,7 +4,7 @@ import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import {Utils} from "../../../src/utils.js";
 import fs from "fs-extra";
-import chalk from "chalk";
+import chalk from "chalk-template";
 import assert, {AssertionError} from "assert";
 
 const originalDir = process.cwd();

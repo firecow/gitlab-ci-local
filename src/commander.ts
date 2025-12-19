@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import chalk from "chalk-template";
 import {Job} from "./job.js";
 import {Parser} from "./parser.js";
 import {Utils} from "./utils.js";

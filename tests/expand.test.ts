@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import chalk from "chalk-template";
 import * as DataExpander from "../src/data-expander.js";
 import {Utils} from "../src/utils.js";
 import assert from "assert";

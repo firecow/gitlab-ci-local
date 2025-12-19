@@ -1,6 +1,6 @@
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
-import chalk from "chalk";
+import chalk from "chalk-template";
 import fs from "fs-extra";
 import assert, {AssertionError} from "assert";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
