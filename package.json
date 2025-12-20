@@ -56,7 +56,6 @@
     "@types/checksum": "0.1.x",
     "@types/deep-extend": "0.6.x",
     "@types/fs-extra": "11.x.x",
-    "@types/jest": "30.x.x",
     "@types/jest-when": "3.x.x",
     "@types/js-yaml": "4.x.x",
     "@types/micromatch": "4.x.x",
