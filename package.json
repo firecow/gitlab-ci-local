@@ -2,125 +2,70 @@
   "type": "module",
   "name": "gitlab-ci-local",
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
-  "main": "src/index.js",
-  "bin": "src/index.js",
+  "main": "src/index.ts",
+  "bin": "src/index.ts",
   "version": "4.64.1",
   "scripts": {
-    "esbuild": "esbuild src/index.ts --outfile=bin/index.cjs --bundle --platform=node --format=cjs --minify --external:yargs --sourcemap=inline",
-    "pkg-linux": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t linux-x64 -o bin/linux/gitlab-ci-local && chmod +x bin/linux/gitlab-ci-local && gzip -c bin/linux/gitlab-ci-local > bin/linux.gz",
-    "pkg-macos": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
-    "pkg-win": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
-    "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win && npm ci",
-    "cleanup": "git clean -fX tests/ && git clean -fX src/",
-    "build": " npm run cleanup && tsc",
-    "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
-    "audit": "npm audit --parseable",
-    "lint": "npx eslint .",
-    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --testTimeout 60000",
-    "test-except-dind": "npm run test -- --testPathIgnorePatterns=\"/dind.*/|/node_modules/|/.gitlab-ci-local/\"",
-    "coverage": "npm run build && FORCE_COLOR=1 npm run test -- --coverage --verbose",
-    "start": "tsx src/index.ts --cwd examples/docker-compose-nodejs",
-    "dev": "touch .gitlab-ci.yml && nodemon -e ts --watch src --watch .gitlab-ci.yml --exec \"tsc --noEmit && tsx src/index.ts\"",
+    "build": "bun build --compile --minify --sourcemap src/index.ts --outfile bin/gitlab-ci-local",
+    "build:linux": "bun build --compile --minify --sourcemap --target=bun-linux-x64 src/index.ts --outfile bin/linux/gitlab-ci-local",
+    "build:macos-x64": "bun build --compile --minify --sourcemap --target=bun-darwin-x64 src/index.ts --outfile bin/macos-x64/gitlab-ci-local",
+    "build:macos-arm64": "bun build --compile --minify --sourcemap --target=bun-darwin-arm64 src/index.ts --outfile bin/macos-arm64/gitlab-ci-local",
+    "build:win": "bun build --compile --minify --sourcemap --target=bun-windows-x64 src/index.ts --outfile bin/win/gitlab-ci-local.exe",
+    "build-all": "bun build:linux && bun build:win && bun build:macos-x64 && bun build:macos-arm64",
+    "check-all": "bun run build  && bun lint && bun run coverage && bun audit",
+    "audit": "bun audit --parseable",
+    "lint": "eslint .",
+    "test": "bun test",
+    "test-except-dind": "bun test --filter '(?!.*dind)'",
+    "coverage": "bun test --coverage --verbose",
+    "start": "bun src/index.ts --cwd examples/docker-compose-nodejs",
     "fetch-and-patch-schema": "curl https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json -sf | jq 'del(.. | .pattern?)' > src/schema/schema.json"
   },
   "dependencies": {
-    "ajv": "8.x.x",
-    "axios": "1.x.x",
-    "base64url": "3.x.x",
-    "camelcase": "9.x.x",
-    "chalk": "5.x.x",
-    "chalk-template": "1.x.x",
-    "checksum": "1.x.x",
-    "deep-extend": "0.6.x",
-    "dotenv": "17.x",
-    "execa": "5.x.x",
-    "fs-extra": "11.x.x",
-    "globby": "16.x.x",
-    "js-yaml": "4.x.x",
-    "jsonpointer": "5.x.x",
-    "micromatch": "4.x.x",
-    "object-traversal": "1.x.x",
-    "p-map": "7.x.x",
-    "pretty-hrtime": "1.x.x",
-    "re2js": "1.x.x",
-    "semver": "7.x.x",
-    "split2": "4.x.x",
-    "terminal-link": "5.x.x",
-    "yargs": "17.x.x"
+    "ajv": "^8.17.1",
+    "axios": "^1.13.2",
+    "base64url": "^3.0.1",
+    "camelcase": "^9.0.0",
+    "chalk": "^5.6.2",
+    "chalk-template": "^1.1.2",
+    "checksum": "^1.0.0",
+    "deep-extend": "^0.6.0",
+    "dotenv": "^17.2.3",
+    "execa": "^5.1.1",
+    "fs-extra": "^11.3.3",
+    "globby": "^16.1.0",
+    "js-yaml": "^4.1.1",
+    "jsonpointer": "^5.0.1",
+    "micromatch": "^4.0.8",
+    "object-traversal": "^1.0.1",
+    "p-map": "^7.0.4",
+    "pretty-hrtime": "^1.0.3",
+    "re2js": "^1.2.0",
+    "semver": "^7.7.3",
+    "split2": "^4.2.0",
+    "terminal-link": "^5.0.0",
+    "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "9.x.x",
-    "@stylistic/eslint-plugin-js": "4.x.x",
-    "@stylistic/eslint-plugin-ts": "4.x.x",
-    "@types/base64url": "2.x.x",
-    "@types/checksum": "0.1.x",
-    "@types/deep-extend": "0.6.x",
-    "@types/fs-extra": "11.x.x",
-    "@types/jest-when": "3.x.x",
-    "@types/js-yaml": "4.x.x",
-    "@types/micromatch": "4.x.x",
-    "@types/node": "24.x.x",
-    "@types/pretty-hrtime": "1.x.x",
-    "@types/semver": "7.x.x",
-    "@types/split2": "4.x.x",
-    "@types/yargs": "17.x.x",
-    "@yao-pkg/pkg": "6.x.x",
-    "axios-mock-adapter": "2.x",
-    "depcheck": "1.x.x",
-    "esbuild": "0.27.x",
-    "eslint": "9.x.x",
-    "jest": "30.x.x",
-    "jest-when": "3.x.x",
-    "nodemon": "3.x.x",
-    "ts-jest": "29.x.x",
-    "tsx": "4.x.x",
-    "typescript": "5.x.x",
-    "typescript-eslint": "8.x.x"
+    "@eslint/js": "^9.39.2",
+    "@stylistic/eslint-plugin": "^5.6.1",
+    "@types/base64url": "^2.0.7",
+    "@types/checksum": "^0.1.35",
+    "@types/deep-extend": "^0.6.2",
+    "@types/fs-extra": "^11.0.4",
+    "@types/js-yaml": "^4.0.9",
+    "@types/micromatch": "^4.0.10",
+    "@types/pretty-hrtime": "^1.0.3",
+    "@types/semver": "^7.7.1",
+    "@types/split2": "^4.2.3",
+    "@types/yargs": "^17.0.35",
+    "axios-mock-adapter": "^2.1.0",
+    "depcheck": "^1.4.7",
+    "eslint": "^9.39.2",
+    "typescript-eslint": "^8.50.1"
   },
   "engines": {
     "node": ">=18"
-  },
-  "pkg": {
-    "assets": [
-      "package.json",
-      "**/src/schema/schema.json"
-    ],
-    "scripts": [
-      "src/**/*.js"
-    ]
-  },
-  "jest": {
-    "extensionsToTreatAsEsm": [
-      ".ts"
-    ],
-    "transform": {
-      "^.+\\.tsx?$": [
-        "ts-jest",
-        {
-          "useESM": true
-        }
-      ],
-      "^.+\\.jsx?$": "babel-jest"
-    },
-    "preset": "ts-jest",
-    "testMatch": [
-      "**/*.test.ts"
-    ],
-    "coveragePathIgnorePatterns": [
-      "<rootDir>/scripts"
-    ],
-    "testPathIgnorePatterns": [
-      "/node_modules/",
-      "/.gitlab-ci-local/"
-    ],
-    "moduleNameMapper": {
-      "(.+)\\.js": "$1"
-    },
-    "coverageReporters": [
-      "lcov",
-      "json-summary",
-      "text-summary"
-    ]
   },
   "repository": {
     "type": "git",
@@ -145,7 +90,7 @@
     "gitlab-ci"
   ],
   "files": [
-    "src/**/*.js",
+    "src/**/*.ts",
     "src/**/*.json"
   ]
 }

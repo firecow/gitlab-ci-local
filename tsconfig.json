@@ -1,13 +1,25 @@
 {
   "compilerOptions": {
-    "target": "esnext",
+    /* Bun & Environment */
+    "lib": ["esnext"],
     "module": "esnext",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "inlineSourceMap": true,
-    "inlineSources": true,
+    "target": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["bun-types"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+
+    /* Max Strictness (The "Pedantic" Suite) */
     "strict": true,
-    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "useUnknownInCatchVariables": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true
   }
 }
