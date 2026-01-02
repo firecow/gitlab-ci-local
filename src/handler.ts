@@ -12,6 +12,12 @@ import {cleanupJobResources, Job} from "./job.js";
 import {Utils} from "./utils.js";
 import {Argv} from "./argv.js";
 import assert from "assert";
+import {EventEmitter} from "./web/events/event-emitter.js";
+import {GCLDatabase} from "./web/persistence/database.js";
+import {EventRecorder} from "./web/events/event-recorder.js";
+
+let eventRecorder: EventRecorder | null = null;
+let eventDb: GCLDatabase | null = null;
 
 const generateGitIgnore = (cwd: string, stateDir: string) => {
     const gitIgnoreFilePath = `${cwd}/${stateDir}/.gitignore`;
@@ -32,6 +38,19 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     if (argv.completion) {
         yargs(process.argv.slice(2)).showCompletionScript();
         return [];
+    }
+
+    // Enable events and recording for web UI (GCIL_ prefix avoids yargs .env("GCL") parsing)
+    const webUiDbPath = path.join(cwd, stateDir, "web-ui.db");
+    if (process.env.GCIL_WEB_UI_ENABLED === "true" || fs.existsSync(webUiDbPath)) {
+        EventEmitter.getInstance().enable();
+        // Initialize database and event recorder if not already done
+        if (!eventRecorder) {
+            const dbPath = path.join(cwd, stateDir, "web-ui.db");
+            eventDb = new GCLDatabase(dbPath);
+            await eventDb.init();
+            eventRecorder = new EventRecorder(eventDb);
+        }
     }
 
     assert(fs.existsSync(`${cwd}/${file}`), `${path.resolve(cwd)}/${file} could not be found`);
@@ -76,7 +95,9 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         }
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
-        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        if (!argv.mountCwd) {
+            await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        }
         await Commander.runJobs(argv, parser, writeStreams);
         if (argv.needs || argv.onlyNeeds) {
             writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
@@ -86,7 +107,9 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         const time = process.hrtime();
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
-        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        if (!argv.mountCwd) {
+            await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        }
         await Commander.runJobsInStage(argv, parser, writeStreams);
         writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     } else {
@@ -95,11 +118,21 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         await state.incrementPipelineIid(cwd, stateDir);
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
-        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        if (!argv.mountCwd) {
+            await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        }
         await Commander.runPipeline(argv, parser, writeStreams);
         if (childPipelineDepth == 0) writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();
+
+    // Clean up event recording
+    if (eventRecorder && eventDb) {
+        eventRecorder.cleanup();
+        eventDb.close();
+        eventRecorder = null;
+        eventDb = null;
+    }
 
     return cleanupJobResources(jobs);
 }

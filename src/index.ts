@@ -62,6 +62,61 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             command: "$0 [job..]",
             describe: "Runs the entire pipeline or job's",
         })
+        .command({
+            command: "serve",
+            describe: "Start web UI server for monitoring pipelines",
+            handler: async (argv: any) => {
+                try {
+                    const {WebServer} = await import("./web/server/index.js");
+                    const {EventEmitter} = await import("./web/events/event-emitter.js");
+
+                    const server = new WebServer({
+                        port: argv.port || 3000,
+                        cwd: argv.cwd || process.cwd(),
+                        stateDir: argv.stateDir || ".gitlab-ci-local",
+                        mountCwd: argv.mountCwd || false,
+                        volumes: argv.volume || [],
+                        helperImage: argv.helperImage,
+                    });
+
+                    // Enable events globally for CLI runs to be monitored
+                    // Use GCIL_ prefix to avoid yargs .env("GCL") parsing it as a CLI argument
+                    process.env.GCIL_WEB_UI_ENABLED = "true";
+                    EventEmitter.getInstance().enable();
+
+                    // Graceful shutdown handler
+                    const shutdown = async (signal: string) => {
+                        console.log(`\nReceived ${signal}, shutting down gracefully...`);
+                        try {
+                            await server.stop();
+                            console.log("Server stopped.");
+                            process.exit(0);
+                        } catch (err) {
+                            console.error("Error during shutdown:", err);
+                            process.exit(1);
+                        }
+                    };
+
+                    process.on("SIGINT", () => shutdown("SIGINT"));
+                    process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+                    await server.start();
+
+                    // Keep process alive
+                    await new Promise(() => {});
+                } catch (e: any) {
+                    process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
+                    process.exit(1);
+                }
+            },
+            builder: (y: any) => {
+                return y.option("port", {
+                    type: "number",
+                    description: "Port for web UI server",
+                    default: 3000,
+                });
+            },
+        })
         .usage("Find more information at https://github.com/firecow/gitlab-ci-local.\nNote: To negate an option use '--no-(option)'.")
         .strictOptions()
         .env("GCL")
@@ -240,6 +295,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         .option("volume", {
             type: "array",
             description: "Add volumes to docker executor",
+            requiresArg: false,
+        })
+        .option("mount-cwd", {
+            type: "boolean",
+            description: "Bind mount cwd into docker containers (instant startup, no copy)",
             requiresArg: false,
         })
         .option("extra-host", {

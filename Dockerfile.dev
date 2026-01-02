@@ -1,0 +1,30 @@
+# Development container for gitlab-ci-local web UI
+# Multi-stage: copies Node.js from official image to docker:dind
+
+FROM node:24-alpine AS node-source
+
+FROM docker:dind
+
+# Install rsync, git, bash and required libs for Node
+RUN apk add --no-cache \
+    rsync \
+    git \
+    bash \
+    libstdc++
+
+# Copy Node.js from node image
+COPY --from=node-source /usr/local/bin/node /usr/local/bin/
+COPY --from=node-source /usr/local/lib/node_modules /usr/local/lib/node_modules
+
+# Create symlinks for npm/npx
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+WORKDIR /app
+
+# Set git safe directory for mounted volumes
+RUN git config --global --add safe.directory /app
+
+EXPOSE 3000
+
+CMD ["npx", "tsx", "src/index.ts", "serve", "--port", "3000"]

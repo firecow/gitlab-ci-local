@@ -11,7 +11,7 @@
     "pkg-macos": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t macos-x64 -o bin/macos/gitlab-ci-local && gzip -c bin/macos/gitlab-ci-local > bin/macos.gz",
     "pkg-win": "pkg bin/index.cjs --public --options=enable-source-maps --no-bytecode -t win-x64 -o bin/win/gitlab-ci-local && gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz",
     "pkg-all": "npm run pkg-linux && npm run pkg-macos && npm run pkg-win && npm ci",
-    "cleanup": "git clean -fX tests/ && git clean -fX src/",
+    "cleanup": "(git clean -fX tests/ && git clean -fX src/) 2>/dev/null || find tests/ src/ -name '*.js' -type f -delete 2>/dev/null || true",
     "build": " npm run cleanup && tsc",
     "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
     "audit": "npm audit --parseable",
@@ -27,6 +27,7 @@
     "ajv": "8.x.x",
     "axios": "1.x.x",
     "base64url": "3.x.x",
+    "sql.js": "1.x.x",
     "camelcase": "9.x.x",
     "chalk": "5.x.x",
     "chalk-template": "1.x.x",
@@ -83,7 +84,12 @@
   "pkg": {
     "assets": [
       "package.json",
-      "**/src/schema/schema.json"
+      "**/src/schema/schema.json",
+      "src/web/frontend/index.html",
+      "src/web/frontend/app.js",
+      "src/web/frontend/styles/*.css",
+      "src/web/frontend/components/*.js",
+      "src/web/frontend/utils/*.js"
     ],
     "scripts": [
       "src/**/*.js"

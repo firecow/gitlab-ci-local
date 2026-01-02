@@ -1,0 +1,9 @@
+# Helper image for gitlab-ci-local
+# Used for setting file permissions on Docker volumes and copying artifacts
+FROM alpine:3.20
+
+# Install bash (alpine comes with sh, chown, chmod by default)
+RUN apk add --no-cache bash
+
+# Default to sh for simple commands
+CMD ["sh"]

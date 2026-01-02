@@ -1,0 +1,1084 @@
+// Embedded frontend files for pkg binary compatibility
+// This avoids the need for pkg to include static assets
+
+export const INDEX_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitLab CI Local - Web UI</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --surface-color: #16213e;
+            --text-color: #eee;
+            --text-muted: #888;
+            --accent-color: #f8c22fff;
+            --success-color: #4caf50;
+            --warning-color: #ff8800ff;
+            --error-color: #f81515ff;
+            --border-color: #2a2a4a;
+            --hover-color: #1f2f4f;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+        .app-header { background: var(--surface-color); border-bottom: 1px solid var(--border-color); padding: 1rem 0; }
+        .header-content { display: flex; justify-content: space-between; align-items: center; }
+        .app-title { font-size: 1.25rem; font-weight: 600; }
+        .logo { color: var(--text-color); text-decoration: none; }
+        .logo:hover { opacity: 0.8; }
+        .app-nav { display: flex; gap: 1rem; }
+        .nav-link { color: var(--text-muted); text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s; }
+        .nav-link:hover { color: var(--text-color); background: var(--hover-color); }
+        .nav-link.active { color: var(--accent-color); background: var(--hover-color); }
+        .app-main { padding: 2rem 0; }
+        .card { background: var(--surface-color); border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 1rem; overflow: hidden; }
+        .card-header { padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .card-body { padding: 1rem; }
+        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .badge-success { background: var(--success-color); color: white; }
+        .badge-warning { background: var(--warning-color); color: black; }
+        .badge-error { background: var(--error-color); color: white; }
+        .badge-running { background: var(--accent-color); color: white; animation: pulse 1.5s infinite; }
+        .badge-pending { background: var(--text-muted); color: white; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .pipeline-row { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
+        .pipeline-row:hover { background: var(--hover-color); }
+        .pipeline-row:last-child { border-bottom: none; }
+        .pipeline-info { display: flex; align-items: center; gap: 1rem; }
+        .pipeline-id { font-weight: 600; color: var(--accent-color); }
+        .pipeline-branch { color: var(--text-muted); }
+        .pipeline-time { color: var(--text-muted); font-size: 0.875rem; }
+        .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
+        .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .loading { display: flex; justify-content: center; padding: 2rem; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .jobs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem; }
+        .job-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem; cursor: pointer; transition: all 0.2s; }
+        .job-card:hover { border-color: var(--accent-color); transform: translateY(-2px); }
+        .job-name { font-weight: 500; margin-bottom: 0.25rem; }
+        .job-stage { font-size: 0.75rem; color: var(--text-muted); }
+        .dag-container { overflow-x: auto; padding: 1rem 0; position: relative; }
+        .dag-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .dag-line { stroke: var(--border-color); stroke-width: 2; fill: none; opacity: 0.6; }
+        .dag-stages { display: flex; gap: 2rem; min-width: max-content; align-items: flex-start; position: relative; z-index: 2; }
+        .dag-stage { min-width: 100px; display: flex; flex-direction: column; align-items: center; }
+        .dag-stage-header { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem; padding: 0.25rem 0.75rem; background: var(--hover-color); border-radius: 12px; text-align: center; white-space: nowrap; }
+        .dag-jobs { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+        .dag-job { width: 48px; height: 48px; border-radius: 50%; cursor: pointer; transition: all 0.2s; position: relative; display: flex; align-items: center; justify-content: center; border: none; background: var(--border-color); color: white; }
+        .dag-job:hover { transform: scale(1.1); box-shadow: 0 0 12px rgba(233, 69, 96, 0.5); }
+        .dag-job.selected { box-shadow: 0 0 0 3px var(--accent-color); }
+        .dag-job.status-success { background: var(--success-color); }
+        .dag-job.status-failed { background: var(--error-color); }
+        .dag-job.status-warning { background: var(--warning-color); color: black; }
+        .dag-job.status-running { background: var(--accent-color); animation: pulse-ring 1.5s infinite; }
+        .dag-job.status-pending { background: var(--text-muted); }
+        @keyframes pulse-ring { 0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(233, 69, 96, 0); } }
+        .dag-job-icon { font-size: 1.1rem; color: inherit; }
+        .dag-job-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--surface-color); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 6px; white-space: nowrap; font-size: 0.75rem; opacity: 0; visibility: hidden; transition: all 0.2s; z-index: 100; pointer-events: none; margin-bottom: 8px; }
+        .dag-job-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--border-color); }
+        .dag-job:hover .dag-job-tooltip { opacity: 1; visibility: visible; }
+        .dag-job-tooltip-name { font-weight: 600; margin-bottom: 0.25rem; }
+        .dag-job-tooltip-info { color: var(--text-muted); }
+        .dag-legend { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .dag-legend-item { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
+        .dag-legend-color { width: 16px; height: 16px; border-radius: 50%; border: 2px solid; }
+        .split-view { display: flex; gap: 1rem; height: calc(100vh - 200px); min-height: 500px; }
+        .split-left { flex: 1; overflow: auto; }
+        .split-right { flex: 1; display: flex; flex-direction: column; background: var(--surface-color); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; }
+        .split-right-header { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--hover-color); }
+        .split-right-header h3 { font-size: 0.9rem; font-weight: 600; }
+        .split-right-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        .live-log-viewer { flex: 1; background: #0d1117; color: #c9d1d9; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.75rem; overflow: auto; padding: 0.5rem; }
+        .live-log-line { display: flex; line-height: 1.4; }
+        .live-log-line-number { color: #484f58; min-width: 40px; text-align: right; padding-right: 0.75rem; user-select: none; }
+        .live-log-content { white-space: pre-wrap; word-break: break-all; }
+        .close-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem; font-size: 1.2rem; line-height: 1; }
+        .close-btn:hover { color: var(--text-color); }
+        .log-status-bar { padding: 0.5rem 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; background: var(--hover-color); }
+        .auto-scroll-indicator { display: flex; align-items: center; gap: 0.5rem; }
+        .auto-scroll-indicator.active { color: var(--success-color); }
+        /* ANSI color classes */
+        .ansi-black { color: #586e75; } .ansi-red { color: #dc322f; } .ansi-green { color: #859900; } .ansi-yellow { color: #b58900; }
+        .ansi-blue { color: #268bd2; } .ansi-magenta { color: #d33682; } .ansi-cyan { color: #2aa198; } .ansi-white { color: #eee8d5; }
+        .ansi-bright-black { color: #657b83; } .ansi-bright-red { color: #cb4b16; } .ansi-bright-green { color: #98c379; } .ansi-bright-yellow { color: #e5c07b; }
+        .ansi-bright-blue { color: #83a598; } .ansi-bright-magenta { color: #c678dd; } .ansi-bright-cyan { color: #56b6c2; } .ansi-bright-white { color: #fdf6e3; }
+        .ansi-bg-black { background: #002b36; } .ansi-bg-red { background: #dc322f; } .ansi-bg-green { background: #859900; } .ansi-bg-yellow { background: #b58900; }
+        .ansi-bg-blue { background: #268bd2; } .ansi-bg-magenta { background: #d33682; } .ansi-bg-cyan { background: #2aa198; } .ansi-bg-white { background: #eee8d5; }
+        .ansi-bold { font-weight: bold; } .ansi-dim { opacity: 0.7; } .ansi-italic { font-style: italic; } .ansi-underline { text-decoration: underline; }
+        .artifacts-container { margin-top: 1rem; }
+        .artifact-list { display: flex; flex-direction: column; gap: 0.25rem; }
+        .artifact-item { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; transition: all 0.2s; }
+        .artifact-item:hover { border-color: var(--accent-color); }
+        .artifact-info { display: flex; align-items: center; gap: 0.5rem; }
+        .artifact-icon { color: var(--text-muted); }
+        .artifact-name { font-family: monospace; font-size: 0.85rem; }
+        .artifact-size { font-size: 0.75rem; color: var(--text-muted); }
+        .artifact-download { color: var(--accent-color); text-decoration: none; font-size: 0.75rem; padding: 0.25rem 0.5rem; border: 1px solid var(--accent-color); border-radius: 4px; transition: all 0.2s; }
+        .artifact-download:hover { background: var(--accent-color); color: white; }
+        .tabs { display: flex; gap: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .tab { padding: 0.5rem 1rem; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; color: var(--text-muted); }
+        .tab:hover { color: var(--text-color); }
+        .tab.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .log-viewer, .yaml-viewer { background: #0d1117; color: #c9d1d9; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.8rem; padding: 1rem; max-height: 600px; overflow: auto; border-radius: 4px; white-space: pre; tab-size: 2; }
+        .log-line { display: flex; }
+        .log-line-number { color: #484f58; width: 50px; text-align: right; padding-right: 1rem; user-select: none; }
+        .yaml-line { display: flex; }
+        .yaml-line-number { color: #484f58; min-width: 40px; text-align: right; padding-right: 1rem; user-select: none; }
+        .yaml-content { flex: 1; }
+        .yaml-key { color: #7ee787; }
+        .yaml-string { color: #a5d6ff; }
+        .yaml-number { color: #79c0ff; }
+        .yaml-boolean { color: #ff7b72; }
+        .yaml-null { color: #ff7b72; font-style: italic; }
+        .yaml-anchor { color: #d2a8ff; }
+        .yaml-alias { color: #d2a8ff; }
+        .yaml-tag { color: #ffa657; }
+        .yaml-comment { color: #8b949e; font-style: italic; }
+        .yaml-variable { color: #ffa657; }
+        .yaml-keyword { color: #ff7b72; font-weight: 500; }
+        .yaml-list-marker { color: #79c0ff; }
+        .back-link { color: var(--accent-color); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+        .back-link:hover { text-decoration: underline; }
+        h2 { margin-bottom: 1rem; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .text-muted { color: var(--text-muted); }
+        .cwd-info { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--success-color); color: white; }
+        .btn-primary:hover:not(:disabled) { background: #d13550; }
+        .btn-secondary { background: var(--border-color); color: var(--text-color); }
+        .btn-secondary:hover:not(:disabled) { background: var(--hover-color); }
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-success:hover:not(:disabled) { background: #43a047; }
+        .btn-danger { background: var(--error-color); color: white; }
+        .btn-danger:hover:not(:disabled) { background: #e53935; }
+        .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+        .action-bar { display: flex; gap: 0.5rem; align-items: center; }
+        .status-indicator { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.running { background: var(--accent-color); animation: pulse 1.5s infinite; }
+        .status-dot.idle { background: var(--success-color); }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <a href="#/" class="logo">GitLab CI Local</a>
+                </h1>
+                <nav class="app-nav">
+                    <a href="#/" class="nav-link" id="nav-pipelines">Pipelines</a>
+                    <a href="#/yaml" class="nav-link" id="nav-yaml">YAML</a>
+                    <div class="status-indicator" id="nav-status">
+                        <div class="status-dot idle"></div>
+                        <span>Ready</span>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </header>
+    <main class="app-main">
+        <div class="container">
+            <div id="app-root">
+                <div class="loading"><div class="spinner"></div></div>
+            </div>
+        </div>
+    </main>
+    <script>
+        const API_BASE = '/api';
+
+        function getStatusBadgeClass(status) {
+            const map = { success: 'badge-success', failed: 'badge-error', running: 'badge-running', pending: 'badge-pending', canceled: 'badge-warning', skipped: 'badge-warning' };
+            return 'badge ' + (map[status] || 'badge-pending');
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return '';
+            return new Date(timestamp).toLocaleString();
+        }
+
+        function formatDuration(ms) {
+            if (!ms) return '';
+            const secs = Math.floor(ms / 1000);
+            if (secs < 60) return secs + 's';
+            const mins = Math.floor(secs / 60);
+            return mins + 'm ' + (secs % 60) + 's';
+        }
+
+        async function fetchPipelines() {
+            const res = await fetch(API_BASE + '/pipelines');
+            return (await res.json()).pipelines || [];
+        }
+
+        async function fetchPipeline(id) {
+            const res = await fetch(API_BASE + '/pipelines/' + id);
+            return await res.json();
+        }
+
+        async function fetchJobLogs(jobId) {
+            const res = await fetch(API_BASE + '/jobs/' + jobId + '/logs');
+            return await res.json();
+        }
+
+        async function fetchJobArtifacts(jobId) {
+            const res = await fetch(API_BASE + '/jobs/' + jobId + '/artifacts');
+            return await res.json();
+        }
+
+        async function fetchJob(jobId) {
+            const res = await fetch(API_BASE + '/jobs/' + jobId);
+            return await res.json();
+        }
+
+        async function fetchYaml() {
+            const res = await fetch(API_BASE + '/config/yaml');
+            return await res.json();
+        }
+
+        async function fetchConfig() {
+            const res = await fetch(API_BASE + '/config');
+            return await res.json();
+        }
+
+        async function fetchPipelineStatus() {
+            const res = await fetch(API_BASE + '/pipelines/status');
+            return await res.json();
+        }
+
+        async function fetchPipelineStructure() {
+            const res = await fetch(API_BASE + '/pipeline-structure');
+            return await res.json();
+        }
+
+        async function runPipeline(jobs) {
+            const res = await fetch(API_BASE + '/pipelines/run', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: jobs ? JSON.stringify({jobs: jobs}) : '{}'
+            });
+            return await res.json();
+        }
+
+        async function cancelPipeline() {
+            const res = await fetch(API_BASE + '/pipelines/cancel', {
+                method: 'POST'
+            });
+            return await res.json();
+        }
+
+        async function runSingleJob(jobId) {
+            const res = await fetch(API_BASE + '/jobs/' + jobId + '/run', {
+                method: 'POST'
+            });
+            return await res.json();
+        }
+
+        var pipelineRunning = false;
+
+        function highlightYaml(content) {
+            // Enhanced YAML syntax highlighting
+            var lines = content.split('\\n');
+            var gitlabKeywords = ['stages', 'variables', 'before_script', 'after_script', 'script', 'image', 'services', 'cache', 'artifacts', 'dependencies', 'needs', 'rules', 'only', 'except', 'when', 'allow_failure', 'retry', 'timeout', 'include', 'extends', 'trigger', 'parallel', 'resource_group', 'environment', 'coverage', 'interruptible', 'tags', 'stage', 'default', 'workflow', 'pages', 'release', 'secrets', 'id_tokens'];
+            return lines.map(function(line, i) {
+                var escaped = escapeHtml(line);
+                var result = '';
+                // Full line comments
+                if (/^\\s*#/.test(line)) {
+                    result = '<span class="yaml-comment">' + escaped + '</span>';
+                } else {
+                    // Parse the line structure first
+                    var listMatch = escaped.match(/^(\\s*)(-)\\s(.*)$/);
+                    var keyMatch = escaped.match(/^(\\s*)([\\w.-]+):(\\s*)(.*)$/);
+                    if (listMatch) {
+                        // List item: "  - value"
+                        var indent = listMatch[1];
+                        var value = listMatch[3];
+                        value = highlightValue(value, gitlabKeywords);
+                        result = indent + '<span class="yaml-list-marker">-</span> ' + value;
+                    } else if (keyMatch) {
+                        // Key-value: "key: value"
+                        var kindent = keyMatch[1];
+                        var key = keyMatch[2];
+                        var spacing = keyMatch[3];
+                        var val = keyMatch[4];
+                        var keyClass = gitlabKeywords.indexOf(key) !== -1 ? 'yaml-keyword' : 'yaml-key';
+                        val = highlightValue(val, gitlabKeywords);
+                        result = kindent + '<span class="' + keyClass + '">' + key + '</span>:' + spacing + val;
+                    } else {
+                        // Plain text or continuation
+                        result = highlightValue(escaped, gitlabKeywords);
+                    }
+                }
+                return '<div class="yaml-line"><span class="yaml-line-number">' + (i + 1) + '</span><span class="yaml-content">' + result + '</span></div>';
+            }).join('');
+        }
+
+        function highlightValue(text, gitlabKeywords) {
+            if (!text) return '';
+            var result = text;
+            // Anchors &name
+            result = result.replace(/(&amp;[a-zA-Z_][a-zA-Z0-9_-]*)/g, '<span class="yaml-anchor">$1</span>');
+            // Aliases *name
+            result = result.replace(/(\\*[a-zA-Z_][a-zA-Z0-9_-]*)/g, '<span class="yaml-alias">$1</span>');
+            // Variables
+            result = result.replace(/(\\$[A-Za-z_][A-Za-z0-9_]*)/g, '<span class="yaml-variable">$1</span>');
+            result = result.replace(/(\\$\\{[A-Za-z_][A-Za-z0-9_]*\\})/g, '<span class="yaml-variable">$1</span>');
+            // Boolean values (standalone)
+            if (/^(true|false)$/.test(text.trim())) {
+                result = '<span class="yaml-boolean">' + text + '</span>';
+            }
+            // Null values (standalone)
+            else if (/^(null|~)$/.test(text.trim())) {
+                result = '<span class="yaml-null">' + text + '</span>';
+            }
+            // Numbers (standalone)
+            else if (/^-?\\d+\\.?\\d*$/.test(text.trim())) {
+                result = '<span class="yaml-number">' + text + '</span>';
+            }
+            // Strings in quotes
+            else {
+                result = result.replace(/("[^"]*")/g, '<span class="yaml-string">$1</span>');
+                result = result.replace(/('[^']*')/g, '<span class="yaml-string">$1</span>');
+            }
+            // Inline comments
+            result = result.replace(/(\\s)(#.*)$/, '$1<span class="yaml-comment">$2</span>');
+            return result;
+        }
+
+        function renderPipelineList(pipelines, status, structure, recentPipelineJobs) {
+            var isRunning = status && status.running;
+
+            // Update navbar status
+            updateNavbarStatus(isRunning);
+
+            var actionBtn = '<span id="action-btn">' + (isRunning ?
+                '<button class="btn btn-danger" onclick="handleCancelPipeline()">Cancel Pipeline</button>' :
+                '<button class="btn btn-primary" onclick="handleRunPipeline()">&#9654; Run Pipeline</button>') + '</span>';
+
+            // Get most recent pipeline ID for navigation
+            var recentPipelineId = pipelines.length > 0 ? pipelines[0].id : null;
+
+            // Build DAG visualization from YAML structure
+            var dagSection = '';
+            if (structure && structure.exists && structure.jobs && structure.jobs.length > 0) {
+                var structureJobs = buildStructureJobs(structure, recentPipelineJobs);
+                var dagHtml = renderDagVisualization(structureJobs, null, recentPipelineId);
+                dagSection = '<div class="card"><div class="card-header"><h2>Pipeline Structure</h2>' + actionBtn + '</div><div class="card-body"><div id="dag-content">' + dagHtml + '</div></div></div>';
+            } else {
+                dagSection = '<div class="card"><div class="card-header"><h2>Pipeline Structure</h2>' + actionBtn + '</div>' +
+                    '<div class="empty-state"><div class="empty-state-icon">📄</div><div>No .gitlab-ci.yml found</div>' +
+                    '<div class="text-muted">Create a .gitlab-ci.yml file to get started</div></div></div>';
+            }
+
+            var pipelinesSection = '<div id="pipelines-section">' + renderPipelinesSection(pipelines) + '</div>';
+
+            return dagSection + pipelinesSection;
+        }
+
+        function buildStructureJobs(structure, recentPipelineJobs) {
+            var jobStatusMap = {};
+            if (recentPipelineJobs && recentPipelineJobs.length > 0) {
+                recentPipelineJobs.forEach(function(job) {
+                    jobStatusMap[job.name] = {
+                        status: job.status,
+                        duration: job.duration,
+                        id: job.id
+                    };
+                });
+            }
+            return structure.jobs.map(function(j) {
+                var recentJob = jobStatusMap[j.name];
+                return {
+                    id: recentJob ? recentJob.id : j.id,
+                    name: j.name,
+                    stage: j.stage,
+                    status: recentJob ? recentJob.status : 'pending',
+                    needs: j.needs ? JSON.stringify(j.needs) : null,
+                    duration: recentJob ? recentJob.duration : null
+                };
+            });
+        }
+
+        function renderPipelinesSection(pipelines) {
+            if (!pipelines.length) {
+                return '<div class="card"><div class="card-header"><h2>Recent Pipelines</h2></div>' +
+                    '<div class="empty-state"><div class="empty-state-icon">&#128203;</div><div>No pipelines run yet</div>' +
+                    '<div class="text-muted">Click "Run Pipeline" above to start</div></div></div>';
+            }
+            const rows = pipelines.map(p =>
+                '<div class="pipeline-row" onclick="showPipeline(\\'' + p.id + '\\')">' +
+                '<div class="pipeline-info"><span class="pipeline-id">#' + p.iid + '</span><span class="' + getStatusBadgeClass(p.status) + '">' + p.status + '</span><span class="pipeline-branch">' + (p.git_ref || '') + '</span></div>' +
+                '<div class="pipeline-time">' + formatTime(p.created_at) + '</div></div>'
+            ).join('');
+            return '<div class="card"><div class="card-header"><h2>Recent Pipelines</h2></div><div class="card-body" style="padding:0">' + rows + '</div></div>';
+        }
+
+        function updatePipelineListContent(pipelines, status, structure, recentPipelineJobs) {
+            var isRunning = status && status.running;
+            updateNavbarStatus(isRunning);
+
+            // Update action button
+            var actionBtnEl = document.getElementById('action-btn');
+            if (actionBtnEl) {
+                actionBtnEl.innerHTML = isRunning ?
+                    '<button class="btn btn-danger" onclick="handleCancelPipeline()">Cancel Pipeline</button>' :
+                    '<button class="btn btn-primary" onclick="handleRunPipeline()">&#9654; Run Pipeline</button>';
+            }
+
+            // Update DAG content - update statuses in place to avoid line flicker
+            var dagContent = document.getElementById('dag-content');
+            if (dagContent && structure && structure.exists && structure.jobs) {
+                var recentPipelineId = pipelines.length > 0 ? pipelines[0].id : null;
+                var structureJobs = buildStructureJobs(structure, recentPipelineJobs);
+                var existingDagJobs = dagContent.querySelectorAll('.dag-job');
+
+                if (existingDagJobs.length === structureJobs.length && existingDagJobs.length > 0) {
+                    // Update statuses in place
+                    structureJobs.forEach(function(job) {
+                        var jobEl = dagContent.querySelector('.dag-job[data-job-name="' + escapeHtml(job.name) + '"]');
+                        if (jobEl) {
+                            jobEl.className = 'dag-job status-' + job.status;
+                            jobEl.innerHTML = getStatusIcon(job.status);
+                        }
+                    });
+                } else {
+                    // Structure changed, do full re-render
+                    dagContent.innerHTML = renderDagVisualization(structureJobs, null, recentPipelineId);
+                    scheduleDependencyLinesDraw();
+                }
+            }
+
+            // Update pipelines section
+            var pipelinesSection = document.getElementById('pipelines-section');
+            if (pipelinesSection) {
+                pipelinesSection.innerHTML = renderPipelinesSection(pipelines);
+            }
+        }
+
+        function updateNavbarStatus(isRunning) {
+            var navStatus = document.getElementById('nav-status');
+            if (navStatus) {
+                if (isRunning) {
+                    navStatus.innerHTML = '<div class="status-dot running"></div><span>Running</span>';
+                } else {
+                    navStatus.innerHTML = '<div class="status-dot idle"></div><span>Ready</span>';
+                }
+            }
+        }
+
+        window.handleRunPipeline = async function() {
+            try {
+                var result = await runPipeline();
+                if (result.success) {
+                    pipelineRunning = true;
+                    router(); // Refresh view
+                } else {
+                    alert('Failed to start pipeline: ' + (result.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        };
+
+        window.handleCancelPipeline = async function() {
+            if (!confirm('Cancel the running pipeline?')) return;
+            try {
+                var result = await cancelPipeline();
+                if (result.success) {
+                    pipelineRunning = false;
+                    router();
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        };
+
+        function getStatusIcon(status) {
+            var icons = {
+                success: '✓',
+                failed: '✕',
+                warning: '!',
+                running: '◉',
+                pending: '○'
+            };
+            return icons[status] || '○';
+        }
+
+        // ANSI color code parser
+        function parseAnsiColors(text) {
+            var colorMap = {
+                '30': 'ansi-black', '31': 'ansi-red', '32': 'ansi-green', '33': 'ansi-yellow',
+                '34': 'ansi-blue', '35': 'ansi-magenta', '36': 'ansi-cyan', '37': 'ansi-white',
+                '90': 'ansi-bright-black', '91': 'ansi-bright-red', '92': 'ansi-bright-green', '93': 'ansi-bright-yellow',
+                '94': 'ansi-bright-blue', '95': 'ansi-bright-magenta', '96': 'ansi-bright-cyan', '97': 'ansi-bright-white',
+                '40': 'ansi-bg-black', '41': 'ansi-bg-red', '42': 'ansi-bg-green', '43': 'ansi-bg-yellow',
+                '44': 'ansi-bg-blue', '45': 'ansi-bg-magenta', '46': 'ansi-bg-cyan', '47': 'ansi-bg-white',
+                '1': 'ansi-bold', '2': 'ansi-dim', '3': 'ansi-italic', '4': 'ansi-underline'
+            };
+            var result = '';
+            var activeClasses = [];
+            // Match ANSI escape sequences
+            var regex = /\\x1b\\[([0-9;]*)m|\\u001b\\[([0-9;]*)m|\\033\\[([0-9;]*)m/g;
+            var lastIndex = 0;
+            var match;
+            var escaped = escapeHtml(text.replace(/\\x1b\\[|\\u001b\\[|\\033\\[/g, '\\x1b['));
+            // Re-process with escaped text
+            var parts = escaped.split(/(\\x1b\\[[0-9;]*m)/g);
+            parts.forEach(function(part) {
+                if (part.match(/^\\x1b\\[([0-9;]*)m$/)) {
+                    var codes = part.replace(/\\x1b\\[|m$/g, '').split(';');
+                    codes.forEach(function(code) {
+                        if (code === '0' || code === '') {
+                            activeClasses = [];
+                        } else if (colorMap[code]) {
+                            activeClasses.push(colorMap[code]);
+                        }
+                    });
+                } else if (part) {
+                    if (activeClasses.length > 0) {
+                        result += '<span class="' + activeClasses.join(' ') + '">' + part + '</span>';
+                    } else {
+                        result += part;
+                    }
+                }
+            });
+            return result || escapeHtml(text);
+        }
+
+        var selectedJobId = null;
+        var logAutoScroll = true;
+        var renderedLogCount = 0;
+        var logRefreshInterval = null;
+
+        function renderDagVisualization(jobs, selectedId, pipelineId) {
+            // Group jobs by stage
+            var stageMap = {};
+            var stageOrder = [];
+            jobs.forEach(function(j) {
+                if (!stageMap[j.stage]) {
+                    stageMap[j.stage] = [];
+                    stageOrder.push(j.stage);
+                }
+                stageMap[j.stage].push(j);
+            });
+
+            // Build DAG stages HTML with circles
+            var stagesHtml = stageOrder.map(function(stage) {
+                var stageJobs = stageMap[stage];
+                var jobsHtml = stageJobs.map(function(j) {
+                    var needs = j.needs ? JSON.parse(j.needs) : [];
+                    var needsInfo = needs.length > 0 ? 'Needs: ' + needs.join(', ') : '';
+                    var selectedClass = selectedId === j.id ? ' selected' : '';
+                    var icon = getStatusIcon(j.status);
+                    // If pipelineId is provided, clicking navigates to pipeline detail; otherwise, selects job
+                    var clickHandler = pipelineId ?
+                        'location.hash=\\'#/pipeline/' + pipelineId + '\\'; setTimeout(function() { selectJob(\\'' + j.id + '\\'); }, 100);' :
+                        'selectJob(\\'' + j.id + '\\')';
+                    return '<div class="dag-job status-' + j.status + selectedClass + '" data-job-id="' + j.id + '" data-job-name="' + escapeHtml(j.name) + '" data-needs="' + escapeHtml(needs.join(',')) + '" onclick="' + clickHandler + '">' +
+                        '<span class="dag-job-icon">' + icon + '</span>' +
+                        '<div class="dag-job-tooltip">' +
+                        '<div class="dag-job-tooltip-name">' + escapeHtml(j.name) + '</div>' +
+                        '<div class="dag-job-tooltip-info">' + j.status + (j.duration ? ' • ' + formatDuration(j.duration) : '') + '</div>' +
+                        (needsInfo ? '<div class="dag-job-tooltip-info">' + needsInfo + '</div>' : '') +
+                        '</div></div>';
+                }).join('');
+                return '<div class="dag-stage"><div class="dag-stage-header">' + escapeHtml(stage) + '</div><div class="dag-jobs">' + jobsHtml + '</div></div>';
+            }).join('');
+
+            var legend = '<div class="dag-legend">' +
+                '<div class="dag-legend-item"><div class="dag-legend-color" style="border:none;background:var(--text-muted)"></div>Pending</div>' +
+                '<div class="dag-legend-item"><div class="dag-legend-color" style="border:none;background:var(--accent-color)"></div>Running</div>' +
+                '<div class="dag-legend-item"><div class="dag-legend-color" style="border:none;background:var(--success-color)"></div>Success</div>' +
+                '<div class="dag-legend-item"><div class="dag-legend-color" style="border:none;background:var(--error-color)"></div>Failed</div>' +
+                '</div>';
+
+            return legend + '<div class="dag-container"><svg class="dag-lines"></svg><div class="dag-stages">' + stagesHtml + '</div></div>';
+        }
+
+        function drawDependencyLines() {
+            var svg = document.querySelector('.dag-lines');
+            if (!svg) return;
+
+            // Clear existing lines
+            svg.innerHTML = '';
+
+            var container = svg.closest('.dag-container');
+            if (!container) return;
+
+            var containerRect = container.getBoundingClientRect();
+
+            // Find all jobs with needs
+            var jobs = container.querySelectorAll('.dag-job');
+            var jobsByName = {};
+            jobs.forEach(function(job) {
+                var name = job.getAttribute('data-job-name');
+                if (name) {
+                    jobsByName[name] = job;
+                }
+            });
+
+            // Draw lines for each job that has needs
+            jobs.forEach(function(job) {
+                var needsAttr = job.getAttribute('data-needs');
+                if (!needsAttr) return;
+
+                var needs = needsAttr.split(',').filter(function(n) { return n.trim(); });
+                needs.forEach(function(needName) {
+                    var sourceJob = jobsByName[needName.trim()];
+                    if (!sourceJob) return;
+
+                    var sourceRect = sourceJob.getBoundingClientRect();
+                    var targetRect = job.getBoundingClientRect();
+
+                    // Calculate positions relative to container
+                    var x1 = sourceRect.right - containerRect.left;
+                    var y1 = sourceRect.top + sourceRect.height / 2 - containerRect.top;
+                    var x2 = targetRect.left - containerRect.left;
+                    var y2 = targetRect.top + targetRect.height / 2 - containerRect.top;
+
+                    // Create curved path
+                    var midX = (x1 + x2) / 2;
+                    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + midX + ' ' + y1 + ', ' + midX + ' ' + y2 + ', ' + x2 + ' ' + y2);
+                    path.setAttribute('class', 'dag-line');
+                    svg.appendChild(path);
+                });
+            });
+        }
+
+        // Draw lines after DOM updates
+        function scheduleDependencyLinesDraw() {
+            requestAnimationFrame(function() {
+                setTimeout(drawDependencyLines, 50);
+            });
+        }
+
+        function renderPipelineDetail(data, selectedJob, logData) {
+            const p = data.pipeline;
+            const jobs = data.jobs || [];
+            const dagHtml = renderDagVisualization(jobs, selectedJobId);
+
+            var leftPanel = '<div class="split-left">' +
+                '<a href="#/" class="back-link">&larr; Back to pipelines</a>' +
+                '<div class="card"><div class="card-header"><div><h2>Pipeline #' + p.iid + '</h2></div><span id="pipeline-status" class="' + getStatusBadgeClass(p.status) + '">' + p.status + '</span></div>' +
+                '<div class="card-body"><p>Started: ' + formatTime(p.started_at) + '</p><p id="pipeline-duration">Duration: ' + formatDuration(p.duration) + '</p></div></div>' +
+                '<div class="card"><div class="card-header"><h2>Pipeline Graph</h2><span class="text-muted">Click a job to view logs</span></div><div class="card-body"><div id="pipeline-dag">' + dagHtml + '</div></div></div>' +
+                '</div>';
+
+            // If a job is selected, show split view with logs
+            if (selectedJob && logData) {
+                var logs = logData.logs || [];
+                var logLines = logs.map(function(l, i) {
+                    return '<div class="live-log-line"><span class="live-log-line-number">' + (i + 1) + '</span><span class="live-log-content">' + parseAnsiColors(l.content) + '</span></div>';
+                }).join('');
+
+                var autoScrollClass = logAutoScroll ? ' active' : '';
+                var rightPanel = '<div class="split-right">' +
+                    '<div class="split-right-header">' +
+                    '<h3 id="job-header">' + escapeHtml(selectedJob.name) + ' <span class="' + getStatusBadgeClass(selectedJob.status) + '">' + selectedJob.status + '</span></h3>' +
+                    '<button class="close-btn" onclick="closeLogPanel()">×</button>' +
+                    '</div>' +
+                    '<div class="split-right-body">' +
+                    '<div class="live-log-viewer" id="live-log-viewer" onscroll="handleLogScroll()">' + (logLines || '<div class="text-muted" style="padding:1rem">No logs yet</div>') + '</div>' +
+                    '</div>' +
+                    '<div class="log-status-bar">' +
+                    '<span id="log-count">' + logs.length + ' lines</span>' +
+                    '<div class="auto-scroll-indicator' + autoScrollClass + '">' +
+                    '<span>' + (logAutoScroll ? '● Auto-scroll ON' : '○ Auto-scroll OFF') + '</span>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+
+                return '<div class="split-view">' + leftPanel + rightPanel + '</div>';
+            }
+
+            // No job selected - show just the pipeline graph
+            return leftPanel;
+        }
+
+        function renderLogLines(logs) {
+            return logs.map(function(l, i) {
+                return '<div class="live-log-line"><span class="live-log-line-number">' + (i + 1) + '</span><span class="live-log-content">' + parseAnsiColors(l.content) + '</span></div>';
+            }).join('');
+        }
+
+        window.selectJob = async function(jobId) {
+            selectedJobId = jobId;
+            logAutoScroll = true;
+            renderedLogCount = 0;
+
+            // Start live log refresh
+            if (logRefreshInterval) {
+                clearInterval(logRefreshInterval);
+            }
+
+            // Initial render
+            await refreshPipelineView();
+
+            // Set up live log polling
+            logRefreshInterval = setInterval(async function() {
+                if (selectedJobId) {
+                    await refreshPipelineView();
+                    // Auto-scroll to bottom if enabled
+                    if (logAutoScroll) {
+                        var viewer = document.getElementById('live-log-viewer');
+                        if (viewer) {
+                            viewer.scrollTop = viewer.scrollHeight;
+                        }
+                    }
+                }
+            }, 1000);
+        };
+
+        window.closeLogPanel = function() {
+            selectedJobId = null;
+            renderedLogCount = 0;
+            if (logRefreshInterval) {
+                clearInterval(logRefreshInterval);
+                logRefreshInterval = null;
+            }
+            refreshPipelineView();
+        };
+
+        window.handleLogScroll = function() {
+            var viewer = document.getElementById('live-log-viewer');
+            if (viewer) {
+                // Check if user scrolled away from bottom
+                var atBottom = viewer.scrollHeight - viewer.scrollTop - viewer.clientHeight < 50;
+                logAutoScroll = atBottom;
+            }
+        };
+
+        async function refreshPipelineView() {
+            var hash = location.hash.slice(1);
+            if (!hash.startsWith('/pipeline/')) return;
+
+            var pipelineId = hash.split('/')[2];
+            var data = await fetchPipeline(pipelineId);
+            var p = data.pipeline;
+            var jobs = data.jobs || [];
+
+            // Check if we need a full render (structure changed)
+            var logPanelExists = document.getElementById('live-log-viewer') !== null;
+            var needsLogPanel = selectedJobId !== null;
+
+            // If structure needs to change, do full render
+            if (needsLogPanel !== logPanelExists) {
+                var selectedJob = null;
+                var logData = null;
+                if (selectedJobId) {
+                    selectedJob = jobs.find(function(j) { return j.id === selectedJobId; });
+                    if (selectedJob) {
+                        logData = await fetchJobLogs(selectedJobId);
+                    }
+                }
+                var root = document.getElementById('app-root');
+                root.innerHTML = renderPipelineDetail(data, selectedJob, logData);
+                // Update renderedLogCount after full render
+                renderedLogCount = logData && logData.logs ? logData.logs.length : 0;
+                scheduleDependencyLinesDraw();
+                if (logAutoScroll && selectedJobId) {
+                    var viewer = document.getElementById('live-log-viewer');
+                    if (viewer) viewer.scrollTop = viewer.scrollHeight;
+                }
+                return;
+            }
+
+            // Targeted updates - structure unchanged
+            var pipelineStatus = document.getElementById('pipeline-status');
+            if (pipelineStatus) {
+                pipelineStatus.className = getStatusBadgeClass(p.status);
+                pipelineStatus.textContent = p.status;
+            }
+            var pipelineDuration = document.getElementById('pipeline-duration');
+            if (pipelineDuration) {
+                pipelineDuration.textContent = 'Duration: ' + formatDuration(p.duration);
+            }
+
+            // Update DAG job statuses in place (avoid full re-render to prevent line flicker)
+            var pipelineDag = document.getElementById('pipeline-dag');
+            if (pipelineDag) {
+                var dagJobs = pipelineDag.querySelectorAll('.dag-job');
+                var jobsChanged = dagJobs.length !== jobs.length;
+
+                if (!jobsChanged) {
+                    // Update statuses in place
+                    jobs.forEach(function(job) {
+                        var jobEl = pipelineDag.querySelector('.dag-job[data-job-id="' + job.id + '"]');
+                        if (jobEl) {
+                            // Update status class
+                            jobEl.className = 'dag-job status-' + job.status + (job.id === selectedJobId ? ' selected' : '');
+                            // Update icon
+                            jobEl.innerHTML = getStatusIcon(job.status);
+                        }
+                    });
+                } else {
+                    // Jobs changed, do full re-render
+                    pipelineDag.innerHTML = renderDagVisualization(jobs, selectedJobId);
+                    scheduleDependencyLinesDraw();
+                }
+            }
+
+            // Update logs if a job is selected
+            if (selectedJobId) {
+                var selectedJob = jobs.find(function(j) { return j.id === selectedJobId; });
+                if (selectedJob) {
+                    var logData = await fetchJobLogs(selectedJobId);
+                    var logs = logData.logs || [];
+
+                    // Update job header
+                    var jobHeader = document.getElementById('job-header');
+                    if (jobHeader) {
+                        jobHeader.innerHTML = escapeHtml(selectedJob.name) + ' <span class="' + getStatusBadgeClass(selectedJob.status) + '">' + selectedJob.status + '</span>';
+                    }
+
+                    // Update log content - only append new lines to preserve text selection
+                    var viewer = document.getElementById('live-log-viewer');
+                    if (viewer) {
+                        var wasAtBottom = viewer.scrollHeight - viewer.scrollTop - viewer.clientHeight < 50;
+
+                        if (logs.length > renderedLogCount) {
+                            // Append only new log lines
+                            var newLogs = logs.slice(renderedLogCount);
+                            var newHtml = newLogs.map(function(l, i) {
+                                var lineNum = renderedLogCount + i + 1;
+                                return '<div class="live-log-line"><span class="live-log-line-number">' + lineNum + '</span><span class="live-log-content">' + parseAnsiColors(l.content) + '</span></div>';
+                            }).join('');
+
+                            if (renderedLogCount === 0) {
+                                viewer.innerHTML = newHtml || '<div class="text-muted" style="padding:1rem">No logs yet</div>';
+                            } else {
+                                viewer.insertAdjacentHTML('beforeend', newHtml);
+                            }
+                            renderedLogCount = logs.length;
+                        }
+
+                        // Auto-scroll only if was at bottom
+                        if (logAutoScroll && wasAtBottom) {
+                            viewer.scrollTop = viewer.scrollHeight;
+                        }
+                    }
+
+                    // Update log count
+                    var logCount = document.getElementById('log-count');
+                    if (logCount) {
+                        logCount.textContent = logs.length + ' lines';
+                    }
+                }
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            var k = 1024;
+            var sizes = ['B', 'KB', 'MB', 'GB'];
+            var i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function renderArtifacts(artifacts, jobId) {
+            if (!artifacts || artifacts.length === 0) {
+                return '<div class="text-muted">No artifacts</div>';
+            }
+            var items = artifacts.map(function(a) {
+                return '<div class="artifact-item">' +
+                    '<div class="artifact-info">' +
+                    '<span class="artifact-icon">&#128196;</span>' +
+                    '<span class="artifact-name">' + escapeHtml(a.file_path) + '</span>' +
+                    '</div>' +
+                    '<div>' +
+                    '<span class="artifact-size">' + formatBytes(a.size) + '</span>' +
+                    ' <a href="/api/jobs/' + jobId + '/artifacts/' + encodeURIComponent(a.file_path) + '" class="artifact-download" download>Download</a>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+            return '<div class="artifact-list">' + items + '</div>';
+        }
+
+        function renderJobLogs(data, jobId, runStatus) {
+            var logs = data.logs || [];
+            var artifacts = data.artifacts || [];
+            var job = data.job || {};
+            var isRunning = runStatus && runStatus.running;
+            var lines = logs.map(function(l,i) {
+                return '<div class="log-line"><span class="log-line-number">' + (i+1) + '</span><span>' + escapeHtml(l.content) + '</span></div>';
+            }).join('');
+
+            var runBtn = isRunning ?
+                '<button class="btn btn-secondary btn-sm" disabled>Running...</button>' :
+                '<button class="btn btn-success btn-sm" onclick="handleRunJob(\\'' + jobId + '\\')">&#9654; Run Job</button>';
+
+            var jobInfo = job.name ? '<p><strong>Job:</strong> ' + escapeHtml(job.name) + '</p>' +
+                '<p><strong>Stage:</strong> ' + escapeHtml(job.stage || 'unknown') + '</p>' +
+                '<p><strong>Status:</strong> <span class="' + getStatusBadgeClass(job.status) + '">' + (job.status || 'unknown') + '</span></p>' +
+                (job.duration ? '<p><strong>Duration:</strong> ' + formatDuration(job.duration) + '</p>' : '') : '';
+
+            var artifactsSection = artifacts.length > 0 ?
+                '<div class="card"><div class="card-header"><h2>Artifacts</h2><span class="text-muted">' + artifacts.length + ' files</span></div>' +
+                '<div class="card-body">' + renderArtifacts(artifacts, jobId) + '</div></div>' : '';
+
+            return '<a href="javascript:history.back()" class="back-link">&larr; Back</a>' +
+                (jobInfo ? '<div class="card"><div class="card-header"><div class="flex-between" style="width:100%"><h2>Job Details</h2>' + runBtn + '</div></div><div class="card-body">' + jobInfo + '</div></div>' : '') +
+                artifactsSection +
+                '<div class="card"><div class="card-header"><h2>Job Logs</h2><span class="text-muted">' + logs.length + ' lines</span></div>' +
+                '<div class="card-body"><div class="log-viewer">' + (lines || '<div class="text-muted">No logs</div>') + '</div></div></div>';
+        }
+
+        window.handleRunJob = async function(jobId) {
+            try {
+                var result = await runSingleJob(jobId);
+                if (result.success) {
+                    alert('Job started: ' + result.job);
+                    router(); // Refresh view
+                } else {
+                    alert('Failed to start job: ' + (result.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        };
+
+        function renderYaml(data, config) {
+            if (!data.exists) {
+                return '<div class="card"><div class="empty-state"><div class="empty-state-icon">📄</div><div>No .gitlab-ci.yml found</div><div class="text-muted">Create a .gitlab-ci.yml file in the project root</div></div></div>';
+            }
+            const highlighted = highlightYaml(data.content);
+            const lineCount = data.content.split('\\n').length;
+            return '<div class="card"><div class="card-header"><div><h2>.gitlab-ci.yml</h2><div class="cwd-info">' + escapeHtml(config.cwd) + '</div></div><span class="text-muted">' + lineCount + ' lines</span></div>' +
+                '<div class="card-body" style="padding:0"><div class="yaml-viewer">' + highlighted + '</div></div></div>';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateNav(hash) {
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            if (hash === '/yaml') {
+                document.getElementById('nav-yaml').classList.add('active');
+            } else {
+                document.getElementById('nav-pipelines').classList.add('active');
+            }
+        }
+
+        window.showPipeline = async function(id) { location.hash = '/pipeline/' + id; };
+        window.showJobLogs = async function(id) { location.hash = '/job/' + id + '/logs'; };
+
+        let refreshInterval = null;
+
+        async function router() {
+            const root = document.getElementById('app-root');
+            const hash = location.hash.slice(1) || '/';
+            updateNav(hash);
+            root.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+            // Clear auto-refresh for non-pipeline pages
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+
+            try {
+                if (hash === '/yaml') {
+                    const [data, config] = await Promise.all([fetchYaml(), fetchConfig()]);
+                    root.innerHTML = renderYaml(data, config);
+                    // Auto-refresh YAML view - only update content fields, not the whole page
+                    refreshInterval = setInterval(async () => {
+                        try {
+                            const [newData, newConfig] = await Promise.all([fetchYaml(), fetchConfig()]);
+                            if (location.hash.slice(1) === '/yaml' && newData.exists) {
+                                // Only update the yaml content and line count
+                                var yamlViewer = document.querySelector('.yaml-viewer');
+                                var lineCountSpan = document.querySelector('.card-header .text-muted');
+                                if (yamlViewer) {
+                                    yamlViewer.innerHTML = highlightYaml(newData.content);
+                                }
+                                if (lineCountSpan) {
+                                    lineCountSpan.textContent = newData.content.split('\\n').length + ' lines';
+                                }
+                            }
+                        } catch (e) {}
+                    }, 3000);
+                } else if (hash.startsWith('/pipeline/')) {
+                    const id = hash.split('/')[2];
+                    // Clear selected job when navigating to new pipeline
+                    if (logRefreshInterval) {
+                        clearInterval(logRefreshInterval);
+                        logRefreshInterval = null;
+                    }
+                    selectedJobId = null;
+                    const data = await fetchPipeline(id);
+                    root.innerHTML = renderPipelineDetail(data, null, null);
+                    scheduleDependencyLinesDraw();
+                    // Auto-refresh pipeline view to show job updates
+                    refreshInterval = setInterval(async () => {
+                        try {
+                            if (!selectedJobId && location.hash.slice(1).startsWith('/pipeline/')) {
+                                await refreshPipelineView();
+                            }
+                        } catch (e) {}
+                    }, 2000);
+                } else if (hash.startsWith('/job/') && hash.endsWith('/logs')) {
+                    const id = hash.split('/')[2];
+                    const [logsData, artifactsData, jobData, runStatus] = await Promise.all([
+                        fetchJobLogs(id),
+                        fetchJobArtifacts(id),
+                        fetchJob(id),
+                        fetchPipelineStatus()
+                    ]);
+                    const combined = {
+                        logs: logsData.logs,
+                        artifacts: artifactsData.artifacts,
+                        job: jobData.job
+                    };
+                    root.innerHTML = renderJobLogs(combined, id, runStatus);
+                } else {
+                    const [pipelines, status, structure] = await Promise.all([fetchPipelines(), fetchPipelineStatus(), fetchPipelineStructure()]);
+                    // Fetch most recent pipeline's jobs if available
+                    var recentJobs = [];
+                    if (pipelines.length > 0) {
+                        try {
+                            var recentPipeline = await fetchPipeline(pipelines[0].id);
+                            recentJobs = recentPipeline.jobs || [];
+                        } catch (e) {}
+                    }
+                    root.innerHTML = renderPipelineList(pipelines, status, structure, recentJobs);
+                    scheduleDependencyLinesDraw();
+                    // Auto-refresh pipeline list - only update content fields
+                    refreshInterval = setInterval(async () => {
+                        try {
+                            const [newPipelines, newStatus, newStructure] = await Promise.all([fetchPipelines(), fetchPipelineStatus(), fetchPipelineStructure()]);
+                            // Fetch most recent pipeline's jobs
+                            var newRecentJobs = [];
+                            if (newPipelines.length > 0) {
+                                try {
+                                    var recentPipeline = await fetchPipeline(newPipelines[0].id);
+                                    newRecentJobs = recentPipeline.jobs || [];
+                                } catch (e) {}
+                            }
+                            if (location.hash.slice(1) === '/' || location.hash === '') {
+                                updatePipelineListContent(newPipelines, newStatus, newStructure, newRecentJobs);
+                            }
+                        } catch (e) {}
+                    }, 2000);
+                }
+            } catch (e) {
+                root.innerHTML = '<div class="card"><div class="empty-state"><div class="empty-state-icon">&#9888;</div><div>Error loading data</div><div class="text-muted">' + e.message + '</div></div></div>';
+            }
+        }
+
+        window.addEventListener('hashchange', router);
+        router();
+    </script>
+</body>
+</html>`;

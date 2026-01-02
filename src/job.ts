@@ -20,6 +20,8 @@ import {globbySync} from "globby";
 import terminalLink from "terminal-link";
 import * as crypto from "crypto";
 import * as path from "path";
+import {EventEmitter} from "./web/events/event-emitter.js";
+import {EventType} from "./web/events/event-types.js";
 
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
 interface JobOptions {
@@ -642,13 +644,45 @@ If you know what you're doing and would like to suppress this warning, use one o
     }
 
     async start (): Promise<void> {
+        const emitter = EventEmitter.getInstance();
+
         if (this.trigger) {
             await this.startTriggerPipeline();
             this._prescriptsExitCode = 0; // NOTE: so that `this.finished` will implicitly be set to true
+
+            // Emit job finished event for trigger jobs
+            emitter.emit({
+                type: EventType.JOB_FINISHED,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                data: {
+                    status: "success",
+                    exitCode: 0,
+                },
+            });
             return;
         }
 
         this._running = true;
+
+        // Emit job started event
+        emitter.emit({
+            type: EventType.JOB_STARTED,
+            timestamp: Date.now(),
+            pipelineId: `${this.pipelineIid}`,
+            pipelineIid: this.pipelineIid,
+            jobId: `${this.jobId}`,
+            jobName: this.name,
+            data: {
+                stage: this.stage,
+                when: this.when,
+                allowFailure: this.allowFailure !== false,
+                needs: this.needs?.map(n => n.job) ?? undefined,
+            },
+        });
 
         const argv = this.argv;
         this._startTime = process.hrtime();
@@ -665,7 +699,20 @@ If you know what you're doing and would like to suppress this warning, use one o
         await fs.truncate(outputLogFilePath);
 
         if (!this.interactive) {
+            const startingMsg = `starting ${imageName ?? "shell"} (${this.stage})`;
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright starting} ${imageName ?? "shell"} ({yellow ${this.stage}})\n`);
+
+            // Emit log event for web UI
+            emitter.emit({
+                type: EventType.JOB_LOG_LINE,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                line: startingMsg,
+                stream: "stdout",
+            });
         }
 
         if (imageName) {
@@ -675,55 +722,71 @@ If you know what you're doing and would like to suppress this warning, use one o
             const tmpVolumeName = this.tmpVolumeName;
             const fileVariablesDir = this.fileVariablesDir;
 
-            const volumePromises = [];
-            volumePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", `${buildVolumeName}`], argv.cwd));
-            volumePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", `${tmpVolumeName}`], argv.cwd));
-            this._containerVolumeNames.push(buildVolumeName);
-            this._containerVolumeNames.push(tmpVolumeName);
-            await Promise.all(volumePromises);
+            // Skip volume creation and file copying when using bind mount
+            if (!this.argv.mountCwd) {
+                const volumePromises = [];
+                volumePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", `${buildVolumeName}`], argv.cwd));
+                volumePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", `${tmpVolumeName}`], argv.cwd));
+                this._containerVolumeNames.push(buildVolumeName);
+                this._containerVolumeNames.push(tmpVolumeName);
+                await Promise.all(volumePromises);
 
-            const time = process.hrtime();
-            this.refreshLongRunningSilentTimeout(writeStreams);
-
-            let chownOpt = "0:0";
-            let chmodOpt = "a+rw";
-            if (!this.argv.umask) {
-                const {stdout} = await Utils.spawn([this.argv.containerExecutable, "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
-                chownOpt = stdout;
-                if (chownOpt == "0:0") {
-                    chmodOpt = "g-w";
-                }
-            }
-            if (helperImageName) {
-                await this.pullImage(writeStreams, helperImageName);
-            }
-
-            const helperContainerArgs = [
-                this.argv.containerExecutable, "create", "--user=0:0",
-                `--volume=${buildVolumeName}:${this.ciProjectDir}`,
-                `--volume=${tmpVolumeName}:${this.fileVariablesDir}`,
-            ];
-
-            if (this.argv.caFile) {
-                const caFilePath = path.isAbsolute(this.argv.caFile) ? this.argv.caFile : path.resolve(this.argv.cwd, this.argv.caFile);
-                if (await fs.pathExists(caFilePath)) {
-                    helperContainerArgs.push(`--volume=${caFilePath}:/etc/ssl/certs/ca-certificates.crt:ro`);
-                }
-            }
-
-            helperContainerArgs.push(`${helperImageName}`, "sh", "-c", `chown ${chownOpt} -R ${this.ciProjectDir} && chmod ${chmodOpt} -R ${this.ciProjectDir} && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`);
-
-            const {stdout: containerId} = await Utils.spawn(helperContainerArgs, argv.cwd);
-            this._containersToClean.push(containerId);
-            if (await fs.pathExists(fileVariablesDir)) {
-                await Utils.spawn([this.argv.containerExecutable, "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
+                const time = process.hrtime();
                 this.refreshLongRunningSilentTimeout(writeStreams);
+
+                let chownOpt = "0:0";
+                let chmodOpt = "a+rw";
+                if (!this.argv.umask) {
+                    const {stdout} = await Utils.spawn([this.argv.containerExecutable, "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
+                    chownOpt = stdout;
+                    if (chownOpt == "0:0") {
+                        chmodOpt = "g-w";
+                    }
+                }
+                if (helperImageName) {
+                    await this.pullImage(writeStreams, helperImageName);
+                }
+
+                const helperContainerArgs = [
+                    this.argv.containerExecutable, "create", "--user=0:0",
+                    `--volume=${buildVolumeName}:${this.ciProjectDir}`,
+                    `--volume=${tmpVolumeName}:${this.fileVariablesDir}`,
+                ];
+
+                if (this.argv.caFile) {
+                    const caFilePath = path.isAbsolute(this.argv.caFile) ? this.argv.caFile : path.resolve(this.argv.cwd, this.argv.caFile);
+                    if (await fs.pathExists(caFilePath)) {
+                        helperContainerArgs.push(`--volume=${caFilePath}:/etc/ssl/certs/ca-certificates.crt:ro`);
+                    }
+                }
+
+                helperContainerArgs.push(`${helperImageName}`, "sh", "-c", `chown ${chownOpt} -R ${this.ciProjectDir} && chmod ${chmodOpt} -R ${this.ciProjectDir} && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`);
+
+                const {stdout: containerId} = await Utils.spawn(helperContainerArgs, argv.cwd);
+                this._containersToClean.push(containerId);
+                if (await fs.pathExists(fileVariablesDir)) {
+                    await Utils.spawn([this.argv.containerExecutable, "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
+                    this.refreshLongRunningSilentTimeout(writeStreams);
+                }
+                await Utils.spawn([this.argv.containerExecutable, "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:${this.ciProjectDir}`], argv.cwd);
+                await Utils.spawn([this.argv.containerExecutable, "start", "--attach", containerId], argv.cwd);
+                await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", containerId], argv.cwd);
+                const endTime = process.hrtime(time);
+                const copiedMsg = `copied to ${this.argv.containerExecutable} volumes in ${prettyHrtime(endTime)}`;
+                writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to ${this.argv.containerExecutable} volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
+
+                // Emit log event for web UI
+                emitter.emit({
+                    type: EventType.JOB_LOG_LINE,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    line: copiedMsg,
+                    stream: "stdout",
+                });
             }
-            await Utils.spawn([this.argv.containerExecutable, "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:${this.ciProjectDir}`], argv.cwd);
-            await Utils.spawn([this.argv.containerExecutable, "start", "--attach", containerId], argv.cwd);
-            await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", containerId], argv.cwd);
-            const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to ${this.argv.containerExecutable} volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         if (this.services?.length) {
@@ -759,6 +822,24 @@ If you know what you're doing and would like to suppress this warning, use one o
         this._running = false;
         this._endTime = this._endTime ?? process.hrtime(this._startTime);
         this.printFinishedString();
+
+        // Emit job finished event
+        const durationMs = this._endTime ? (this._endTime[0] * 1000 + this._endTime[1] / 1000000) : null;
+        const coverageNum = this._coveragePercent ? parseFloat(this._coveragePercent) : null;
+        emitter.emit({
+            type: EventType.JOB_FINISHED,
+            timestamp: Date.now(),
+            pipelineId: `${this.pipelineIid}`,
+            pipelineIid: this.pipelineIid,
+            jobId: `${this.jobId}`,
+            jobName: this.name,
+            data: {
+                status: this.jobStatus,
+                exitCode: this._prescriptsExitCode,
+                duration: durationMs,
+                coverage: coverageNum,
+            },
+        });
 
         await this.copyCacheOut(this.writeStreams, expanded);
         await this.copyArtifactsOut(this.writeStreams, expanded);
@@ -873,6 +954,7 @@ If you know what you're doing and would like to suppress this warning, use one o
     }
 
     private async execScripts (scripts: string[], expanded: {[key: string]: string}, message: string): Promise<number> {
+        const emitter = EventEmitter.getInstance();
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const safeJobName = this.safeJobName;
@@ -977,8 +1059,13 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += `--network ${this._serviceNetworkId} --network-alias build `;
             }
 
-            dockerCmd += `--volume ${buildVolumeName}:${this.ciProjectDir} `;
-            dockerCmd += `--volume ${tmpVolumeName}:${this.fileVariablesDir} `;
+            if (this.argv.mountCwd) {
+                // Bind mount cwd directly for instant startup
+                dockerCmd += `--volume ${this.argv.cwd}:${this.ciProjectDir} `;
+            } else {
+                dockerCmd += `--volume ${buildVolumeName}:${this.ciProjectDir} `;
+                dockerCmd += `--volume ${tmpVolumeName}:${this.fileVariablesDir} `;
+            }
             dockerCmd += `--workdir ${this.ciProjectDir} `;
 
             for (const volume of this.argv.volume) {
@@ -1038,7 +1125,34 @@ If you know what you're doing and would like to suppress this warning, use one o
             dockerCmd += "\texit 1\n";
             dockerCmd += "fi\n\"";
 
+            // Emit message about creating container
+            const creatingMsg = `creating container with ${imageName}`;
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright creating container} with ${imageName}\n`);
+            emitter.emit({
+                type: EventType.JOB_LOG_LINE,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                line: creatingMsg,
+                stream: "stdout",
+            });
+
             const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
+
+            // Emit container ID
+            const containerIdMsg = `container ${containerId.substring(0, 12)} created`;
+            emitter.emit({
+                type: EventType.JOB_LOG_LINE,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                line: containerIdMsg,
+                stream: "stdout",
+            });
 
             for (const network of this.argv.network) {
                 // Special network names that do not work with `docker network connect`
@@ -1091,6 +1205,19 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
             this.refreshLongRunningSilentTimeout(writeStreams);
+
+            // Emit log event
+            emitter.emit({
+                type: EventType.JOB_LOG_LINE,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                line: line,
+                stream: stream === writeStreams.stdout ? "stdout" : "stderr",
+            });
+
             stream(`${this.formattedJobName} `);
             if (line.startsWith(GCL_SHELL_PROMPT_PLACEHOLDER)) {
                 // replace the GCL_SHELL_PROMPT_PLACEHOLDER with `$` and make the SHELL_PROMPT line green color
@@ -1182,12 +1309,42 @@ If you know what you're doing and would like to suppress this warning, use one o
 
     private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
         const pullPolicy = this.argv.pullPolicy;
+        const emitter = EventEmitter.getInstance();
+
         const actualPull = async () => {
             await this.validateCiDependencyProxyServerAuthentication(imageToPull);
+
+            // Emit "pulling" message
+            const pullingMsg = `pulling ${imageToPull}...`;
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulling} ${imageToPull}...\n`);
+            emitter.emit({
+                type: EventType.JOB_LOG_LINE,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                line: pullingMsg,
+                stream: "stdout",
+            });
+
             const time = process.hrtime();
             await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull]);
             const endTime = process.hrtime(time);
+
+            // Emit "pulled" message
+            const pulledMsg = `pulled ${imageToPull} in ${prettyHrtime(endTime)}`;
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+            emitter.emit({
+                type: EventType.JOB_LOG_LINE,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                line: pulledMsg,
+                stream: "stdout",
+            });
             this.refreshLongRunningSilentTimeout(writeStreams);
         };
 
@@ -1197,6 +1354,19 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
         try {
             await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
+            // Image exists locally, emit message
+            const usingCachedMsg = `using cached image ${imageToPull}`;
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright using cached} ${imageToPull}\n`);
+            emitter.emit({
+                type: EventType.JOB_LOG_LINE,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                line: usingCachedMsg,
+                stream: "stdout",
+            });
         } catch {
             await actualPull();
         }
@@ -1432,7 +1602,8 @@ If you know what you're doing and would like to suppress this warning, use one o
         await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName(this._variables)) {
-            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${cmd.replace(/"/g, "\\\"")}"`, cwd);
+            const volumeMount = this.argv.mountCwd ? `${cwd}:${this.ciProjectDir}` : `${buildVolumeName}:${this.ciProjectDir}`;
+            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${volumeMount} -w ${this.ciProjectDir} ${helperImageName} bash -c "${cmd.replace(/"/g, "\\\"")}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
             await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
@@ -1446,7 +1617,9 @@ If you know what you're doing and would like to suppress this warning, use one o
     private refreshLongRunningSilentTimeout (writeStreams: WriteStreams) {
         clearTimeout(this._longRunningSilentTimeout);
         this._longRunningSilentTimeout = setTimeout(() => {
-            writeStreams.stdout(chalk`${this.formattedJobName} {grey > still running...}\n`);
+            const message = "> still running...";
+            writeStreams.stdout(chalk`${this.formattedJobName} {grey ${message}}\n`);
+            // Note: Not emitting log event for web UI as other status messages provide visibility
             this.refreshLongRunningSilentTimeout(writeStreams);
         }, 10000);
     }
@@ -1458,21 +1631,55 @@ If you know what you're doing and would like to suppress this warning, use one o
     private printFinishedString () {
         if (this.jobStatus !== "success") return;
         this.writeStreams.stdout(`${this.getFinishedString()}\n`);
+
+        // Emit log event for web UI
+        const emitter = EventEmitter.getInstance();
+        emitter.emit({
+            type: EventType.JOB_LOG_LINE,
+            timestamp: Date.now(),
+            pipelineId: `${this.pipelineIid}`,
+            pipelineIid: this.pipelineIid,
+            jobId: `${this.jobId}`,
+            jobName: this.name,
+            line: `finished in ${this.prettyDuration}`,
+            stream: "stdout",
+        });
     }
 
     private printExitedString (code: number) {
         const writeStreams = this.writeStreams;
         const finishedStr = this.getFinishedString();
+        const emitter = EventEmitter.getInstance();
 
         // Won't print if jobStatus is "success" because that will be printed via the `printFinishedString()`
         if (this.jobStatus === "warning") {
             writeStreams.stderr(
                 chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }\n`,
             );
+            emitter.emit({
+                type: EventType.JOB_LOG_LINE,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                line: `finished in ${this.prettyDuration} WARN ${code}`,
+                stream: "stderr",
+            });
         } else if (this.jobStatus === "failed") {
             writeStreams.stderr(
                 chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} }\n`,
             );
+            emitter.emit({
+                type: EventType.JOB_LOG_LINE,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                line: `finished in ${this.prettyDuration} FAIL ${code}`,
+                stream: "stderr",
+            });
         }
     }
 
@@ -1553,8 +1760,12 @@ If you know what you're doing and would like to suppress this warning, use one o
         if (serviceEntrypoint) {
             dockerCmd += `--entrypoint ${Utils.safeBashString(serviceEntrypoint[0])} `;
         }
-        dockerCmd += `--volume ${this.buildVolumeName}:${this.ciProjectDir} `;
-        dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
+        if (this.argv.mountCwd) {
+            dockerCmd += `--volume ${this.argv.cwd}:${this.ciProjectDir} `;
+        } else {
+            dockerCmd += `--volume ${this.buildVolumeName}:${this.ciProjectDir} `;
+            dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
+        }
 
         // The default podman network mode is not `bridge`, which means a `podman network connect` call will fail
         // when connecting user defined networks. The workaround is to use a user defined network on container
