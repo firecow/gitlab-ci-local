@@ -1,7 +1,6 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
-import stylisticTs from "@stylistic/eslint-plugin-ts";
-import stylisticJs from "@stylistic/eslint-plugin-js";
+import stylistic from "@stylistic/eslint-plugin";
 
 export default tseslint.config(
     eslint.configs.recommended,
@@ -15,33 +14,32 @@ export default tseslint.config(
     },
     {
         plugins: {
-            "@stylistic/ts": stylisticTs,
-            "@stylistic/js": stylisticJs,
+            "@stylistic": stylistic,
         },
         rules: {
             "@typescript-eslint/no-explicit-any": "off",
             "@typescript-eslint/explicit-module-boundary-types": "off",
-            "@stylistic/ts/semi": "error",
-            "@stylistic/ts/quotes": "error",
-            "@stylistic/ts/comma-dangle": [
+            "@stylistic/semi": "error",
+            "@stylistic/quotes": "error",
+            "@stylistic/comma-dangle": [
                 "error",
                 "always-multiline",
             ],
-            "@stylistic/ts/object-curly-spacing": "error",
-            "@stylistic/ts/space-before-function-paren": "error",
-            "@stylistic/ts/space-before-blocks": "error",
-            "@stylistic/ts/space-infix-ops": "error",
-            "@stylistic/ts/member-delimiter-style": "error",
-            "@stylistic/ts/indent": [
+            "@stylistic/object-curly-spacing": "error",
+            "@stylistic/space-before-function-paren": "error",
+            "@stylistic/space-before-blocks": "error",
+            "@stylistic/space-infix-ops": "error",
+            "@stylistic/member-delimiter-style": "error",
+            "@stylistic/indent": [
                 "error",
                 4,
             ],
-            "@stylistic/js/operator-linebreak": ["error", "after"],
-            "@stylistic/ts/type-annotation-spacing": [ "error" ],
-            "@stylistic/ts/func-call-spacing": [
+            "@stylistic/operator-linebreak": ["error", "after"],
+            "@stylistic/type-annotation-spacing": [ "error" ],
+            "@stylistic/func-call-spacing": [
                 "error",
             ],
-            "@stylistic/ts/comma-spacing": [
+            "@stylistic/comma-spacing": [
                 "error",
             ],
             "keyword-spacing": "error",
