@@ -23,6 +23,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); line-height: 1.5; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+        .container.full-width { max-width: none; padding-right: 0; }
         .app-header { background: var(--surface-color); border-bottom: 1px solid var(--border-color); padding: 1rem 0; }
         .header-content { display: flex; justify-content: space-between; align-items: center; }
         .app-title { font-size: 1.25rem; font-weight: 600; }
@@ -65,7 +66,11 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .dag-line { stroke: var(--border-color); stroke-width: 2; fill: none; opacity: 0.6; }
         .dag-stages { display: flex; gap: 2rem; min-width: max-content; align-items: flex-start; position: relative; z-index: 2; }
         .dag-stage { min-width: 100px; display: flex; flex-direction: column; align-items: center; }
-        .dag-stage-header { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem; padding: 0.25rem 0.75rem; background: var(--hover-color); border-radius: 12px; text-align: center; white-space: nowrap; }
+        .dag-stage-header { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem; padding: 0.25rem 0.75rem; background: var(--hover-color); border-radius: 12px; text-align: center; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s; }
+        .dag-stage-header:hover { background: var(--border-color); }
+        .run-stage-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.7rem; padding: 0; opacity: 0; transition: opacity 0.2s; }
+        .dag-stage-header:hover .run-stage-btn { opacity: 1; }
+        .run-stage-btn:hover { color: var(--accent-color); }
         .dag-jobs { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
         .dag-job { width: 48px; height: 48px; border-radius: 50%; cursor: pointer; transition: all 0.2s; position: relative; display: flex; align-items: center; justify-content: center; border: none; background: var(--border-color); color: white; }
         .dag-job:hover { transform: scale(1.1); box-shadow: 0 0 12px rgba(233, 69, 96, 0.5); }
@@ -85,18 +90,23 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .dag-legend { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .dag-legend-item { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
         .dag-legend-color { width: 16px; height: 16px; border-radius: 50%; border: 2px solid; }
-        .split-view { display: flex; gap: 1rem; height: calc(100vh - 200px); min-height: 500px; }
-        .split-left { flex: 1; overflow: auto; }
-        .split-right { flex: 1; display: flex; flex-direction: column; background: var(--surface-color); border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; }
+        .split-view { display: flex; gap: 1rem; height: calc(100vh - 120px); min-height: 500px; width: 100%; overflow: hidden; }
+        .split-left { flex: 0 0 350px; overflow: auto; min-width: 300px; }
+        .split-left.full-width { flex: 1; max-width: none; }
+        .split-right { flex: 1; display: flex; flex-direction: column; background: var(--surface-color); border-radius: 8px 0 0 8px; border: 1px solid var(--border-color); border-right: none; overflow: hidden; min-height: 0; min-width: 0; }
         .split-right-header { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--hover-color); }
         .split-right-header h3 { font-size: 0.9rem; font-weight: 600; }
-        .split-right-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-        .live-log-viewer { flex: 1; background: #0d1117; color: #c9d1d9; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.75rem; overflow: auto; padding: 0.5rem; }
+        .split-right-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+        .live-log-viewer { flex: 1; background: #0d1117; color: #c9d1d9; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.75rem; overflow: auto; padding: 0.5rem; min-height: 0; }
         .live-log-line { display: flex; line-height: 1.4; }
         .live-log-line-number { color: #484f58; min-width: 40px; text-align: right; padding-right: 0.75rem; user-select: none; }
         .live-log-content { white-space: pre-wrap; word-break: break-all; }
         .close-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem; font-size: 1.2rem; line-height: 1; }
         .close-btn:hover { color: var(--text-color); }
+        .header-actions { display: flex; gap: 0.5rem; align-items: center; }
+        .run-job-btn { background: var(--accent-color); border: none; color: black; cursor: pointer; padding: 0.25rem 0.75rem; font-size: 0.75rem; border-radius: 4px; font-weight: 500; transition: all 0.2s; }
+        .run-job-btn:hover { opacity: 0.9; transform: scale(1.02); }
+        .run-job-btn:disabled { background: var(--text-muted); cursor: not-allowed; opacity: 0.6; }
         .log-status-bar { padding: 0.5rem 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; background: var(--hover-color); }
         .auto-scroll-indicator { display: flex; align-items: center; gap: 0.5rem; }
         .auto-scroll-indicator.active { color: var(--success-color); }
@@ -281,7 +291,15 @@ export const INDEX_HTML = `<!DOCTYPE html>
             return await res.json();
         }
 
+        async function runStage(stageName) {
+            const res = await fetch(API_BASE + '/stages/' + encodeURIComponent(stageName) + '/run', {
+                method: 'POST'
+            });
+            return await res.json();
+        }
+
         var pipelineRunning = false;
+        var queuedJobs = []; // Jobs queued to run
 
         function highlightYaml(content) {
             // Enhanced YAML syntax highlighting
@@ -355,6 +373,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
 
         function renderPipelineList(pipelines, status, structure, recentPipelineJobs) {
             var isRunning = status && status.running;
+            pipelineRunning = isRunning;
 
             // Update navbar status
             updateNavbarStatus(isRunning);
@@ -423,6 +442,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
 
         function updatePipelineListContent(pipelines, status, structure, recentPipelineJobs) {
             var isRunning = status && status.running;
+            pipelineRunning = isRunning;
             updateNavbarStatus(isRunning);
 
             // Update action button
@@ -446,7 +466,16 @@ export const INDEX_HTML = `<!DOCTYPE html>
                         var jobEl = dagContent.querySelector('.dag-job[data-job-name="' + escapeHtml(job.name) + '"]');
                         if (jobEl) {
                             jobEl.className = 'dag-job status-' + job.status;
-                            jobEl.innerHTML = getStatusIcon(job.status);
+                            // Update only the icon, preserve the tooltip
+                            var iconEl = jobEl.querySelector('.dag-job-icon');
+                            if (iconEl) {
+                                iconEl.textContent = getStatusIcon(job.status);
+                            }
+                            // Update tooltip status info
+                            var tooltipInfo = jobEl.querySelector('.dag-job-tooltip-info');
+                            if (tooltipInfo) {
+                                tooltipInfo.textContent = job.status + (job.duration ? ' • ' + formatDuration(job.duration) : '');
+                            }
                         }
                     });
                 } else {
@@ -498,6 +527,97 @@ export const INDEX_HTML = `<!DOCTYPE html>
                 }
             } catch (e) {
                 alert('Error: ' + e.message);
+            }
+        };
+
+        window.handleRunJob = async function(jobId, jobName) {
+            // Check if job is already queued
+            if (queuedJobs.some(function(j) { return j.name === jobName; })) {
+                return; // Already queued
+            }
+
+            // Add to queue
+            queuedJobs.push({ id: jobId, name: jobName });
+
+            // Immediately update UI to show queued state
+            var jobEl = document.querySelector('.dag-job[data-job-id="' + jobId + '"]');
+            if (jobEl) {
+                jobEl.className = jobEl.className.replace(/status-[a-zA-Z0-9_]+/, 'status-pending');
+                var iconEl = jobEl.querySelector('.dag-job-icon');
+                if (iconEl) iconEl.textContent = '◎'; // Queued icon
+                var tooltipInfo = jobEl.querySelector('.dag-job-tooltip-info');
+                if (tooltipInfo) tooltipInfo.textContent = 'queued';
+            }
+
+            // Update the job header badge if logs panel is open
+            var jobHeader = document.getElementById('job-header');
+            if (jobHeader && selectedJobId === jobId) {
+                jobHeader.innerHTML = escapeHtml(jobName) + ' <span class="badge badge-pending">queued</span>';
+            }
+
+            // Disable the run button
+            var runBtn = document.getElementById('run-job-btn');
+            if (runBtn) runBtn.disabled = true;
+
+            // If not already running, process the queue after a short delay to allow batching
+            if (!pipelineRunning) {
+                setTimeout(processJobQueue, 300);
+            }
+        };
+
+        async function processJobQueue() {
+            if (pipelineRunning || queuedJobs.length === 0) return;
+
+            // Get all queued job names and clear the queue
+            var jobsToRun = queuedJobs.map(function(j) { return j.name; });
+            queuedJobs = [];
+
+            try {
+                // Run all queued jobs together using the pipeline endpoint with job names
+                var result = await runPipeline(jobsToRun);
+                if (result.success) {
+                    pipelineRunning = true;
+                    router(); // Refresh view
+                } else {
+                    alert('Failed to run jobs: ' + (result.error || 'Unknown error'));
+                    router(); // Refresh to restore original state
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+                router(); // Refresh to restore original state
+            }
+        }
+
+        window.handleRunStage = async function(stageName) {
+            // Collect all jobs in this stage and add them to the queue
+            var allJobs = document.querySelectorAll('.dag-job');
+            allJobs.forEach(function(jobEl) {
+                // Find the stage this job belongs to by traversing up
+                var stageEl = jobEl.closest('.dag-stage');
+                if (stageEl) {
+                    var stageHeader = stageEl.querySelector('.dag-stage-header span');
+                    if (stageHeader && stageHeader.textContent.toLowerCase() === stageName.toLowerCase()) {
+                        var jobName = jobEl.getAttribute('data-job-name');
+                        var jobId = jobEl.getAttribute('data-job-id');
+
+                        // Add to queue if not already queued
+                        if (jobName && !queuedJobs.some(function(j) { return j.name === jobName; })) {
+                            queuedJobs.push({ id: jobId, name: jobName });
+                        }
+
+                        // Update UI to queued state
+                        jobEl.className = jobEl.className.replace(/status-[a-zA-Z0-9_]+/, 'status-pending');
+                        var iconEl = jobEl.querySelector('.dag-job-icon');
+                        if (iconEl) iconEl.textContent = '◎'; // Queued icon
+                        var tooltipInfo = jobEl.querySelector('.dag-job-tooltip-info');
+                        if (tooltipInfo) tooltipInfo.textContent = 'queued';
+                    }
+                }
+            });
+
+            // If not already running, process the queue after a short delay
+            if (!pipelineRunning) {
+                setTimeout(processJobQueue, 300);
             }
         };
 
@@ -590,7 +710,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
                         (needsInfo ? '<div class="dag-job-tooltip-info">' + needsInfo + '</div>' : '') +
                         '</div></div>';
                 }).join('');
-                return '<div class="dag-stage"><div class="dag-stage-header">' + escapeHtml(stage) + '</div><div class="dag-jobs">' + jobsHtml + '</div></div>';
+                return '<div class="dag-stage"><div class="dag-stage-header"><span>' + escapeHtml(stage) + '</span><button class="run-stage-btn" onclick="event.stopPropagation(); handleRunStage(\\'' + escapeHtml(stage) + '\\')" title="Run stage">▶</button></div><div class="dag-jobs">' + jobsHtml + '</div></div>';
             }).join('');
 
             var legend = '<div class="dag-legend">' +
@@ -666,7 +786,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
             const jobs = data.jobs || [];
             const dagHtml = renderDagVisualization(jobs, selectedJobId);
 
-            var leftPanel = '<div class="split-left">' +
+            var leftPanelClass = selectedJob ? 'split-left' : 'split-left full-width';
+            var leftPanel = '<div class="' + leftPanelClass + '">' +
                 '<a href="#/" class="back-link">&larr; Back to pipelines</a>' +
                 '<div class="card"><div class="card-header"><div><h2>Pipeline #' + p.iid + '</h2></div><span id="pipeline-status" class="' + getStatusBadgeClass(p.status) + '">' + p.status + '</span></div>' +
                 '<div class="card-body"><p>Started: ' + formatTime(p.started_at) + '</p><p id="pipeline-duration">Duration: ' + formatDuration(p.duration) + '</p></div></div>' +
@@ -681,10 +802,16 @@ export const INDEX_HTML = `<!DOCTYPE html>
                 }).join('');
 
                 var autoScrollClass = logAutoScroll ? ' active' : '';
+                var runBtnText = (selectedJob.status === 'pending' || selectedJob.status === 'running') ? 'Run' : 'Retry';
+                var runBtnDisabled = pipelineRunning ? ' disabled' : '';
                 var rightPanel = '<div class="split-right">' +
                     '<div class="split-right-header">' +
                     '<h3 id="job-header">' + escapeHtml(selectedJob.name) + ' <span class="' + getStatusBadgeClass(selectedJob.status) + '">' + selectedJob.status + '</span></h3>' +
+                    '<div class="header-actions">' +
+                    '<button class="run-job-btn" id="run-job-btn" onclick="handleRunJob(\\''+selectedJob.id+'\\', \\''+escapeHtml(selectedJob.name)+'\\')"'+runBtnDisabled+'>' + runBtnText + '</button>' +
+                    '<button class="run-job-btn" style="background:var(--border-color);color:white" onclick="window.open(\\'/api/jobs/' + selectedJob.id + '/logs/raw\\', \\'_blank\\')">Raw</button>' +
                     '<button class="close-btn" onclick="closeLogPanel()">×</button>' +
+                    '</div>' +
                     '</div>' +
                     '<div class="split-right-body">' +
                     '<div class="live-log-viewer" id="live-log-viewer" onscroll="handleLogScroll()">' + (logLines || '<div class="text-muted" style="padding:1rem">No logs yet</div>') + '</div>' +
@@ -697,11 +824,20 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     '</div>' +
                     '</div>';
 
+                // Add full-width class to container when showing logs
+                setTimeout(function() {
+                    var container = document.querySelector('.app-main .container');
+                    if (container) container.classList.add('full-width');
+                }, 0);
                 return '<div class="split-view">' + leftPanel + rightPanel + '</div>';
             }
 
-            // No job selected - show just the pipeline graph
-            return leftPanel;
+            // No job selected - show just the pipeline graph (full width)
+            setTimeout(function() {
+                var container = document.querySelector('.app-main .container');
+                if (container) container.classList.remove('full-width');
+            }, 0);
+            return '<div class="split-view">' + leftPanel + '</div>';
         }
 
         function renderLogLines(logs) {
@@ -762,7 +898,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
             if (!hash.startsWith('/pipeline/')) return;
 
             var pipelineId = hash.split('/')[2];
-            var data = await fetchPipeline(pipelineId);
+            var [data, status] = await Promise.all([fetchPipeline(pipelineId), fetchPipelineStatus()]);
+            pipelineRunning = status && status.running;
             var p = data.pipeline;
             var jobs = data.jobs || [];
 
@@ -816,8 +953,16 @@ export const INDEX_HTML = `<!DOCTYPE html>
                         if (jobEl) {
                             // Update status class
                             jobEl.className = 'dag-job status-' + job.status + (job.id === selectedJobId ? ' selected' : '');
-                            // Update icon
-                            jobEl.innerHTML = getStatusIcon(job.status);
+                            // Update only the icon, preserve the tooltip
+                            var iconEl = jobEl.querySelector('.dag-job-icon');
+                            if (iconEl) {
+                                iconEl.textContent = getStatusIcon(job.status);
+                            }
+                            // Update tooltip status info
+                            var tooltipInfo = jobEl.querySelector('.dag-job-tooltip-info');
+                            if (tooltipInfo) {
+                                tooltipInfo.textContent = job.status + (job.duration ? ' • ' + formatDuration(job.duration) : '');
+                            }
                         }
                     });
                 } else {
@@ -846,25 +991,39 @@ export const INDEX_HTML = `<!DOCTYPE html>
                         }
                     }
 
+                    // Update run button disabled state
+                    var runBtn = document.getElementById('run-job-btn');
+                    if (runBtn) {
+                        runBtn.disabled = pipelineRunning;
+                    }
+
                     // Update log content - only append new lines to preserve text selection
                     var viewer = document.getElementById('live-log-viewer');
                     if (viewer) {
                         var wasAtBottom = viewer.scrollHeight - viewer.scrollTop - viewer.clientHeight < 50;
 
-                        if (logs.length > renderedLogCount && !hasSelection) {
-                            // Append only new log lines (skip if user has selection)
-                            var newLogs = logs.slice(renderedLogCount);
-                            var newHtml = newLogs.map(function(l, i) {
-                                var lineNum = renderedLogCount + i + 1;
-                                return '<div class="live-log-line"><span class="live-log-line-number">' + lineNum + '</span><span class="live-log-content">' + parseAnsiColors(l.content) + '</span></div>';
-                            }).join('');
-
+                        if (!hasSelection) {
                             if (renderedLogCount === 0) {
-                                viewer.innerHTML = newHtml || '<div class="text-muted" style="padding:1rem">No logs yet</div>';
-                            } else {
+                                // Fresh job selection - render all logs or empty message
+                                if (logs.length > 0) {
+                                    var allHtml = logs.map(function(l, i) {
+                                        return '<div class="live-log-line"><span class="live-log-line-number">' + (i + 1) + '</span><span class="live-log-content">' + parseAnsiColors(l.content) + '</span></div>';
+                                    }).join('');
+                                    viewer.innerHTML = allHtml;
+                                } else {
+                                    viewer.innerHTML = '<div class="text-muted" style="padding:1rem">No logs yet</div>';
+                                }
+                                renderedLogCount = logs.length;
+                            } else if (logs.length > renderedLogCount) {
+                                // Append only new log lines
+                                var newLogs = logs.slice(renderedLogCount);
+                                var newHtml = newLogs.map(function(l, i) {
+                                    var lineNum = renderedLogCount + i + 1;
+                                    return '<div class="live-log-line"><span class="live-log-line-number">' + lineNum + '</span><span class="live-log-content">' + parseAnsiColors(l.content) + '</span></div>';
+                                }).join('');
                                 viewer.insertAdjacentHTML('beforeend', newHtml);
+                                renderedLogCount = logs.length;
                             }
-                            renderedLogCount = logs.length;
                         }
 
                         // Auto-scroll only if was at bottom and no selection
@@ -989,6 +1148,12 @@ export const INDEX_HTML = `<!DOCTYPE html>
             const hash = location.hash.slice(1) || '/';
             updateNav(hash);
             root.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+            // Reset container width for non-split-view pages
+            var container = document.querySelector('.app-main .container');
+            if (container && !hash.startsWith('/pipeline/')) {
+                container.classList.remove('full-width');
+            }
 
             // Clear auto-refresh for non-pipeline pages
             if (refreshInterval) {

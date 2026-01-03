@@ -12,6 +12,20 @@ interface SqlJsDatabase {
     close(): void;
 }
 
+interface SqlJsStatic {
+    Database: new (data?: ArrayLike<number>) => SqlJsDatabase;
+}
+
+// Cached SQL.js constructor to avoid repeated initialization (memory leak fix)
+let cachedSQL: SqlJsStatic | null = null;
+
+async function getSqlJs (): Promise<SqlJsStatic> {
+    if (!cachedSQL) {
+        cachedSQL = await initSqlJs();
+    }
+    return cachedSQL!;
+}
+
 // Database wrapper for gitlab-ci-local web UI using sql.js (pure JS, portable)
 export class GCLDatabase {
     private db: SqlJsDatabase | null = null;
@@ -28,7 +42,7 @@ export class GCLDatabase {
 
     // Initialize database asynchronously
     async init (): Promise<void> {
-        const SQL = await initSqlJs();
+        const SQL = await getSqlJs();
 
         // Ensure directory exists
         const dir = path.dirname(this.dbPath);
@@ -129,7 +143,7 @@ export class GCLDatabase {
 
         // Re-read from disk
         if (fs.existsSync(this.dbPath)) {
-            const SQL = await initSqlJs();
+            const SQL = await getSqlJs();
             try {
                 const buffer = fs.readFileSync(this.dbPath);
                 const oldDb = this.db;
@@ -184,6 +198,12 @@ export class GCLDatabase {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [row.id, row.iid, row.status, row.started_at, row.finished_at, row.duration, row.cwd, row.git_ref, row.git_sha, row.created_at]);
 
+        // Auto-cleanup: keep only the 20 most recent pipelines
+        const count = this.getPipelineCount();
+        if (count > 20) {
+            this.deleteOldPipelines(20);
+        }
+
         this.scheduleSave();
         return row as PipelineRow;
     }
@@ -207,6 +227,11 @@ export class GCLDatabase {
 
     getRecentPipelines (limit: number = 20, offset: number = 0): PipelineRow[] {
         return this.getAll<PipelineRow>("SELECT * FROM pipelines ORDER BY created_at DESC LIMIT ? OFFSET ?", [limit, offset]);
+    }
+
+    getPipelineCount (): number {
+        const result = this.getOne<{count: number}>("SELECT COUNT(*) as count FROM pipelines", []);
+        return result?.count ?? 0;
     }
 
     deleteOldPipelines (keep: number = 20) {
@@ -416,4 +441,9 @@ export class GCLDatabase {
         this.db.run("VACUUM");
         this.save();
     }
+}
+
+// Reset the cached SQL.js constructor (useful for testing)
+export function resetSqlJsCache () {
+    cachedSQL = null;
 }

@@ -15,9 +15,11 @@ import assert from "assert";
 import {EventEmitter} from "./web/events/event-emitter.js";
 import {GCLDatabase} from "./web/persistence/database.js";
 import {EventRecorder} from "./web/events/event-recorder.js";
+import {LogFileManager} from "./web/persistence/log-file-manager.js";
 
 let eventRecorder: EventRecorder | null = null;
 let eventDb: GCLDatabase | null = null;
+let logFileManager: LogFileManager | null = null;
 
 const generateGitIgnore = (cwd: string, stateDir: string) => {
     const gitIgnoreFilePath = `${cwd}/${stateDir}/.gitignore`;
@@ -40,16 +42,19 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         return [];
     }
 
-    // Enable events and recording for web UI (GCIL_ prefix avoids yargs .env("GCL") parsing)
-    const webUiDbPath = path.join(cwd, stateDir, "web-ui.db");
-    if (process.env.GCIL_WEB_UI_ENABLED === "true" || fs.existsSync(webUiDbPath)) {
+    // Enable events and recording for web UI only when explicitly enabled
+    // GCIL_ prefix avoids yargs .env("GCL") parsing it as a CLI argument
+    // Web UI is default OFF - only enabled via `gitlab-ci-local serve` command
+    if (process.env.GCIL_WEB_UI_ENABLED === "true") {
         EventEmitter.getInstance().enable();
-        // Initialize database and event recorder if not already done
+        // Initialize database, log file manager, and event recorder if not already done
         if (!eventRecorder) {
             const dbPath = path.join(cwd, stateDir, "web-ui.db");
             eventDb = new GCLDatabase(dbPath);
             await eventDb.init();
-            eventRecorder = new EventRecorder(eventDb);
+            // Use file-based logging to prevent memory growth from large log output
+            logFileManager = new LogFileManager(path.join(cwd, stateDir));
+            eventRecorder = new EventRecorder(eventDb, logFileManager);
         }
     }
 
@@ -129,6 +134,10 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     // Clean up event recording
     if (eventRecorder && eventDb) {
         eventRecorder.destroy(); // Properly remove listeners
+        if (logFileManager) {
+            logFileManager.cleanup();
+            logFileManager = null;
+        }
         eventDb.close();
         eventRecorder = null;
         eventDb = null;
@@ -143,6 +152,10 @@ export function cleanupEventSystem () {
     if (eventRecorder) {
         eventRecorder.destroy();
         eventRecorder = null;
+    }
+    if (logFileManager) {
+        logFileManager.cleanup();
+        logFileManager = null;
     }
     if (eventDb) {
         eventDb.close();

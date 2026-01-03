@@ -1,6 +1,6 @@
 import {jest, describe, test, expect, beforeEach, afterEach} from "@jest/globals";
 import {EventEmitter} from "../src/web/events/event-emitter.js";
-import {EventType, GCLEvent, PipelineEvent, JobEvent, LogEvent} from "../src/web/events/event-types.js";
+import {EventType, PipelineEvent, JobEvent, LogEvent} from "../src/web/events/event-types.js";
 import {EventRecorder} from "../src/web/events/event-recorder.js";
 import {SSEManager} from "../src/web/server/sse-manager.js";
 import {EventBroadcaster} from "../src/web/events/event-broadcaster.js";
@@ -343,7 +343,7 @@ describe("GCLDatabase", () => {
     });
 
     test("creates and retrieves pipelines", () => {
-        const pipeline = db.createPipeline({
+        db.createPipeline({
             id: "test-pipeline-1",
             iid: 1,
             status: "running",
@@ -1301,10 +1301,10 @@ describe("SSEManager extended", () => {
 
     test("handleConnection with valid pipelineId sets up SSE", () => {
         const manager = new SSEManager();
-        const onCallbacks: Record<string, Function> = {};
+        const onCallbacks: Record<string, () => void> = {};
         const mockReq = {
             url: "/events/pipelines/test-pipeline-123",
-            on: jest.fn((event: string, cb: Function) => { onCallbacks[event] = cb; }),
+            on: jest.fn((event: string, cb: () => void) => { onCallbacks[event] = cb; }),
         } as unknown as http.IncomingMessage;
 
         let statusCode = 0;
@@ -2616,13 +2616,13 @@ describe("SSEManager additional branches", () => {
         const manager = new SSEManager();
         const pipelineId = "multi-client-test";
 
-        const onCallbacks1: Record<string, Function> = {};
-        const onCallbacks2: Record<string, Function> = {};
+        const onCallbacks1: Record<string, () => void> = {};
+        const onCallbacks2: Record<string, () => void> = {};
 
         // Connect first client
         const mockReq1 = {
             url: `/events/pipelines/${pipelineId}`,
-            on: jest.fn((event: string, cb: Function) => { onCallbacks1[event] = cb; }),
+            on: jest.fn((event: string, cb: () => void) => { onCallbacks1[event] = cb; }),
         } as unknown as http.IncomingMessage;
 
         const mockRes1 = {
@@ -2634,7 +2634,7 @@ describe("SSEManager additional branches", () => {
         // Connect second client
         const mockReq2 = {
             url: `/events/pipelines/${pipelineId}`,
-            on: jest.fn((event: string, cb: Function) => { onCallbacks2[event] = cb; }),
+            on: jest.fn((event: string, cb: () => void) => { onCallbacks2[event] = cb; }),
         } as unknown as http.IncomingMessage;
 
         const mockRes2 = {

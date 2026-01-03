@@ -45,6 +45,8 @@ Get rid of all those dev specific shell scripts and make files.
     * [Includes](#includes)
     * [Artifacts](#artifacts)
     * [Self Hosted Custom Ports](#self-hosted-custom-ports)
+* [Web UI](#web-ui)
+    * [Web UI Options](#web-ui-options)
 * [Development](#development)
     * [Scripts](#scripts)
 * [Creating single executable binaries from source](#creating-single-executable-binaries-from-source)
@@ -398,6 +400,38 @@ CI_SERVER_SHELL_SSH_PORT: 8022
 
 ### Special variables
 - `GCL_PROJECT_DIR_ON_HOST` Absolute path to gitlab-ci-local current working directory on the host machine. Use in docker-executor jobs only.
+
+## Web UI
+
+gitlab-ci-local includes a web UI for monitoring and managing pipeline execution.
+
+```bash
+# Start the web UI server
+gitlab-ci-local serve
+
+# Start on a specific port
+gitlab-ci-local serve --port 3001
+```
+
+The web UI provides:
+- Pipeline visualization with DAG (Directed Acyclic Graph) view
+- Real-time job status updates
+- Live log streaming
+- Run/retry individual jobs or entire stages
+- Artifact browsing and download
+
+### Web UI Options
+
+The serve command accepts these options:
+
+| Option | Env Variable | Description | Default |
+|--------|--------------|-------------|---------|
+| `--port` | `GCL_PORT` | Port for web UI server | `3000` |
+| - | `GCIL_WEB_BASE_URL` | Base URL for the web server (useful for proxy setups) | `http://localhost` |
+
+**Note on environment variable prefixes:**
+- `GCL_*` - Standard CLI options that map to yargs arguments (e.g., `GCL_PORT` → `--port`)
+- `GCIL_*` - Internal/web-only options that don't have CLI equivalents. The `GCIL_` prefix prevents yargs from parsing them as CLI arguments.
 
 ## Development
 

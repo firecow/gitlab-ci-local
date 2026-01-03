@@ -1,10 +1,10 @@
 import http from "http";
-import url from "url";
 import path from "path";
 import fs from "fs-extra";
 import {spawn} from "child_process";
 import yaml from "yaml";
 import {GCLDatabase} from "../persistence/database.js";
+import {LogFileManager, LogLine} from "../persistence/log-file-manager.js";
 
 interface RouteParams {
     [key: string]: string;
@@ -22,20 +22,24 @@ interface Route {
 export class APIRouter {
     private routes: Route[] = [];
     private db: GCLDatabase;
+    private logFileManager: LogFileManager | null;
     private cwd: string;
     private stateDir: string;
     private mountCwd: boolean;
     private volumes: string[];
     private helperImage?: string;
+    private urlBase: string;
     private runningProcess: ReturnType<typeof spawn> | null = null;
 
-    constructor (db: GCLDatabase, cwd: string, stateDir: string, mountCwd?: boolean, volumes?: string[], helperImage?: string) {
+    constructor (db: GCLDatabase, cwd: string, stateDir: string, mountCwd?: boolean, volumes?: string[], helperImage?: string, logFileManager?: LogFileManager, webBaseUrl?: string) {
         this.db = db;
+        this.logFileManager = logFileManager || null;
         this.cwd = cwd;
         this.stateDir = stateDir;
         this.mountCwd = mountCwd ?? false;
         this.volumes = volumes ?? [];
         this.helperImage = helperImage;
+        this.urlBase = webBaseUrl || "http://localhost";
         this.registerRoutes();
     }
 
@@ -52,7 +56,11 @@ export class APIRouter {
         // Job routes
         this.get("/api/jobs/:id", this.getJob.bind(this));
         this.get("/api/jobs/:id/logs", this.getJobLogs.bind(this));
+        this.get("/api/jobs/:id/logs/raw", this.getJobLogsRaw.bind(this));
         this.post("/api/jobs/:id/run", this.runJob.bind(this));
+
+        // Stage routes
+        this.post("/api/stages/:name/run", this.runStage.bind(this));
 
         // Artifact routes
         this.get("/api/jobs/:id/artifacts", this.listArtifacts.bind(this));
@@ -111,7 +119,7 @@ export class APIRouter {
     }
 
     private matchRoute (method: string, urlPath: string): {handler: RouteHandler; params: RouteParams} | null {
-        const parsedUrl = url.parse(urlPath);
+        const parsedUrl = new URL(urlPath, this.urlBase);
         const pathname = parsedUrl.pathname || "/";
 
         for (const route of this.routes) {
@@ -141,9 +149,9 @@ export class APIRouter {
     private async listPipelines (req: http.IncomingMessage, res: http.ServerResponse) {
         await this.reloadIfRunning();
 
-        const parsedUrl = url.parse(req.url!, true);
-        const limit = parseInt(parsedUrl.query.limit as string) || 20;
-        const offset = parseInt(parsedUrl.query.offset as string) || 0;
+        const parsedUrl = new URL(req.url!, this.urlBase);
+        const limit = parseInt(parsedUrl.searchParams.get("limit") || "20");
+        const offset = parseInt(parsedUrl.searchParams.get("offset") || "0");
 
         const pipelines = this.db.getRecentPipelines(limit, offset);
         this.json(res, {pipelines});
@@ -199,14 +207,86 @@ export class APIRouter {
     private async getJobLogs (req: http.IncomingMessage, res: http.ServerResponse, params: RouteParams) {
         await this.reloadIfRunning();
 
-        const parsedUrl = url.parse(req.url!, true);
-        const offset = parseInt(parsedUrl.query.offset as string) || 0;
-        const limit = parseInt(parsedUrl.query.limit as string) || 1000;
+        const parsedUrl = new URL(req.url!, this.urlBase);
+        const offset = parseInt(parsedUrl.searchParams.get("offset") || "0");
+        const limit = parseInt(parsedUrl.searchParams.get("limit") || "1000");
 
+        // Try file-based logs first (preferred for memory efficiency)
+        if (this.logFileManager) {
+            const job = this.db.getJob(params.id);
+            if (job) {
+                const logs = await this.logFileManager.getJobLogs(job.pipeline_id, params.id, offset, limit);
+                const total = await this.logFileManager.getJobLogCount(job.pipeline_id, params.id);
+                this.json(res, {logs: logs.map((l: LogLine) => ({
+                    line_number: l.lineNumber,
+                    stream: l.stream,
+                    content: l.content,
+                    timestamp: l.timestamp,
+                })), total});
+                return;
+            }
+        }
+
+        // Fallback to database logs
         const logs = this.db.getJobLogs(params.id, offset, limit);
         const total = this.db.getJobLogCount(params.id);
 
         this.json(res, {logs, total});
+    }
+
+    private async getJobLogsRaw (req: http.IncomingMessage, res: http.ServerResponse, params: RouteParams) {
+        await this.reloadIfRunning();
+
+        const job = this.db.getJob(params.id);
+        if (!job) {
+            this.notFound(res, "Job not found");
+            return;
+        }
+
+        // Try file-based logs first
+        if (this.logFileManager) {
+            const logPath = path.join(this.cwd, this.stateDir, "logs", job.pipeline_id, `${params.id}.log`);
+
+            if (await fs.pathExists(logPath)) {
+                // Stream the raw log file, converting JSON lines to plain text
+                res.writeHead(200, {
+                    "Content-Type": "text/plain; charset=utf-8",
+                    "Access-Control-Allow-Origin": "*",
+                    "Cache-Control": "no-cache",
+                });
+
+                const fileStream = fs.createReadStream(logPath);
+                const rl = await import("readline").then(m => m.createInterface({
+                    input: fileStream,
+                    crlfDelay: Infinity,
+                }));
+
+                for await (const line of rl) {
+                    try {
+                        const entry = JSON.parse(line);
+                        res.write(entry.c + "\n");
+                    } catch {
+                        // Write malformed lines as-is
+                        res.write(line + "\n");
+                    }
+                }
+
+                res.end();
+                return;
+            }
+        }
+
+        // Fallback to database logs
+        const logs = this.db.getJobLogs(params.id, 0, 100000); // Get all logs
+        res.writeHead(200, {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+        });
+
+        for (const log of logs) {
+            res.write(log.content + "\n");
+        }
+        res.end();
     }
 
     // Artifact handlers
@@ -224,7 +304,7 @@ export class APIRouter {
         }
 
         // Extract file path from URL
-        const urlPath = url.parse(req.url!).pathname!;
+        const urlPath = new URL(req.url!, this.urlBase).pathname;
         const artifactPath = urlPath.replace(`/api/jobs/${params.id}/artifacts/`, "");
 
         // Prevent path traversal
@@ -675,6 +755,84 @@ export class APIRouter {
         } catch (error) {
             this.runningProcess = null;
             this.serverError(res, error instanceof Error ? error.message : "Failed to start job");
+        }
+    }
+
+    private async runStage (req: http.IncomingMessage, res: http.ServerResponse, params: RouteParams) {
+        if (this.runningProcess) {
+            this.json(res, {error: "A pipeline is already running", running: true}, 409);
+            return;
+        }
+
+        const stageName = decodeURIComponent(params.name);
+
+        // Build command to run specific stage using --stage option
+        const args = ["--state-dir", this.stateDir, "--stage", stageName];
+        if (this.mountCwd) {
+            args.push("--mount-cwd");
+        }
+        for (const vol of this.volumes) {
+            args.push("--volume", vol);
+        }
+        if (this.helperImage) {
+            args.push("--helper-image", this.helperImage);
+        }
+
+        const nodeExecutable = process.argv[0];
+        const mainScript = process.argv[1];
+
+        let cmd: string;
+        let cmdArgs: string[];
+
+        if (mainScript.includes("tsx") || mainScript.endsWith(".ts")) {
+            cmd = "npx";
+            cmdArgs = ["tsx", path.join(this.cwd, "src/index.ts"), ...args];
+        } else {
+            cmd = nodeExecutable;
+            cmdArgs = [mainScript, ...args];
+        }
+
+        try {
+            this.runningProcess = spawn(cmd, cmdArgs, {
+                cwd: this.cwd,
+                env: {
+                    ...process.env,
+                    GCIL_WEB_UI_ENABLED: "true",
+                    FORCE_COLOR: "0",
+                },
+                stdio: ["ignore", "pipe", "pipe"],
+            });
+
+            const pid = this.runningProcess.pid;
+
+            this.runningProcess.on("close", async (code) => {
+                console.log(`Stage process exited with code ${code}`);
+                this.runningProcess = null;
+                await this.db.reload();
+            });
+
+            this.runningProcess.on("error", (err) => {
+                console.error("Stage process error:", err);
+                this.runningProcess = null;
+            });
+
+            this.runningProcess.stdout?.on("data", (data) => {
+                process.stdout.write(`[stage] ${data}`);
+            });
+
+            this.runningProcess.stderr?.on("data", (data) => {
+                process.stderr.write(`[stage] ${data}`);
+            });
+
+            this.json(res, {
+                success: true,
+                message: `Stage "${stageName}" started`,
+                pid,
+                stage: stageName,
+            });
+        } catch (error) {
+            this.runningProcess = null;
+            this.serverError(res, error instanceof Error ? error.message : "Failed to start stage");
         }
     }
 

@@ -77,6 +77,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                         mountCwd: argv.mountCwd || false,
                         volumes: argv.volume || [],
                         helperImage: argv.helperImage,
+                        webBaseUrl: process.env.GCIL_WEB_BASE_URL,
                     });
 
                     // Enable events globally for CLI runs to be monitored
@@ -110,11 +111,12 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                 }
             },
             builder: (y: any) => {
-                return y.option("port", {
-                    type: "number",
-                    description: "Port for web UI server",
-                    default: 3000,
-                });
+                return y
+                    .option("port", {
+                        type: "number",
+                        description: "Port for web UI server",
+                        default: 3000,
+                    });
             },
         })
         .usage("Find more information at https://github.com/firecow/gitlab-ci-local.\nNote: To negate an option use '--no-(option)'.")

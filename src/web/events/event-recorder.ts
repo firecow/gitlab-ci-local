@@ -1,18 +1,22 @@
 import {EventEmitter} from "./event-emitter.js";
 import {EventType, PipelineEvent, JobEvent, LogEvent, GCLEvent} from "./event-types.js";
 import {GCLDatabase} from "../persistence/database.js";
+import {LogFileManager} from "../persistence/log-file-manager.js";
 
-// Records events to the database
+// Records events to the database and log files
 export class EventRecorder {
     private db: GCLDatabase;
+    private logFileManager: LogFileManager | null;
     private emitter: EventEmitter;
     private lineNumbers: Map<string, number> = new Map();
+    private jobPipelineMap: Map<string, string> = new Map(); // Maps jobId to pipelineId for file logging
     private jobIdMap: Map<string, string> = new Map(); // Maps event jobId to actual db jobId
     // Store bound listener references for cleanup
     private boundListeners: Map<EventType, (event: GCLEvent) => void> = new Map();
 
-    constructor (db: GCLDatabase) {
+    constructor (db: GCLDatabase, logFileManager?: LogFileManager) {
         this.db = db;
+        this.logFileManager = logFileManager || null;
         this.emitter = EventEmitter.getInstance();
         this.registerListeners();
     }
@@ -125,6 +129,7 @@ export class EventRecorder {
             });
 
             this.lineNumbers.set(jobEvent.jobId, 0); // Initialize line number counter
+            this.jobPipelineMap.set(jobEvent.jobId, jobEvent.pipelineId); // Track pipeline for file logging
         } catch (error) {
             console.error("Error recording job queued event:", error);
         }
@@ -157,6 +162,7 @@ export class EventRecorder {
                     coverage_percent: null,
                 });
                 this.lineNumbers.set(jobEvent.jobId, 0);
+                this.jobPipelineMap.set(jobEvent.jobId, jobEvent.pipelineId);
             } else {
                 // Update the existing job (may have been created as pending by web UI)
                 this.db.updateJob(existing.id, {
@@ -165,6 +171,7 @@ export class EventRecorder {
                     stage: jobEvent.data.stage || existing.stage,
                 });
                 this.lineNumbers.set(existing.id, 0);
+                this.jobPipelineMap.set(existing.id, jobEvent.pipelineId);
                 // Map the event's jobId to the actual database jobId
                 if (existing.id !== jobEvent.jobId) {
                     this.jobIdMap.set(jobEvent.jobId, existing.id);
@@ -185,13 +192,23 @@ export class EventRecorder {
             const lineNumber = this.lineNumbers.get(actualJobId) || 0;
             this.lineNumbers.set(actualJobId, lineNumber + 1);
 
-            // Append log (buffered)
-            this.db.appendLog(actualJobId, {
-                line_number: lineNumber,
-                stream: logEvent.stream,
-                content: logEvent.line,
-                timestamp: logEvent.timestamp,
-            });
+            // Write to log file if file manager is available (preferred for memory efficiency)
+            if (this.logFileManager) {
+                const pipelineId = this.jobPipelineMap.get(actualJobId) || logEvent.pipelineId;
+                this.logFileManager.appendLog(pipelineId, actualJobId, {
+                    stream: logEvent.stream,
+                    content: logEvent.line,
+                    timestamp: logEvent.timestamp,
+                }, lineNumber);
+            } else {
+                // Fallback to database storage
+                this.db.appendLog(actualJobId, {
+                    line_number: lineNumber,
+                    stream: logEvent.stream,
+                    content: logEvent.line,
+                    timestamp: logEvent.timestamp,
+                });
+            }
         } catch (error) {
             console.error("Error recording job log line event:", error);
         }
@@ -218,8 +235,15 @@ export class EventRecorder {
                 coverage_percent: jobEvent.data.coverage !== undefined ? jobEvent.data.coverage : null,
             });
 
-            this.db.flushLogs(); // Flush logs for this job
+            // Flush logs for this job
+            if (this.logFileManager) {
+                const pipelineId = this.jobPipelineMap.get(actualJobId) || jobEvent.pipelineId;
+                this.logFileManager.flushJob(pipelineId, actualJobId);
+            } else {
+                this.db.flushLogs();
+            }
             this.lineNumbers.delete(actualJobId); // Clean up line number counter
+            this.jobPipelineMap.delete(actualJobId); // Clean up pipeline mapping
             this.jobIdMap.delete(jobEvent.jobId); // Clean up ID mapping
         } catch (error) {
             console.error("Error recording job finished event:", error);
@@ -227,18 +251,27 @@ export class EventRecorder {
     }
 
     cleanup () {
-        this.db.flushLogs();
+        if (this.logFileManager) {
+            this.logFileManager.flushAll();
+        } else {
+            this.db.flushLogs();
+        }
     }
 
     // Unregister all listeners and clean up resources
     destroy () {
-        this.db.flushLogs();
+        if (this.logFileManager) {
+            this.logFileManager.flushAll();
+        } else {
+            this.db.flushLogs();
+        }
         // Remove all registered listeners
         for (const [type, listener] of this.boundListeners) {
             this.emitter.off(type, listener);
         }
         this.boundListeners.clear();
         this.lineNumbers.clear();
+        this.jobPipelineMap.clear();
         this.jobIdMap.clear();
     }
 }
