@@ -410,9 +410,16 @@ export class Utils {
     static async getTrackedFiles (cwd: string): Promise<string[]> {
         const lsFilesRes = await Utils.bash("git ls-files --deduplicate", cwd);
         if (lsFilesRes.exitCode != 0) {
+            // Check if the error is due to not being in a git repository
+            if (lsFilesRes.stderr.includes("not a git repository") ||
+                lsFilesRes.stderr.includes("GIT_DISCOVERY_ACROSS_FILESYSTEM")) {
+                // Return empty array - this allows wildcard includes to gracefully find no files
+                // rather than crashing. This can happen in Docker containers or isolated environments.
+                return [];
+            }
             throw new Error(`Failed to list tracked files in ${cwd}: ${lsFilesRes.stderr}`);
         }
-        return lsFilesRes.stdout.split("\n");
+        return lsFilesRes.stdout.split("\n").filter(f => f.length > 0);
     }
 
     static getAxiosProxyConfig (): AxiosRequestConfig {

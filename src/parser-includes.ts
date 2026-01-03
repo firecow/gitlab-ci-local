@@ -378,17 +378,21 @@ export class ParserIncludes {
         }
     }
 
-    static readonly memoLocalRepoFiles = (() => {
-        const cache = new Map<string, string[]>();
-        return async (path: string) => {
-            let result = cache.get(path);
-            if (typeof result !== "undefined") return result;
+    private static readonly localRepoFilesCache = new Map<string, string[]>();
 
-            result = (await Utils.getTrackedFiles(path)).map(p => `${path}/${p}`);
-            cache.set(path, result);
-            return result;
-        };
-    })();
+    static readonly memoLocalRepoFiles = async (path: string) => {
+        let result = ParserIncludes.localRepoFilesCache.get(path);
+        if (typeof result !== "undefined") return result;
+
+        result = (await Utils.getTrackedFiles(path)).map(p => `${path}/${p}`);
+        ParserIncludes.localRepoFilesCache.set(path, result);
+        return result;
+    };
+
+    // Clear the memoization cache (useful for testing)
+    static clearLocalRepoFilesCache () {
+        ParserIncludes.localRepoFilesCache.clear();
+    }
 }
 
 export function validateIncludeLocal (filePath: string) {

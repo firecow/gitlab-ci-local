@@ -1,8 +1,8 @@
-// @ts-ignore - sql.js lacks type declarations, using asm.js version for portability (no WASM needed)
-import initSqlJs from 'sql.js/dist/sql-asm.js';
-import {SCHEMA, PipelineRow, JobRow, LogRow, ArtifactRow} from './schema.js';
-import fs from 'fs-extra';
-import path from 'path';
+// @ts-expect-error - sql.js lacks type declarations, using asm.js version for portability (no WASM needed)
+import initSqlJs from "sql.js/dist/sql-asm.js";
+import {SCHEMA, PipelineRow, JobRow, LogRow, ArtifactRow} from "./schema.js";
+import fs from "fs-extra";
+import path from "path";
 
 // Type definitions for sql.js
 interface SqlJsDatabase {
@@ -22,12 +22,12 @@ export class GCLDatabase {
     private readonly LOG_BUFFER_TIMEOUT_MS = 100;
     private saveTimeout: NodeJS.Timeout | null = null;
 
-    constructor(dbPath: string) {
+    constructor (dbPath: string) {
         this.dbPath = dbPath;
     }
 
     // Initialize database asynchronously
-    async init(): Promise<void> {
+    async init (): Promise<void> {
         const SQL = await initSqlJs();
 
         // Ensure directory exists
@@ -40,15 +40,15 @@ export class GCLDatabase {
                 const buffer = fs.readFileSync(this.dbPath);
                 this.db = new SQL.Database(buffer);
                 // Verify database is valid
-                this.db.exec('SELECT 1');
+                this.db!.exec("SELECT 1");
             } catch (error) {
                 // Database is corrupt, backup and create new one
-                console.warn('Database appears corrupt, creating new database:', error);
-                const backupPath = this.dbPath + '.corrupt.' + Date.now();
+                console.warn("Database appears corrupt, creating new database:", error);
+                const backupPath = this.dbPath + ".corrupt." + Date.now();
                 try {
                     fs.renameSync(this.dbPath, backupPath);
-                    console.log('Corrupt database backed up to:', backupPath);
-                } catch (e) {
+                    console.log("Corrupt database backed up to:", backupPath);
+                } catch {
                     // Ignore backup errors
                 }
                 this.db = new SQL.Database();
@@ -67,37 +67,37 @@ export class GCLDatabase {
     }
 
     // Run database migrations for schema changes
-    private runMigrations() {
+    private runMigrations () {
         if (!this.db) return;
 
         // Migration: Add 'needs' column to jobs table if it doesn't exist
         try {
             // Check if column exists by trying to query it
-            this.db.exec('SELECT needs FROM jobs LIMIT 1');
-        } catch (e) {
+            this.db.exec("SELECT needs FROM jobs LIMIT 1");
+        } catch {
             // Column doesn't exist, add it
             try {
-                this.db.run('ALTER TABLE jobs ADD COLUMN needs TEXT');
-                console.log('Migration: Added needs column to jobs table');
-            } catch (alterError) {
+                this.db.run("ALTER TABLE jobs ADD COLUMN needs TEXT");
+                console.log("Migration: Added needs column to jobs table");
+            } catch {
                 // Ignore if it already exists
             }
         }
     }
 
     // Save database to file (atomic write to prevent corruption)
-    private save() {
+    private save () {
         if (!this.db) return;
         const data = this.db.export();
         const buffer = Buffer.from(data);
         // Write to temp file first, then rename atomically
-        const tempPath = this.dbPath + '.tmp';
+        const tempPath = this.dbPath + ".tmp";
         fs.writeFileSync(tempPath, buffer);
         fs.renameSync(tempPath, this.dbPath);
     }
 
     // Schedule a save (debounced)
-    private scheduleSave() {
+    private scheduleSave () {
         if (this.saveTimeout) return;
         this.saveTimeout = setTimeout(() => {
             this.save();
@@ -106,7 +106,7 @@ export class GCLDatabase {
     }
 
     // Close database and flush pending data
-    close() {
+    close () {
         this.flushLogs();
         this.save();
         if (this.db) {
@@ -116,7 +116,7 @@ export class GCLDatabase {
     }
 
     // Reload database from disk (for picking up changes from other processes)
-    async reload(): Promise<void> {
+    async reload (): Promise<void> {
         if (!this.db) return;
 
         // Flush any pending data first
@@ -135,11 +135,11 @@ export class GCLDatabase {
                 const oldDb = this.db;
                 this.db = new SQL.Database(buffer);
                 // Verify database is valid by running a simple query
-                this.db.exec('SELECT 1');
+                this.db!.exec("SELECT 1");
                 oldDb.close();
             } catch (error) {
                 // Database file may be corrupt or being written to, keep current in-memory state
-                console.warn('Failed to reload database, keeping current state:', error);
+                console.warn("Failed to reload database, keeping current state:", error);
             }
         }
     }
@@ -171,8 +171,8 @@ export class GCLDatabase {
 
     // ==================== Pipeline Operations ====================
 
-    createPipeline(pipeline: Omit<PipelineRow, 'created_at'> & {created_at?: number}): PipelineRow {
-        if (!this.db) throw new Error('Database not initialized');
+    createPipeline (pipeline: Omit<PipelineRow, "created_at"> & {created_at?: number}): PipelineRow {
+        if (!this.db) throw new Error("Database not initialized");
 
         const row = {
             ...pipeline,
@@ -188,28 +188,28 @@ export class GCLDatabase {
         return row as PipelineRow;
     }
 
-    updatePipeline(id: string, updates: Partial<Omit<PipelineRow, 'id' | 'iid' | 'created_at'>>) {
+    updatePipeline (id: string, updates: Partial<Omit<PipelineRow, "id" | "iid" | "created_at">>) {
         if (!this.db) return;
 
-        const fields = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+        const fields = Object.keys(updates).map(k => `${k} = ?`).join(", ");
         const values = Object.values(updates);
         this.db.run(`UPDATE pipelines SET ${fields} WHERE id = ?`, [...values, id]);
         this.scheduleSave();
     }
 
-    getPipeline(id: string): PipelineRow | null {
-        return this.getOne<PipelineRow>('SELECT * FROM pipelines WHERE id = ?', [id]);
+    getPipeline (id: string): PipelineRow | null {
+        return this.getOne<PipelineRow>("SELECT * FROM pipelines WHERE id = ?", [id]);
     }
 
-    getPipelineByIid(iid: number): PipelineRow | null {
-        return this.getOne<PipelineRow>('SELECT * FROM pipelines WHERE iid = ? ORDER BY created_at DESC LIMIT 1', [iid]);
+    getPipelineByIid (iid: number): PipelineRow | null {
+        return this.getOne<PipelineRow>("SELECT * FROM pipelines WHERE iid = ? ORDER BY created_at DESC LIMIT 1", [iid]);
     }
 
-    getRecentPipelines(limit: number = 20, offset: number = 0): PipelineRow[] {
-        return this.getAll<PipelineRow>('SELECT * FROM pipelines ORDER BY created_at DESC LIMIT ? OFFSET ?', [limit, offset]);
+    getRecentPipelines (limit: number = 20, offset: number = 0): PipelineRow[] {
+        return this.getAll<PipelineRow>("SELECT * FROM pipelines ORDER BY created_at DESC LIMIT ? OFFSET ?", [limit, offset]);
     }
 
-    deleteOldPipelines(keep: number = 20) {
+    deleteOldPipelines (keep: number = 20) {
         if (!this.db) return;
         this.db.run(`
             DELETE FROM pipelines
@@ -222,8 +222,8 @@ export class GCLDatabase {
 
     // ==================== Job Operations ====================
 
-    createJob(job: Omit<JobRow, 'created_at'> & {created_at?: number}): JobRow {
-        if (!this.db) throw new Error('Database not initialized');
+    createJob (job: Omit<JobRow, "created_at"> & {created_at?: number}): JobRow {
+        if (!this.db) throw new Error("Database not initialized");
 
         const row = {
             ...job,
@@ -240,35 +240,35 @@ export class GCLDatabase {
         return row;
     }
 
-    updateJob(id: string, updates: Partial<Omit<JobRow, 'id' | 'pipeline_id' | 'created_at'>>) {
+    updateJob (id: string, updates: Partial<Omit<JobRow, "id" | "pipeline_id" | "created_at">>) {
         if (!this.db) return;
 
         const data = {...updates};
-        if ('allow_failure' in data) {
+        if ("allow_failure" in data) {
             (data as any).allow_failure = data.allow_failure ? 1 : 0;
         }
 
-        const fields = Object.keys(data).map(k => `${k} = ?`).join(', ');
+        const fields = Object.keys(data).map(k => `${k} = ?`).join(", ");
         const values = Object.values(data);
         this.db.run(`UPDATE jobs SET ${fields} WHERE id = ?`, [...values, id]);
         this.scheduleSave();
     }
 
-    getJob(id: string): JobRow | null {
-        return this.getOne<JobRow>('SELECT * FROM jobs WHERE id = ?', [id]);
+    getJob (id: string): JobRow | null {
+        return this.getOne<JobRow>("SELECT * FROM jobs WHERE id = ?", [id]);
     }
 
-    getJobByPipelineAndName(pipelineId: string, name: string): JobRow | null {
-        return this.getOne<JobRow>('SELECT * FROM jobs WHERE pipeline_id = ? AND name = ?', [pipelineId, name]);
+    getJobByPipelineAndName (pipelineId: string, name: string): JobRow | null {
+        return this.getOne<JobRow>("SELECT * FROM jobs WHERE pipeline_id = ? AND name = ?", [pipelineId, name]);
     }
 
-    getJobsByPipeline(pipelineId: string): JobRow[] {
-        return this.getAll<JobRow>('SELECT * FROM jobs WHERE pipeline_id = ? ORDER BY created_at ASC', [pipelineId]);
+    getJobsByPipeline (pipelineId: string): JobRow[] {
+        return this.getAll<JobRow>("SELECT * FROM jobs WHERE pipeline_id = ? ORDER BY created_at ASC", [pipelineId]);
     }
 
     // ==================== Log Operations ====================
 
-    appendLog(jobId: string, line: Omit<LogRow, 'id' | 'job_id'>): void {
+    appendLog (jobId: string, line: Omit<LogRow, "id" | "job_id">): void {
         const log: LogRow = {
             id: 0,
             job_id: jobId,
@@ -287,7 +287,7 @@ export class GCLDatabase {
         }
     }
 
-    private scheduleFlush() {
+    private scheduleFlush () {
         if (this.logBufferTimeout) return;
 
         this.logBufferTimeout = setTimeout(() => {
@@ -296,7 +296,7 @@ export class GCLDatabase {
         }, this.LOG_BUFFER_TIMEOUT_MS);
     }
 
-    private flushJobLogs(jobId: string) {
+    private flushJobLogs (jobId: string) {
         if (!this.db) return;
         const logs = this.logBuffer.get(jobId);
         if (!logs || logs.length === 0) return;
@@ -312,13 +312,13 @@ export class GCLDatabase {
         this.scheduleSave();
     }
 
-    flushLogs() {
+    flushLogs () {
         for (const jobId of this.logBuffer.keys()) {
             this.flushJobLogs(jobId);
         }
     }
 
-    getJobLogs(jobId: string, offset: number = 0, limit: number = 1000): LogRow[] {
+    getJobLogs (jobId: string, offset: number = 0, limit: number = 1000): LogRow[] {
         this.flushJobLogs(jobId);
         return this.getAll<LogRow>(`
             SELECT * FROM job_logs
@@ -328,16 +328,16 @@ export class GCLDatabase {
         `, [jobId, limit, offset]);
     }
 
-    getJobLogCount(jobId: string): number {
+    getJobLogCount (jobId: string): number {
         this.flushJobLogs(jobId);
-        const result = this.getOne<{count: number}>('SELECT COUNT(*) as count FROM job_logs WHERE job_id = ?', [jobId]);
+        const result = this.getOne<{count: number}>("SELECT COUNT(*) as count FROM job_logs WHERE job_id = ?", [jobId]);
         return result?.count ?? 0;
     }
 
     // ==================== Artifact Operations ====================
 
-    recordArtifact(artifact: Omit<ArtifactRow, 'id' | 'created_at'> & {created_at?: number}): ArtifactRow {
-        if (!this.db) throw new Error('Database not initialized');
+    recordArtifact (artifact: Omit<ArtifactRow, "id" | "created_at"> & {created_at?: number}): ArtifactRow {
+        if (!this.db) throw new Error("Database not initialized");
 
         const row = {
             ...artifact,
@@ -350,20 +350,20 @@ export class GCLDatabase {
         `, [row.job_id, row.file_path, row.size, row.created_at]);
 
         // Get the last inserted ID
-        const result = this.getOne<{id: number}>('SELECT last_insert_rowid() as id', []);
+        const result = this.getOne<{id: number}>("SELECT last_insert_rowid() as id", []);
         this.scheduleSave();
         return {id: result?.id ?? 0, ...row} as ArtifactRow;
     }
 
-    getArtifactsByJob(jobId: string): ArtifactRow[] {
-        return this.getAll<ArtifactRow>('SELECT * FROM artifacts WHERE job_id = ? ORDER BY file_path ASC', [jobId]);
+    getArtifactsByJob (jobId: string): ArtifactRow[] {
+        return this.getAll<ArtifactRow>("SELECT * FROM artifacts WHERE job_id = ? ORDER BY file_path ASC", [jobId]);
     }
 
     // ==================== Utility Operations ====================
 
     // Mark any incomplete pipelines/jobs as cancelled (for cleanup on startup)
-    markIncompleteAsCancelled(): { pipelines: number; jobs: number } {
-        if (!this.db) return { pipelines: 0, jobs: 0 };
+    markIncompleteAsCancelled (): {pipelines: number; jobs: number} {
+        if (!this.db) return {pipelines: 0, jobs: 0};
 
         const now = Date.now();
 
@@ -393,14 +393,14 @@ export class GCLDatabase {
             this.save();
         }
 
-        return { pipelines: pipelinesUpdated, jobs: jobsUpdated };
+        return {pipelines: pipelinesUpdated, jobs: jobsUpdated};
     }
 
-    getStats() {
-        const pipelineCount = this.getOne<{count: number}>('SELECT COUNT(*) as count FROM pipelines', []);
-        const jobCount = this.getOne<{count: number}>('SELECT COUNT(*) as count FROM jobs', []);
-        const logCount = this.getOne<{count: number}>('SELECT COUNT(*) as count FROM job_logs', []);
-        const artifactCount = this.getOne<{count: number}>('SELECT COUNT(*) as count FROM artifacts', []);
+    getStats () {
+        const pipelineCount = this.getOne<{count: number}>("SELECT COUNT(*) as count FROM pipelines", []);
+        const jobCount = this.getOne<{count: number}>("SELECT COUNT(*) as count FROM jobs", []);
+        const logCount = this.getOne<{count: number}>("SELECT COUNT(*) as count FROM job_logs", []);
+        const artifactCount = this.getOne<{count: number}>("SELECT COUNT(*) as count FROM artifacts", []);
 
         return {
             pipelines: pipelineCount?.count ?? 0,
@@ -410,10 +410,10 @@ export class GCLDatabase {
         };
     }
 
-    vacuum() {
+    vacuum () {
         if (!this.db) return;
         this.flushLogs();
-        this.db.run('VACUUM');
+        this.db.run("VACUUM");
         this.save();
     }
 }

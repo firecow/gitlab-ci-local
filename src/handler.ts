@@ -128,11 +128,25 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
 
     // Clean up event recording
     if (eventRecorder && eventDb) {
-        eventRecorder.cleanup();
+        eventRecorder.destroy(); // Properly remove listeners
         eventDb.close();
         eventRecorder = null;
         eventDb = null;
+        EventEmitter.reset(); // Reset the singleton state
     }
 
     return cleanupJobResources(jobs);
+}
+
+// Export cleanup function for testing purposes
+export function cleanupEventSystem () {
+    if (eventRecorder) {
+        eventRecorder.destroy();
+        eventRecorder = null;
+    }
+    if (eventDb) {
+        eventDb.close();
+        eventDb = null;
+    }
+    EventEmitter.reset();
 }

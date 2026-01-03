@@ -80,7 +80,7 @@ CREATE INDEX IF NOT EXISTS idx_artifacts_job ON artifacts(job_id);
 export interface PipelineRow {
     id: string;
     iid: number;
-    status: 'queued' | 'running' | 'success' | 'failed' | 'canceled';
+    status: "queued" | "running" | "success" | "failed" | "canceled";
     started_at: number | null;
     finished_at: number | null;
     duration: number | null;
@@ -96,7 +96,7 @@ export interface JobRow {
     name: string;
     base_name: string;
     stage: string;
-    status: 'pending' | 'running' | 'success' | 'warning' | 'failed' | 'canceled';
+    status: "pending" | "running" | "success" | "warning" | "failed" | "canceled";
     when_condition: string | null;
     allow_failure: number; // SQLite uses 0/1 for boolean
     needs: string | null; // JSON array of job names this job depends on
@@ -112,7 +112,7 @@ export interface LogRow {
     id: number;
     job_id: string;
     line_number: number;
-    stream: 'stdout' | 'stderr';
+    stream: "stdout" | "stderr";
     content: string;
     timestamp: number;
 }

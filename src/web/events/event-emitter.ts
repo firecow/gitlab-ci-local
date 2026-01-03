@@ -1,4 +1,4 @@
-import {EventType, GCLEvent, EventListener} from './event-types.js';
+import {EventType, GCLEvent, EventListener} from "./event-types.js";
 
 // Global event emitter with singleton pattern and zero overhead when disabled
 export class EventEmitter {
@@ -6,28 +6,28 @@ export class EventEmitter {
     private listeners: Map<EventType, Set<EventListener>> = new Map();
     private enabled: boolean = false;
 
-    private constructor() {}
+    private constructor () {}
 
-    static getInstance(): EventEmitter {
+    static getInstance (): EventEmitter {
         if (!this.instance) {
             this.instance = new EventEmitter();
         }
         return this.instance;
     }
 
-    enable() {
+    enable () {
         this.enabled = true;
     }
 
-    disable() {
+    disable () {
         this.enabled = false;
     }
 
-    isEnabled(): boolean {
+    isEnabled (): boolean {
         return this.enabled;
     }
 
-    emit(event: GCLEvent) {
+    emit (event: GCLEvent) {
         // Zero overhead check - return immediately if disabled
         if (!this.enabled) return;
 
@@ -45,18 +45,18 @@ export class EventEmitter {
         });
     }
 
-    on(type: EventType, callback: EventListener) {
+    on (type: EventType, callback: EventListener) {
         if (!this.listeners.has(type)) {
             this.listeners.set(type, new Set());
         }
         this.listeners.get(type)!.add(callback);
     }
 
-    off(type: EventType, callback: EventListener) {
+    off (type: EventType, callback: EventListener) {
         this.listeners.get(type)?.delete(callback);
     }
 
-    once(type: EventType, callback: EventListener) {
+    once (type: EventType, callback: EventListener) {
         const onceWrapper: EventListener = (event: GCLEvent) => {
             callback(event);
             this.off(type, onceWrapper);
@@ -64,7 +64,7 @@ export class EventEmitter {
         this.on(type, onceWrapper);
     }
 
-    removeAllListeners(type?: EventType) {
+    removeAllListeners (type?: EventType) {
         if (type) {
             this.listeners.delete(type);
         } else {
@@ -72,7 +72,15 @@ export class EventEmitter {
         }
     }
 
-    listenerCount(type: EventType): number {
+    listenerCount (type: EventType): number {
         return this.listeners.get(type)?.size ?? 0;
+    }
+
+    // Reset the singleton instance (useful for testing)
+    static reset () {
+        if (this.instance) {
+            this.instance.listeners.clear();
+            this.instance.enabled = false;
+        }
     }
 }

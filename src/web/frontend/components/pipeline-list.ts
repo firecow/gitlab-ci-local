@@ -1,4 +1,4 @@
-import { apiClient, Pipeline } from '../utils/api-client.js';
+import {apiClient, Pipeline} from "../utils/api-client.js";
 
 // Pipeline list component displays recent pipelines
 export class PipelineList extends HTMLElement {
@@ -7,49 +7,49 @@ export class PipelineList extends HTMLElement {
     private loading: boolean = true;
     private refreshInterval: number | null = null;
 
-    constructor(router: any) {
+    constructor (router: any) {
         super();
         this.router = router;
     }
 
     // Called when component is added to DOM
-    connectedCallback() {
+    connectedCallback () {
         this.loadPipelines();
         // Auto-refresh every 5 seconds
         this.refreshInterval = window.setInterval(() => this.loadPipelines(), 5000);
     }
 
     // Called when component is removed from DOM
-    disconnectedCallback() {
+    disconnectedCallback () {
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
         }
     }
 
     // Load pipelines from API
-    private async loadPipelines() {
+    private async loadPipelines () {
         try {
             const response = await apiClient.listPipelines(20, 0);
             this.pipelines = response.pipelines;
             this.loading = false;
             this.render();
         } catch (error) {
-            console.error('Failed to load pipelines:', error);
+            console.error("Failed to load pipelines:", error);
             this.loading = false;
             this.render();
         }
     }
 
     // Format timestamp to readable date
-    private formatDate(timestamp: number | null): string {
-        if (!timestamp) return 'N/A';
+    private formatDate (timestamp: number | null): string {
+        if (!timestamp) return "N/A";
         const date = new Date(timestamp);
         return date.toLocaleString();
     }
 
     // Format duration to human readable format
-    private formatDuration(duration: number | null): string {
-        if (!duration) return 'N/A';
+    private formatDuration (duration: number | null): string {
+        if (!duration) return "N/A";
         const seconds = Math.floor(duration / 1000);
         const minutes = Math.floor(seconds / 60);
         const hours = Math.floor(minutes / 60);
@@ -64,12 +64,12 @@ export class PipelineList extends HTMLElement {
     }
 
     // Handle pipeline click
-    private handlePipelineClick(pipelineId: string) {
+    private handlePipelineClick (pipelineId: string) {
         this.router.navigate(`/pipelines/${pipelineId}`);
     }
 
     // Render component
-    private render() {
+    private render () {
         if (this.loading) {
             this.innerHTML = `
                 <div class="loading-container">
@@ -103,11 +103,11 @@ export class PipelineList extends HTMLElement {
                 </div>
                 <div class="pipeline-meta">
                     <span>Started: ${this.formatDate(pipeline.started_at)}</span>
-                    ${pipeline.duration ? `<span>Duration: ${this.formatDuration(pipeline.duration)}</span>` : ''}
-                    ${pipeline.git_ref ? `<span>Ref: ${pipeline.git_ref}</span>` : ''}
+                    ${pipeline.duration ? `<span>Duration: ${this.formatDuration(pipeline.duration)}</span>` : ""}
+                    ${pipeline.git_ref ? `<span>Ref: ${pipeline.git_ref}</span>` : ""}
                 </div>
             </div>
-        `).join('');
+        `).join("");
 
         this.innerHTML = `
             <div class="card">
@@ -121,9 +121,9 @@ export class PipelineList extends HTMLElement {
         `;
 
         // Add click handlers
-        this.querySelectorAll('.pipeline-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const pipelineId = item.getAttribute('data-id');
+        this.querySelectorAll(".pipeline-item").forEach(item => {
+            item.addEventListener("click", () => {
+                const pipelineId = item.getAttribute("data-id");
                 if (pipelineId) {
                     this.handlePipelineClick(pipelineId);
                 }

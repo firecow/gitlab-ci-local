@@ -1,29 +1,29 @@
-import http from 'http';
-import {GCLEvent} from '../events/event-types.js';
+import http from "http";
+import {GCLEvent} from "../events/event-types.js";
 
 export class SSEManager {
     private connections: Map<string, Set<http.ServerResponse>> = new Map();
     private eventBuffer: Map<string, GCLEvent[]> = new Map();
     private readonly BUFFER_SIZE = 100;
 
-    handleConnection(req: http.IncomingMessage, res: http.ServerResponse) {
+    handleConnection (req: http.IncomingMessage, res: http.ServerResponse) {
         const pipelineId = this.extractPipelineId(req.url!);
         if (!pipelineId) {
-            res.writeHead(400, {'Content-Type': 'text/plain'});
-            res.end('Missing pipeline ID');
+            res.writeHead(400, {"Content-Type": "text/plain"});
+            res.end("Missing pipeline ID");
             return;
         }
 
         // Setup SSE headers
         res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*',
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
         });
 
         // Send initial comment to establish connection
-        res.write(': connected\n\n');
+        res.write(": connected\n\n");
 
         // Add to connections
         if (!this.connections.has(pipelineId)) {
@@ -36,7 +36,7 @@ export class SSEManager {
         buffered.forEach(event => this.sendEvent(res, event));
 
         // Cleanup on disconnect
-        req.on('close', () => {
+        req.on("close", () => {
             this.connections.get(pipelineId)?.delete(res);
             if (this.connections.get(pipelineId)?.size === 0) {
                 this.connections.delete(pipelineId);
@@ -44,7 +44,7 @@ export class SSEManager {
         });
     }
 
-    broadcast(pipelineId: string, event: GCLEvent) {
+    broadcast (pipelineId: string, event: GCLEvent) {
         // Buffer event for reconnections
         if (!this.eventBuffer.has(pipelineId)) {
             this.eventBuffer.set(pipelineId, []);
@@ -62,22 +62,22 @@ export class SSEManager {
         connections.forEach(res => this.sendEvent(res, event));
     }
 
-    private sendEvent(res: http.ServerResponse, event: GCLEvent) {
+    private sendEvent (res: http.ServerResponse, event: GCLEvent) {
         try {
             const data = JSON.stringify(event);
             res.write(`data: ${data}\n\n`);
-        } catch (error) {
+        } catch {
             // Ignore write errors for disconnected clients
         }
     }
 
-    private extractPipelineId(url: string): string | null {
+    private extractPipelineId (url: string): string | null {
         // Extract pipeline ID from /events/pipelines/:id
         const match = url.match(/\/events\/pipelines\/([^/?]+)/);
         return match ? match[1] : null;
     }
 
-    closeAll() {
+    closeAll () {
         this.connections.forEach(conns => {
             conns.forEach(res => {
                 try {
@@ -91,7 +91,7 @@ export class SSEManager {
         this.eventBuffer.clear();
     }
 
-    getConnectionCount(pipelineId?: string): number {
+    getConnectionCount (pipelineId?: string): number {
         if (pipelineId) {
             return this.connections.get(pipelineId)?.size || 0;
         }

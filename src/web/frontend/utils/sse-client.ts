@@ -6,12 +6,12 @@ export class SSEClient {
     private reconnectAttempts: number = 0;
     private maxReconnectAttempts: number = 10;
 
-    constructor(url: string) {
+    constructor (url: string) {
         this.url = url;
     }
 
     // Connect to SSE endpoint
-    connect() {
+    connect () {
         if (this.eventSource) {
             return;
         }
@@ -19,16 +19,16 @@ export class SSEClient {
         this.eventSource = new EventSource(this.url);
 
         this.eventSource.onopen = () => {
-            console.log('SSE connected');
+            console.log("SSE connected");
             this.reconnectAttempts = 0;
         };
 
         this.eventSource.onerror = (error) => {
-            console.error('SSE error:', error);
+            console.error("SSE error:", error);
             this.reconnectAttempts++;
 
             if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-                console.error('Max reconnect attempts reached');
+                console.error("Max reconnect attempts reached");
                 this.close();
             }
         };
@@ -46,18 +46,18 @@ export class SSEClient {
                 }
 
                 // Also trigger wildcard listeners
-                const wildcardListeners = this.listeners.get('*');
+                const wildcardListeners = this.listeners.get("*");
                 if (wildcardListeners) {
                     wildcardListeners.forEach(callback => callback(data));
                 }
             } catch (error) {
-                console.error('Error parsing SSE message:', error);
+                console.error("Error parsing SSE message:", error);
             }
         };
     }
 
     // Register event listener for specific event type
-    on(eventType: string, callback: (data: any) => void) {
+    on (eventType: string, callback: (data: any) => void) {
         if (!this.listeners.has(eventType)) {
             this.listeners.set(eventType, new Set());
         }
@@ -65,7 +65,7 @@ export class SSEClient {
     }
 
     // Remove event listener
-    off(eventType: string, callback: (data: any) => void) {
+    off (eventType: string, callback: (data: any) => void) {
         const listeners = this.listeners.get(eventType);
         if (listeners) {
             listeners.delete(callback);
@@ -73,7 +73,7 @@ export class SSEClient {
     }
 
     // Close connection
-    close() {
+    close () {
         if (this.eventSource) {
             this.eventSource.close();
             this.eventSource = null;
@@ -83,6 +83,6 @@ export class SSEClient {
 }
 
 // Create SSE client for a specific pipeline
-export function createPipelineSSE(pipelineId: string): SSEClient {
+export function createPipelineSSE (pipelineId: string): SSEClient {
     return new SSEClient(`/events/pipelines/${pipelineId}`);
 }

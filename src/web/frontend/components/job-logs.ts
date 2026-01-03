@@ -1,5 +1,5 @@
-import { apiClient, LogLine } from '../utils/api-client.js';
-import { createPipelineSSE, SSEClient } from '../utils/sse-client.js';
+import {apiClient, LogLine} from "../utils/api-client.js";
+import {createPipelineSSE, SSEClient} from "../utils/sse-client.js";
 
 // Job logs component displays real-time job logs
 export class JobLogs extends HTMLElement {
@@ -9,26 +9,26 @@ export class JobLogs extends HTMLElement {
     private sseClient: SSEClient | null = null;
     private autoScroll: boolean = true;
 
-    constructor(jobId: string) {
+    constructor (jobId: string) {
         super();
         this.jobId = jobId;
     }
 
     // Called when component is added to DOM
-    connectedCallback() {
+    connectedCallback () {
         this.loadLogs();
         this.connectSSE();
     }
 
     // Called when component is removed from DOM
-    disconnectedCallback() {
+    disconnectedCallback () {
         if (this.sseClient) {
             this.sseClient.close();
         }
     }
 
     // Load initial logs from API
-    private async loadLogs() {
+    private async loadLogs () {
         try {
             const response = await apiClient.getJobLogs(this.jobId, 0, 10000);
             this.logs = response.logs;
@@ -36,20 +36,20 @@ export class JobLogs extends HTMLElement {
             this.render();
             this.scrollToBottom();
         } catch (error) {
-            console.error('Failed to load logs:', error);
+            console.error("Failed to load logs:", error);
             this.loading = false;
             this.render();
         }
     }
 
     // Connect to SSE for real-time log streaming
-    private connectSSE() {
+    private connectSSE () {
         // Get job details to find pipeline ID
-        apiClient.getJob(this.jobId).then(({ job }) => {
+        apiClient.getJob(this.jobId).then(({job}) => {
             this.sseClient = createPipelineSSE(job.pipeline_id);
 
             // Listen for new log lines for this job
-            this.sseClient.on('job:log', (event) => {
+            this.sseClient.on("job:log", (event) => {
                 if (event.jobId === this.jobId) {
                     this.logs.push({
                         line_number: this.logs.length,
@@ -66,25 +66,25 @@ export class JobLogs extends HTMLElement {
 
             this.sseClient.connect();
         }).catch(error => {
-            console.error('Failed to get job info for SSE:', error);
+            console.error("Failed to get job info for SSE:", error);
         });
     }
 
     // Scroll to bottom of logs
-    private scrollToBottom() {
-        const logViewer = this.querySelector('.log-viewer');
+    private scrollToBottom () {
+        const logViewer = this.querySelector(".log-viewer");
         if (logViewer) {
             logViewer.scrollTop = logViewer.scrollHeight;
         }
     }
 
     // Render a new log line (append only)
-    private renderNewLog(content: string, lineNumber: number) {
-        const logViewer = this.querySelector('.log-viewer');
+    private renderNewLog (content: string, lineNumber: number) {
+        const logViewer = this.querySelector(".log-viewer");
         if (!logViewer) return;
 
-        const logLine = document.createElement('div');
-        logLine.className = 'log-line';
+        const logLine = document.createElement("div");
+        logLine.className = "log-line";
         logLine.innerHTML = `
             <span class="log-line-number">${lineNumber + 1}</span>
             <span>${this.escapeHtml(content)}</span>
@@ -93,23 +93,23 @@ export class JobLogs extends HTMLElement {
     }
 
     // Escape HTML to prevent XSS
-    private escapeHtml(text: string): string {
-        const div = document.createElement('div');
+    private escapeHtml (text: string): string {
+        const div = document.createElement("div");
         div.textContent = text;
         return div.innerHTML;
     }
 
     // Toggle auto-scroll
-    private toggleAutoScroll() {
+    private toggleAutoScroll () {
         this.autoScroll = !this.autoScroll;
-        const checkbox = this.querySelector('.auto-scroll-checkbox') as HTMLInputElement;
+        const checkbox = this.querySelector(".auto-scroll-checkbox") as HTMLInputElement;
         if (checkbox) {
             checkbox.checked = this.autoScroll;
         }
     }
 
     // Render component
-    private render() {
+    private render () {
         if (this.loading) {
             this.innerHTML = `
                 <div class="loading-container">
@@ -129,18 +129,18 @@ export class JobLogs extends HTMLElement {
             return;
         }
 
-        const logsHTML = this.logs.map((log, index) => `
+        const logsHTML = this.logs.map((log) => `
             <div class="log-line">
                 <span class="log-line-number">${log.line_number + 1}</span>
                 <span>${this.escapeHtml(log.content)}</span>
             </div>
-        `).join('');
+        `).join("");
 
         this.innerHTML = `
             <div class="logs-controls mb-2 flex-between">
                 <div>
                     <label>
-                        <input type="checkbox" class="auto-scroll-checkbox" ${this.autoScroll ? 'checked' : ''}>
+                        <input type="checkbox" class="auto-scroll-checkbox" ${this.autoScroll ? "checked" : ""}>
                         Auto-scroll
                     </label>
                 </div>
@@ -154,7 +154,7 @@ export class JobLogs extends HTMLElement {
         `;
 
         // Add auto-scroll toggle handler
-        const checkbox = this.querySelector('.auto-scroll-checkbox');
-        checkbox?.addEventListener('change', () => this.toggleAutoScroll());
+        const checkbox = this.querySelector(".auto-scroll-checkbox");
+        checkbox?.addEventListener("change", () => this.toggleAutoScroll());
     }
 }

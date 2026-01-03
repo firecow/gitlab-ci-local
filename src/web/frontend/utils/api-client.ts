@@ -54,7 +54,7 @@ export interface Stats {
 export class APIClient {
     private baseURL: string;
 
-    constructor(baseURL: string = '/api') {
+    constructor (baseURL: string = "/api") {
         this.baseURL = baseURL;
     }
 
@@ -63,7 +63,7 @@ export class APIClient {
         const response = await fetch(`${this.baseURL}${endpoint}`, options);
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+            const error = await response.json().catch(() => ({error: "Unknown error"}));
             throw new Error(error.error || `HTTP ${response.status}`);
         }
 
@@ -71,43 +71,43 @@ export class APIClient {
     }
 
     // Pipeline endpoints
-    async listPipelines(limit: number = 20, offset: number = 0): Promise<{ pipelines: Pipeline[] }> {
+    async listPipelines (limit: number = 20, offset: number = 0): Promise<{pipelines: Pipeline[]}> {
         return this.fetch(`/pipelines?limit=${limit}&offset=${offset}`);
     }
 
-    async getPipeline(id: string): Promise<{ pipeline: Pipeline; jobs: Job[] }> {
+    async getPipeline (id: string): Promise<{pipeline: Pipeline; jobs: Job[]}> {
         return this.fetch(`/pipelines/${id}`);
     }
 
-    async listJobs(pipelineId: string): Promise<{ jobs: Job[] }> {
+    async listJobs (pipelineId: string): Promise<{jobs: Job[]}> {
         return this.fetch(`/pipelines/${pipelineId}/jobs`);
     }
 
-    async getExpandedYaml(pipelineId: string): Promise<{ yaml: string }> {
+    async getExpandedYaml (pipelineId: string): Promise<{yaml: string}> {
         return this.fetch(`/pipelines/${pipelineId}/yaml`);
     }
 
     // Job endpoints
-    async getJob(id: string): Promise<{ job: Job }> {
+    async getJob (id: string): Promise<{job: Job}> {
         return this.fetch(`/jobs/${id}`);
     }
 
-    async getJobLogs(id: string, offset: number = 0, limit: number = 1000): Promise<{ logs: LogLine[]; total: number }> {
+    async getJobLogs (id: string, offset: number = 0, limit: number = 1000): Promise<{logs: LogLine[]; total: number}> {
         return this.fetch(`/jobs/${id}/logs?offset=${offset}&limit=${limit}`);
     }
 
     // Artifact endpoints
-    async listArtifacts(jobId: string): Promise<{ artifacts: Artifact[] }> {
+    async listArtifacts (jobId: string): Promise<{artifacts: Artifact[]}> {
         return this.fetch(`/jobs/${jobId}/artifacts`);
     }
 
-    getArtifactDownloadURL(jobId: string, path: string): string {
+    getArtifactDownloadURL (jobId: string, path: string): string {
         return `${this.baseURL}/jobs/${jobId}/artifacts/${path}`;
     }
 
     // Stats endpoint
-    async getStats(): Promise<Stats> {
-        return this.fetch('/stats');
+    async getStats (): Promise<Stats> {
+        return this.fetch("/stats");
     }
 }
 

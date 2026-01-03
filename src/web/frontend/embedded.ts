@@ -834,10 +834,16 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     var logData = await fetchJobLogs(selectedJobId);
                     var logs = logData.logs || [];
 
-                    // Update job header
-                    var jobHeader = document.getElementById('job-header');
-                    if (jobHeader) {
-                        jobHeader.innerHTML = escapeHtml(selectedJob.name) + ' <span class="' + getStatusBadgeClass(selectedJob.status) + '">' + selectedJob.status + '</span>';
+                    // Check if user has text selected - skip updates that might reset selection
+                    var selection = window.getSelection();
+                    var hasSelection = selection && selection.toString().length > 0;
+
+                    // Update job header (only if no selection to preserve focus)
+                    if (!hasSelection) {
+                        var jobHeader = document.getElementById('job-header');
+                        if (jobHeader) {
+                            jobHeader.innerHTML = escapeHtml(selectedJob.name) + ' <span class="' + getStatusBadgeClass(selectedJob.status) + '">' + selectedJob.status + '</span>';
+                        }
                     }
 
                     // Update log content - only append new lines to preserve text selection
@@ -845,8 +851,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     if (viewer) {
                         var wasAtBottom = viewer.scrollHeight - viewer.scrollTop - viewer.clientHeight < 50;
 
-                        if (logs.length > renderedLogCount) {
-                            // Append only new log lines
+                        if (logs.length > renderedLogCount && !hasSelection) {
+                            // Append only new log lines (skip if user has selection)
                             var newLogs = logs.slice(renderedLogCount);
                             var newHtml = newLogs.map(function(l, i) {
                                 var lineNum = renderedLogCount + i + 1;
@@ -861,16 +867,18 @@ export const INDEX_HTML = `<!DOCTYPE html>
                             renderedLogCount = logs.length;
                         }
 
-                        // Auto-scroll only if was at bottom
-                        if (logAutoScroll && wasAtBottom) {
+                        // Auto-scroll only if was at bottom and no selection
+                        if (logAutoScroll && wasAtBottom && !hasSelection) {
                             viewer.scrollTop = viewer.scrollHeight;
                         }
                     }
 
-                    // Update log count
-                    var logCount = document.getElementById('log-count');
-                    if (logCount) {
-                        logCount.textContent = logs.length + ' lines';
+                    // Update log count (only if no selection)
+                    if (!hasSelection) {
+                        var logCount = document.getElementById('log-count');
+                        if (logCount) {
+                            logCount.textContent = logs.length + ' lines';
+                        }
                     }
                 }
             }
