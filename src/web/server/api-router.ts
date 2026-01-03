@@ -459,22 +459,12 @@ export class APIRouter {
     // Create pending pipeline and jobs from YAML before subprocess starts
     private async createPendingPipeline (requestedJobs: string[]): Promise<string> {
         const yamlPath = path.join(this.cwd, ".gitlab-ci.yml");
-        const stateFile = path.join(this.cwd, this.stateDir, "state.yml");
 
-        // Get next pipeline IID
-        let pipelineIid = 1;
-        try {
-            if (await fs.pathExists(stateFile)) {
-                const stateContent = await fs.readFile(stateFile, "utf-8");
-                const stateData = yaml.parse(stateContent) || {};
-                pipelineIid = (stateData.pipelineIid || 0) + 1;
-            }
-        } catch {
-            // Use default IID
-        }
+        // Get next pipeline IID from database (ensures uniqueness)
+        const pipelineIid = this.db.getNextPipelineIid();
 
-        // Generate pipeline ID
-        const pipelineId = `${pipelineIid}`;
+        // Generate unique pipeline ID using timestamp + iid
+        const pipelineId = `${Date.now()}-${pipelineIid}`;
 
         // Create pipeline entry
         this.db.createPipeline({

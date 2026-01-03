@@ -531,37 +531,39 @@ export const INDEX_HTML = `<!DOCTYPE html>
         };
 
         window.handleRunJob = async function(jobId, jobName) {
-            // Check if job is already queued
-            if (queuedJobs.some(function(j) { return j.name === jobName; })) {
-                return; // Already queued
-            }
-
-            // Add to queue
-            queuedJobs.push({ id: jobId, name: jobName });
-
-            // Immediately update UI to show queued state
+            // Immediately update UI to show running state
             var jobEl = document.querySelector('.dag-job[data-job-id="' + jobId + '"]');
             if (jobEl) {
-                jobEl.className = jobEl.className.replace(/status-[a-zA-Z0-9_]+/, 'status-pending');
+                jobEl.className = jobEl.className.replace(/status-[a-zA-Z0-9_]+/, 'status-running');
                 var iconEl = jobEl.querySelector('.dag-job-icon');
-                if (iconEl) iconEl.textContent = '◎'; // Queued icon
+                if (iconEl) iconEl.textContent = '◉'; // Running icon
                 var tooltipInfo = jobEl.querySelector('.dag-job-tooltip-info');
-                if (tooltipInfo) tooltipInfo.textContent = 'queued';
+                if (tooltipInfo) tooltipInfo.textContent = 'running';
             }
 
             // Update the job header badge if logs panel is open
             var jobHeader = document.getElementById('job-header');
             if (jobHeader && selectedJobId === jobId) {
-                jobHeader.innerHTML = escapeHtml(jobName) + ' <span class="badge badge-pending">queued</span>';
+                jobHeader.innerHTML = escapeHtml(jobName) + ' <span class="badge badge-running">running</span>';
             }
 
             // Disable the run button
             var runBtn = document.getElementById('run-job-btn');
             if (runBtn) runBtn.disabled = true;
 
-            // If not already running, process the queue after a short delay to allow batching
-            if (!pipelineRunning) {
-                setTimeout(processJobQueue, 300);
+            try {
+                // Run the single job directly (updates existing pipeline)
+                var result = await runSingleJob(jobId);
+                if (result.success) {
+                    pipelineRunning = true;
+                    // Don't call router() - let the refresh interval update the view
+                } else {
+                    alert('Failed to run job: ' + (result.error || 'Unknown error'));
+                    router(); // Refresh to restore original state
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+                router(); // Refresh to restore original state
             }
         };
 
@@ -1081,7 +1083,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
 
             var runBtn = isRunning ?
                 '<button class="btn btn-secondary btn-sm" disabled>Running...</button>' :
-                '<button class="btn btn-success btn-sm" onclick="handleRunJob(\\'' + jobId + '\\')">&#9654; Run Job</button>';
+                '<button class="btn btn-success btn-sm" onclick="handleRunJobLegacy(\\'' + jobId + '\\')">&#9654; Run Job</button>';
 
             var jobInfo = job.name ? '<p><strong>Job:</strong> ' + escapeHtml(job.name) + '</p>' +
                 '<p><strong>Stage:</strong> ' + escapeHtml(job.stage || 'unknown') + '</p>' +
@@ -1099,7 +1101,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
                 '<div class="card-body"><div class="log-viewer">' + (lines || '<div class="text-muted">No logs</div>') + '</div></div></div>';
         }
 
-        window.handleRunJob = async function(jobId) {
+        window.handleRunJobLegacy = async function(jobId) {
             try {
                 var result = await runSingleJob(jobId);
                 if (result.success) {

@@ -234,6 +234,11 @@ export class GCLDatabase {
         return result?.count ?? 0;
     }
 
+    getNextPipelineIid (): number {
+        const result = this.getOne<{max_iid: number | null}>("SELECT MAX(iid) as max_iid FROM pipelines", []);
+        return (result?.max_iid ?? 0) + 1;
+    }
+
     deleteOldPipelines (keep: number = 20) {
         if (!this.db) return;
         this.db.run(`
