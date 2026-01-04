@@ -5,7 +5,7 @@ import {WriteStreams} from "./write-streams.js";
 import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "assert";
 import chalk from "chalk-template";
-import {Parser} from "./parser.js";
+import {Parser, createGitlabYamlSchema} from "./parser.js";
 import axios, {AxiosRequestConfig} from "axios";
 import path from "path";
 import semver from "semver";
@@ -161,8 +161,8 @@ export class ParserIncludes {
                 const bundledContent = this.getBundledTemplate(value["template"]);
                 let fileDoc;
                 if (bundledContent) {
-                    // Use bundled template
-                    fileDoc = yaml.load(bundledContent) as any;
+                    // Use bundled template with !reference support
+                    fileDoc = yaml.load(bundledContent, {schema: createGitlabYamlSchema()}) as any;
                     // Note: inputs are not supported for bundled templates
                     // Use --online-templates if inputs are needed
                 } else if (argv.onlineTemplates) {

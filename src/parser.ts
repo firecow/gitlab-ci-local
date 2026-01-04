@@ -24,6 +24,21 @@ const MAX_FUNCTIONS = 3;
 const INCLUDE_INPUTS_SUPPORTED_TYPES = ["string", "boolean", "number", "array"] as const;
 export type InputType = typeof INCLUDE_INPUTS_SUPPORTED_TYPES[number];
 
+/**
+ * Creates the YAML schema with GitLab's !reference tag support.
+ * This schema transforms !reference [path, to, value] into {referenceData: [path, to, value]}
+ * which is later expanded by DataExpander.reference().
+ */
+export function createGitlabYamlSchema (): yaml.Schema {
+    const referenceType = new yaml.Type("!reference", {
+        kind: "sequence",
+        construct: function (data) {
+            return {referenceData: data};
+        },
+    });
+    return yaml.DEFAULT_SCHEMA.extend([referenceType]);
+}
+
 export class Parser {
 
     private _stages: string[] = [];
@@ -303,13 +318,7 @@ export class Parser {
             }
         }
 
-        const referenceType = new yaml.Type("!reference", {
-            kind: "sequence",
-            construct: function (data) {
-                return {referenceData: data};
-            },
-        });
-        const schema = yaml.DEFAULT_SCHEMA.extend([referenceType]);
+        const schema = createGitlabYamlSchema();
         let fileData;
 
         try {
