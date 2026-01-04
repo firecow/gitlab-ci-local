@@ -836,7 +836,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
             }
             var progress = p.init_progress || 0;
             var message = p.init_message || 'Initializing...';
-            return '<div class="init-progress">' +
+            return '<div class="init-progress" id="init-progress">' +
                 '<div class="init-progress-header">' +
                 '<span class="init-progress-label"><span class="init-spinner"></span> ' + escapeHtml(message) + '</span>' +
                 '<span class="init-progress-phase">' + progress + '%</span>' +
@@ -1047,6 +1047,23 @@ export const INDEX_HTML = `<!DOCTYPE html>
             var pipelineDuration = document.getElementById('pipeline-duration');
             if (pipelineDuration) {
                 pipelineDuration.textContent = 'Duration: ' + formatDuration(p.duration);
+            }
+
+            // Update or remove init progress section
+            var initProgressEl = document.getElementById('init-progress');
+            if (initProgressEl) {
+                // Remove init progress if pipeline is now running/success/failed
+                if (p.status === 'running' || p.status === 'success' || p.status === 'failed') {
+                    initProgressEl.remove();
+                } else if (p.init_phase) {
+                    // Update progress values
+                    var progressFill = initProgressEl.querySelector('.init-progress-fill');
+                    var progressPhase = initProgressEl.querySelector('.init-progress-phase');
+                    var progressLabel = initProgressEl.querySelector('.init-progress-label');
+                    if (progressFill) progressFill.style.width = (p.init_progress || 0) + '%';
+                    if (progressPhase) progressPhase.textContent = (p.init_progress || 0) + '%';
+                    if (progressLabel) progressLabel.innerHTML = '<span class="init-spinner"></span> ' + escapeHtml(p.init_message || 'Initializing...');
+                }
             }
 
             // Update DAG job statuses in place (avoid full re-render to prevent line flicker)
