@@ -531,11 +531,11 @@ export class Utils {
 
     // Common Docker socket locations to check
     static readonly dockerSocketPaths = [
-        "/var/run/docker.sock",                                              // Standard Linux
-        "/var/run/docker-cli.sock",                                          // Docker CLI socket
+        "/var/run/docker.sock", // Standard Linux
+        "/var/run/docker-cli.sock", // Docker CLI socket
         "/mnt/wsl/docker-desktop/shared-sockets/guest-services/docker.sock", // Docker Desktop WSL integration
-        `${process.env.HOME}/.docker/run/docker.sock`,                       // Docker Desktop macOS
-        "/run/docker.sock",                                                  // Alternative Linux location
+        `${process.env.HOME}/.docker/run/docker.sock`, // Docker Desktop macOS
+        "/run/docker.sock", // Alternative Linux location
     ];
 
     static findDockerSocketPath (): string | null {
