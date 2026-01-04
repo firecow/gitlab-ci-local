@@ -4,6 +4,14 @@ stages:
   - test
   - build
 
+# Default configuration for all jobs (after deps)
+default:
+  image: gcl-dev:latest
+
+# Global variables for all jobs
+variables:
+  DOCKER_HOST: unix:///var/run/docker.sock
+
 # Build development image with Node.js + Docker in .pre stage
 deps:
   stage: .pre
@@ -12,14 +20,6 @@ deps:
     DOCKER_HOST: unix:///var/run/docker.sock
   script:
     - docker build --cache-from gcl-dev:latest -t gcl-dev:latest -f Dockerfile.dev . 2>/dev/null || docker build -t gcl-dev:latest -f Dockerfile.dev .
-
-# Default configuration for all jobs (after deps)
-default:
-  image: gcl-dev:latest
-
-# Global variables for all jobs
-variables:
-  DOCKER_HOST: unix:///var/run/docker.sock
 
 # Lint job - check code quality
 lint:

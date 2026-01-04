@@ -67,6 +67,9 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     const file = argv.file;
     let parser: Parser | null = null;
 
+    // Auto-detect Docker socket location if DOCKER_HOST is not set
+    Utils.detectDockerSocket();
+
     if (argv.completion) {
         yargs(process.argv.slice(2)).showCompletionScript();
         return [];

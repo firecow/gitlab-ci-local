@@ -528,4 +528,38 @@ export class Utils {
             return String(variable);
         }
     }
+
+    // Common Docker socket locations to check
+    static readonly dockerSocketPaths = [
+        "/var/run/docker.sock",                                              // Standard Linux
+        "/var/run/docker-cli.sock",                                          // Docker CLI socket
+        "/mnt/wsl/docker-desktop/shared-sockets/guest-services/docker.sock", // Docker Desktop WSL integration
+        `${process.env.HOME}/.docker/run/docker.sock`,                       // Docker Desktop macOS
+        "/run/docker.sock",                                                  // Alternative Linux location
+    ];
+
+    static findDockerSocketPath (): string | null {
+        for (const socketPath of Utils.dockerSocketPaths) {
+            if (socketPath && fs.existsSync(socketPath)) {
+                return socketPath;
+            }
+        }
+        return null;
+    }
+
+    static detectDockerSocket (): string | null {
+        // If DOCKER_HOST is already set, respect it
+        if (process.env.DOCKER_HOST) {
+            return process.env.DOCKER_HOST;
+        }
+
+        const socketPath = Utils.findDockerSocketPath();
+        if (socketPath) {
+            const dockerHost = `unix://${socketPath}`;
+            process.env.DOCKER_HOST = dockerHost;
+            return dockerHost;
+        }
+
+        return null;
+    }
 }

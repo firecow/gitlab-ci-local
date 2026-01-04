@@ -141,7 +141,19 @@ export class Argv {
 
     get volume (): string[] {
         const val = this.map.get("volume") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
+        const volumes = typeof val == "string" ? val.split(" ") : [...val];
+
+        // Auto-detect and mount Docker socket if available
+        const socketPath = Utils.findDockerSocketPath();
+        if (socketPath) {
+            const volumeMount = `${socketPath}:/var/run/docker.sock`;
+            // Only add if not already specified
+            if (!volumes.some(v => v.includes("/var/run/docker.sock") || v.includes(socketPath))) {
+                volumes.push(volumeMount);
+            }
+        }
+
+        return volumes;
     }
 
     get network (): string[] {
