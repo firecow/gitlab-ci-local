@@ -1,3 +1,7 @@
+# Include bundled GitLab CI templates
+include:
+  - template: 'Jobs/Container-Scanning.latest.gitlab-ci.yml'
+
 # test and build
 stages:
   - .pre
@@ -123,6 +127,16 @@ build:macos:
       - bin/macos/gitlab-ci-local
       - bin/macos.gz
     expire_in: 1 week
+
+# Container scanning - scan the gcl-dev image for vulnerabilities
+container_scanning:
+  stage: test
+  needs:
+    - deps
+  variables:
+    CS_IMAGE: gcl-dev:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH
 
 # Build Windows binary
 build:windows:

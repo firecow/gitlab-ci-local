@@ -10,6 +10,8 @@ import axios, {AxiosRequestConfig} from "axios";
 import path from "path";
 import semver from "semver";
 import {RE2JS} from "re2js";
+import yaml from "js-yaml";
+import {BUNDLED_TEMPLATES} from "./bundled-templates.js";
 
 type ParserIncludesInitOptions = {
     argv: Argv;
@@ -82,9 +84,13 @@ export class ParserIncludes {
                     promises.push(this.downloadIncludeProjectFile(cwd, stateDir, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes));
                 }
             } else if (value["template"]) {
-                const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
-                const url = `https://${domain}/${project}/-/raw/${ref}/${file}`;
-                promises.push(this.downloadIncludeRemote(cwd, stateDir, url, fetchIncludes));
+                const bundledContent = this.getBundledTemplate(value["template"]);
+                if (!bundledContent && argv.onlineTemplates) {
+                    // Not bundled and online mode enabled - fetch from GitLab
+                    const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
+                    const url = `https://${domain}/${project}/-/raw/${ref}/${file}`;
+                    promises.push(this.downloadIncludeRemote(cwd, stateDir, url, fetchIncludes));
+                }
             } else if (value["remote"]) {
                 promises.push(this.downloadIncludeRemote(cwd, stateDir, value["remote"], fetchIncludes));
             } else if (value["component"]) {
@@ -152,11 +158,26 @@ export class ParserIncludes {
                 fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], component.projectPath, component.ref, opts);
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["template"]) {
-                const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
-                const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
-                const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables,
-                );
+                const bundledContent = this.getBundledTemplate(value["template"]);
+                let fileDoc;
+                if (bundledContent) {
+                    // Use bundled template
+                    fileDoc = yaml.load(bundledContent) as any;
+                    // Note: inputs are not supported for bundled templates
+                    // Use --online-templates if inputs are needed
+                } else if (argv.onlineTemplates) {
+                    // Fallback to downloaded file (only if online mode enabled)
+                    const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
+                    const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
+                    fileDoc = await Parser.loadYaml(
+                        `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables,
+                    );
+                } else {
+                    throw new AssertionError({
+                        message: `Template '${value["template"]}' not found in bundled templates. ` +
+                                 "Use --online-templates to fetch from GitLab.",
+                    });
+                }
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
@@ -213,6 +234,10 @@ export class ParserIncludes {
             ref: "HEAD",
             file: `lib/gitlab/ci/templates/${template}`,
         };
+    }
+
+    static getBundledTemplate (templateName: string): string | null {
+        return BUNDLED_TEMPLATES[templateName] ?? null;
     }
 
     static parseIncludeComponent (component: string, gitData: GitData): ParsedComponent {

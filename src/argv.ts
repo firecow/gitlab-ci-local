@@ -302,6 +302,10 @@ export class Argv {
         return this.map.get("fetchIncludes") ?? false;
     }
 
+    get onlineTemplates (): boolean {
+        return this.map.get("onlineTemplates") ?? false;
+    }
+
     get mountCache (): boolean {
         return this.map.get("mountCache") ?? false;
     }

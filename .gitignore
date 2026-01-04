@@ -18,6 +18,10 @@ tsconfig.tsbuildinfo
 
 /.gitlab-ci-local/
 
+# Generated bundled templates
+/src/bundled-templates.ts
+/vendor/gitlab-templates/
+
 .DS_Store
 
 .vscode

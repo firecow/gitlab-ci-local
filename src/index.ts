@@ -324,6 +324,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Fetch all external includes one more time",
             requiresArg: false,
         })
+        .option("online-templates", {
+            type: "boolean",
+            description: "Fetch templates from GitLab if not found in bundled templates",
+            requiresArg: false,
+        })
         .option("maximum-includes", {
             type: "number",
             description: "The maximum number of includes",
