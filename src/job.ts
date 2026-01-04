@@ -651,38 +651,42 @@ If you know what you're doing and would like to suppress this warning, use one o
             this._prescriptsExitCode = 0; // NOTE: so that `this.finished` will implicitly be set to true
 
             // Emit job finished event for trigger jobs
-            emitter.emit({
-                type: EventType.JOB_FINISHED,
-                timestamp: Date.now(),
-                pipelineId: `${this.pipelineIid}`,
-                pipelineIid: this.pipelineIid,
-                jobId: `${this.jobId}`,
-                jobName: this.name,
-                data: {
-                    status: "success",
-                    exitCode: 0,
-                },
-            });
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_FINISHED,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    data: {
+                        status: "success",
+                        exitCode: 0,
+                    },
+                });
+            }
             return;
         }
 
         this._running = true;
 
         // Emit job started event
-        emitter.emit({
-            type: EventType.JOB_STARTED,
-            timestamp: Date.now(),
-            pipelineId: `${this.pipelineIid}`,
-            pipelineIid: this.pipelineIid,
-            jobId: `${this.jobId}`,
-            jobName: this.name,
-            data: {
-                stage: this.stage,
-                when: this.when,
-                allowFailure: this.allowFailure !== false,
-                needs: this.needs?.map(n => n.job) ?? undefined,
-            },
-        });
+        if (emitter.isEnabled()) {
+            emitter.emit({
+                type: EventType.JOB_STARTED,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                data: {
+                    stage: this.stage,
+                    when: this.when,
+                    allowFailure: this.allowFailure !== false,
+                    needs: this.needs?.map(n => n.job) ?? undefined,
+                },
+            });
+        }
 
         const argv = this.argv;
         this._startTime = process.hrtime();
@@ -703,16 +707,18 @@ If you know what you're doing and would like to suppress this warning, use one o
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright starting} ${imageName ?? "shell"} ({yellow ${this.stage}})\n`);
 
             // Emit log event for web UI
-            emitter.emit({
-                type: EventType.JOB_LOG_LINE,
-                timestamp: Date.now(),
-                pipelineId: `${this.pipelineIid}`,
-                pipelineIid: this.pipelineIid,
-                jobId: `${this.jobId}`,
-                jobName: this.name,
-                line: startingMsg,
-                stream: "stdout",
-            });
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_LOG_LINE,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    line: startingMsg,
+                    stream: "stdout",
+                });
+            }
         }
 
         if (imageName) {
@@ -776,16 +782,18 @@ If you know what you're doing and would like to suppress this warning, use one o
                 writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to ${this.argv.containerExecutable} volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
 
                 // Emit log event for web UI
-                emitter.emit({
-                    type: EventType.JOB_LOG_LINE,
-                    timestamp: Date.now(),
-                    pipelineId: `${this.pipelineIid}`,
-                    pipelineIid: this.pipelineIid,
-                    jobId: `${this.jobId}`,
-                    jobName: this.name,
-                    line: copiedMsg,
-                    stream: "stdout",
-                });
+                if (emitter.isEnabled()) {
+                    emitter.emit({
+                        type: EventType.JOB_LOG_LINE,
+                        timestamp: Date.now(),
+                        pipelineId: `${this.pipelineIid}`,
+                        pipelineIid: this.pipelineIid,
+                        jobId: `${this.jobId}`,
+                        jobName: this.name,
+                        line: copiedMsg,
+                        stream: "stdout",
+                    });
+                }
             }
         }
 
@@ -824,22 +832,24 @@ If you know what you're doing and would like to suppress this warning, use one o
         this.printFinishedString();
 
         // Emit job finished event
-        const durationMs = this._endTime ? (this._endTime[0] * 1000 + this._endTime[1] / 1000000) : null;
-        const coverageNum = this._coveragePercent ? parseFloat(this._coveragePercent) : null;
-        emitter.emit({
-            type: EventType.JOB_FINISHED,
-            timestamp: Date.now(),
-            pipelineId: `${this.pipelineIid}`,
-            pipelineIid: this.pipelineIid,
-            jobId: `${this.jobId}`,
-            jobName: this.name,
-            data: {
-                status: this.jobStatus,
-                exitCode: this._prescriptsExitCode,
-                duration: durationMs,
-                coverage: coverageNum,
-            },
-        });
+        if (emitter.isEnabled()) {
+            const durationMs = this._endTime ? (this._endTime[0] * 1000 + this._endTime[1] / 1000000) : null;
+            const coverageNum = this._coveragePercent ? parseFloat(this._coveragePercent) : null;
+            emitter.emit({
+                type: EventType.JOB_FINISHED,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                data: {
+                    status: this.jobStatus,
+                    exitCode: this._prescriptsExitCode,
+                    duration: durationMs,
+                    coverage: coverageNum,
+                },
+            });
+        }
 
         await this.copyCacheOut(this.writeStreams, expanded);
         await this.copyArtifactsOut(this.writeStreams, expanded);
@@ -1128,31 +1138,35 @@ If you know what you're doing and would like to suppress this warning, use one o
             // Emit message about creating container
             const creatingMsg = `creating container with ${imageName}`;
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright creating container} with ${imageName}\n`);
-            emitter.emit({
-                type: EventType.JOB_LOG_LINE,
-                timestamp: Date.now(),
-                pipelineId: `${this.pipelineIid}`,
-                pipelineIid: this.pipelineIid,
-                jobId: `${this.jobId}`,
-                jobName: this.name,
-                line: creatingMsg,
-                stream: "stdout",
-            });
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_LOG_LINE,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    line: creatingMsg,
+                    stream: "stdout",
+                });
+            }
 
             const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
 
             // Emit container ID
             const containerIdMsg = `container ${containerId.substring(0, 12)} created`;
-            emitter.emit({
-                type: EventType.JOB_LOG_LINE,
-                timestamp: Date.now(),
-                pipelineId: `${this.pipelineIid}`,
-                pipelineIid: this.pipelineIid,
-                jobId: `${this.jobId}`,
-                jobName: this.name,
-                line: containerIdMsg,
-                stream: "stdout",
-            });
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_LOG_LINE,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    line: containerIdMsg,
+                    stream: "stdout",
+                });
+            }
 
             for (const network of this.argv.network) {
                 // Special network names that do not work with `docker network connect`
@@ -1207,16 +1221,18 @@ If you know what you're doing and would like to suppress this warning, use one o
             this.refreshLongRunningSilentTimeout(writeStreams);
 
             // Emit log event
-            emitter.emit({
-                type: EventType.JOB_LOG_LINE,
-                timestamp: Date.now(),
-                pipelineId: `${this.pipelineIid}`,
-                pipelineIid: this.pipelineIid,
-                jobId: `${this.jobId}`,
-                jobName: this.name,
-                line: line,
-                stream: stream === writeStreams.stdout ? "stdout" : "stderr",
-            });
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_LOG_LINE,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    line: line,
+                    stream: stream === writeStreams.stdout ? "stdout" : "stderr",
+                });
+            }
 
             stream(`${this.formattedJobName} `);
             if (line.startsWith(GCL_SHELL_PROMPT_PLACEHOLDER)) {
@@ -1317,16 +1333,18 @@ If you know what you're doing and would like to suppress this warning, use one o
             // Emit "pulling" message
             const pullingMsg = `pulling ${imageToPull}...`;
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulling} ${imageToPull}...\n`);
-            emitter.emit({
-                type: EventType.JOB_LOG_LINE,
-                timestamp: Date.now(),
-                pipelineId: `${this.pipelineIid}`,
-                pipelineIid: this.pipelineIid,
-                jobId: `${this.jobId}`,
-                jobName: this.name,
-                line: pullingMsg,
-                stream: "stdout",
-            });
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_LOG_LINE,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    line: pullingMsg,
+                    stream: "stdout",
+                });
+            }
 
             const time = process.hrtime();
             await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull]);
@@ -1335,16 +1353,18 @@ If you know what you're doing and would like to suppress this warning, use one o
             // Emit "pulled" message
             const pulledMsg = `pulled ${imageToPull} in ${prettyHrtime(endTime)}`;
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
-            emitter.emit({
-                type: EventType.JOB_LOG_LINE,
-                timestamp: Date.now(),
-                pipelineId: `${this.pipelineIid}`,
-                pipelineIid: this.pipelineIid,
-                jobId: `${this.jobId}`,
-                jobName: this.name,
-                line: pulledMsg,
-                stream: "stdout",
-            });
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_LOG_LINE,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    line: pulledMsg,
+                    stream: "stdout",
+                });
+            }
             this.refreshLongRunningSilentTimeout(writeStreams);
         };
 
@@ -1357,16 +1377,18 @@ If you know what you're doing and would like to suppress this warning, use one o
             // Image exists locally, emit message
             const usingCachedMsg = `using cached image ${imageToPull}`;
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright using cached} ${imageToPull}\n`);
-            emitter.emit({
-                type: EventType.JOB_LOG_LINE,
-                timestamp: Date.now(),
-                pipelineId: `${this.pipelineIid}`,
-                pipelineIid: this.pipelineIid,
-                jobId: `${this.jobId}`,
-                jobName: this.name,
-                line: usingCachedMsg,
-                stream: "stdout",
-            });
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_LOG_LINE,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    line: usingCachedMsg,
+                    stream: "stdout",
+                });
+            }
         } catch {
             await actualPull();
         }
@@ -1634,16 +1656,18 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         // Emit log event for web UI
         const emitter = EventEmitter.getInstance();
-        emitter.emit({
-            type: EventType.JOB_LOG_LINE,
-            timestamp: Date.now(),
-            pipelineId: `${this.pipelineIid}`,
-            pipelineIid: this.pipelineIid,
-            jobId: `${this.jobId}`,
-            jobName: this.name,
-            line: `finished in ${this.prettyDuration}`,
-            stream: "stdout",
-        });
+        if (emitter.isEnabled()) {
+            emitter.emit({
+                type: EventType.JOB_LOG_LINE,
+                timestamp: Date.now(),
+                pipelineId: `${this.pipelineIid}`,
+                pipelineIid: this.pipelineIid,
+                jobId: `${this.jobId}`,
+                jobName: this.name,
+                line: `finished in ${this.prettyDuration}`,
+                stream: "stdout",
+            });
+        }
     }
 
     private printExitedString (code: number) {
@@ -1656,30 +1680,34 @@ If you know what you're doing and would like to suppress this warning, use one o
             writeStreams.stderr(
                 chalk`${finishedStr} {black.bgYellowBright  WARN ${code.toString()} }\n`,
             );
-            emitter.emit({
-                type: EventType.JOB_LOG_LINE,
-                timestamp: Date.now(),
-                pipelineId: `${this.pipelineIid}`,
-                pipelineIid: this.pipelineIid,
-                jobId: `${this.jobId}`,
-                jobName: this.name,
-                line: `finished in ${this.prettyDuration} WARN ${code}`,
-                stream: "stderr",
-            });
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_LOG_LINE,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    line: `finished in ${this.prettyDuration} WARN ${code}`,
+                    stream: "stderr",
+                });
+            }
         } else if (this.jobStatus === "failed") {
             writeStreams.stderr(
                 chalk`${finishedStr} {black.bgRed  FAIL ${code.toString()} }\n`,
             );
-            emitter.emit({
-                type: EventType.JOB_LOG_LINE,
-                timestamp: Date.now(),
-                pipelineId: `${this.pipelineIid}`,
-                pipelineIid: this.pipelineIid,
-                jobId: `${this.jobId}`,
-                jobName: this.name,
-                line: `finished in ${this.prettyDuration} FAIL ${code}`,
-                stream: "stderr",
-            });
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_LOG_LINE,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    line: `finished in ${this.prettyDuration} FAIL ${code}`,
+                    stream: "stderr",
+                });
+            }
         }
     }
 

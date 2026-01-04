@@ -97,6 +97,20 @@ export class GCLDatabase {
                 // Ignore if it already exists
             }
         }
+
+        // Migration: Add init_phase, init_message, init_progress columns to pipelines table
+        try {
+            this.db.exec("SELECT init_phase FROM pipelines LIMIT 1");
+        } catch {
+            try {
+                this.db.run("ALTER TABLE pipelines ADD COLUMN init_phase TEXT");
+                this.db.run("ALTER TABLE pipelines ADD COLUMN init_message TEXT");
+                this.db.run("ALTER TABLE pipelines ADD COLUMN init_progress INTEGER");
+                console.log("Migration: Added init_phase, init_message, init_progress columns to pipelines table");
+            } catch {
+                // Ignore if columns already exist
+            }
+        }
     }
 
     // Save database to file (atomic write to prevent corruption)

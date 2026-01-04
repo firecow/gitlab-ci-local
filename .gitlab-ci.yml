@@ -1,0 +1,140 @@
+# test and build
+stages:
+  - .pre
+  - test
+  - build
+
+# Build development image with Node.js + Docker in .pre stage
+deps:
+  stage: .pre
+  image: docker:dind
+  variables:
+    DOCKER_HOST: unix:///var/run/docker.sock
+  script:
+    - docker build --cache-from gcl-dev:latest -t gcl-dev:latest -f Dockerfile.dev . 2>/dev/null || docker build -t gcl-dev:latest -f Dockerfile.dev .
+
+# Default configuration for all jobs (after deps)
+default:
+  image: gcl-dev:latest
+
+# Global variables for all jobs
+variables:
+  DOCKER_HOST: unix:///var/run/docker.sock
+
+# Lint job - check code quality
+lint:
+  stage: test
+  needs:
+    - deps
+  script:
+    - npm install --legacy-peer-deps
+    - npm run lint --verbose
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report.json
+    when: always
+
+# Test job - run unit tests (needs Docker for docker executor tests)
+test:
+  stage: test
+  needs:
+    - deps
+  script:
+    - npm install --legacy-peer-deps
+    - npm run build --verbose
+    - npm run test-except-dind --verbose
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    when: always
+    reports:
+      junit: junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+
+# Coverage job - generate full coverage report
+coverage:
+  stage: test
+  needs:
+    - deps
+  script:
+    - npm install --legacy-peer-deps
+    - npm run coverage --verbose
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+    expire_in: 30 days
+
+# Audit job - check for security vulnerabilities
+audit:
+  stage: test
+  needs:
+    - deps
+  script:
+    - npm install --legacy-peer-deps
+    - npm audit --audit-level=high --verbose
+  allow_failure: true
+
+# Build Linux binary
+build:linux:
+  stage: build
+  needs:
+    - deps
+    - lint
+    - test
+  script:
+    - npm install --legacy-peer-deps
+    - npm run build --verbose
+    - npm run esbuild --verbose
+    - npm run pkg-linux --verbose
+  artifacts:
+    name: "gitlab-ci-local-linux-x64"
+    paths:
+      - bin/linux/gitlab-ci-local
+      - bin/linux.gz
+    expire_in: 1 week
+
+# Build macOS binary
+build:macos:
+  stage: build
+  needs:
+    - deps
+    - lint
+    - test
+  script:
+    - npm install --legacy-peer-deps
+    - npm run build --verbose
+    - npm run esbuild --verbose
+    - npm run pkg-macos --verbose
+  artifacts:
+    name: "gitlab-ci-local-macos-x64"
+    paths:
+      - bin/macos/gitlab-ci-local
+      - bin/macos.gz
+    expire_in: 1 week
+
+# Build Windows binary
+build:windows:
+  stage: build
+  needs:
+    - deps
+    - lint
+    - test
+  script:
+    - npm install --legacy-peer-deps
+    - npm run build --verbose
+    - npm run esbuild --verbose
+    - npm run pkg-win --verbose
+  artifacts:
+    name: "gitlab-ci-local-windows-x64"
+    paths:
+      - bin/win/gitlab-ci-local.exe
+      - bin/win.gz
+    expire_in: 1 week

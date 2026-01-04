@@ -1,6 +1,7 @@
 // Event types for pipeline and job lifecycle
 export enum EventType {
     PIPELINE_QUEUED = "pipeline:queued",
+    PIPELINE_INIT_PHASE = "pipeline:init_phase",
     PIPELINE_STARTED = "pipeline:started",
     PIPELINE_FINISHED = "pipeline:finished",
     JOB_QUEUED = "job:queued",
@@ -31,6 +32,14 @@ export interface PipelineEvent extends BaseEvent {
     };
 }
 
+// Pipeline initialization phase event
+export type InitPhase = "parsing" | "fetching_includes" | "syncing_files" | "preparing_jobs" | "ready";
+export interface PipelineInitEvent extends BaseEvent {
+    phase: InitPhase;
+    message: string;
+    progress?: number; // 0-100 percentage
+}
+
 // Job-level event
 export interface JobEvent extends BaseEvent {
     jobId: string;
@@ -56,7 +65,7 @@ export interface LogEvent extends BaseEvent {
 }
 
 // Union type of all events
-export type GCLEvent = PipelineEvent | JobEvent | LogEvent;
+export type GCLEvent = PipelineEvent | PipelineInitEvent | JobEvent | LogEvent;
 
 // Event listener callback type
 export type EventListener = (event: GCLEvent) => void;

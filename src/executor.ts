@@ -14,18 +14,20 @@ export class Executor {
         const pipelineId = `${pipelineIid}`;
 
         // Emit pipeline started event
-        emitter.emit({
-            type: EventType.PIPELINE_STARTED,
-            timestamp: Date.now(),
-            pipelineId,
-            pipelineIid,
-            data: {
-                status: "running",
-                stages: [...stages],
-                jobCount: jobs.length,
-                cwd: argv.cwd,
-            },
-        });
+        if (emitter.isEnabled()) {
+            emitter.emit({
+                type: EventType.PIPELINE_STARTED,
+                timestamp: Date.now(),
+                pipelineId,
+                pipelineIid,
+                data: {
+                    status: "running",
+                    stages: [...stages],
+                    jobCount: jobs.length,
+                    cwd: argv.cwd,
+                },
+            });
+        }
 
         let startCandidates = [];
 
@@ -39,16 +41,18 @@ export class Executor {
 
         // Emit pipeline finished event
         const failed = Executor.getFailed(jobs);
-        emitter.emit({
-            type: EventType.PIPELINE_FINISHED,
-            timestamp: Date.now(),
-            pipelineId,
-            pipelineIid,
-            data: {
-                status: failed.length > 0 ? "failed" : "success",
-                failedJobs: failed.map(j => j.name),
-            },
-        });
+        if (emitter.isEnabled()) {
+            emitter.emit({
+                type: EventType.PIPELINE_FINISHED,
+                timestamp: Date.now(),
+                pipelineId,
+                pipelineIid,
+                data: {
+                    status: failed.length > 0 ? "failed" : "success",
+                    failedJobs: failed.map(j => j.name),
+                },
+            });
+        }
     }
 
     static getStartCandidates (jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: readonly Job[], manuals: string[]) {

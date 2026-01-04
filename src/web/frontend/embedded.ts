@@ -175,6 +175,13 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .status-dot { width: 8px; height: 8px; border-radius: 50%; }
         .status-dot.running { background: var(--accent-color); animation: pulse 1.5s infinite; }
         .status-dot.idle { background: var(--success-color); }
+        .init-progress { margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: 6px; border: 1px solid var(--border-color); }
+        .init-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .init-progress-label { font-size: 0.875rem; color: var(--text-color); display: flex; align-items: center; gap: 0.5rem; }
+        .init-progress-phase { font-size: 0.75rem; color: var(--text-muted); }
+        .init-progress-bar { height: 4px; background: var(--border-color); border-radius: 2px; overflow: hidden; }
+        .init-progress-fill { height: 100%; background: var(--accent-color); border-radius: 2px; transition: width 0.3s ease; }
+        .init-spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
@@ -783,16 +790,32 @@ export const INDEX_HTML = `<!DOCTYPE html>
             });
         }
 
+        function renderInitProgress(p) {
+            if (!p.init_phase || p.status === 'running' || p.status === 'success' || p.status === 'failed') {
+                return '';
+            }
+            var progress = p.init_progress || 0;
+            var message = p.init_message || 'Initializing...';
+            return '<div class="init-progress">' +
+                '<div class="init-progress-header">' +
+                '<span class="init-progress-label"><span class="init-spinner"></span> ' + escapeHtml(message) + '</span>' +
+                '<span class="init-progress-phase">' + progress + '%</span>' +
+                '</div>' +
+                '<div class="init-progress-bar"><div class="init-progress-fill" style="width: ' + progress + '%"></div></div>' +
+                '</div>';
+        }
+
         function renderPipelineDetail(data, selectedJob, logData) {
             const p = data.pipeline;
             const jobs = data.jobs || [];
             const dagHtml = renderDagVisualization(jobs, selectedJobId);
+            const initProgressHtml = renderInitProgress(p);
 
             var leftPanelClass = selectedJob ? 'split-left' : 'split-left full-width';
             var leftPanel = '<div class="' + leftPanelClass + '">' +
                 '<a href="#/" class="back-link">&larr; Back to pipelines</a>' +
                 '<div class="card"><div class="card-header"><div><h2>Pipeline #' + p.iid + '</h2></div><span id="pipeline-status" class="' + getStatusBadgeClass(p.status) + '">' + p.status + '</span></div>' +
-                '<div class="card-body"><p>Started: ' + formatTime(p.started_at) + '</p><p id="pipeline-duration">Duration: ' + formatDuration(p.duration) + '</p></div></div>' +
+                '<div class="card-body"><p>Started: ' + formatTime(p.started_at) + '</p><p id="pipeline-duration">Duration: ' + formatDuration(p.duration) + '</p>' + initProgressHtml + '</div></div>' +
                 '<div class="card"><div class="card-header"><h2>Pipeline Graph</h2><span class="text-muted">Click a job to view logs</span></div><div class="card-body"><div id="pipeline-dag">' + dagHtml + '</div></div></div>' +
                 '</div>';
 

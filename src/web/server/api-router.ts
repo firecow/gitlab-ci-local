@@ -596,12 +596,17 @@ export class APIRouter {
             cmdArgs = [mainScript, ...args];
         }
 
+        // Get the pipeline IID from the pending pipeline we just created
+        const pendingPipeline = this.db.getPipeline(pipelineId);
+        const pipelineIid = pendingPipeline?.iid ?? 0;
+
         try {
             this.runningProcess = spawn(cmd, cmdArgs, {
                 cwd: this.cwd,
                 env: {
                     ...process.env,
                     GCIL_WEB_UI_ENABLED: "true", // Use GCIL_ prefix to avoid yargs .env("GCL") parsing
+                    GCIL_PIPELINE_IID: String(pipelineIid), // Pass IID so subprocess uses same pipeline
                     FORCE_COLOR: "0", // Disable colors in subprocess
                 },
                 stdio: ["ignore", "pipe", "pipe"],

@@ -22,8 +22,8 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 
 WORKDIR /app
 
-# Set git safe directory for mounted volumes
-RUN git config --global --add safe.directory /app
+# Set git safe directory for mounted volumes and cloned repos in tests
+RUN git config --global --add safe.directory '*'
 
 EXPOSE 3000
 

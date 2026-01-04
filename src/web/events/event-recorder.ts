@@ -1,5 +1,5 @@
 import {EventEmitter} from "./event-emitter.js";
-import {EventType, PipelineEvent, JobEvent, LogEvent, GCLEvent} from "./event-types.js";
+import {EventType, PipelineEvent, PipelineInitEvent, JobEvent, LogEvent, GCLEvent} from "./event-types.js";
 import {GCLDatabase} from "../persistence/database.js";
 import {LogFileManager} from "../persistence/log-file-manager.js";
 
@@ -25,6 +25,7 @@ export class EventRecorder {
         // Store bound references so we can remove them later
         const listeners: Array<[EventType, (event: GCLEvent) => void]> = [
             [EventType.PIPELINE_QUEUED, this.onPipelineQueued.bind(this)],
+            [EventType.PIPELINE_INIT_PHASE, this.onPipelineInitPhase.bind(this)],
             [EventType.PIPELINE_STARTED, this.onPipelineStarted.bind(this)],
             [EventType.PIPELINE_FINISHED, this.onPipelineFinished.bind(this)],
             [EventType.JOB_QUEUED, this.onJobQueued.bind(this)],
@@ -55,6 +56,34 @@ export class EventRecorder {
             });
         } catch (error) {
             console.error("Error recording pipeline queued event:", error);
+        }
+    }
+
+    private onPipelineInitPhase (event: GCLEvent) {
+        const initEvent = event as PipelineInitEvent;
+        try {
+            // Check if pipeline exists, create if not
+            const existing = this.db.getPipeline(initEvent.pipelineId);
+            if (!existing) {
+                this.db.createPipeline({
+                    id: initEvent.pipelineId,
+                    iid: initEvent.pipelineIid,
+                    status: "queued",
+                    started_at: null,
+                    finished_at: null,
+                    duration: null,
+                    cwd: process.cwd(),
+                    git_ref: null,
+                    git_sha: null,
+                });
+            }
+            this.db.updatePipeline(initEvent.pipelineId, {
+                init_phase: initEvent.phase,
+                init_message: initEvent.message,
+                init_progress: initEvent.progress ?? null,
+            });
+        } catch (error) {
+            console.error("Error recording pipeline init phase event:", error);
         }
     }
 

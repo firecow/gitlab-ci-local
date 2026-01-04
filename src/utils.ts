@@ -14,6 +14,8 @@ import micromatch from "micromatch";
 import {AxiosRequestConfig} from "axios";
 import path from "path";
 import {Argv} from "./argv.js";
+import {EventEmitter} from "./web/events/event-emitter.js";
+import {EventType, PipelineInitEvent} from "./web/events/event-types.js";
 
 type RuleResultOpt = {
     argv: Argv;
@@ -372,11 +374,88 @@ export class Utils {
         return !relative.startsWith("..");
     }
 
-    static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
+    static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string, pipelineIid?: number): Promise<{hrdeltatime: [number, number]; skipped: boolean}> {
         const time = process.hrtime();
-        await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
+        const emitter = EventEmitter.getInstance();
+        const cacheFile = `${cwd}/${stateDir}/rsync-cache-${target}.txt`;
+
+        // Emit syncing files phase
+        if (pipelineIid !== undefined && emitter.isEnabled()) {
+            emitter.emit({
+                type: EventType.PIPELINE_INIT_PHASE,
+                timestamp: Date.now(),
+                pipelineId: `${pipelineIid}`,
+                pipelineIid,
+                phase: "syncing_files",
+                message: "Checking for file changes...",
+                progress: 70,
+            } as PipelineInitEvent);
+        }
+
+        // Get current git state hash (HEAD + any uncommitted changes)
+        let currentStateHash: string;
+        try {
+            const headResult = await Utils.bash("git rev-parse HEAD 2>/dev/null || echo 'no-git'", cwd);
+            const diffResult = await Utils.bash("git diff-index HEAD --raw 2>/dev/null | md5sum | cut -d' ' -f1 || echo 'no-diff'", cwd);
+            const untrackedResult = await Utils.bash("git ls-files -o --exclude-standard 2>/dev/null | md5sum | cut -d' ' -f1 || echo 'no-untracked'", cwd);
+            currentStateHash = `${headResult.stdout.trim()}-${diffResult.stdout.trim()}-${untrackedResult.stdout.trim()}`;
+        } catch {
+            currentStateHash = `no-git-${Date.now()}`;
+        }
+
+        // Check if we can skip rsync
+        let lastStateHash = "";
+        try {
+            if (await fs.pathExists(cacheFile)) {
+                lastStateHash = (await fs.readFile(cacheFile, "utf8")).trim();
+            }
+        } catch {
+            // Ignore cache read errors
+        }
+
+        const targetDir = `${cwd}/${stateDir}/builds/${target}`;
+        const targetExists = await fs.pathExists(targetDir);
+
+        if (lastStateHash === currentStateHash && targetExists) {
+            // No changes, skip rsync
+            if (pipelineIid !== undefined && emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.PIPELINE_INIT_PHASE,
+                    timestamp: Date.now(),
+                    pipelineId: `${pipelineIid}`,
+                    pipelineIid,
+                    phase: "syncing_files",
+                    message: "No file changes detected, using cache",
+                    progress: 80,
+                } as PipelineInitEvent);
+            }
+            return {hrdeltatime: process.hrtime(time), skipped: true};
+        }
+
+        // Emit syncing message
+        if (pipelineIid !== undefined && emitter.isEnabled()) {
+            emitter.emit({
+                type: EventType.PIPELINE_INIT_PHASE,
+                timestamp: Date.now(),
+                pipelineId: `${pipelineIid}`,
+                pipelineIid,
+                phase: "syncing_files",
+                message: "Syncing tracked files...",
+                progress: 75,
+            } as PipelineInitEvent);
+        }
+
+        await fs.mkdirp(targetDir);
         await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') --exclude node_modules/ --exclude ${stateDir}/ ./ ${stateDir}/builds/${target}/`, cwd);
-        return {hrdeltatime: process.hrtime(time)};
+
+        // Save current state hash for next run
+        try {
+            await fs.writeFile(cacheFile, currentStateHash);
+        } catch {
+            // Ignore cache write errors
+        }
+
+        return {hrdeltatime: process.hrtime(time), skipped: false};
     }
 
     static async checksumFiles (cwd: string, files: string[]): Promise<string> {

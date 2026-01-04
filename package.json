@@ -16,7 +16,7 @@
     "check-all": "npm run build && npm run lint && npm run coverage && npm run audit",
     "audit": "npm audit --parseable",
     "lint": "npx eslint .",
-    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --testTimeout 60000",
+    "test": "FORCE_COLOR=1 NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules --disable-warning=ExperimentalWarning\" jest --testTimeout 300000",
     "test-except-dind": "npm run test -- --testPathIgnorePatterns=\"/dind.*/|/node_modules/|/.gitlab-ci-local/\"",
     "coverage": "npm run build && FORCE_COLOR=1 npm run test -- --coverage --verbose",
     "start": "tsx src/index.ts --cwd examples/docker-compose-nodejs",

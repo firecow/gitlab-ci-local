@@ -13,6 +13,7 @@ import {Utils} from "./utils.js";
 import {Argv} from "./argv.js";
 import assert from "assert";
 import {EventEmitter} from "./web/events/event-emitter.js";
+import {EventType, PipelineInitEvent} from "./web/events/event-types.js";
 import {GCLDatabase} from "./web/persistence/database.js";
 import {EventRecorder} from "./web/events/event-recorder.js";
 import {LogFileManager} from "./web/persistence/log-file-manager.js";
@@ -27,6 +28,35 @@ const generateGitIgnore = (cwd: string, stateDir: string) => {
     if (!fs.existsSync(gitIgnoreFilePath)) {
         fs.outputFileSync(gitIgnoreFilePath, gitIgnoreContent);
     }
+};
+
+const emitInitReady = (pipelineIid: number) => {
+    const emitter = EventEmitter.getInstance();
+    if (!emitter.isEnabled()) return;
+    emitter.emit({
+        type: EventType.PIPELINE_INIT_PHASE,
+        timestamp: Date.now(),
+        pipelineId: `${pipelineIid}`,
+        pipelineIid,
+        phase: "ready",
+        message: "Ready to run jobs",
+        progress: 100,
+    } as PipelineInitEvent);
+};
+
+// Get pipeline IID - uses passed env var in web UI mode, or file-based state in CLI mode
+const getEffectivePipelineIid = async (cwd: string, stateDir: string, shouldIncrement: boolean): Promise<number> => {
+    // Web UI mode: use the IID passed from the web server
+    const envIid = process.env.GCIL_PIPELINE_IID;
+    if (envIid) {
+        return parseInt(envIid, 10);
+    }
+
+    // CLI mode: use file-based state
+    if (shouldIncrement) {
+        await state.incrementPipelineIid(cwd, stateDir);
+    }
+    return state.getPipelineIid(cwd, stateDir);
 };
 
 export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[] = [], childPipelineDepth = 0) {
@@ -95,14 +125,13 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         assert(argv.stage === null, "You cannot use --stage when starting individual jobs");
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
-        if (argv.needs || argv.onlyNeeds) {
-            await state.incrementPipelineIid(cwd, stateDir);
-        }
-        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
+        const shouldIncrement = argv.needs || argv.onlyNeeds;
+        const pipelineIid = await getEffectivePipelineIid(cwd, stateDir, shouldIncrement);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         if (!argv.mountCwd) {
-            await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+            await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker", pipelineIid);
         }
+        emitInitReady(pipelineIid);
         await Commander.runJobs(argv, parser, writeStreams);
         if (argv.needs || argv.onlyNeeds) {
             writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
@@ -110,22 +139,23 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     } else if (argv.stage) {
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
-        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
+        const pipelineIid = await getEffectivePipelineIid(cwd, stateDir, false);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         if (!argv.mountCwd) {
-            await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+            await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker", pipelineIid);
         }
+        emitInitReady(pipelineIid);
         await Commander.runJobsInStage(argv, parser, writeStreams);
         writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     } else {
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
-        await state.incrementPipelineIid(cwd, stateDir);
-        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
+        const pipelineIid = await getEffectivePipelineIid(cwd, stateDir, true);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         if (!argv.mountCwd) {
-            await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+            await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker", pipelineIid);
         }
+        emitInitReady(pipelineIid);
         await Commander.runPipeline(argv, parser, writeStreams);
         if (childPipelineDepth == 0) writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }

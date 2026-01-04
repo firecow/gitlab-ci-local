@@ -17,6 +17,8 @@ import {VariablesFromFiles} from "./variables-from-files.js";
 import {Argv} from "./argv.js";
 import {WriteStreams} from "./write-streams.js";
 import {init as initPredefinedVariables} from "./predefined-variables.js";
+import {EventEmitter} from "./web/events/event-emitter.js";
+import {EventType, PipelineInitEvent} from "./web/events/event-types.js";
 
 const MAX_FUNCTIONS = 3;
 const INCLUDE_INPUTS_SUPPORTED_TYPES = ["string", "boolean", "number", "array"] as const;
@@ -52,6 +54,20 @@ export class Parser {
 
     get jobNamePad (): number {
         return this._jobNamePad ?? 0;
+    }
+
+    private emitInitPhase (phase: PipelineInitEvent["phase"], message: string, progress?: number) {
+        const emitter = EventEmitter.getInstance();
+        if (!emitter.isEnabled()) return;
+        emitter.emit({
+            type: EventType.PIPELINE_INIT_PHASE,
+            timestamp: Date.now(),
+            pipelineId: `${this.pipelineIid}`,
+            pipelineIid: this.pipelineIid,
+            phase,
+            message,
+            progress,
+        } as PipelineInitEvent);
     }
 
     static async create (argv: Argv, writeStreams: WriteStreams, pipelineIid: number, jobs: Job[], expandVariables: boolean = true) {
@@ -97,6 +113,10 @@ export class Parser {
         const file = argv.file;
         const pipelineIid = this.pipelineIid;
         const fetchIncludes = argv.fetchIncludes;
+
+        // Emit parsing phase
+        this.emitInitPhase("parsing", "Parsing configuration...", 10);
+
         const gitData = await GitData.init(cwd, writeStreams);
         const variablesFromFiles = await VariablesFromFiles.init(argv, writeStreams, gitData);
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles);
@@ -106,6 +126,9 @@ export class Parser {
 
         let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`, {}, this.expandVariables);
+
+        // Emit fetching includes phase
+        this.emitInitPhase("fetching_includes", "Processing includes...", 30);
 
         yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, {argv, cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables, maximumIncludes: argv.maximumIncludes}));
         ParserIncludes.resetCount();
@@ -155,6 +178,9 @@ export class Parser {
         });
 
         this._gitlabData = gitlabData;
+
+        // Emit preparing jobs phase
+        this.emitInitPhase("preparing_jobs", "Creating job definitions...", 60);
 
         // Generate jobs and put them into stages
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {

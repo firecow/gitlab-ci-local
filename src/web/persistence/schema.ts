@@ -88,6 +88,9 @@ export interface PipelineRow {
     git_ref: string | null;
     git_sha: string | null;
     created_at: number;
+    init_phase?: string | null; // Current initialization phase
+    init_message?: string | null; // Initialization phase message
+    init_progress?: number | null; // Initialization progress (0-100)
 }
 
 export interface JobRow {
