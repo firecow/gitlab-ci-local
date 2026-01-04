@@ -63,7 +63,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .job-stage { font-size: 0.75rem; color: var(--text-muted); }
         .dag-container { overflow-x: auto; padding: 1rem 0; position: relative; }
         .dag-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-        .dag-line { stroke: var(--border-color); stroke-width: 2; fill: none; opacity: 0.6; }
+        .dag-line { stroke: var(--border-color); stroke-width: 2; fill: none; opacity: 0.6; marker-end: url(#arrowhead); }
+        .dag-line-same-stage { stroke: var(--accent-color); opacity: 0.8; }
         .dag-stages { display: flex; gap: 2rem; min-width: max-content; align-items: flex-start; position: relative; z-index: 2; }
         .dag-stage { min-width: 100px; display: flex; flex-direction: column; align-items: center; }
         .dag-stage-header { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem; padding: 0.25rem 0.75rem; background: var(--hover-color); border-radius: 12px; text-align: center; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s; }
@@ -90,10 +91,13 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .dag-legend { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
         .dag-legend-item { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
         .dag-legend-color { width: 16px; height: 16px; border-radius: 50%; border: 2px solid; }
-        .split-view { display: flex; gap: 1rem; height: calc(100vh - 120px); min-height: 500px; width: 100%; overflow: hidden; }
-        .split-left { flex: 0 0 350px; overflow: auto; min-width: 300px; }
+        .split-view { display: flex; gap: 0; height: calc(100vh - 120px); min-height: 500px; width: 100%; overflow: hidden; }
+        .split-left { flex: 0 0 350px; overflow: auto; min-width: 200px; max-width: 80%; padding-right: 0.5rem; }
         .split-left.full-width { flex: 1; max-width: none; }
-        .split-right { flex: 1; display: flex; flex-direction: column; background: var(--surface-color); border-radius: 8px 0 0 8px; border: 1px solid var(--border-color); border-right: none; overflow: hidden; min-height: 0; min-width: 0; }
+        .split-divider { flex: 0 0 6px; background: var(--border-color); cursor: col-resize; position: relative; transition: background 0.2s; }
+        .split-divider:hover, .split-divider.dragging { background: var(--accent-color); }
+        .split-divider::before { content: ''; position: absolute; left: -4px; right: -4px; top: 0; bottom: 0; }
+        .split-right { flex: 1; display: flex; flex-direction: column; background: var(--surface-color); border-radius: 0; border: 1px solid var(--border-color); border-left: none; overflow: hidden; min-height: 0; min-width: 200px; }
         .split-right-header { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--hover-color); }
         .split-right-header h3 { font-size: 0.9rem; font-weight: 600; }
         .split-right-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
@@ -240,8 +244,9 @@ export const INDEX_HTML = `<!DOCTYPE html>
             return await res.json();
         }
 
-        async function fetchJobLogs(jobId) {
-            const res = await fetch(API_BASE + '/jobs/' + jobId + '/logs');
+        async function fetchJobLogs(jobId, limit) {
+            limit = limit || 100000; // Default to 100k lines
+            const res = await fetch(API_BASE + '/jobs/' + jobId + '/logs?limit=' + limit);
             return await res.json();
         }
 
@@ -427,7 +432,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     name: j.name,
                     stage: j.stage,
                     status: recentJob ? recentJob.status : 'pending',
-                    needs: j.needs ? JSON.stringify(j.needs) : null,
+                    needs: j.needs || null, // Already an array from API
                     duration: recentJob ? recentJob.duration : null
                 };
             });
@@ -703,7 +708,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
             var stagesHtml = stageOrder.map(function(stage) {
                 var stageJobs = stageMap[stage];
                 var jobsHtml = stageJobs.map(function(j) {
-                    var needs = j.needs ? JSON.parse(j.needs) : [];
+                    // needs is already parsed as array from API
+                    var needs = j.needs || [];
                     var needsInfo = needs.length > 0 ? 'Needs: ' + needs.join(', ') : '';
                     var selectedClass = selectedId === j.id ? ' selected' : '';
                     var icon = getStatusIcon(j.status);
@@ -739,6 +745,14 @@ export const INDEX_HTML = `<!DOCTYPE html>
             // Clear existing lines
             svg.innerHTML = '';
 
+            // Add arrowhead marker definition
+            var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            defs.innerHTML = '<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">' +
+                '<polygon points="0 0, 10 3.5, 0 7" fill="var(--border-color)" opacity="0.6"/></marker>' +
+                '<marker id="arrowhead-accent" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">' +
+                '<polygon points="0 0, 10 3.5, 0 7" fill="var(--accent-color)" opacity="0.8"/></marker>';
+            svg.appendChild(defs);
+
             var container = svg.closest('.dag-container');
             if (!container) return;
 
@@ -767,17 +781,43 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     var sourceRect = sourceJob.getBoundingClientRect();
                     var targetRect = job.getBoundingClientRect();
 
-                    // Calculate positions relative to container
-                    var x1 = sourceRect.right - containerRect.left;
-                    var y1 = sourceRect.top + sourceRect.height / 2 - containerRect.top;
-                    var x2 = targetRect.left - containerRect.left;
-                    var y2 = targetRect.top + targetRect.height / 2 - containerRect.top;
+                    // Check if jobs are in the same stage (same column - similar x position)
+                    var sameStage = Math.abs(sourceRect.left - targetRect.left) < 50;
 
-                    // Create curved path
-                    var midX = (x1 + x2) / 2;
                     var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + midX + ' ' + y1 + ', ' + midX + ' ' + y2 + ', ' + x2 + ' ' + y2);
-                    path.setAttribute('class', 'dag-line');
+
+                    if (sameStage) {
+                        // Same stage: draw vertical line from source bottom to target top
+                        var x1 = sourceRect.left + sourceRect.width / 2 - containerRect.left;
+                        var y1 = sourceRect.bottom - containerRect.top;
+                        var x2 = targetRect.left + targetRect.width / 2 - containerRect.left;
+                        var y2 = targetRect.top - containerRect.top;
+
+                        // If target is above source, flip direction
+                        if (y2 < y1) {
+                            var temp = y1; y1 = y2; y2 = temp;
+                            var tempX = x1; x1 = x2; x2 = tempX;
+                            y1 = sourceRect.top - containerRect.top;
+                            y2 = targetRect.bottom - containerRect.top;
+                        }
+
+                        // Curved vertical path
+                        var midY = (y1 + y2) / 2;
+                        path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + midY + ', ' + x2 + ' ' + midY + ', ' + x2 + ' ' + y2);
+                        path.setAttribute('class', 'dag-line dag-line-same-stage');
+                        path.style.markerEnd = 'url(#arrowhead-accent)';
+                    } else {
+                        // Different stages: draw horizontal curved line
+                        var x1 = sourceRect.right - containerRect.left;
+                        var y1 = sourceRect.top + sourceRect.height / 2 - containerRect.top;
+                        var x2 = targetRect.left - containerRect.left;
+                        var y2 = targetRect.top + targetRect.height / 2 - containerRect.top;
+
+                        // Create curved path
+                        var midX = (x1 + x2) / 2;
+                        path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + midX + ' ' + y1 + ', ' + midX + ' ' + y2 + ', ' + x2 + ' ' + y2);
+                        path.setAttribute('class', 'dag-line');
+                    }
                     svg.appendChild(path);
                 });
             });
@@ -822,6 +862,9 @@ export const INDEX_HTML = `<!DOCTYPE html>
             // If a job is selected, show split view with logs
             if (selectedJob && logData) {
                 var logs = logData.logs || [];
+                var totalLogs = logData.total || logs.length;
+                var reachedLimit = logs.length < totalLogs;
+                var logCountText = logs.length + ' lines' + (reachedLimit ? ' (reached limit of ' + logs.length + ', total: ' + totalLogs + ')' : '');
                 var logLines = logs.map(function(l, i) {
                     return '<div class="live-log-line"><span class="live-log-line-number">' + (i + 1) + '</span><span class="live-log-content">' + parseAnsiColors(l.content) + '</span></div>';
                 }).join('');
@@ -842,7 +885,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     '<div class="live-log-viewer" id="live-log-viewer" onscroll="handleLogScroll()">' + (logLines || '<div class="text-muted" style="padding:1rem">No logs yet</div>') + '</div>' +
                     '</div>' +
                     '<div class="log-status-bar">' +
-                    '<span id="log-count">' + logs.length + ' lines</span>' +
+                    '<span id="log-count">' + logCountText + '</span>' +
                     '<div class="auto-scroll-indicator' + autoScrollClass + '">' +
                     '<span>' + (logAutoScroll ? '● Auto-scroll ON' : '○ Auto-scroll OFF') + '</span>' +
                     '</div>' +
@@ -853,8 +896,9 @@ export const INDEX_HTML = `<!DOCTYPE html>
                 setTimeout(function() {
                     var container = document.querySelector('.app-main .container');
                     if (container) container.classList.add('full-width');
+                    initSplitDivider();
                 }, 0);
-                return '<div class="split-view">' + leftPanel + rightPanel + '</div>';
+                return '<div class="split-view">' + leftPanel + '<div class="split-divider" id="split-divider"></div>' + rightPanel + '</div>';
             }
 
             // No job selected - show just the pipeline graph (full width)
@@ -917,6 +961,46 @@ export const INDEX_HTML = `<!DOCTYPE html>
                 logAutoScroll = atBottom;
             }
         };
+
+        // Initialize the split divider for dragging
+        function initSplitDivider() {
+            var divider = document.getElementById('split-divider');
+            var splitView = document.querySelector('.split-view');
+            var leftPanel = document.querySelector('.split-left');
+            if (!divider || !splitView || !leftPanel) return;
+
+            var isDragging = false;
+            var startX = 0;
+            var startWidth = 0;
+
+            divider.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                startX = e.clientX;
+                startWidth = leftPanel.offsetWidth;
+                divider.classList.add('dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                var delta = e.clientX - startX;
+                var newWidth = startWidth + delta;
+                var minWidth = 200;
+                var maxWidth = splitView.offsetWidth - 200 - 6; // 6px divider
+                newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+                leftPanel.style.flex = '0 0 ' + newWidth + 'px';
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (!isDragging) return;
+                isDragging = false;
+                divider.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            });
+        }
 
         async function refreshPipelineView() {
             var hash = location.hash.slice(1);
@@ -1061,7 +1145,9 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     if (!hasSelection) {
                         var logCount = document.getElementById('log-count');
                         if (logCount) {
-                            logCount.textContent = logs.length + ' lines';
+                            var totalLogs = logData.total || logs.length;
+                            var reachedLimit = logs.length < totalLogs;
+                            logCount.textContent = logs.length + ' lines' + (reachedLimit ? ' (reached limit of ' + logs.length + ', total: ' + totalLogs + ')' : '');
                         }
                     }
                 }

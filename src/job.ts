@@ -1220,6 +1220,14 @@ If you know what you're doing and would like to suppress this warning, use one o
         const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
             this.refreshLongRunningSilentTimeout(writeStreams);
 
+            // Transform shell prompt placeholder for web UI
+            let logLine = line;
+            let isShellPrompt = false;
+            if (line.startsWith(GCL_SHELL_PROMPT_PLACEHOLDER)) {
+                isShellPrompt = true;
+                logLine = "$" + line.slice(GCL_SHELL_PROMPT_PLACEHOLDER.length);
+            }
+
             // Emit log event
             if (emitter.isEnabled()) {
                 emitter.emit({
@@ -1229,13 +1237,13 @@ If you know what you're doing and would like to suppress this warning, use one o
                     pipelineIid: this.pipelineIid,
                     jobId: `${this.jobId}`,
                     jobName: this.name,
-                    line: line,
+                    line: logLine,
                     stream: stream === writeStreams.stdout ? "stdout" : "stderr",
                 });
             }
 
             stream(`${this.formattedJobName} `);
-            if (line.startsWith(GCL_SHELL_PROMPT_PLACEHOLDER)) {
+            if (isShellPrompt) {
                 // replace the GCL_SHELL_PROMPT_PLACEHOLDER with `$` and make the SHELL_PROMPT line green color
                 line = line.slice(GCL_SHELL_PROMPT_PLACEHOLDER.length);
                 line = chalk`{green $${line}}`;

@@ -21,6 +21,7 @@ export interface Job {
     status: string;
     when_condition: string | null;
     allow_failure: boolean;
+    needs: string[] | null; // Job names this job depends on
     started_at: number | null;
     finished_at: number | null;
     duration: number | null;

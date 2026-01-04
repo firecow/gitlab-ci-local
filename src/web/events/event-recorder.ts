@@ -62,8 +62,11 @@ export class EventRecorder {
     private onPipelineInitPhase (event: GCLEvent) {
         const initEvent = event as PipelineInitEvent;
         try {
-            // Check if pipeline exists, create if not
-            const existing = this.db.getPipeline(initEvent.pipelineId);
+            // Check if pipeline exists by ID or by IID (for web UI pending pipelines)
+            let existing = this.db.getPipeline(initEvent.pipelineId);
+            if (!existing) {
+                existing = this.db.getPipelineByIid(initEvent.pipelineIid);
+            }
             if (!existing) {
                 this.db.createPipeline({
                     id: initEvent.pipelineId,
@@ -76,12 +79,18 @@ export class EventRecorder {
                     git_ref: null,
                     git_sha: null,
                 });
+                this.db.updatePipeline(initEvent.pipelineId, {
+                    init_phase: initEvent.phase,
+                    init_message: initEvent.message,
+                    init_progress: initEvent.progress ?? null,
+                });
+            } else {
+                this.db.updatePipeline(existing.id, {
+                    init_phase: initEvent.phase,
+                    init_message: initEvent.message,
+                    init_progress: initEvent.progress ?? null,
+                });
             }
-            this.db.updatePipeline(initEvent.pipelineId, {
-                init_phase: initEvent.phase,
-                init_message: initEvent.message,
-                init_progress: initEvent.progress ?? null,
-            });
         } catch (error) {
             console.error("Error recording pipeline init phase event:", error);
         }
@@ -90,8 +99,11 @@ export class EventRecorder {
     private onPipelineStarted (event: GCLEvent) {
         const pipelineEvent = event as PipelineEvent;
         try {
-            // Check if pipeline exists, create if not
-            const existing = this.db.getPipeline(pipelineEvent.pipelineId);
+            // Check if pipeline exists by ID or by IID (for web UI pending pipelines)
+            let existing = this.db.getPipeline(pipelineEvent.pipelineId);
+            if (!existing) {
+                existing = this.db.getPipelineByIid(pipelineEvent.pipelineIid);
+            }
             if (!existing) {
                 this.db.createPipeline({
                     id: pipelineEvent.pipelineId,
@@ -105,7 +117,7 @@ export class EventRecorder {
                     git_sha: pipelineEvent.data.gitSha || null,
                 });
             } else {
-                this.db.updatePipeline(pipelineEvent.pipelineId, {
+                this.db.updatePipeline(existing.id, {
                     status: "running",
                     started_at: pipelineEvent.timestamp,
                 });
@@ -118,14 +130,18 @@ export class EventRecorder {
     private onPipelineFinished (event: GCLEvent) {
         const pipelineEvent = event as PipelineEvent;
         try {
-            const pipeline = this.db.getPipeline(pipelineEvent.pipelineId);
+            // Check if pipeline exists by ID or by IID (for web UI pending pipelines)
+            let pipeline = this.db.getPipeline(pipelineEvent.pipelineId);
+            if (!pipeline) {
+                pipeline = this.db.getPipelineByIid(pipelineEvent.pipelineIid);
+            }
             if (!pipeline) {
                 console.warn(`Pipeline ${pipelineEvent.pipelineId} not found for finished event`);
                 return;
             }
 
             const duration = pipeline.started_at ? pipelineEvent.timestamp - pipeline.started_at : null;
-            this.db.updatePipeline(pipelineEvent.pipelineId, {
+            this.db.updatePipeline(pipeline.id, {
                 status: pipelineEvent.data.status || "success",
                 finished_at: pipelineEvent.timestamp,
                 duration,
@@ -140,9 +156,13 @@ export class EventRecorder {
     private onJobQueued (event: GCLEvent) {
         const jobEvent = event as JobEvent;
         try {
+            // Resolve actual pipeline ID (may differ from event's pipelineId in web UI mode)
+            const pipeline = this.db.getPipeline(jobEvent.pipelineId) || this.db.getPipelineByIid(jobEvent.pipelineIid);
+            const actualPipelineId = pipeline?.id || jobEvent.pipelineId;
+
             this.db.createJob({
                 id: jobEvent.jobId,
-                pipeline_id: jobEvent.pipelineId,
+                pipeline_id: actualPipelineId,
                 name: jobEvent.jobName,
                 base_name: jobEvent.jobName.replace(/\s*\[.*\]$/, ""), // Remove matrix suffix
                 stage: jobEvent.data.stage || "unknown",
@@ -158,7 +178,7 @@ export class EventRecorder {
             });
 
             this.lineNumbers.set(jobEvent.jobId, 0); // Initialize line number counter
-            this.jobPipelineMap.set(jobEvent.jobId, jobEvent.pipelineId); // Track pipeline for file logging
+            this.jobPipelineMap.set(jobEvent.jobId, actualPipelineId); // Track pipeline for file logging
         } catch (error) {
             console.error("Error recording job queued event:", error);
         }
@@ -167,16 +187,20 @@ export class EventRecorder {
     private onJobStarted (event: GCLEvent) {
         const jobEvent = event as JobEvent;
         try {
+            // Resolve actual pipeline ID (may differ from event's pipelineId in web UI mode)
+            const pipeline = this.db.getPipeline(jobEvent.pipelineId) || this.db.getPipelineByIid(jobEvent.pipelineIid);
+            const actualPipelineId = pipeline?.id || jobEvent.pipelineId;
+
             // Check if job exists by ID or by pipeline+name (for pending jobs created by web UI)
             let existing = this.db.getJob(jobEvent.jobId);
             if (!existing) {
-                existing = this.db.getJobByPipelineAndName(jobEvent.pipelineId, jobEvent.jobName);
+                existing = this.db.getJobByPipelineAndName(actualPipelineId, jobEvent.jobName);
             }
 
             if (!existing) {
                 this.db.createJob({
                     id: jobEvent.jobId,
-                    pipeline_id: jobEvent.pipelineId,
+                    pipeline_id: actualPipelineId,
                     name: jobEvent.jobName,
                     base_name: jobEvent.jobName.replace(/\s*\[.*\]$/, ""),
                     stage: jobEvent.data.stage || "unknown",
@@ -191,7 +215,7 @@ export class EventRecorder {
                     coverage_percent: null,
                 });
                 this.lineNumbers.set(jobEvent.jobId, 0);
-                this.jobPipelineMap.set(jobEvent.jobId, jobEvent.pipelineId);
+                this.jobPipelineMap.set(jobEvent.jobId, actualPipelineId);
             } else {
                 // Update the existing job (may have been created as pending by web UI)
                 this.db.updateJob(existing.id, {
@@ -200,7 +224,7 @@ export class EventRecorder {
                     stage: jobEvent.data.stage || existing.stage,
                 });
                 this.lineNumbers.set(existing.id, 0);
-                this.jobPipelineMap.set(existing.id, jobEvent.pipelineId);
+                this.jobPipelineMap.set(existing.id, actualPipelineId);
                 // Map the event's jobId to the actual database jobId
                 if (existing.id !== jobEvent.jobId) {
                     this.jobIdMap.set(jobEvent.jobId, existing.id);

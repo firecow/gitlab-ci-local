@@ -11,6 +11,7 @@ export class PipelineDetail extends HTMLElement {
     private loading: boolean = true;
     private sseClient: SSEClient | null = null;
     private selectedJobId: string | null = null;
+    private refreshInterval: number | null = null;
 
     constructor (router: any, pipelineId: string) {
         super();
@@ -22,12 +23,17 @@ export class PipelineDetail extends HTMLElement {
     connectedCallback () {
         this.loadPipeline();
         this.connectSSE();
+        // Poll for updates every 2 seconds (subprocess events don't come through SSE)
+        this.refreshInterval = window.setInterval(() => this.loadPipeline(), 2000);
     }
 
     // Called when component is removed from DOM
     disconnectedCallback () {
         if (this.sseClient) {
             this.sseClient.close();
+        }
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
         }
     }
 
@@ -178,8 +184,11 @@ export class PipelineDetail extends HTMLElement {
             <div class="stage-group mb-3">
                 <h3 class="text-muted mb-2">Stage: ${stage}</h3>
                 <div class="job-list">
-                    ${jobs.map(job => `
-                        <div class="job-item" data-id="${job.id}">
+                    ${jobs.map(job => {
+                        const needsInStage = job.needs?.filter(n => jobs.some(j => j.name === n)) || [];
+                        const needsFromOtherStages = job.needs?.filter(n => !jobs.some(j => j.name === n)) || [];
+                        return `
+                        <div class="job-item" data-id="${job.id}" data-needs="${job.needs?.join(",") || ""}">
                             <div class="job-header">
                                 <div class="job-name">${job.name}</div>
                                 <span class="status-badge status-${job.status}">
@@ -190,8 +199,20 @@ export class PipelineDetail extends HTMLElement {
                                 ${job.duration ? `Duration: ${this.formatDuration(job.duration)}` : "Not started"}
                                 ${job.exit_code !== null ? ` | Exit code: ${job.exit_code}` : ""}
                             </div>
+                            ${needsInStage.length > 0 ? `
+                                <div class="job-needs">
+                                    <span class="needs-label">⏳ waits for:</span>
+                                    ${needsInStage.map(n => `<span class="needs-job">${n}</span>`).join("")}
+                                </div>
+                            ` : ""}
+                            ${needsFromOtherStages.length > 0 ? `
+                                <div class="job-needs job-needs-external">
+                                    <span class="needs-label">↩ needs:</span>
+                                    ${needsFromOtherStages.map(n => `<span class="needs-job">${n}</span>`).join("")}
+                                </div>
+                            ` : ""}
                         </div>
-                    `).join("")}
+                    `;}).join("")}
                 </div>
             </div>
         `).join("");

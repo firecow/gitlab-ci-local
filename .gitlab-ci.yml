@@ -35,7 +35,7 @@ lint:
     when: always
 
 # Test job - run unit tests (needs Docker for docker executor tests)
-test:
+unit-tests:
   stage: test
   needs:
     - deps
@@ -54,11 +54,12 @@ test:
     paths:
       - coverage/
 
-# Coverage job - generate full coverage report
+# Coverage job - generate full coverage report (runs after tests pass)
 coverage:
   stage: test
   needs:
     - deps
+    - unit-tests
   script:
     - npm install --legacy-peer-deps
     - npm run coverage --verbose
@@ -88,7 +89,7 @@ build:linux:
   needs:
     - deps
     - lint
-    - test
+    - unit-tests
   script:
     - npm install --legacy-peer-deps
     - npm run build --verbose
@@ -107,7 +108,7 @@ build:macos:
   needs:
     - deps
     - lint
-    - test
+    - unit-tests
   script:
     - npm install --legacy-peer-deps
     - npm run build --verbose
@@ -126,7 +127,7 @@ build:windows:
   needs:
     - deps
     - lint
-    - test
+    - unit-tests
   script:
     - npm install --legacy-peer-deps
     - npm run build --verbose

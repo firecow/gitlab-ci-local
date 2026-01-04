@@ -157,6 +157,26 @@ export class APIRouter {
         this.json(res, {pipelines});
     }
 
+    // Safely parse needs JSON, returning null if invalid or not an array
+    private parseNeeds (needsJson: string | null): string[] | null {
+        if (!needsJson) return null;
+        try {
+            const parsed = JSON.parse(needsJson);
+            // Ensure we always return an array or null
+            if (Array.isArray(parsed)) {
+                return parsed;
+            }
+            // If it's a single string, wrap in array
+            if (typeof parsed === "string") {
+                return [parsed];
+            }
+            return null;
+        } catch {
+            // Invalid JSON - might be a plain string, wrap in array
+            return [needsJson];
+        }
+    }
+
     private async getPipeline (req: http.IncomingMessage, res: http.ServerResponse, params: RouteParams) {
         await this.reloadIfRunning();
 
@@ -166,12 +186,18 @@ export class APIRouter {
             return;
         }
 
-        const jobs = this.db.getJobsByPipeline(params.id);
+        const jobs = this.db.getJobsByPipeline(params.id).map(job => ({
+            ...job,
+            needs: this.parseNeeds(job.needs),
+        }));
         this.json(res, {pipeline, jobs});
     }
 
     private async listJobs (req: http.IncomingMessage, res: http.ServerResponse, params: RouteParams) {
-        const jobs = this.db.getJobsByPipeline(params.id);
+        const jobs = this.db.getJobsByPipeline(params.id).map(job => ({
+            ...job,
+            needs: this.parseNeeds(job.needs),
+        }));
         this.json(res, {jobs});
     }
 
@@ -201,7 +227,10 @@ export class APIRouter {
             return;
         }
 
-        this.json(res, {job});
+        this.json(res, {job: {
+            ...job,
+            needs: this.parseNeeds(job.needs),
+        }});
     }
 
     private async getJobLogs (req: http.IncomingMessage, res: http.ServerResponse, params: RouteParams) {

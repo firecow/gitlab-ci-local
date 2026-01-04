@@ -272,6 +272,36 @@ body {
     color: var(--text-secondary);
 }
 
+/* Job needs/dependencies */
+.job-needs {
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px dashed var(--border-color);
+    font-size: 11px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.job-needs-external {
+    opacity: 0.7;
+}
+
+.needs-label {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.needs-job {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+}
+
 /* Log viewer */
 .log-viewer {
     background-color: #1E1E1E;
