@@ -72,6 +72,7 @@ export class APIRouter {
         // Config routes
         this.get("/api/config", this.getConfig.bind(this));
         this.get("/api/config/yaml", this.getGitlabCiYaml.bind(this));
+        this.get("/api/config/expanded-yaml", this.getExpandedGitlabCiYaml.bind(this));
 
         // Pipeline structure (parsed from YAML)
         this.get("/api/pipeline-structure", this.getPipelineStructure.bind(this));
@@ -402,6 +403,26 @@ export class APIRouter {
                 content: null,
                 exists: false,
                 error: "File not found",
+            });
+        }
+    }
+
+    private async getExpandedGitlabCiYaml (req: http.IncomingMessage, res: http.ServerResponse) {
+        const expandedPath = path.join(this.cwd, this.stateDir, "expanded-gitlab-ci.yml");
+
+        try {
+            const content = await fs.readFile(expandedPath, "utf-8");
+            this.json(res, {
+                file: "expanded-gitlab-ci.yml",
+                content,
+                exists: true,
+            });
+        } catch {
+            this.json(res, {
+                file: "expanded-gitlab-ci.yml",
+                content: null,
+                exists: false,
+                error: "Expanded YAML not found. Run a pipeline first to generate it.",
             });
         }
     }

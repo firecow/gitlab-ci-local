@@ -1,6 +1,8 @@
 # Include bundled GitLab CI templates
 include:
   - template: 'Jobs/Container-Scanning.latest.gitlab-ci.yml'
+  - template: 'Security/Secret-Detection.gitlab-ci.yml'
+  - template: 'Security/SAST.gitlab-ci.yml'
 
 # test and build
 stages:

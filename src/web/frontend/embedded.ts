@@ -174,6 +174,12 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .btn-danger { background: var(--error-color); color: white; }
         .btn-danger:hover:not(:disabled) { background: #e53935; }
         .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+        .btn-group { display: inline-flex; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); }
+        .btn-group .btn { border-radius: 0; border: none; padding: 0.375rem 0.75rem; }
+        .btn-group .btn:not(:last-child) { border-right: 1px solid var(--border-color); }
+        .btn-group .btn.active { background: var(--accent-color); color: white; }
+        .btn-group .btn:not(.active) { background: var(--surface-color); color: var(--text-muted); }
+        .btn-group .btn:not(.active):hover { background: var(--hover-color); color: var(--text-color); }
         .action-bar { display: flex; gap: 0.5rem; align-items: center; }
         .status-indicator { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; }
@@ -265,6 +271,11 @@ export const INDEX_HTML = `<!DOCTYPE html>
             return await res.json();
         }
 
+        async function fetchExpandedYaml() {
+            const res = await fetch(API_BASE + '/config/expanded-yaml');
+            return await res.json();
+        }
+
         async function fetchConfig() {
             const res = await fetch(API_BASE + '/config');
             return await res.json();
@@ -353,34 +364,66 @@ export const INDEX_HTML = `<!DOCTYPE html>
 
         function highlightValue(text, gitlabKeywords) {
             if (!text) return '';
-            var result = text;
-            // Anchors &name
-            result = result.replace(/(&amp;[a-zA-Z_][a-zA-Z0-9_-]*)/g, '<span class="yaml-anchor">$1</span>');
-            // Aliases *name
-            result = result.replace(/(\\*[a-zA-Z_][a-zA-Z0-9_-]*)/g, '<span class="yaml-alias">$1</span>');
-            // Variables
-            result = result.replace(/(\\$[A-Za-z_][A-Za-z0-9_]*)/g, '<span class="yaml-variable">$1</span>');
-            result = result.replace(/(\\$\\{[A-Za-z_][A-Za-z0-9_]*\\})/g, '<span class="yaml-variable">$1</span>');
             // Boolean values (standalone)
             if (/^(true|false)$/.test(text.trim())) {
-                result = '<span class="yaml-boolean">' + text + '</span>';
+                return '<span class="yaml-boolean">' + text + '</span>';
             }
             // Null values (standalone)
-            else if (/^(null|~)$/.test(text.trim())) {
-                result = '<span class="yaml-null">' + text + '</span>';
+            if (/^(null|~)$/.test(text.trim())) {
+                return '<span class="yaml-null">' + text + '</span>';
             }
             // Numbers (standalone)
-            else if (/^-?\\d+\\.?\\d*$/.test(text.trim())) {
-                result = '<span class="yaml-number">' + text + '</span>';
+            if (/^-?\\d+\\.?\\d*$/.test(text.trim())) {
+                return '<span class="yaml-number">' + text + '</span>';
             }
-            // Strings in quotes
-            else {
-                result = result.replace(/("[^"]*")/g, '<span class="yaml-string">$1</span>');
-                result = result.replace(/('[^']*')/g, '<span class="yaml-string">$1</span>');
+            // Tokenize the text to avoid overlapping matches
+            // Match: double-quoted strings, single-quoted strings, anchors, aliases, variables, or plain text
+            var tokens = [];
+            var remaining = text;
+            while (remaining.length > 0) {
+                var match;
+                // Double-quoted string
+                if ((match = remaining.match(/^("[^"]*")/))) {
+                    tokens.push('<span class="yaml-string">' + match[1] + '</span>');
+                    remaining = remaining.slice(match[1].length);
+                }
+                // Single-quoted string
+                else if ((match = remaining.match(/^('[^']*')/))) {
+                    tokens.push('<span class="yaml-string">' + match[1] + '</span>');
+                    remaining = remaining.slice(match[1].length);
+                }
+                // Anchor &name
+                else if ((match = remaining.match(/^(&amp;[a-zA-Z_][a-zA-Z0-9_-]*)/))) {
+                    tokens.push('<span class="yaml-anchor">' + match[1] + '</span>');
+                    remaining = remaining.slice(match[1].length);
+                }
+                // Alias *name
+                else if ((match = remaining.match(/^([*][a-zA-Z_][a-zA-Z0-9_-]*)/))) {
+                    tokens.push('<span class="yaml-alias">' + match[1] + '</span>');
+                    remaining = remaining.slice(match[1].length);
+                }
+                // Variable \${VAR}
+                else if ((match = remaining.match(/^([$][{][A-Za-z_][A-Za-z0-9_]*[}])/))) {
+                    tokens.push('<span class="yaml-variable">' + match[1] + '</span>');
+                    remaining = remaining.slice(match[1].length);
+                }
+                // Variable $VAR
+                else if ((match = remaining.match(/^([$][A-Za-z_][A-Za-z0-9_]*)/))) {
+                    tokens.push('<span class="yaml-variable">' + match[1] + '</span>');
+                    remaining = remaining.slice(match[1].length);
+                }
+                // Inline comment
+                else if ((match = remaining.match(/^(\\s)(#.*)$/))) {
+                    tokens.push(match[1] + '<span class="yaml-comment">' + match[2] + '</span>');
+                    remaining = '';
+                }
+                // Plain character - consume one character at a time
+                else {
+                    tokens.push(remaining[0]);
+                    remaining = remaining.slice(1);
+                }
             }
-            // Inline comments
-            result = result.replace(/(\\s)(#.*)$/, '$1<span class="yaml-comment">$2</span>');
-            return result;
+            return tokens.join('');
         }
 
         function renderPipelineList(pipelines, status, structure, recentPipelineJobs) {
@@ -1241,13 +1284,66 @@ export const INDEX_HTML = `<!DOCTYPE html>
             }
         };
 
-        function renderYaml(data, config) {
+        // State for YAML view toggle
+        var yamlViewMode = 'source'; // 'source' or 'rendered'
+        var cachedSourceYaml = null;
+        var cachedExpandedYaml = null;
+        var cachedConfig = null;
+
+        window.toggleYamlView = function(mode) {
+            yamlViewMode = mode;
+            updateYamlView();
+        };
+
+        function updateYamlView() {
+            var sourceBtn = document.getElementById('yaml-source-btn');
+            var renderedBtn = document.getElementById('yaml-rendered-btn');
+            var yamlViewer = document.querySelector('.yaml-viewer');
+            var lineCountSpan = document.getElementById('yaml-line-count');
+            var titleSpan = document.getElementById('yaml-title');
+
+            if (sourceBtn) sourceBtn.className = 'btn' + (yamlViewMode === 'source' ? ' active' : '');
+            if (renderedBtn) renderedBtn.className = 'btn' + (yamlViewMode === 'rendered' ? ' active' : '');
+
+            var data = yamlViewMode === 'source' ? cachedSourceYaml : cachedExpandedYaml;
+            if (yamlViewer && data) {
+                if (data.exists && data.content) {
+                    yamlViewer.innerHTML = highlightYaml(data.content);
+                    if (lineCountSpan) lineCountSpan.textContent = data.content.split('\\n').length + ' lines';
+                    if (titleSpan) titleSpan.textContent = yamlViewMode === 'source' ? '.gitlab-ci.yml' : 'expanded-gitlab-ci.yml';
+                } else {
+                    yamlViewer.innerHTML = '<div class="text-muted" style="padding:1rem">' + (data.error || 'Not available') + '</div>';
+                    if (lineCountSpan) lineCountSpan.textContent = '';
+                }
+            }
+        }
+
+        function renderYaml(data, expandedData, config) {
+            cachedSourceYaml = data;
+            cachedExpandedYaml = expandedData;
+            cachedConfig = config;
+
             if (!data.exists) {
                 return '<div class="card"><div class="empty-state"><div class="empty-state-icon">📄</div><div>No .gitlab-ci.yml found</div><div class="text-muted">Create a .gitlab-ci.yml file in the project root</div></div></div>';
             }
-            const highlighted = highlightYaml(data.content);
-            const lineCount = data.content.split('\\n').length;
-            return '<div class="card"><div class="card-header"><div><h2>.gitlab-ci.yml</h2><div class="cwd-info">' + escapeHtml(config.cwd) + '</div></div><span class="text-muted">' + lineCount + ' lines</span></div>' +
+
+            var displayData = yamlViewMode === 'source' ? data : (expandedData.exists ? expandedData : data);
+            var highlighted = highlightYaml(displayData.content || '');
+            var lineCount = (displayData.content || '').split('\\n').length;
+            var title = yamlViewMode === 'source' ? '.gitlab-ci.yml' : 'expanded-gitlab-ci.yml';
+
+            var sourceActive = yamlViewMode === 'source' ? ' active' : '';
+            var renderedActive = yamlViewMode === 'rendered' ? ' active' : '';
+            var renderedDisabled = !expandedData.exists ? ' disabled title="Run a pipeline first to generate expanded YAML"' : '';
+
+            return '<div class="card"><div class="card-header"><div><h2 id="yaml-title">' + title + '</h2><div class="cwd-info">' + escapeHtml(config.cwd) + '</div></div>' +
+                '<div class="action-bar">' +
+                '<div class="btn-group">' +
+                '<button id="yaml-source-btn" class="btn' + sourceActive + '" onclick="toggleYamlView(\\'source\\')">Source</button>' +
+                '<button id="yaml-rendered-btn" class="btn' + renderedActive + '"' + renderedDisabled + ' onclick="toggleYamlView(\\'rendered\\')">Rendered</button>' +
+                '</div>' +
+                '<span id="yaml-line-count" class="text-muted">' + lineCount + ' lines</span>' +
+                '</div></div>' +
                 '<div class="card-body" style="padding:0"><div class="yaml-viewer">' + highlighted + '</div></div></div>';
         }
 
@@ -1291,25 +1387,9 @@ export const INDEX_HTML = `<!DOCTYPE html>
 
             try {
                 if (hash === '/yaml') {
-                    const [data, config] = await Promise.all([fetchYaml(), fetchConfig()]);
-                    root.innerHTML = renderYaml(data, config);
-                    // Auto-refresh YAML view - only update content fields, not the whole page
-                    refreshInterval = setInterval(async () => {
-                        try {
-                            const [newData, newConfig] = await Promise.all([fetchYaml(), fetchConfig()]);
-                            if (location.hash.slice(1) === '/yaml' && newData.exists) {
-                                // Only update the yaml content and line count
-                                var yamlViewer = document.querySelector('.yaml-viewer');
-                                var lineCountSpan = document.querySelector('.card-header .text-muted');
-                                if (yamlViewer) {
-                                    yamlViewer.innerHTML = highlightYaml(newData.content);
-                                }
-                                if (lineCountSpan) {
-                                    lineCountSpan.textContent = newData.content.split('\\n').length + ' lines';
-                                }
-                            }
-                        } catch (e) {}
-                    }, 3000);
+                    const [data, expandedData, config] = await Promise.all([fetchYaml(), fetchExpandedYaml(), fetchConfig()]);
+                    root.innerHTML = renderYaml(data, expandedData, config);
+                    // No auto-refresh for YAML view - content is static
                 } else if (hash.startsWith('/pipeline/')) {
                     const id = hash.split('/')[2];
                     // Clear selected job when navigating to new pipeline
