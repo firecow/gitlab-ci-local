@@ -83,12 +83,12 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .dag-job.status-pending { background: var(--text-muted); }
         @keyframes pulse-ring { 0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(233, 69, 96, 0); } }
         .dag-job-icon { font-size: 1.1rem; color: inherit; }
-        .dag-job-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--surface-color); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 6px; white-space: nowrap; font-size: 0.75rem; opacity: 0; visibility: hidden; transition: all 0.2s; z-index: 100; pointer-events: none; margin-bottom: 8px; }
+        .dag-job-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--surface-color); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 6px; white-space: nowrap; font-size: 0.75rem; opacity: 0; visibility: hidden; transition: all 0.2s; z-index: 1000; pointer-events: none; margin-bottom: 8px; color: var(--text-color); }
         .dag-job-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--border-color); }
         .dag-job:hover .dag-job-tooltip { opacity: 1; visibility: visible; }
-        .dag-job-tooltip-name { font-weight: 600; margin-bottom: 0.25rem; }
+        .dag-job-tooltip-name { font-weight: 600; margin-bottom: 0.25rem; color: var(--text-color); }
         .dag-job-tooltip-info { color: var(--text-muted); }
-        .dag-legend { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .dag-legend { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; position: relative; z-index: 1; }
         .dag-legend-item { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
         .dag-legend-color { width: 16px; height: 16px; border-radius: 50%; border: 2px solid; }
         .split-view { display: flex; gap: 0; height: calc(100vh - 120px); min-height: 500px; width: 100%; overflow: hidden; }

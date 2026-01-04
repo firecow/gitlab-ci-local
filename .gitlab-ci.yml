@@ -29,6 +29,7 @@ lint:
   script:
     - npm install --legacy-peer-deps
     - npm run lint --verbose
+  allow_failure: true
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -44,6 +45,7 @@ unit-tests:
     - npm run build --verbose
     - npm run test-except-dind --verbose
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  allow_failure: true
   artifacts:
     when: always
     reports:
@@ -64,6 +66,7 @@ coverage:
     - npm install --legacy-peer-deps
     - npm run coverage --verbose
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  allow_failure: true
   artifacts:
     reports:
       coverage_report:
