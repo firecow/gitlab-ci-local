@@ -40,3 +40,59 @@ export function formatDuration (duration: number | null): string {
         return `${seconds}s`;
     }
 }
+
+/**
+ * Format bytes to human readable size
+ */
+export function formatBytes (bytes: number | null): string {
+    if (!bytes || bytes === 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(1) + " " + units[i];
+}
+
+/**
+ * Format bytes to GB with 2 decimal places
+ */
+export function formatMemoryGB (bytes: number | null): string {
+    if (!bytes) return "0 GB";
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+}
+
+/**
+ * Get CSS badge class for job/pipeline status
+ */
+export function getStatusBadgeClass (status: string): string {
+    const map: Record<string, string> = {
+        success: "badge-success",
+        failed: "badge-error",
+        running: "badge-running",
+        pending: "badge-pending",
+        canceled: "badge-warning",
+        skipped: "badge-warning",
+    };
+    return "badge " + (map[status] || "badge-pending");
+}
+
+/**
+ * Get icon character for job status
+ */
+export function getStatusIcon (status: string): string {
+    const icons: Record<string, string> = {
+        success: "\u2713", // ✓
+        failed: "\u2715", // ✕
+        warning: "!",
+        running: "\u25C9", // ◉
+        pending: "\u25CB", // ○
+    };
+    return icons[status] || "\u25CB";
+}
+
+/**
+ * Escape HTML special characters to prevent XSS
+ */
+export function escapeHtml (text: string): string {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}

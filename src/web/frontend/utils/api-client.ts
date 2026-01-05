@@ -77,6 +77,48 @@ export interface PipelineResponse {
     resourceMonitor: ResourceMonitorData;
 }
 
+export interface StructureJob {
+    name: string;
+    stage: string;
+    needs: string[] | null;
+    when?: string;
+    id?: string;
+}
+
+export interface PipelineStructure {
+    exists: boolean;
+    stages: string[];
+    jobs: StructureJob[];
+}
+
+export interface ConfigResponse {
+    cwd: string;
+    file: string;
+}
+
+export interface YamlResponse {
+    exists: boolean;
+    content?: string;
+    error?: string;
+}
+
+export interface PipelineStatusResponse {
+    running: boolean;
+    pipelineId?: string;
+}
+
+export interface RunPipelineResponse {
+    success: boolean;
+    pipelineId?: string;
+    error?: string;
+}
+
+export interface RunJobResponse {
+    success: boolean;
+    job?: string;
+    error?: string;
+}
+
 // API client for making requests to the backend
 export class APIClient {
     private baseURL: string;
@@ -152,6 +194,44 @@ export class APIClient {
 
     async disableResourceMonitor (): Promise<{success: boolean; enabled: boolean}> {
         return this.fetch("/resource-monitor/disable", {method: "POST"});
+    }
+
+    // Config endpoints
+    async getSourceYaml (): Promise<YamlResponse> {
+        return this.fetch("/config/yaml");
+    }
+
+    async getExpandedYamlConfig (): Promise<YamlResponse> {
+        return this.fetch("/config/expanded-yaml");
+    }
+
+    async getConfig (): Promise<ConfigResponse> {
+        return this.fetch("/config");
+    }
+
+    // Pipeline control endpoints
+    async getPipelineStatus (): Promise<PipelineStatusResponse> {
+        return this.fetch("/pipelines/status");
+    }
+
+    async getPipelineStructure (): Promise<PipelineStructure> {
+        return this.fetch("/pipeline-structure");
+    }
+
+    async runPipeline (jobs?: string[]): Promise<RunPipelineResponse> {
+        return this.fetch("/pipelines/run", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: jobs ? JSON.stringify({jobs}) : "{}",
+        });
+    }
+
+    async runJob (jobId: string): Promise<RunJobResponse> {
+        return this.fetch(`/jobs/${jobId}/run`, {method: "POST"});
+    }
+
+    async runStage (stageName: string): Promise<{success: boolean; error?: string}> {
+        return this.fetch(`/stages/${encodeURIComponent(stageName)}/run`, {method: "POST"});
     }
 }
 
