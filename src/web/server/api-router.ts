@@ -1,10 +1,12 @@
 import http from "http";
 import path from "path";
 import fs from "fs-extra";
-import {spawn} from "child_process";
+import {spawn, execSync} from "child_process";
 import yaml from "yaml";
 import {GCLDatabase} from "../persistence/database.js";
 import {LogFileManager, LogLine} from "../persistence/log-file-manager.js";
+import {ContainerStats, ResourceMonitor} from "../../resource-monitor.js";
+import {Utils} from "../../utils.js";
 
 interface RouteParams {
     [key: string]: string;
@@ -30,8 +32,10 @@ export class APIRouter {
     private helperImage?: string;
     private urlBase: string;
     private runningProcess: ReturnType<typeof spawn> | null = null;
+    private containerExecutable: string;
+    private resourceMonitorEnabled: boolean = true; // Toggle state for the UI
 
-    constructor (db: GCLDatabase, cwd: string, stateDir: string, mountCwd?: boolean, volumes?: string[], helperImage?: string, logFileManager?: LogFileManager, webBaseUrl?: string) {
+    constructor (db: GCLDatabase, cwd: string, stateDir: string, mountCwd?: boolean, volumes?: string[], helperImage?: string, logFileManager?: LogFileManager, webBaseUrl?: string, containerExecutable?: string) {
         this.db = db;
         this.logFileManager = logFileManager || null;
         this.cwd = cwd;
@@ -40,6 +44,7 @@ export class APIRouter {
         this.volumes = volumes ?? [];
         this.helperImage = helperImage;
         this.urlBase = webBaseUrl || "http://localhost";
+        this.containerExecutable = containerExecutable || "docker";
         this.registerRoutes();
     }
 
@@ -68,6 +73,11 @@ export class APIRouter {
 
         // Stats route
         this.get("/api/stats", this.getStats.bind(this));
+
+        // Resource monitoring routes
+        this.get("/api/resource-monitor/status", this.getResourceMonitorStatus.bind(this));
+        this.post("/api/resource-monitor/enable", this.enableResourceMonitor.bind(this));
+        this.post("/api/resource-monitor/disable", this.disableResourceMonitor.bind(this));
 
         // Config routes
         this.get("/api/config", this.getConfig.bind(this));
@@ -146,6 +156,54 @@ export class APIRouter {
         }
     }
 
+    // Poll docker stats for running containers
+    private async pollDockerStats (containerIds: string[], jobNames: Map<string, string>): Promise<ContainerStats[]> {
+        if (containerIds.length === 0) return [];
+
+        try {
+            const format = "{{.Container}}\t{{.CPUPerc}}\t{{.MemPerc}}";
+            const cmd = `${this.containerExecutable} stats --no-stream --format "${format}" ${containerIds.join(" ")}`;
+
+            const {stdout} = await Utils.bash(cmd, this.cwd);
+            const stats: ContainerStats[] = [];
+            const now = Date.now();
+
+            const lines = stdout.trim().split("\n").filter(l => l.length > 0);
+            for (const line of lines) {
+                const parts = line.split("\t");
+                if (parts.length >= 3) {
+                    const containerId = parts[0];
+                    const cpuStr = parts[1].replace("%", "");
+                    const memStr = parts[2].replace("%", "");
+
+                    const cpu = parseFloat(cpuStr) || 0;
+                    const memory = parseFloat(memStr) || 0;
+
+                    // Find matching container (docker stats may return short ID)
+                    let jobName = "unknown";
+                    for (const [fullId, name] of jobNames) {
+                        if (fullId.startsWith(containerId) || containerId.startsWith(fullId.substring(0, 12))) {
+                            jobName = name;
+                            break;
+                        }
+                    }
+
+                    stats.push({
+                        containerId: containerId.substring(0, 12),
+                        jobName,
+                        cpuPercent: cpu,
+                        memoryPercent: memory,
+                        timestamp: now,
+                    });
+                }
+            }
+
+            return stats;
+        } catch {
+            return [];
+        }
+    }
+
     // Pipeline handlers
     private async listPipelines (req: http.IncomingMessage, res: http.ServerResponse) {
         await this.reloadIfRunning();
@@ -191,7 +249,37 @@ export class APIRouter {
             ...job,
             needs: this.parseNeeds(job.needs),
         }));
-        this.json(res, {pipeline, jobs});
+
+        // Collect container IDs from running jobs for live stats
+        let containerStats: ContainerStats[] = [];
+        const statsHistory: Record<string, ContainerStats[]> = {};
+
+        if (this.resourceMonitorEnabled) {
+            const containerIds: string[] = [];
+            const jobNames = new Map<string, string>();
+
+            for (const job of jobs) {
+                if (job.status === "running" && job.container_id) {
+                    containerIds.push(job.container_id);
+                    jobNames.set(job.container_id, job.name);
+                }
+            }
+
+            // Poll live stats if there are running containers
+            if (containerIds.length > 0) {
+                containerStats = await this.pollDockerStats(containerIds, jobNames);
+            }
+        }
+
+        this.json(res, {
+            pipeline,
+            jobs,
+            resourceMonitor: {
+                enabled: this.resourceMonitorEnabled,
+                containerStats,
+                statsHistory,
+            },
+        });
     }
 
     private async listJobs (req: http.IncomingMessage, res: http.ServerResponse, params: RouteParams) {
@@ -370,6 +458,23 @@ export class APIRouter {
     private async getStats (req: http.IncomingMessage, res: http.ServerResponse) {
         const stats = this.db.getStats();
         this.json(res, stats);
+    }
+
+    // Resource monitor handlers
+    private async getResourceMonitorStatus (req: http.IncomingMessage, res: http.ServerResponse) {
+        this.json(res, {
+            enabled: this.resourceMonitorEnabled,
+        });
+    }
+
+    private async enableResourceMonitor (req: http.IncomingMessage, res: http.ServerResponse) {
+        this.resourceMonitorEnabled = true;
+        this.json(res, {success: true, enabled: true});
+    }
+
+    private async disableResourceMonitor (req: http.IncomingMessage, res: http.ServerResponse) {
+        this.resourceMonitorEnabled = false;
+        this.json(res, {success: true, enabled: false});
     }
 
     // Config handlers
@@ -578,6 +683,11 @@ export class APIRouter {
                     duration: null,
                     exit_code: null,
                     coverage_percent: null,
+                    container_id: null,
+                    avg_cpu_percent: null,
+                    avg_memory_percent: null,
+                    peak_cpu_percent: null,
+                    peak_memory_percent: null,
                 });
             }
         } catch (e) {

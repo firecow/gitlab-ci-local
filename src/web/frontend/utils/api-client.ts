@@ -27,6 +27,11 @@ export interface Job {
     duration: number | null;
     exit_code: number | null;
     coverage_percent: number | null;
+    // Resource usage stats (for Docker jobs)
+    avg_cpu_percent: number | null;
+    avg_memory_percent: number | null;
+    peak_cpu_percent: number | null;
+    peak_memory_percent: number | null;
 }
 
 export interface LogLine {
@@ -49,6 +54,26 @@ export interface Stats {
     logCount: number;
     artifactCount: number;
     connections: number;
+}
+
+export interface ContainerStats {
+    containerId: string;
+    jobName: string;
+    cpuPercent: number;
+    memoryPercent: number;
+    timestamp: number;
+}
+
+export interface ResourceMonitorData {
+    enabled: boolean;
+    containerStats: ContainerStats[];
+    statsHistory: Record<string, ContainerStats[]>;
+}
+
+export interface PipelineResponse {
+    pipeline: Pipeline;
+    jobs: Job[];
+    resourceMonitor: ResourceMonitorData;
 }
 
 // API client for making requests to the backend
@@ -76,7 +101,7 @@ export class APIClient {
         return this.fetch(`/pipelines?limit=${limit}&offset=${offset}`);
     }
 
-    async getPipeline (id: string): Promise<{pipeline: Pipeline; jobs: Job[]}> {
+    async getPipeline (id: string): Promise<PipelineResponse> {
         return this.fetch(`/pipelines/${id}`);
     }
 
@@ -86,6 +111,10 @@ export class APIClient {
 
     async getExpandedYaml (pipelineId: string): Promise<{yaml: string}> {
         return this.fetch(`/pipelines/${pipelineId}/yaml`);
+    }
+
+    async cancelPipeline (): Promise<{success: boolean; message: string}> {
+        return this.fetch("/pipelines/cancel", {method: "POST"});
     }
 
     // Job endpoints
@@ -109,6 +138,19 @@ export class APIClient {
     // Stats endpoint
     async getStats (): Promise<Stats> {
         return this.fetch("/stats");
+    }
+
+    // Resource monitor endpoints
+    async getResourceMonitorStatus (): Promise<{enabled: boolean; containerCount: number}> {
+        return this.fetch("/resource-monitor/status");
+    }
+
+    async enableResourceMonitor (): Promise<{success: boolean; enabled: boolean}> {
+        return this.fetch("/resource-monitor/enable", {method: "POST"});
+    }
+
+    async disableResourceMonitor (): Promise<{success: boolean; enabled: boolean}> {
+        return this.fetch("/resource-monitor/disable", {method: "POST"});
     }
 }
 

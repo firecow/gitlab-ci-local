@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS jobs (
   duration INTEGER,
   exit_code INTEGER,
   coverage_percent REAL,
+  container_id TEXT,
+  avg_cpu_percent REAL,
+  avg_memory_percent REAL,
+  peak_cpu_percent REAL,
+  peak_memory_percent REAL,
   created_at INTEGER NOT NULL,
   FOREIGN KEY (pipeline_id) REFERENCES pipelines(id) ON DELETE CASCADE
 );
@@ -108,7 +113,13 @@ export interface JobRow {
     duration: number | null;
     exit_code: number | null;
     coverage_percent: number | null;
+    container_id: string | null; // Docker container ID for resource monitoring
     created_at: number;
+    // Resource usage stats (for Docker jobs)
+    avg_cpu_percent: number | null;
+    avg_memory_percent: number | null;
+    peak_cpu_percent: number | null;
+    peak_memory_percent: number | null;
 }
 
 export interface LogRow {

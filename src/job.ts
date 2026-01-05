@@ -22,6 +22,7 @@ import * as crypto from "crypto";
 import * as path from "path";
 import {EventEmitter} from "./web/events/event-emitter.js";
 import {EventType} from "./web/events/event-types.js";
+import {ResourceMonitor} from "./resource-monitor.js";
 
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
 interface JobOptions {
@@ -122,6 +123,7 @@ export class Job {
     private _running = false;
     private _containerId: string | null = null;
     private _serviceNetworkId: string | null = null;
+    private _resourceStats: {avgCpu: number; avgMemory: number; peakCpu: number; peakMemory: number} | null = null;
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
     private _producers: {name: string; dotenv: string | null}[] | null = null;
     private _jobNamePad: number | null = null;
@@ -627,6 +629,14 @@ If you know what you're doing and would like to suppress this warning, use one o
         return this._coveragePercent;
     }
 
+    get resourceStats (): {avgCpu: number; avgMemory: number; peakCpu: number; peakMemory: number} | null {
+        return this._resourceStats;
+    }
+
+    get isDockerJob (): boolean {
+        return this.imageName(this._variables) !== null;
+    }
+
     get fileVariablesDir () {
         return `/tmp/gitlab-ci-local-file-variables-${this._variables["CI_PROJECT_PATH_SLUG"]}-${this.jobId}`;
     }
@@ -831,6 +841,14 @@ If you know what you're doing and would like to suppress this warning, use one o
         this._endTime = this._endTime ?? process.hrtime(this._startTime);
         this.printFinishedString();
 
+        // Collect resource stats before emitting finished event
+        if (this._containerId) {
+            const stats = ResourceMonitor.getInstance()?.removeContainer(this._containerId);
+            if (stats) {
+                this._resourceStats = stats;
+            }
+        }
+
         // Emit job finished event
         if (emitter.isEnabled()) {
             const durationMs = this._endTime ? (this._endTime[0] * 1000 + this._endTime[1] / 1000000) : null;
@@ -847,6 +865,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                     exitCode: this._prescriptsExitCode,
                     duration: durationMs,
                     coverage: coverageNum,
+                    resourceStats: this._resourceStats ?? undefined,
                 },
             });
         }
@@ -859,13 +878,24 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
     }
 
-    async cleanupResources () {
+    async cleanupResources (force: boolean = false) {
         clearTimeout(this._longRunningSilentTimeout);
 
-        if (!this.argv.cleanup) return;
+        // Collect resource stats if not already done (fallback for abnormal termination)
+        if (this._containerId && !this._resourceStats) {
+            const stats = ResourceMonitor.getInstance()?.removeContainer(this._containerId);
+            if (stats) {
+                this._resourceStats = stats;
+            }
+        }
+
+        // Skip cleanup if --no-cleanup flag is set, unless force is true (e.g., on shutdown)
+        if (!this.argv.cleanup && !force) return;
 
         if (this._containersToClean.length > 0) {
             try {
+                // Kill containers first to ensure they stop, then remove them
+                await Utils.spawn([this.argv.containerExecutable, "kill", ...this._containersToClean]).catch(() => {});
                 await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", ...this._containersToClean]);
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
@@ -1178,6 +1208,24 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             this._containerId = containerId;
             this._containersToClean.push(this._containerId);
+
+            // Register container for resource monitoring
+            ResourceMonitor.getInstance()?.addContainer(this._containerId, this.name);
+
+            // Emit container created event for web UI
+            if (emitter.isEnabled()) {
+                emitter.emit({
+                    type: EventType.JOB_CONTAINER_CREATED,
+                    timestamp: Date.now(),
+                    pipelineId: `${this.pipelineIid}`,
+                    pipelineIid: this.pipelineIid,
+                    jobId: `${this.jobId}`,
+                    jobName: this.name,
+                    data: {
+                        containerId: this._containerId,
+                    },
+                });
+            }
         }
 
         await this.copyCacheIn(writeStreams, expanded);
@@ -1933,11 +1981,11 @@ If you know what you're doing and would like to suppress this warning, use one o
     }
 }
 
-export async function cleanupJobResources (jobs?: Iterable<Job>) {
+export async function cleanupJobResources (jobs?: Iterable<Job>, force: boolean = false) {
     if (!jobs) return;
     const promises = [];
     for (const job of jobs) {
-        promises.push(job.cleanupResources());
+        promises.push(job.cleanupResources(force));
     }
     await Promise.all(promises);
 }

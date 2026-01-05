@@ -4,6 +4,7 @@
 /ppa/
 /*.sh
 tsconfig.tsbuildinfo
+/*report*.json
 
 /src/**/*.js
 /src/**/*.d.ts
@@ -15,6 +16,8 @@ tsconfig.tsbuildinfo
 /coverage
 
 !/docker-npm
+!/src/web/frontend/lib/
+!/src/web/frontend/lib/chart.min.js
 
 /.gitlab-ci-local/
 

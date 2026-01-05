@@ -13,10 +13,14 @@ import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
 
 const jobs: Job[] = [];
 
-process.on("SIGINT", async (_: string, code: number) => {
-    await cleanupJobResources(jobs);
+const gracefulShutdown = async (signal: string, code: number = 130) => {
+    console.log(`\nReceived ${signal}, cleaning up containers...`);
+    await cleanupJobResources(jobs, true); // Force cleanup on shutdown
     process.exit(code);
-});
+};
+
+process.on("SIGINT", async () => gracefulShutdown("SIGINT", 130));
+process.on("SIGTERM", async () => gracefulShutdown("SIGTERM", 143));
 
 // Graceful shutdown for nodemon
 process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
@@ -78,6 +82,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                         volumes: argv.volume || [],
                         helperImage: argv.helperImage,
                         webBaseUrl: process.env.GCIL_WEB_BASE_URL,
+                        containerExecutable: argv.containerExecutable || "docker",
                     });
 
                     // Enable events globally for CLI runs to be monitored

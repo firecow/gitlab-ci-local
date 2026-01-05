@@ -401,3 +401,38 @@ body {
 .empty-state-text {
     font-size: 16px;
 }
+
+/* Resource monitoring */
+.resource-monitor {
+    margin-bottom: var(--spacing-md);
+}
+
+.resource-toggle.btn-active {
+    background-color: var(--color-success);
+    color: white;
+    border-color: var(--color-success);
+}
+
+.resource-toggle.btn-active:hover {
+    background-color: #0D7340;
+}
+
+.chart-container {
+    min-height: 200px;
+}
+
+.chart-disabled-msg {
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+/* Job resource stats */
+.job-resources {
+    margin-top: var(--spacing-xs);
+    font-size: 11px;
+    color: var(--color-info);
+    font-family: var(--font-mono);
+    padding: 4px 8px;
+    background-color: #E3F2FD;
+    border-radius: var(--border-radius);
+}

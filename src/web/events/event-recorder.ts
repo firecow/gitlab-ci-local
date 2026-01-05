@@ -30,6 +30,7 @@ export class EventRecorder {
             [EventType.PIPELINE_FINISHED, this.onPipelineFinished.bind(this)],
             [EventType.JOB_QUEUED, this.onJobQueued.bind(this)],
             [EventType.JOB_STARTED, this.onJobStarted.bind(this)],
+            [EventType.JOB_CONTAINER_CREATED, this.onJobContainerCreated.bind(this)],
             [EventType.JOB_LOG_LINE, this.onJobLogLine.bind(this)],
             [EventType.JOB_FINISHED, this.onJobFinished.bind(this)],
         ];
@@ -175,6 +176,11 @@ export class EventRecorder {
                 duration: null,
                 exit_code: null,
                 coverage_percent: null,
+                container_id: null,
+                avg_cpu_percent: null,
+                avg_memory_percent: null,
+                peak_cpu_percent: null,
+                peak_memory_percent: null,
             });
 
             this.lineNumbers.set(jobEvent.jobId, 0); // Initialize line number counter
@@ -213,6 +219,11 @@ export class EventRecorder {
                     duration: null,
                     exit_code: null,
                     coverage_percent: null,
+                    container_id: null,
+                    avg_cpu_percent: null,
+                    avg_memory_percent: null,
+                    peak_cpu_percent: null,
+                    peak_memory_percent: null,
                 });
                 this.lineNumbers.set(jobEvent.jobId, 0);
                 this.jobPipelineMap.set(jobEvent.jobId, actualPipelineId);
@@ -232,6 +243,23 @@ export class EventRecorder {
             }
         } catch (error) {
             console.error("Error recording job started event:", error);
+        }
+    }
+
+    private onJobContainerCreated (event: GCLEvent) {
+        const jobEvent = event as JobEvent;
+        try {
+            // Resolve actual job ID (may be mapped from pending job)
+            const actualJobId = this.jobIdMap.get(jobEvent.jobId) || jobEvent.jobId;
+
+            // Update job with container ID
+            if (jobEvent.data.containerId) {
+                this.db.updateJob(actualJobId, {
+                    container_id: jobEvent.data.containerId,
+                });
+            }
+        } catch (error) {
+            console.error("Error recording job container created event:", error);
         }
     }
 
@@ -280,12 +308,17 @@ export class EventRecorder {
             }
 
             const duration = job.started_at ? jobEvent.timestamp - job.started_at : null;
+            const resourceStats = jobEvent.data.resourceStats as {avgCpu: number; avgMemory: number; peakCpu: number; peakMemory: number} | undefined;
             this.db.updateJob(actualJobId, {
                 status: jobEvent.data.status || "success",
                 finished_at: jobEvent.timestamp,
                 duration,
                 exit_code: jobEvent.data.exitCode !== undefined ? jobEvent.data.exitCode : null,
                 coverage_percent: jobEvent.data.coverage !== undefined ? jobEvent.data.coverage : null,
+                avg_cpu_percent: resourceStats?.avgCpu ?? null,
+                avg_memory_percent: resourceStats?.avgMemory ?? null,
+                peak_cpu_percent: resourceStats?.peakCpu ?? null,
+                peak_memory_percent: resourceStats?.peakMemory ?? null,
             });
 
             // Flush logs for this job

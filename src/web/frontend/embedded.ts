@@ -1,6 +1,8 @@
 // Embedded frontend files for pkg binary compatibility
 // This avoids the need for pkg to include static assets
 
+import {CHARTJS_LIB} from "./lib/chartjs.js";
+
 export const INDEX_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -92,7 +94,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .dag-legend-item { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
         .dag-legend-color { width: 16px; height: 16px; border-radius: 50%; border: 2px solid; }
         .split-view { display: flex; gap: 0; height: calc(100vh - 120px); min-height: 500px; width: 100%; overflow: hidden; }
-        .split-left { flex: 0 0 350px; overflow: auto; min-width: 200px; max-width: 80%; padding-right: 0.5rem; }
+        .split-left { flex: 0 0 450px; overflow: auto; min-width: 200px; max-width: 80%; padding-right: 0.5rem; }
         .split-left.full-width { flex: 1; max-width: none; }
         .split-divider { flex: 0 0 6px; background: var(--border-color); cursor: col-resize; position: relative; transition: background 0.2s; }
         .split-divider:hover, .split-divider.dragging { background: var(--accent-color); }
@@ -192,6 +194,11 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .init-progress-bar { height: 4px; background: var(--border-color); border-radius: 2px; overflow: hidden; }
         .init-progress-fill { height: 100%; background: var(--accent-color); border-radius: 2px; transition: width 0.3s ease; }
         .init-spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; }
+        .resource-chart-card { margin-bottom: 1rem; }
+        .resource-chart-container { position: relative; height: 150px; }
+        .resource-toggle-btn { font-size: 0.7rem; padding: 0.2rem 0.5rem; }
+        .resource-toggle-btn.active { background: var(--success-color); }
+        .resource-disabled-msg { text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -219,6 +226,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
             </div>
         </div>
     </main>
+    <script>${CHARTJS_LIB}</script>
     <script>
         const API_BASE = '/api';
 
@@ -323,6 +331,156 @@ export const INDEX_HTML = `<!DOCTYPE html>
 
         var pipelineRunning = false;
         var queuedJobs = []; // Jobs queued to run
+
+        // Resource monitoring state
+        var resourceChart = null;
+        var resourceMonitorEnabled = localStorage.getItem('gcl-resource-monitor') !== 'false';
+        var statsHistory = {}; // jobName -> [{timestamp, cpu, memory}]
+        var jobColorIndex = 0;
+        var jobColorMap = {};
+        var JOB_COLORS = [
+            {cpu: '#4CAF50', memory: '#81C784'}, // Green
+            {cpu: '#2196F3', memory: '#64B5F6'}, // Blue
+            {cpu: '#FF9800', memory: '#FFB74D'}, // Orange
+            {cpu: '#9C27B0', memory: '#BA68C8'}, // Purple
+            {cpu: '#F44336', memory: '#E57373'}, // Red
+            {cpu: '#00BCD4', memory: '#4DD0E1'}, // Cyan
+        ];
+
+        function getJobColor(jobName) {
+            if (!jobColorMap[jobName]) {
+                jobColorMap[jobName] = JOB_COLORS[jobColorIndex % JOB_COLORS.length];
+                jobColorIndex++;
+            }
+            return jobColorMap[jobName];
+        }
+
+        function toggleResourceMonitor() {
+            resourceMonitorEnabled = !resourceMonitorEnabled;
+            localStorage.setItem('gcl-resource-monitor', resourceMonitorEnabled ? 'true' : 'false');
+            updateResourceChartVisibility();
+        }
+
+        function updateResourceChartVisibility() {
+            var container = document.getElementById('resource-chart-container');
+            var disabledMsg = document.getElementById('resource-disabled-msg');
+            var toggleBtn = document.getElementById('resource-toggle-btn');
+            if (container) container.style.display = resourceMonitorEnabled ? 'block' : 'none';
+            if (disabledMsg) disabledMsg.style.display = resourceMonitorEnabled ? 'none' : 'block';
+            if (toggleBtn) {
+                toggleBtn.textContent = resourceMonitorEnabled ? 'Disable' : 'Enable';
+                toggleBtn.className = 'btn btn-sm resource-toggle-btn' + (resourceMonitorEnabled ? ' active' : '');
+            }
+        }
+
+        function initResourceChart() {
+            var canvas = document.getElementById('resource-chart');
+            if (!canvas || typeof Chart === 'undefined') return;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            resourceChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 10 } } },
+                        tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%'; } } }
+                    },
+                    scales: {
+                        x: { display: true, ticks: { maxTicksLimit: 6, font: { size: 9 } } },
+                        y: { display: true, min: 0, max: 100, ticks: { stepSize: 25, font: { size: 9 } }, title: { display: true, text: '%', font: { size: 9 } } }
+                    }
+                }
+            });
+        }
+
+        function updateResourceChart(containerStats) {
+            if (!resourceMonitorEnabled || !resourceChart) return;
+            if (!containerStats || containerStats.length === 0) return;
+
+            var now = Date.now();
+            // Add new stats to history
+            containerStats.forEach(function(stat) {
+                if (!statsHistory[stat.jobName]) statsHistory[stat.jobName] = [];
+                statsHistory[stat.jobName].push({
+                    timestamp: stat.timestamp || now,
+                    cpu: stat.cpuPercent,
+                    memory: stat.memoryPercent
+                });
+                // Keep last 60 seconds (12 data points at 5s interval)
+                if (statsHistory[stat.jobName].length > 12) {
+                    statsHistory[stat.jobName] = statsHistory[stat.jobName].slice(-12);
+                }
+            });
+
+            // Build datasets
+            var allTimestamps = new Set();
+            Object.values(statsHistory).forEach(function(history) {
+                history.forEach(function(h) { allTimestamps.add(h.timestamp); });
+            });
+            var sortedTs = Array.from(allTimestamps).sort(function(a,b) { return a - b; });
+            var labels = sortedTs.map(function(ts) {
+                var d = new Date(ts);
+                return d.toLocaleTimeString([], {minute: '2-digit', second: '2-digit'});
+            });
+
+            var datasets = [];
+            Object.keys(statsHistory).forEach(function(jobName) {
+                var colors = getJobColor(jobName);
+                var history = statsHistory[jobName];
+                var historyMap = {};
+                history.forEach(function(h) { historyMap[h.timestamp] = h; });
+
+                var cpuData = sortedTs.map(function(ts) { var h = historyMap[ts]; return h ? h.cpu : null; });
+                var memData = sortedTs.map(function(ts) { var h = historyMap[ts]; return h ? h.memory : null; });
+
+                datasets.push({
+                    label: jobName + ' CPU',
+                    data: cpuData,
+                    borderColor: colors.cpu,
+                    backgroundColor: colors.cpu,
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 2
+                });
+                datasets.push({
+                    label: jobName + ' Mem',
+                    data: memData,
+                    borderColor: colors.memory,
+                    backgroundColor: colors.memory,
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 2
+                });
+            });
+
+            resourceChart.data.labels = labels;
+            resourceChart.data.datasets = datasets;
+            resourceChart.update('none');
+        }
+
+        function renderResourceChart() {
+            var displayStyle = resourceMonitorEnabled ? 'block' : 'none';
+            var disabledStyle = resourceMonitorEnabled ? 'none' : 'block';
+            var btnClass = 'btn btn-sm resource-toggle-btn' + (resourceMonitorEnabled ? ' active' : '');
+            var btnText = resourceMonitorEnabled ? 'Disable' : 'Enable';
+
+            return '<div class="card resource-chart-card">' +
+                '<div class="card-header"><h3 style="font-size:0.9rem;margin:0">Resource Usage</h3>' +
+                '<button id="resource-toggle-btn" class="' + btnClass + '" onclick="toggleResourceMonitor()">' + btnText + '</button></div>' +
+                '<div class="card-body" style="padding:0.5rem">' +
+                '<div id="resource-chart-container" class="resource-chart-container" style="display:' + displayStyle + '"><canvas id="resource-chart"></canvas></div>' +
+                '<div id="resource-disabled-msg" class="resource-disabled-msg" style="display:' + disabledStyle + '">Resource monitoring disabled</div>' +
+                '</div></div>';
+        }
 
         function highlightYaml(content) {
             // Enhanced YAML syntax highlighting
@@ -895,10 +1053,12 @@ export const INDEX_HTML = `<!DOCTYPE html>
             const initProgressHtml = renderInitProgress(p);
 
             var leftPanelClass = selectedJob ? 'split-left' : 'split-left full-width';
+            var resourceChartHtml = renderResourceChart();
             var leftPanel = '<div class="' + leftPanelClass + '">' +
                 '<a href="#/" class="back-link">&larr; Back to pipelines</a>' +
-                '<div class="card"><div class="card-header"><div><h2>Pipeline #' + p.iid + '</h2></div><span id="pipeline-status" class="' + getStatusBadgeClass(p.status) + '">' + p.status + '</span></div>' +
+                '<div class="card"><div class="card-header"><div><h2>Pipeline #' + p.iid + '</h2></div><div style="display:flex;gap:0.5rem;align-items:center"><span id="pipeline-status" class="' + getStatusBadgeClass(p.status) + '">' + p.status + '</span>' + (p.status === 'running' ? '<button class="btn btn-danger btn-sm" onclick="handleCancelPipeline()">Cancel</button>' : '') + '</div></div>' +
                 '<div class="card-body"><p>Started: ' + formatTime(p.started_at) + '</p><p id="pipeline-duration">Duration: ' + formatDuration(p.duration) + '</p>' + initProgressHtml + '</div></div>' +
+                resourceChartHtml +
                 '<div class="card"><div class="card-header"><h2>Pipeline Graph</h2><span class="text-muted">Click a job to view logs</span></div><div class="card-body"><div id="pipeline-dag">' + dagHtml + '</div></div></div>' +
                 '</div>';
 
@@ -1074,6 +1234,12 @@ export const INDEX_HTML = `<!DOCTYPE html>
                 // Update renderedLogCount after full render
                 renderedLogCount = logData && logData.logs ? logData.logs.length : 0;
                 scheduleDependencyLinesDraw();
+                // Re-initialize resource chart after full render
+                if (resourceChart) { resourceChart.destroy(); resourceChart = null; }
+                initResourceChart();
+                if (data.resourceMonitor && data.resourceMonitor.containerStats) {
+                    updateResourceChart(data.resourceMonitor.containerStats);
+                }
                 if (logAutoScroll && selectedJobId) {
                     var viewer = document.getElementById('live-log-viewer');
                     if (viewer) viewer.scrollTop = viewer.scrollHeight;
@@ -1086,6 +1252,13 @@ export const INDEX_HTML = `<!DOCTYPE html>
             if (pipelineStatus) {
                 pipelineStatus.className = getStatusBadgeClass(p.status);
                 pipelineStatus.textContent = p.status;
+                // Update cancel button visibility
+                var cancelBtn = pipelineStatus.parentElement.querySelector('.btn-danger');
+                if (p.status === 'running' && !cancelBtn) {
+                    pipelineStatus.insertAdjacentHTML('afterend', '<button class="btn btn-danger btn-sm" onclick="handleCancelPipeline()">Cancel</button>');
+                } else if (p.status !== 'running' && cancelBtn) {
+                    cancelBtn.remove();
+                }
             }
             var pipelineDuration = document.getElementById('pipeline-duration');
             if (pipelineDuration) {
@@ -1211,6 +1384,11 @@ export const INDEX_HTML = `<!DOCTYPE html>
                         }
                     }
                 }
+            }
+
+            // Update resource chart with new stats
+            if (data.resourceMonitor && data.resourceMonitor.containerStats) {
+                updateResourceChart(data.resourceMonitor.containerStats);
             }
         }
 
@@ -1398,9 +1576,19 @@ export const INDEX_HTML = `<!DOCTYPE html>
                         logRefreshInterval = null;
                     }
                     selectedJobId = null;
+                    // Reset stats history for new pipeline
+                    statsHistory = {};
+                    jobColorIndex = 0;
+                    jobColorMap = {};
+                    if (resourceChart) { resourceChart.destroy(); resourceChart = null; }
                     const data = await fetchPipeline(id);
                     root.innerHTML = renderPipelineDetail(data, null, null);
                     scheduleDependencyLinesDraw();
+                    // Initialize resource chart
+                    initResourceChart();
+                    if (data.resourceMonitor && data.resourceMonitor.containerStats) {
+                        updateResourceChart(data.resourceMonitor.containerStats);
+                    }
                     // Auto-refresh pipeline view to show job updates
                     refreshInterval = setInterval(async () => {
                         try {

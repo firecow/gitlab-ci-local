@@ -5,6 +5,7 @@ import {Argv} from "./argv.js";
 import pMap from "p-map";
 import {EventEmitter} from "./web/events/event-emitter.js";
 import {EventType} from "./web/events/event-types.js";
+import {ResourceMonitor} from "./resource-monitor.js";
 
 export class Executor {
 
@@ -12,6 +13,14 @@ export class Executor {
         const emitter = EventEmitter.getInstance();
         const pipelineIid = jobs[0]?.pipelineIid ?? 0;
         const pipelineId = `${pipelineIid}`;
+
+        // Start resource monitoring for Docker jobs when web UI is enabled
+        if (emitter.isEnabled()) {
+            const hasDockerJobs = jobs.some(j => j.isDockerJob);
+            if (hasDockerJobs) {
+                ResourceMonitor.getInstance(argv.containerExecutable)?.start();
+            }
+        }
 
         // Emit pipeline started event
         if (emitter.isEnabled()) {
@@ -53,6 +62,9 @@ export class Executor {
                 },
             });
         }
+
+        // Stop resource monitoring
+        ResourceMonitor.getInstance()?.stop();
     }
 
     static getStartCandidates (jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: readonly Job[], manuals: string[]) {

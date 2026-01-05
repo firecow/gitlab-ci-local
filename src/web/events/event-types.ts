@@ -6,6 +6,7 @@ export enum EventType {
     PIPELINE_FINISHED = "pipeline:finished",
     JOB_QUEUED = "job:queued",
     JOB_STARTED = "job:started",
+    JOB_CONTAINER_CREATED = "job:container_created",
     JOB_LOG_LINE = "job:log",
     JOB_FINISHED = "job:finished",
     JOB_STATUS_CHANGED = "job:status",
@@ -53,6 +54,8 @@ export interface JobEvent extends BaseEvent {
         coverage?: number | null;
         allowFailure?: boolean;
         needs?: string[]; // Job names this job depends on
+        containerId?: string; // Docker container ID for resource monitoring
+        resourceStats?: {avgCpu: number; avgMemory: number; peakCpu: number; peakMemory: number};
     };
 }
 

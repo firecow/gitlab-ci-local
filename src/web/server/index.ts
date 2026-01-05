@@ -18,6 +18,7 @@ export interface WebServerOptions {
     volumes?: string[];
     helperImage?: string;
     webBaseUrl?: string;
+    containerExecutable?: string;
 }
 
 export class WebServer {
@@ -49,7 +50,7 @@ export class WebServer {
         this.eventBroadcaster = new EventBroadcaster(this.sseManager);
 
         // Initialize API router with file-based log reading
-        this.apiRouter = new APIRouter(this.db, options.cwd, options.stateDir, options.mountCwd, options.volumes, options.helperImage, this.logFileManager, options.webBaseUrl);
+        this.apiRouter = new APIRouter(this.db, options.cwd, options.stateDir, options.mountCwd, options.volumes, options.helperImage, this.logFileManager, options.webBaseUrl, options.containerExecutable);
 
         // Initialize static server (uses embedded HTML, no external files needed)
         this.staticServer = new StaticServer();

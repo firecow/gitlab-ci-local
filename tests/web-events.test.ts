@@ -408,6 +408,11 @@ describe("GCLDatabase", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const retrieved = db.getJob("test-job-1");
@@ -443,6 +448,11 @@ describe("GCLDatabase", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         db.createJob({
@@ -460,6 +470,11 @@ describe("GCLDatabase", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const jobs = db.getJobsByPipeline("test-pipeline-4");
@@ -494,6 +509,11 @@ describe("GCLDatabase", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         db.appendLog("test-job-4", {line_number: 0, stream: "stdout", content: "Hello", timestamp: Date.now()});
@@ -579,6 +599,11 @@ describe("GCLDatabase", () => {
             duration: 50,
             exit_code: 0,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const stats = db.getStats();
@@ -664,6 +689,11 @@ describe("GCLDatabase extended", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         db.updateJob("update-job-1", {
@@ -708,6 +738,11 @@ describe("GCLDatabase extended", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         db.updateJob("allow-fail-job", {allow_failure: 1});
@@ -744,6 +779,11 @@ describe("GCLDatabase extended", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const job = db.getJobByPipelineAndName("name-lookup-pipeline", "unique-job-name");
@@ -779,6 +819,11 @@ describe("GCLDatabase extended", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         db.appendLog("log-count-job", {line_number: 0, stream: "stdout", content: "Line 1", timestamp: Date.now()});
@@ -817,6 +862,11 @@ describe("GCLDatabase extended", () => {
             duration: 100,
             exit_code: 0,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         db.recordArtifact({
@@ -944,6 +994,11 @@ describe("GCLDatabase extended", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const result = db.markIncompleteAsCancelled();
@@ -1556,6 +1611,11 @@ describe("GCLDatabase reload and edge cases", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // Add 20 log lines
@@ -1666,6 +1726,11 @@ describe("EventRecorder edge cases", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // CLI starts job with different ID but same name
@@ -1739,6 +1804,11 @@ describe("EventRecorder edge cases", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // CLI starts job with different ID
@@ -2034,6 +2104,11 @@ describe("EventRecorder edge cases", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // Finish job - duration should be null since started_at is null
@@ -2309,6 +2384,11 @@ describe("GCLDatabase null db edge cases", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         })).toThrow("Database not initialized");
 
         expect(() => db.recordArtifact({
@@ -2399,6 +2479,11 @@ describe("GCLDatabase debounce and timing", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // Add exactly LOG_BUFFER_SIZE (10) logs to trigger flush
@@ -2600,6 +2685,11 @@ describe("GCLDatabase migrations", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const job = db.getJob("migrate-job");
@@ -2716,6 +2806,11 @@ describe("GCLDatabase additional branches", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // Add multiple logs rapidly (less than buffer size to trigger scheduleFlush)
@@ -2805,6 +2900,11 @@ describe("GCLDatabase additional branches", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const after = Date.now();
@@ -2841,6 +2941,11 @@ describe("GCLDatabase additional branches", () => {
             duration: 50,
             exit_code: 0,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const before = Date.now();
@@ -3299,6 +3404,11 @@ describe("GCLDatabase final branch coverage", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // Update with allow_failure true (tests the conversion branch)
@@ -3402,6 +3512,11 @@ describe("GCLDatabase final branch coverage", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // Add multiple logs rapidly (less than buffer size)
@@ -3467,6 +3582,11 @@ describe("GCLDatabase final branch coverage", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // Get logs for job with no logs yet
@@ -3700,6 +3820,11 @@ describe("GCLDatabase remaining branches", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // Update without allow_failure (tests else branch of "allow_failure" in data)
@@ -3747,6 +3872,11 @@ describe("GCLDatabase remaining branches", () => {
             duration: 50,
             exit_code: 0,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const explicitTime = 1234567890;
@@ -3825,6 +3955,11 @@ describe("GCLDatabase remaining branches", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
             created_at: explicitTime,
         });
 
@@ -3868,6 +4003,11 @@ describe("GCLDatabase remaining branches", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         expect(job.allow_failure).toBe(0);
@@ -3910,6 +4050,11 @@ describe("GCLDatabase remaining branches", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         expect(job.allow_failure).toBe(1);
@@ -3954,6 +4099,11 @@ describe("GCLDatabase remaining branches", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const result = db.markIncompleteAsCancelled();
@@ -4069,6 +4219,11 @@ describe("GCLDatabase remaining branches", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // Add 20 logs
@@ -4157,6 +4312,11 @@ describe("GCLDatabase remaining branches", () => {
             duration: 50,
             exit_code: 0,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // Add logs
@@ -4234,6 +4394,11 @@ describe("GCLDatabase remaining branches", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         // First log for this job should create the buffer
@@ -4395,6 +4560,11 @@ describe("GCLDatabase remaining branches", () => {
             duration: null,
             exit_code: null,
             coverage_percent: null,
+            container_id: null,
+            avg_cpu_percent: null,
+            avg_memory_percent: null,
+            peak_cpu_percent: null,
+            peak_memory_percent: null,
         });
 
         const job = db.getJob("needs-migration-job");

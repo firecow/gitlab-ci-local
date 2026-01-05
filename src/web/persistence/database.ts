@@ -111,6 +111,33 @@ export class GCLDatabase {
                 // Ignore if columns already exist
             }
         }
+
+        // Migration: Add resource usage columns to jobs table
+        try {
+            this.db.exec("SELECT avg_cpu_percent FROM jobs LIMIT 1");
+        } catch {
+            try {
+                this.db.run("ALTER TABLE jobs ADD COLUMN avg_cpu_percent REAL");
+                this.db.run("ALTER TABLE jobs ADD COLUMN avg_memory_percent REAL");
+                this.db.run("ALTER TABLE jobs ADD COLUMN peak_cpu_percent REAL");
+                this.db.run("ALTER TABLE jobs ADD COLUMN peak_memory_percent REAL");
+                console.log("Migration: Added resource usage columns to jobs table");
+            } catch {
+                // Ignore if columns already exist
+            }
+        }
+
+        // Migration: Add container_id column to jobs table
+        try {
+            this.db.exec("SELECT container_id FROM jobs LIMIT 1");
+        } catch {
+            try {
+                this.db.run("ALTER TABLE jobs ADD COLUMN container_id TEXT");
+                console.log("Migration: Added container_id column to jobs table");
+            } catch {
+                // Ignore if column already exists
+            }
+        }
     }
 
     // Save database to file (atomic write to prevent corruption)
@@ -276,9 +303,9 @@ export class GCLDatabase {
         };
 
         this.db.run(`
-            INSERT INTO jobs (id, pipeline_id, name, base_name, stage, status, when_condition, allow_failure, needs, started_at, finished_at, duration, exit_code, coverage_percent, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [row.id, row.pipeline_id, row.name, row.base_name, row.stage, row.status, row.when_condition, row.allow_failure, row.needs, row.started_at, row.finished_at, row.duration, row.exit_code, row.coverage_percent, row.created_at]);
+            INSERT INTO jobs (id, pipeline_id, name, base_name, stage, status, when_condition, allow_failure, needs, started_at, finished_at, duration, exit_code, coverage_percent, container_id, avg_cpu_percent, avg_memory_percent, peak_cpu_percent, peak_memory_percent, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [row.id, row.pipeline_id, row.name, row.base_name, row.stage, row.status, row.when_condition, row.allow_failure, row.needs, row.started_at, row.finished_at, row.duration, row.exit_code, row.coverage_percent, row.container_id, row.avg_cpu_percent, row.avg_memory_percent, row.peak_cpu_percent, row.peak_memory_percent, row.created_at]);
 
         this.scheduleSave();
         return row;
