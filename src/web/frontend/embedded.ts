@@ -23,10 +23,11 @@ export const INDEX_HTML = `<!DOCTYPE html>
             --hover-color: #1f2f4f;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); line-height: 1.5; }
+        html { height: 100%; overflow: hidden; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-color); color: var(--text-color); line-height: 1.5; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
         .container.full-width { max-width: none; padding-right: 0; }
-        .app-header { background: var(--surface-color); border-bottom: 1px solid var(--border-color); padding: 1rem 0; }
+        .app-header { background: var(--surface-color); border-bottom: 1px solid var(--border-color); padding: 1rem 0; flex-shrink: 0; }
         .header-content { display: flex; justify-content: space-between; align-items: center; }
         .app-title { font-size: 1.25rem; font-weight: 600; }
         .logo { color: var(--text-color); text-decoration: none; }
@@ -35,7 +36,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .nav-link { color: var(--text-muted); text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s; }
         .nav-link:hover { color: var(--text-color); background: var(--hover-color); }
         .nav-link.active { color: var(--accent-color); background: var(--hover-color); }
-        .app-main { padding: 2rem 0; }
+        .app-main { padding: 2rem 0; flex: 1; overflow-y: auto; }
         .card { background: var(--surface-color); border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 1rem; overflow: hidden; }
         .card-header { padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 1rem; }
@@ -93,7 +94,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .dag-legend { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; position: relative; z-index: 1; }
         .dag-legend-item { display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--text-muted); }
         .dag-legend-color { width: 16px; height: 16px; border-radius: 50%; border: 2px solid; }
-        .split-view { display: flex; gap: 0; height: calc(100vh - 120px); min-height: 500px; width: 100%; overflow: hidden; }
+        .split-view { display: flex; gap: 0; height: calc(100vh - 200px); min-height: 400px; width: 100%; overflow: hidden; }
         .split-left { flex: 0 0 450px; overflow: auto; min-width: 200px; max-width: 80%; padding-right: 0.5rem; }
         .split-left.full-width { flex: 1; max-width: none; }
         .split-divider { flex: 0 0 6px; background: var(--border-color); cursor: col-resize; position: relative; transition: background 0.2s; }
@@ -199,6 +200,12 @@ export const INDEX_HTML = `<!DOCTYPE html>
         .resource-toggle-btn { font-size: 0.7rem; padding: 0.2rem 0.5rem; }
         .resource-toggle-btn.active { background: var(--success-color); }
         .resource-disabled-msg { text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.85rem; }
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        * { scrollbar-width: thin; scrollbar-color: var(--border-color) var(--bg-color); }
     </style>
 </head>
 <body>
@@ -373,6 +380,11 @@ export const INDEX_HTML = `<!DOCTYPE html>
             }
         }
 
+        function formatMemoryGB(bytes) {
+            if (!bytes) return '0 GB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+
         function initResourceChart() {
             var canvas = document.getElementById('resource-chart');
             if (!canvas || typeof Chart === 'undefined') return;
@@ -388,12 +400,39 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     animation: { duration: 0 },
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 10 } } },
-                        tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%'; } } }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    if (ctx.dataset.yAxisID === 'y-memory') {
+                                        // ctx.parsed.y is in MB, display in GB
+                                        return ctx.dataset.label + ': ' + (ctx.parsed.y / 1024).toFixed(2) + ' GB';
+                                    }
+                                    return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%';
+                                }
+                            }
+                        }
                     },
                     scales: {
                         x: { display: true, ticks: { maxTicksLimit: 6, font: { size: 9 } } },
-                        y: { display: true, min: 0, max: 100, ticks: { stepSize: 25, font: { size: 9 } }, title: { display: true, text: '%', font: { size: 9 } } }
+                        'y-cpu': {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            title: { display: true, text: 'CPU %', font: { size: 9 } },
+                            ticks: { font: { size: 9 }, callback: function(v) { return v + '%'; } }
+                        },
+                        'y-memory': {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            title: { display: true, text: 'Memory (GB)', font: { size: 9 } },
+                            // Values are stored in MB, display in GB
+                            ticks: { font: { size: 9 }, callback: function(v) { return (v / 1024).toFixed(1) + ' GB'; } },
+                            grid: { drawOnChartArea: false }
+                        }
                     }
                 }
             });
@@ -401,22 +440,41 @@ export const INDEX_HTML = `<!DOCTYPE html>
 
         function updateResourceChart(containerStats) {
             if (!resourceMonitorEnabled || !resourceChart) return;
-            if (!containerStats || containerStats.length === 0) return;
 
             var now = Date.now();
+            var MB = 1024 * 1024;
+            var cutoffTime = now - 120000; // 120 seconds ago
+
             // Add new stats to history
-            containerStats.forEach(function(stat) {
-                if (!statsHistory[stat.jobName]) statsHistory[stat.jobName] = [];
-                statsHistory[stat.jobName].push({
-                    timestamp: stat.timestamp || now,
-                    cpu: stat.cpuPercent,
-                    memory: stat.memoryPercent
+            if (containerStats && containerStats.length > 0) {
+                containerStats.forEach(function(stat) {
+                    if (!statsHistory[stat.jobName]) statsHistory[stat.jobName] = [];
+                    statsHistory[stat.jobName].push({
+                        timestamp: stat.timestamp || now,
+                        cpu: stat.cpuPercent,
+                        memoryMB: (stat.memoryBytes || 0) / MB // Store memory in MB for charting
+                    });
                 });
-                // Keep last 60 seconds (12 data points at 5s interval)
-                if (statsHistory[stat.jobName].length > 12) {
-                    statsHistory[stat.jobName] = statsHistory[stat.jobName].slice(-12);
+            }
+
+            // Filter out data older than 120 seconds and clean up empty jobs
+            Object.keys(statsHistory).forEach(function(jobName) {
+                statsHistory[jobName] = statsHistory[jobName].filter(function(h) {
+                    return h.timestamp >= cutoffTime;
+                });
+                // Remove job from history if no recent data
+                if (statsHistory[jobName].length === 0) {
+                    delete statsHistory[jobName];
                 }
             });
+
+            // If no data in history, clear chart
+            if (Object.keys(statsHistory).length === 0) {
+                resourceChart.data.labels = [];
+                resourceChart.data.datasets = [];
+                resourceChart.update('none');
+                return;
+            }
 
             // Build datasets
             var allTimestamps = new Set();
@@ -437,7 +495,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
                 history.forEach(function(h) { historyMap[h.timestamp] = h; });
 
                 var cpuData = sortedTs.map(function(ts) { var h = historyMap[ts]; return h ? h.cpu : null; });
-                var memData = sortedTs.map(function(ts) { var h = historyMap[ts]; return h ? h.memory : null; });
+                var memData = sortedTs.map(function(ts) { var h = historyMap[ts]; return h ? h.memoryMB : null; });
 
                 datasets.push({
                     label: jobName + ' CPU',
@@ -447,7 +505,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     borderWidth: 2,
                     fill: false,
                     tension: 0.1,
-                    pointRadius: 2
+                    pointRadius: 2,
+                    yAxisID: 'y-cpu'
                 });
                 datasets.push({
                     label: jobName + ' Mem',
@@ -458,7 +517,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     borderDash: [5, 5],
                     fill: false,
                     tension: 0.1,
-                    pointRadius: 2
+                    pointRadius: 2,
+                    yAxisID: 'y-memory'
                 });
             });
 
@@ -1032,7 +1092,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
         }
 
         function renderInitProgress(p) {
-            if (!p.init_phase || p.status === 'running' || p.status === 'success' || p.status === 'failed') {
+            // Only show init progress for queued pipelines with an init phase
+            if (!p.init_phase || p.status !== 'queued') {
                 return '';
             }
             var progress = p.init_progress || 0;
@@ -1075,9 +1136,15 @@ export const INDEX_HTML = `<!DOCTYPE html>
                 var autoScrollClass = logAutoScroll ? ' active' : '';
                 var runBtnText = (selectedJob.status === 'pending' || selectedJob.status === 'running') ? 'Run' : 'Retry';
                 var runBtnDisabled = pipelineRunning ? ' disabled' : '';
+                // Build resource stats tooltip for finished Docker jobs
+                var resourceStatsHtml = '';
+                if (selectedJob.status !== 'running' && selectedJob.status !== 'pending' && selectedJob.avg_cpu_percent != null) {
+                    var avgMemGB = selectedJob.avg_memory_percent != null ? (selectedJob.avg_memory_percent / 100 * 8).toFixed(2) : '?'; // Estimate based on typical 8GB containers
+                    resourceStatsHtml = ' <span class="text-muted" style="font-size:0.75rem;font-weight:normal">(Avg CPU: ' + selectedJob.avg_cpu_percent.toFixed(1) + '%, Peak: ' + (selectedJob.peak_cpu_percent || 0).toFixed(1) + '%)</span>';
+                }
                 var rightPanel = '<div class="split-right">' +
                     '<div class="split-right-header">' +
-                    '<h3 id="job-header">' + escapeHtml(selectedJob.name) + ' <span class="' + getStatusBadgeClass(selectedJob.status) + '">' + selectedJob.status + '</span></h3>' +
+                    '<h3 id="job-header">' + escapeHtml(selectedJob.name) + ' <span class="' + getStatusBadgeClass(selectedJob.status) + '">' + selectedJob.status + '</span>' + resourceStatsHtml + '</h3>' +
                     '<div class="header-actions">' +
                     '<button class="run-job-btn" id="run-job-btn" onclick="handleRunJob(\\''+selectedJob.id+'\\', \\''+escapeHtml(selectedJob.name)+'\\')"'+runBtnDisabled+'>' + runBtnText + '</button>' +
                     '<button class="run-job-btn" style="background:var(--border-color);color:white" onclick="window.open(\\'/api/jobs/' + selectedJob.id + '/logs/raw\\', \\'_blank\\')">Raw</button>' +
@@ -1118,22 +1185,30 @@ export const INDEX_HTML = `<!DOCTYPE html>
             }).join('');
         }
 
+        var selectJobCounter = 0;
         window.selectJob = async function(jobId) {
+            // Increment counter to track this selection
+            var thisSelection = ++selectJobCounter;
+
             selectedJobId = jobId;
             logAutoScroll = true;
             renderedLogCount = 0;
 
-            // Start live log refresh
+            // Clear any existing log refresh interval
             if (logRefreshInterval) {
                 clearInterval(logRefreshInterval);
+                logRefreshInterval = null;
             }
 
             // Initial render
             await refreshPipelineView();
 
+            // Only set up polling if this is still the current selection
+            if (thisSelection !== selectJobCounter) return;
+
             // Set up live log polling
             logRefreshInterval = setInterval(async function() {
-                if (selectedJobId) {
+                if (selectedJobId && thisSelection === selectJobCounter) {
                     await refreshPipelineView();
                     // Auto-scroll to bottom if enabled
                     if (logAutoScroll) {
@@ -1142,6 +1217,9 @@ export const INDEX_HTML = `<!DOCTYPE html>
                             viewer.scrollTop = viewer.scrollHeight;
                         }
                     }
+                } else if (thisSelection !== selectJobCounter) {
+                    // This interval is stale, clear it
+                    clearInterval(logRefreshInterval);
                 }
             }, 1000);
         };
@@ -1268,8 +1346,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
             // Update or remove init progress section
             var initProgressEl = document.getElementById('init-progress');
             if (initProgressEl) {
-                // Remove init progress if pipeline is now running/success/failed
-                if (p.status === 'running' || p.status === 'success' || p.status === 'failed') {
+                // Remove init progress if pipeline is no longer queued
+                if (p.status !== 'queued') {
                     initProgressEl.remove();
                 } else if (p.init_phase) {
                     // Update progress values
@@ -1544,8 +1622,12 @@ export const INDEX_HTML = `<!DOCTYPE html>
         window.showJobLogs = async function(id) { location.hash = '/job/' + id + '/logs'; };
 
         let refreshInterval = null;
+        let routerCounter = 0;
 
         async function router() {
+            // Increment counter to track this router call
+            const thisRoute = ++routerCounter;
+
             const root = document.getElementById('app-root');
             const hash = location.hash.slice(1) || '/';
             updateNav(hash);
@@ -1557,7 +1639,7 @@ export const INDEX_HTML = `<!DOCTYPE html>
                 container.classList.remove('full-width');
             }
 
-            // Clear auto-refresh for non-pipeline pages
+            // Clear auto-refresh intervals
             if (refreshInterval) {
                 clearInterval(refreshInterval);
                 refreshInterval = null;
@@ -1582,6 +1664,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     jobColorMap = {};
                     if (resourceChart) { resourceChart.destroy(); resourceChart = null; }
                     const data = await fetchPipeline(id);
+                    // Check if route changed during await
+                    if (thisRoute !== routerCounter) return;
                     root.innerHTML = renderPipelineDetail(data, null, null);
                     scheduleDependencyLinesDraw();
                     // Initialize resource chart
@@ -1592,6 +1676,10 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     // Auto-refresh pipeline view to show job updates
                     refreshInterval = setInterval(async () => {
                         try {
+                            if (thisRoute !== routerCounter) {
+                                clearInterval(refreshInterval);
+                                return;
+                            }
                             if (!selectedJobId && location.hash.slice(1).startsWith('/pipeline/')) {
                                 await refreshPipelineView();
                             }
@@ -1613,6 +1701,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
                     root.innerHTML = renderJobLogs(combined, id, runStatus);
                 } else {
                     const [pipelines, status, structure] = await Promise.all([fetchPipelines(), fetchPipelineStatus(), fetchPipelineStructure()]);
+                    // Check if route changed during await
+                    if (thisRoute !== routerCounter) return;
                     // Fetch most recent pipeline's jobs if available
                     var recentJobs = [];
                     if (pipelines.length > 0) {
@@ -1621,11 +1711,17 @@ export const INDEX_HTML = `<!DOCTYPE html>
                             recentJobs = recentPipeline.jobs || [];
                         } catch (e) {}
                     }
+                    // Check again after second await
+                    if (thisRoute !== routerCounter) return;
                     root.innerHTML = renderPipelineList(pipelines, status, structure, recentJobs);
                     scheduleDependencyLinesDraw();
                     // Auto-refresh pipeline list - only update content fields
                     refreshInterval = setInterval(async () => {
                         try {
+                            if (thisRoute !== routerCounter) {
+                                clearInterval(refreshInterval);
+                                return;
+                            }
                             const [newPipelines, newStatus, newStructure] = await Promise.all([fetchPipelines(), fetchPipelineStatus(), fetchPipelineStructure()]);
                             // Fetch most recent pipeline's jobs
                             var newRecentJobs = [];

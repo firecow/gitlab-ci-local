@@ -1,12 +1,13 @@
 import http from "http";
 import path from "path";
 import fs from "fs-extra";
-import {spawn, execSync} from "child_process";
+import {spawn} from "child_process";
 import yaml from "yaml";
 import {GCLDatabase} from "../persistence/database.js";
 import {LogFileManager, LogLine} from "../persistence/log-file-manager.js";
-import {ContainerStats, ResourceMonitor} from "../../resource-monitor.js";
+import {ContainerStats} from "../../resource-monitor.js";
 import {Utils} from "../../utils.js";
+import {matchContainerId} from "../utils/docker-utils.js";
 
 interface RouteParams {
     [key: string]: string;
@@ -22,6 +23,12 @@ interface Route {
 }
 
 export class APIRouter {
+    // Reserved YAML keys that are not job definitions
+    private static readonly YAML_RESERVED_KEYS = new Set([
+        "stages", "variables", "default", "include", "image", "services",
+        "before_script", "after_script", "cache", "workflow", "pages",
+    ]);
+
     private routes: Route[] = [];
     private db: GCLDatabase;
     private logFileManager: LogFileManager | null;
@@ -156,33 +163,115 @@ export class APIRouter {
         }
     }
 
-    // Poll docker stats for running containers
+    // Build base command arguments for spawning gitlab-ci-local
+    private buildBaseArgs (): string[] {
+        const args = ["--state-dir", this.stateDir];
+        if (this.mountCwd) {
+            args.push("--mount-cwd");
+        }
+        for (const vol of this.volumes) {
+            args.push("--volume", vol);
+        }
+        if (this.helperImage) {
+            args.push("--helper-image", this.helperImage);
+        }
+        return args;
+    }
+
+    // Build spawn command (determines dev vs production mode)
+    private buildSpawnCommand (args: string[]): {cmd: string; cmdArgs: string[]} {
+        const nodeExecutable = process.argv[0];
+        const mainScript = process.argv[1];
+
+        if (mainScript.includes("tsx") || mainScript.endsWith(".ts")) {
+            // Development mode - use tsx
+            return {
+                cmd: "npx",
+                cmdArgs: ["tsx", path.join(this.cwd, "src/index.ts"), ...args],
+            };
+        } else {
+            // Production mode - use the same executable
+            return {
+                cmd: nodeExecutable,
+                cmdArgs: [mainScript, ...args],
+            };
+        }
+    }
+
+    // Attach event handlers to a spawned process
+    private attachProcessHandlers (label: string): void {
+        if (!this.runningProcess) return;
+
+        this.runningProcess.on("close", async (code) => {
+            console.log(`${label} process exited with code ${code}`);
+            this.runningProcess = null;
+            // Reload database to pick up final state from subprocess
+            await this.db.reload();
+        });
+
+        this.runningProcess.on("error", (err) => {
+            console.error(`${label} process error:`, err);
+            this.runningProcess = null;
+        });
+
+        this.runningProcess.stdout?.on("data", (data) => {
+            process.stdout.write(`[${label.toLowerCase()}] ${data}`);
+        });
+
+        this.runningProcess.stderr?.on("data", (data) => {
+            process.stderr.write(`[${label.toLowerCase()}] ${data}`);
+        });
+    }
+
+    // Parse memory string like "1.5GiB" or "500MiB" to bytes
+    private parseMemoryToBytes (memStr: string): number {
+        const match = memStr.match(/^([\d.]+)\s*([A-Za-z]+)/);
+        if (!match) return 0;
+        const value = parseFloat(match[1]);
+        const unit = match[2].toLowerCase();
+        const multipliers: Record<string, number> = {
+            "b": 1,
+            "kib": 1024,
+            "kb": 1000,
+            "mib": 1024 * 1024,
+            "mb": 1000 * 1000,
+            "gib": 1024 * 1024 * 1024,
+            "gb": 1000 * 1000 * 1000,
+        };
+        return value * (multipliers[unit] || 1);
+    }
+
+    // Poll docker stats for running containers using JSON format
     private async pollDockerStats (containerIds: string[], jobNames: Map<string, string>): Promise<ContainerStats[]> {
         if (containerIds.length === 0) return [];
 
         try {
-            const format = "{{.Container}}\t{{.CPUPerc}}\t{{.MemPerc}}";
-            const cmd = `${this.containerExecutable} stats --no-stream --format "${format}" ${containerIds.join(" ")}`;
+            // Use JSON format for reliable parsing
+            const cmd = `${this.containerExecutable} stats --no-stream --format json ${containerIds.join(" ")}`;
 
             const {stdout} = await Utils.bash(cmd, this.cwd);
             const stats: ContainerStats[] = [];
             const now = Date.now();
 
+            // Parse JSON output (one JSON object per line)
             const lines = stdout.trim().split("\n").filter(l => l.length > 0);
             for (const line of lines) {
-                const parts = line.split("\t");
-                if (parts.length >= 3) {
-                    const containerId = parts[0];
-                    const cpuStr = parts[1].replace("%", "");
-                    const memStr = parts[2].replace("%", "");
+                try {
+                    const stat = JSON.parse(line);
+                    const containerId = stat.Container || stat.ID || "";
+                    const cpuStr = (stat.CPUPerc || "0%").replace("%", "");
+                    // MemUsage format: "1.5GiB / 8GiB" - take the first part (used)
+                    const memUsage = stat.MemUsage || "0B / 0B";
+                    const memUsageParts = memUsage.split("/");
+                    const memUsedStr = memUsageParts[0].trim();
 
                     const cpu = parseFloat(cpuStr) || 0;
-                    const memory = parseFloat(memStr) || 0;
+                    const memoryBytes = this.parseMemoryToBytes(memUsedStr);
 
                     // Find matching container (docker stats may return short ID)
                     let jobName = "unknown";
                     for (const [fullId, name] of jobNames) {
-                        if (fullId.startsWith(containerId) || containerId.startsWith(fullId.substring(0, 12))) {
+                        if (matchContainerId(fullId, containerId)) {
                             jobName = name;
                             break;
                         }
@@ -192,9 +281,12 @@ export class APIRouter {
                         containerId: containerId.substring(0, 12),
                         jobName,
                         cpuPercent: cpu,
-                        memoryPercent: memory,
+                        memoryPercent: 0, // Keep for backwards compatibility
+                        memoryBytes,
                         timestamp: now,
                     });
+                } catch {
+                    // Skip lines that aren't valid JSON (e.g., warnings)
                 }
             }
 
@@ -540,13 +632,8 @@ export class APIRouter {
             const parsed = yaml.parse(content);
 
             // Extract stages (use default if not specified)
-            const stages: string[] = parsed.stages || ["build", "test", "deploy"];
-
-            // Reserved keys that are not jobs
-            const reservedKeys = new Set([
-                "stages", "variables", "default", "include", "image", "services",
-                "before_script", "after_script", "cache", "workflow", "pages",
-            ]);
+            // GitLab CI always has .pre and .post stages available
+            const userStages: string[] = parsed.stages || ["build", "test", "deploy"];
 
             // Extract jobs
             const jobs: Array<{
@@ -559,13 +646,18 @@ export class APIRouter {
                 allowFailure: boolean;
             }> = [];
 
+            // Track which stages have jobs
+            const usedStages = new Set<string>();
+
             for (const [key, value] of Object.entries(parsed)) {
                 // Skip reserved keys and hidden jobs (starting with .)
-                if (reservedKeys.has(key) || key.startsWith(".") || typeof value !== "object" || value === null) {
+                if (APIRouter.YAML_RESERVED_KEYS.has(key) || key.startsWith(".") || typeof value !== "object" || value === null) {
                     continue;
                 }
 
                 const jobDef = value as Record<string, any>;
+                const jobStage = jobDef.stage || "test";
+                usedStages.add(jobStage);
 
                 // Extract needs - can be array of strings or array of objects with 'job' property
                 let needs: string[] | null = null;
@@ -580,7 +672,7 @@ export class APIRouter {
                 jobs.push({
                     id: `yaml-${key}`,
                     name: key,
-                    stage: jobDef.stage || "test",
+                    stage: jobStage,
                     status: "pending",
                     needs,
                     when: jobDef.when || null,
@@ -588,8 +680,37 @@ export class APIRouter {
                 });
             }
 
-            // Sort jobs by stage order
-            const stageOrder = new Map(stages.map((s, i) => [s, i]));
+            // Build final stages list: .pre first, user stages, .post last
+            // Only include .pre/.post if they have jobs or are explicitly in stages list
+            const stages: string[] = [];
+
+            // Add .pre if it has jobs or is explicitly listed
+            if (usedStages.has(".pre") || userStages.includes(".pre")) {
+                stages.push(".pre");
+            }
+
+            // Add user stages (excluding .pre and .post which we handle specially)
+            for (const stage of userStages) {
+                if (stage !== ".pre" && stage !== ".post") {
+                    stages.push(stage);
+                }
+            }
+
+            // Add .post if it has jobs or is explicitly listed
+            if (usedStages.has(".post") || userStages.includes(".post")) {
+                stages.push(".post");
+            }
+
+            // Sort jobs by stage order (.pre = -1, .post = Infinity, others by position)
+            const stageOrder = new Map<string, number>();
+            stageOrder.set(".pre", -1);
+            stages.forEach((s, i) => {
+                if (s !== ".pre" && s !== ".post") {
+                    stageOrder.set(s, i);
+                }
+            });
+            stageOrder.set(".post", Infinity);
+
             jobs.sort((a, b) => {
                 const aOrder = stageOrder.get(a.stage) ?? 999;
                 const bOrder = stageOrder.get(b.stage) ?? 999;
@@ -639,14 +760,9 @@ export class APIRouter {
             const content = await fs.readFile(yamlPath, "utf-8");
             const parsed = yaml.parse(content);
 
-            const reservedKeys = new Set([
-                "stages", "variables", "default", "include", "image", "services",
-                "before_script", "after_script", "cache", "workflow", "pages",
-            ]);
-
             let jobIndex = 0;
             for (const [key, value] of Object.entries(parsed)) {
-                if (reservedKeys.has(key) || key.startsWith(".") || typeof value !== "object" || value === null) {
+                if (APIRouter.YAML_RESERVED_KEYS.has(key) || key.startsWith(".") || typeof value !== "object" || value === null) {
                     continue;
                 }
 
@@ -722,39 +838,13 @@ export class APIRouter {
         // Create pipeline entry immediately with pending status
         const pipelineId = await this.createPendingPipeline(requestedJobs);
 
-        // Build command arguments (no --cwd needed since we set cwd in spawn options)
-        const args = ["--state-dir", this.stateDir];
-        if (this.mountCwd) {
-            args.push("--mount-cwd");
-        }
-        for (const vol of this.volumes) {
-            args.push("--volume", vol);
-        }
-        if (this.helperImage) {
-            args.push("--helper-image", this.helperImage);
-        }
+        // Build command arguments
+        const args = this.buildBaseArgs();
         if (requestedJobs.length > 0) {
             args.push(...requestedJobs);
         }
 
-        // Spawn gitlab-ci-local process
-        // Try to find the executable or use npx tsx
-        const nodeExecutable = process.argv[0];
-        const mainScript = process.argv[1];
-
-        // If running via tsx or node, use that approach
-        let cmd: string;
-        let cmdArgs: string[];
-
-        if (mainScript.includes("tsx") || mainScript.endsWith(".ts")) {
-            // Development mode - use tsx
-            cmd = "npx";
-            cmdArgs = ["tsx", path.join(this.cwd, "src/index.ts"), ...args];
-        } else {
-            // Production mode - use the same executable
-            cmd = nodeExecutable;
-            cmdArgs = [mainScript, ...args];
-        }
+        const {cmd, cmdArgs} = this.buildSpawnCommand(args);
 
         // Get the pipeline IID from the pending pipeline we just created
         const pendingPipeline = this.db.getPipeline(pipelineId);
@@ -765,35 +855,15 @@ export class APIRouter {
                 cwd: this.cwd,
                 env: {
                     ...process.env,
-                    GCIL_WEB_UI_ENABLED: "true", // Use GCIL_ prefix to avoid yargs .env("GCL") parsing
-                    GCIL_PIPELINE_IID: String(pipelineIid), // Pass IID so subprocess uses same pipeline
-                    FORCE_COLOR: "0", // Disable colors in subprocess
+                    GCIL_WEB_UI_ENABLED: "true",
+                    GCIL_PIPELINE_IID: String(pipelineIid),
+                    FORCE_COLOR: "0",
                 },
                 stdio: ["ignore", "pipe", "pipe"],
             });
 
             const pid = this.runningProcess.pid;
-
-            this.runningProcess.on("close", async (code) => {
-                console.log(`Pipeline process exited with code ${code}`);
-                this.runningProcess = null;
-                // Reload database to pick up final state from subprocess
-                await this.db.reload();
-            });
-
-            this.runningProcess.on("error", (err) => {
-                console.error("Pipeline process error:", err);
-                this.runningProcess = null;
-            });
-
-            // Log output for debugging
-            this.runningProcess.stdout?.on("data", (data) => {
-                process.stdout.write(`[pipeline] ${data}`);
-            });
-
-            this.runningProcess.stderr?.on("data", (data) => {
-                process.stderr.write(`[pipeline] ${data}`);
-            });
+            this.attachProcessHandlers("Pipeline");
 
             this.json(res, {
                 success: true,
@@ -841,65 +911,25 @@ export class APIRouter {
             return;
         }
 
-        // Build command to run specific job (no --cwd needed since we set cwd in spawn options)
-        const args = ["--state-dir", this.stateDir];
-        if (this.mountCwd) {
-            args.push("--mount-cwd");
-        }
-        for (const vol of this.volumes) {
-            args.push("--volume", vol);
-        }
-        if (this.helperImage) {
-            args.push("--helper-image", this.helperImage);
-        }
+        // Build command to run specific job
+        const args = this.buildBaseArgs();
         args.push(job.name);
 
-        const nodeExecutable = process.argv[0];
-        const mainScript = process.argv[1];
-
-        let cmd: string;
-        let cmdArgs: string[];
-
-        if (mainScript.includes("tsx") || mainScript.endsWith(".ts")) {
-            cmd = "npx";
-            cmdArgs = ["tsx", path.join(this.cwd, "src/index.ts"), ...args];
-        } else {
-            cmd = nodeExecutable;
-            cmdArgs = [mainScript, ...args];
-        }
+        const {cmd, cmdArgs} = this.buildSpawnCommand(args);
 
         try {
             this.runningProcess = spawn(cmd, cmdArgs, {
                 cwd: this.cwd,
                 env: {
                     ...process.env,
-                    GCIL_WEB_UI_ENABLED: "true", // Use GCIL_ prefix to avoid yargs .env("GCL") parsing
+                    GCIL_WEB_UI_ENABLED: "true",
                     FORCE_COLOR: "0",
                 },
                 stdio: ["ignore", "pipe", "pipe"],
             });
 
             const pid = this.runningProcess.pid;
-
-            this.runningProcess.on("close", async (code) => {
-                console.log(`Job process exited with code ${code}`);
-                this.runningProcess = null;
-                // Reload database to pick up final state from subprocess
-                await this.db.reload();
-            });
-
-            this.runningProcess.on("error", (err) => {
-                console.error("Job process error:", err);
-                this.runningProcess = null;
-            });
-
-            this.runningProcess.stdout?.on("data", (data) => {
-                process.stdout.write(`[job] ${data}`);
-            });
-
-            this.runningProcess.stderr?.on("data", (data) => {
-                process.stderr.write(`[job] ${data}`);
-            });
+            this.attachProcessHandlers("Job");
 
             this.json(res, {
                 success: true,
@@ -922,30 +952,10 @@ export class APIRouter {
         const stageName = decodeURIComponent(params.name);
 
         // Build command to run specific stage using --stage option
-        const args = ["--state-dir", this.stateDir, "--stage", stageName];
-        if (this.mountCwd) {
-            args.push("--mount-cwd");
-        }
-        for (const vol of this.volumes) {
-            args.push("--volume", vol);
-        }
-        if (this.helperImage) {
-            args.push("--helper-image", this.helperImage);
-        }
+        const args = this.buildBaseArgs();
+        args.push("--stage", stageName);
 
-        const nodeExecutable = process.argv[0];
-        const mainScript = process.argv[1];
-
-        let cmd: string;
-        let cmdArgs: string[];
-
-        if (mainScript.includes("tsx") || mainScript.endsWith(".ts")) {
-            cmd = "npx";
-            cmdArgs = ["tsx", path.join(this.cwd, "src/index.ts"), ...args];
-        } else {
-            cmd = nodeExecutable;
-            cmdArgs = [mainScript, ...args];
-        }
+        const {cmd, cmdArgs} = this.buildSpawnCommand(args);
 
         try {
             this.runningProcess = spawn(cmd, cmdArgs, {
@@ -959,25 +969,7 @@ export class APIRouter {
             });
 
             const pid = this.runningProcess.pid;
-
-            this.runningProcess.on("close", async (code) => {
-                console.log(`Stage process exited with code ${code}`);
-                this.runningProcess = null;
-                await this.db.reload();
-            });
-
-            this.runningProcess.on("error", (err) => {
-                console.error("Stage process error:", err);
-                this.runningProcess = null;
-            });
-
-            this.runningProcess.stdout?.on("data", (data) => {
-                process.stdout.write(`[stage] ${data}`);
-            });
-
-            this.runningProcess.stderr?.on("data", (data) => {
-                process.stderr.write(`[stage] ${data}`);
-            });
+            this.attachProcessHandlers("Stage");
 
             this.json(res, {
                 success: true,

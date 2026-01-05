@@ -1,5 +1,6 @@
 import {apiClient, Pipeline, Job, ResourceMonitorData, ContainerStats} from "../utils/api-client.js";
 import {createPipelineSSE, SSEClient} from "../utils/sse-client.js";
+import {formatDate, formatDuration} from "../utils/format-utils.js";
 import {JobLogs} from "./job-logs.js";
 import {ResourceChart} from "./resource-chart.js";
 
@@ -126,29 +127,6 @@ export class PipelineDetail extends HTMLElement {
         });
 
         this.sseClient.connect();
-    }
-
-    // Format timestamp to readable date
-    private formatDate (timestamp: number | null): string {
-        if (!timestamp) return "N/A";
-        const date = new Date(timestamp);
-        return date.toLocaleString();
-    }
-
-    // Format duration to human readable format
-    private formatDuration (duration: number | null): string {
-        if (!duration) return "N/A";
-        const seconds = Math.floor(duration / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-
-        if (hours > 0) {
-            return `${hours}h ${minutes % 60}m`;
-        } else if (minutes > 0) {
-            return `${minutes}m ${seconds % 60}s`;
-        } else {
-            return `${seconds}s`;
-        }
     }
 
     // Format resource stats tooltip for completed Docker jobs
@@ -281,7 +259,7 @@ export class PipelineDetail extends HTMLElement {
                                 </span>
                             </div>
                             <div class="job-meta">
-                                ${job.duration ? `Duration: ${this.formatDuration(job.duration)}` : "Not started"}
+                                ${job.duration ? `Duration: ${formatDuration(job.duration)}` : "Not started"}
                                 ${job.exit_code !== null ? ` | Exit code: ${job.exit_code}` : ""}
                             </div>
                             ${resourceStats ? `<div class="job-resources">${resourceStats}</div>` : ""}
@@ -304,7 +282,7 @@ export class PipelineDetail extends HTMLElement {
         `).join("");
 
         // Resource chart HTML (only if Docker jobs exist)
-        const resourceChartPlaceholder = this.hasDockerJobs() ? `<div id="resource-chart-container"></div>` : "";
+        const resourceChartPlaceholder = this.hasDockerJobs() ? "<div id=\"resource-chart-container\"></div>" : "";
 
         this.innerHTML = `
             <div class="mb-3">
@@ -327,8 +305,8 @@ export class PipelineDetail extends HTMLElement {
                 </div>
                 <div class="card-body">
                     <div class="pipeline-meta">
-                        <span>Started: ${this.formatDate(this.pipeline.started_at)}</span>
-                        ${this.pipeline.duration ? `<span>Duration: ${this.formatDuration(this.pipeline.duration)}</span>` : ""}
+                        <span>Started: ${formatDate(this.pipeline.started_at)}</span>
+                        ${this.pipeline.duration ? `<span>Duration: ${formatDuration(this.pipeline.duration)}</span>` : ""}
                         ${this.pipeline.git_ref ? `<span>Ref: ${this.pipeline.git_ref}</span>` : ""}
                         ${this.pipeline.git_sha ? `<span>SHA: ${this.pipeline.git_sha.substring(0, 8)}</span>` : ""}
                     </div>

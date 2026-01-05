@@ -1,4 +1,5 @@
 import {apiClient, Pipeline} from "../utils/api-client.js";
+import {formatDate, formatDuration} from "../utils/format-utils.js";
 
 // Pipeline list component displays recent pipelines
 export class PipelineList extends HTMLElement {
@@ -37,29 +38,6 @@ export class PipelineList extends HTMLElement {
             console.error("Failed to load pipelines:", error);
             this.loading = false;
             this.render();
-        }
-    }
-
-    // Format timestamp to readable date
-    private formatDate (timestamp: number | null): string {
-        if (!timestamp) return "N/A";
-        const date = new Date(timestamp);
-        return date.toLocaleString();
-    }
-
-    // Format duration to human readable format
-    private formatDuration (duration: number | null): string {
-        if (!duration) return "N/A";
-        const seconds = Math.floor(duration / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-
-        if (hours > 0) {
-            return `${hours}h ${minutes % 60}m`;
-        } else if (minutes > 0) {
-            return `${minutes}m ${seconds % 60}s`;
-        } else {
-            return `${seconds}s`;
         }
     }
 
@@ -102,8 +80,8 @@ export class PipelineList extends HTMLElement {
                     </div>
                 </div>
                 <div class="pipeline-meta">
-                    <span>Started: ${this.formatDate(pipeline.started_at)}</span>
-                    ${pipeline.duration ? `<span>Duration: ${this.formatDuration(pipeline.duration)}</span>` : ""}
+                    <span>Started: ${formatDate(pipeline.started_at)}</span>
+                    ${pipeline.duration ? `<span>Duration: ${formatDuration(pipeline.duration)}</span>` : ""}
                     ${pipeline.git_ref ? `<span>Ref: ${pipeline.git_ref}</span>` : ""}
                 </div>
             </div>

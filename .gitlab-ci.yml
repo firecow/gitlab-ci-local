@@ -6,7 +6,6 @@ include:
 
 # test and build
 stages:
-  - .pre
   - test
   - build
 

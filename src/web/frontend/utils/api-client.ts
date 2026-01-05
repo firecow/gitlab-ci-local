@@ -61,6 +61,7 @@ export interface ContainerStats {
     jobName: string;
     cpuPercent: number;
     memoryPercent: number;
+    memoryBytes?: number; // Memory usage in bytes for absolute display
     timestamp: number;
 }
 

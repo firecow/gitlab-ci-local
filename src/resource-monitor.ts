@@ -1,11 +1,12 @@
 import {Utils} from "./utils.js";
-import {EventEmitter} from "./web/events/event-emitter.js";
+import {matchContainerId} from "./web/utils/docker-utils.js";
 
 export interface ContainerStats {
     containerId: string;
     jobName: string;
     cpuPercent: number;
     memoryPercent: number;
+    memoryBytes?: number; // Memory usage in bytes for absolute display
     timestamp: number;
 }
 
@@ -19,7 +20,7 @@ export interface ContainerSummary {
 
 interface ContainerStatsAccumulator {
     jobName: string;
-    samples: { cpu: number; memory: number; timestamp: number }[];
+    samples: {cpu: number; memory: number; timestamp: number}[];
     startTime: number;
 }
 
@@ -29,7 +30,6 @@ export class ResourceMonitor {
 
     private containers: Map<string, ContainerStatsAccumulator> = new Map();
     private pollingInterval: NodeJS.Timeout | null = null;
-    private paused: boolean = false;
     private containerExecutable: string;
     private readonly POLL_INTERVAL_MS = 5000; // 5 seconds
     private readonly MAX_HISTORY_SECONDS = 60; // Keep 60 seconds of history
@@ -109,9 +109,7 @@ export class ResourceMonitor {
         // Poll immediately, then every POLL_INTERVAL_MS
         this.poll();
         this.pollingInterval = setInterval(() => {
-            if (!this.paused) {
-                this.poll();
-            }
+            this.poll();
         }, this.POLL_INTERVAL_MS);
     }
 
@@ -123,21 +121,9 @@ export class ResourceMonitor {
         }
     }
 
-    // Pause polling (for toggle OFF)
-    pause (): void {
-        this.paused = true;
-    }
-
-    // Resume polling (for toggle ON)
-    resume (): void {
-        this.paused = false;
-        // Immediately poll when resuming
-        this.poll();
-    }
-
     // Check if actively polling
     isPolling (): boolean {
-        return this.pollingInterval !== null && !this.paused;
+        return this.pollingInterval !== null;
     }
 
     // Get container count
@@ -199,35 +185,34 @@ export class ResourceMonitor {
         return history;
     }
 
-    // Poll docker stats for all tracked containers
+    // Poll docker stats for all tracked containers using JSON format
     private async poll (): Promise<void> {
         if (this.containers.size === 0) return;
 
         const containerIds = Array.from(this.containers.keys());
 
         try {
-            // Query all containers at once
-            const format = "{{.Container}}\t{{.CPUPerc}}\t{{.MemPerc}}";
-            const cmd = `${this.containerExecutable} stats --no-stream --format "${format}" ${containerIds.join(" ")}`;
+            // Query all containers at once using JSON format for reliable parsing
+            const cmd = `${this.containerExecutable} stats --no-stream --format json ${containerIds.join(" ")}`;
 
             const {stdout} = await Utils.bash(cmd, process.cwd());
             const now = Date.now();
 
-            // Parse output
+            // Parse JSON output (one JSON object per line)
             const lines = stdout.trim().split("\n").filter(l => l.length > 0);
             for (const line of lines) {
-                const parts = line.split("\t");
-                if (parts.length >= 3) {
-                    const containerId = parts[0];
-                    const cpuStr = parts[1].replace("%", "");
-                    const memStr = parts[2].replace("%", "");
+                try {
+                    const stat = JSON.parse(line);
+                    const containerId = stat.Container || stat.ID || "";
+                    const cpuStr = (stat.CPUPerc || "0%").replace("%", "");
+                    const memStr = (stat.MemPerc || "0%").replace("%", "");
 
                     const cpu = parseFloat(cpuStr) || 0;
                     const memory = parseFloat(memStr) || 0;
 
                     // Find matching container (docker stats may return short ID)
                     for (const [fullId, accumulator] of this.containers) {
-                        if (fullId.startsWith(containerId) || containerId.startsWith(fullId.substring(0, 12))) {
+                        if (matchContainerId(fullId, containerId)) {
                             accumulator.samples.push({cpu, memory, timestamp: now});
 
                             // Prune old samples
@@ -237,6 +222,8 @@ export class ResourceMonitor {
                             break;
                         }
                     }
+                } catch {
+                    // Skip lines that aren't valid JSON (e.g., warnings)
                 }
             }
         } catch {

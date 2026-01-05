@@ -1,19 +1,8 @@
 import {ContainerStats} from "../utils/api-client.js";
+import {JOB_COLORS} from "../utils/format-utils.js";
 
 // Declare Chart.js global (loaded from script tag)
 declare const Chart: any;
-
-// Colors for different jobs
-const JOB_COLORS = [
-    {cpu: "#4CAF50", memory: "#81C784"}, // Green
-    {cpu: "#2196F3", memory: "#64B5F6"}, // Blue
-    {cpu: "#FF9800", memory: "#FFB74D"}, // Orange
-    {cpu: "#9C27B0", memory: "#BA68C8"}, // Purple
-    {cpu: "#F44336", memory: "#E57373"}, // Red
-    {cpu: "#00BCD4", memory: "#4DD0E1"}, // Cyan
-    {cpu: "#795548", memory: "#A1887F"}, // Brown
-    {cpu: "#607D8B", memory: "#90A4AE"}, // Blue Grey
-];
 
 const STORAGE_KEY = "gcl-resource-monitor-enabled";
 
@@ -55,7 +44,6 @@ export class ResourceChart extends HTMLElement {
     // Update with new stats data
     updateStats (statsHistory: Record<string, ContainerStats[]>, enabled: boolean) {
         this.statsHistory = statsHistory;
-        const wasEnabled = this.enabled;
         this.enabled = enabled;
 
         // Update toggle button state
