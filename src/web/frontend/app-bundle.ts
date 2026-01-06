@@ -799,7 +799,6 @@ function updateYamlView (): void {
 function renderYaml (data: any, expandedData: any, config: any): string {
     cachedSourceYaml = data;
     cachedExpandedYaml = expandedData;
-    cachedConfig = config;
 
     if (!data.exists) {
         return "<div class=\"card\"><div class=\"empty-state\"><div class=\"empty-state-icon\">\uD83D\uDCC4</div><div>No .gitlab-ci.yml found</div><div class=\"text-muted\">Create a .gitlab-ci.yml file in the project root</div></div></div>";

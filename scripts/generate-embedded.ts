@@ -23,12 +23,13 @@ const OUTPUT_FILE = path.join(FRONTEND_DIR, "embedded.ts");
 
 /**
  * Escape special characters for embedding in a template literal
+ * Note: ${CHARTJS_LIB} is preserved for runtime interpolation
  */
 function escapeTemplateString (str: string): string {
     return str
         .replace(/\\/g, "\\\\") // Escape backslashes first
         .replace(/`/g, "\\`") // Escape backticks
-        .replace(/\$\{/g, "\\${"); // Escape template expressions
+        .replace(/\$\{(?!CHARTJS_LIB\})/g, "\\${"); // Escape template expressions except ${CHARTJS_LIB}
 }
 
 /**

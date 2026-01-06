@@ -4,6 +4,7 @@
 //   - app-bundle.ts (JavaScript)
 // Regenerate with: npm run generate-embedded
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {CHARTJS_LIB} from "./lib/chartjs.js";
 
 export const INDEX_HTML = `<!DOCTYPE html>
@@ -374,7 +375,7 @@ h2 { margin-bottom: 1rem; }
             </div>
         </div>
     </main>
-    <script>\${CHARTJS_LIB}</script>
+    <script>${CHARTJS_LIB}</script>
     <script>
 "use strict";
 (() => {
@@ -382,7 +383,7 @@ h2 { margin-bottom: 1rem; }
   var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // src/web/frontend/utils/api-client.ts
+  // src/web/frontend/utils/api-client.js
   var APIClient = class {
     constructor(baseURL = "/api") {
       __publicField(this, "baseURL");
@@ -474,7 +475,7 @@ h2 { margin-bottom: 1rem; }
   };
   var apiClient = new APIClient();
 
-  // src/web/frontend/utils/format-utils.ts
+  // src/web/frontend/utils/format-utils.js
   var JOB_COLORS = [
     { cpu: "#4CAF50", memory: "#81C784" },
     // Green
@@ -494,12 +495,14 @@ h2 { margin-bottom: 1rem; }
     // Blue Grey
   ];
   function formatDate(timestamp) {
-    if (!timestamp) return "N/A";
+    if (!timestamp)
+      return "N/A";
     const date = new Date(timestamp);
     return date.toLocaleString();
   }
   function formatDuration(duration) {
-    if (!duration) return "N/A";
+    if (!duration)
+      return "N/A";
     const seconds = Math.floor(duration / 1e3);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
@@ -512,7 +515,8 @@ h2 { margin-bottom: 1rem; }
     }
   }
   function formatBytes(bytes) {
-    if (!bytes || bytes === 0) return "0 B";
+    if (!bytes || bytes === 0)
+      return "0 B";
     const units = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, i)).toFixed(1) + " " + units[i];
@@ -548,7 +552,7 @@ h2 { margin-bottom: 1rem; }
     return div.innerHTML;
   }
 
-  // src/web/frontend/utils/ansi-parser.ts
+  // src/web/frontend/utils/ansi-parser.js
   var ANSI_COLOR_MAP = {
     "30": "ansi-black",
     "31": "ansi-red",
@@ -611,7 +615,7 @@ h2 { margin-bottom: 1rem; }
     return result || escapeHtml2(text);
   }
 
-  // src/web/frontend/utils/yaml-highlighter.ts
+  // src/web/frontend/utils/yaml-highlighter.js
   var GITLAB_KEYWORDS = [
     "stages",
     "variables",
@@ -649,7 +653,8 @@ h2 { margin-bottom: 1rem; }
     "id_tokens"
   ];
   function highlightValue(text) {
-    if (!text) return "";
+    if (!text)
+      return "";
     if (/^(true|false)$/.test(text.trim())) {
       return \`<span class="yaml-boolean">\${text}</span>\`;
     }
@@ -704,7 +709,7 @@ h2 { margin-bottom: 1rem; }
         if (listMatch) {
           const indent = listMatch[1];
           const value = listMatch[4];
-          result = indent + \`<span class="yaml-list-marker">-</span> \` + highlightValue(value);
+          result = indent + '<span class="yaml-list-marker">-</span> ' + highlightValue(value);
         } else if (keyMatch) {
           const kindent = keyMatch[1];
           const key = keyMatch[2];
@@ -736,7 +741,6 @@ h2 { margin-bottom: 1rem; }
   var yamlViewMode = "source";
   var cachedSourceYaml = null;
   var cachedExpandedYaml = null;
-  var cachedConfig = null;
   var refreshInterval = null;
   var routerCounter = 0;
   async function fetchPipelines() {
@@ -1254,7 +1258,6 @@ h2 { margin-bottom: 1rem; }
   function renderYaml(data, expandedData, config) {
     cachedSourceYaml = data;
     cachedExpandedYaml = expandedData;
-    cachedConfig = config;
     if (!data.exists) {
       return '<div class="card"><div class="empty-state"><div class="empty-state-icon">\\u{1F4C4}</div><div>No .gitlab-ci.yml found</div><div class="text-muted">Create a .gitlab-ci.yml file in the project root</div></div></div>';
     }
@@ -1614,7 +1617,7 @@ h2 { margin-bottom: 1rem; }
             if (!selectedJobId && location.hash.slice(1).startsWith("/pipeline/")) {
               await refreshPipelineView();
             }
-          } catch (e) {
+          } catch {
           }
         }, 2e3);
       } else if (hash.startsWith("/job/") && hash.endsWith("/logs")) {
@@ -1639,7 +1642,7 @@ h2 { margin-bottom: 1rem; }
           try {
             const recentPipeline = await fetchPipeline(pipelines[0].id);
             recentJobs = recentPipeline.jobs || [];
-          } catch (e) {
+          } catch {
           }
         }
         if (thisRoute !== routerCounter) return;
@@ -1657,13 +1660,13 @@ h2 { margin-bottom: 1rem; }
               try {
                 const recentPipeline = await fetchPipeline(newPipelines[0].id);
                 newRecentJobs = recentPipeline.jobs || [];
-              } catch (e) {
+              } catch {
               }
             }
             if (location.hash.slice(1) === "/" || location.hash === "") {
               updatePipelineListContent(newPipelines, newStatus, newStructure, newRecentJobs);
             }
-          } catch (e) {
+          } catch {
           }
         }, 2e3);
       }

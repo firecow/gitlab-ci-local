@@ -453,36 +453,28 @@ export class APIRouter {
             return;
         }
 
-        // Try file-based logs first
+        // Try file-based logs first using LogFileManager for consistent path handling
         if (this.logFileManager) {
-            const logPath = path.join(this.cwd, this.stateDir, "logs", job.pipeline_id, `${params.id}.log`);
+            try {
+                // Use LogFileManager to get logs and convert to plain text
+                const logs = await this.logFileManager.getJobLogs(job.pipeline_id, params.id, 0, 100000);
+                if (logs.length > 0) {
+                    res.writeHead(200, {
+                        "Content-Type": "text/plain; charset=utf-8",
+                        "Access-Control-Allow-Origin": "*",
+                        "Cache-Control": "no-cache",
+                    });
 
-            if (await fs.pathExists(logPath)) {
-                // Stream the raw log file, converting JSON lines to plain text
-                res.writeHead(200, {
-                    "Content-Type": "text/plain; charset=utf-8",
-                    "Access-Control-Allow-Origin": "*",
-                    "Cache-Control": "no-cache",
-                });
-
-                const fileStream = fs.createReadStream(logPath);
-                const rl = await import("readline").then(m => m.createInterface({
-                    input: fileStream,
-                    crlfDelay: Infinity,
-                }));
-
-                for await (const line of rl) {
-                    try {
-                        const entry = JSON.parse(line);
-                        res.write(entry.c + "\n");
-                    } catch {
-                        // Write malformed lines as-is
-                        res.write(line + "\n");
+                    for (const log of logs) {
+                        res.write((log.content ?? "") + "\n");
                     }
-                }
 
-                res.end();
-                return;
+                    res.end();
+                    return;
+                }
+            } catch (error) {
+                // Log error but continue to database fallback
+                console.error("Error reading file-based logs:", error);
             }
         }
 
@@ -494,7 +486,7 @@ export class APIRouter {
         });
 
         for (const log of logs) {
-            res.write(log.content + "\n");
+            res.write((log.content ?? "") + "\n");
         }
         res.end();
     }
