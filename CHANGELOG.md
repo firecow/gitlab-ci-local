@@ -66,7 +66,7 @@ Build system and tooling improvements.
   - `scripts/generate-embedded.ts` - Frontend asset bundler (CSS + JS to single HTML)
   - `scripts/generate-bundled-templates.ts` - GitLab template caching
 - **Testing Infrastructure**
-  - Comprehensive web UI test suite (4700+ lines)
+  - Comprehensive web UI test suite (133 tests, 4700+ lines)
   - `npm run test-except-dind` for faster local testing
 - **CI/CD Pipeline** - DAG-based parallel builds with multi-platform binary outputs
 - **CLAUDE.md** - AI assistant guidance for codebase navigation

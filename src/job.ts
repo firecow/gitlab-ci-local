@@ -95,6 +95,12 @@ export class Job {
         "include", "local_configuration", "image", "services",
         "stages", "before_script", "default",
         "after_script", "variables", "cache", "workflow", "page:deploy",
+        // gitlab-ci-local specific properties
+        "privileged", "security-opt", "mountCache", "mountCwd", "containerExecutable",
+        "shellIsolation", "shellExecutorNoImage", "forceShellExecutor",
+        "umask", "userns", "device", "ulimit", "volume", "volumesFromDockerHost",
+        "network", "helperImage", "defaultImage", "artifactsToSource",
+        "autoMount", "cpus", "memory", "memorySwap",
     ]);
 
     readonly argv: Argv;
