@@ -2,12 +2,12 @@ import http from "http";
 import path from "path";
 import fs from "fs-extra";
 import {spawn} from "child_process";
-import yaml from "yaml";
 import {GCLDatabase} from "../persistence/database.js";
 import {LogFileManager, LogLine} from "../persistence/log-file-manager.js";
 import {ContainerStats} from "../../resource-monitor.js";
 import {Utils} from "../../utils.js";
 import {matchContainerId} from "../utils/docker-utils.js";
+import {PipelineStructureLoader} from "./pipeline-structure-loader.js";
 
 interface RouteParams {
     [key: string]: string;
@@ -23,12 +23,6 @@ interface Route {
 }
 
 export class APIRouter {
-    // Reserved YAML keys that are not job definitions
-    private static readonly YAML_RESERVED_KEYS = new Set([
-        "stages", "variables", "default", "include", "image", "services",
-        "before_script", "after_script", "cache", "workflow", "pages",
-    ]);
-
     private routes: Route[] = [];
     private db: GCLDatabase;
     private logFileManager: LogFileManager | null;
@@ -41,6 +35,7 @@ export class APIRouter {
     private runningProcess: ReturnType<typeof spawn> | null = null;
     private containerExecutable: string;
     private resourceMonitorEnabled: boolean = true; // Toggle state for the UI
+    private structureLoader: PipelineStructureLoader;
 
     constructor (db: GCLDatabase, cwd: string, stateDir: string, mountCwd?: boolean, volumes?: string[], helperImage?: string, logFileManager?: LogFileManager, webBaseUrl?: string, containerExecutable?: string) {
         this.db = db;
@@ -48,6 +43,7 @@ export class APIRouter {
         this.cwd = cwd;
         this.stateDir = stateDir;
         this.mountCwd = mountCwd ?? false;
+        this.structureLoader = new PipelineStructureLoader();
         this.volumes = volumes ?? [];
         this.helperImage = helperImage;
         this.urlBase = webBaseUrl || "http://localhost";
@@ -184,10 +180,12 @@ export class APIRouter {
         const mainScript = process.argv[1];
 
         if (mainScript.includes("tsx") || mainScript.endsWith(".ts")) {
-            // Development mode - use tsx
+            // Development mode - use tsx with the actual source location
+            // mainScript is the path to the running index.ts, use it directly
+            const sourcePath = mainScript.replace(/\.js$/, ".ts"); // Handle compiled .js -> .ts
             return {
                 cmd: "npx",
-                cmdArgs: ["tsx", path.join(this.cwd, "src/index.ts"), ...args],
+                cmdArgs: ["tsx", sourcePath, ...args],
             };
         } else {
             // Production mode - use the same executable
@@ -617,117 +615,22 @@ export class APIRouter {
     }
 
     private async getPipelineStructure (req: http.IncomingMessage, res: http.ServerResponse) {
-        const yamlPath = path.join(this.cwd, ".gitlab-ci.yml");
-
         try {
-            const content = await fs.readFile(yamlPath, "utf-8");
-            const parsed = yaml.parse(content);
-
-            // Extract stages (use default if not specified)
-            // GitLab CI always has .pre and .post stages available
-            const userStages: string[] = parsed.stages || ["build", "test", "deploy"];
-
-            // Extract jobs
-            const jobs: Array<{
-                id: string;
-                name: string;
-                stage: string;
-                status: string;
-                needs: string[] | null;
-                when: string | null;
-                allowFailure: boolean;
-            }> = [];
-
-            // Track which stages have jobs
-            const usedStages = new Set<string>();
-
-            for (const [key, value] of Object.entries(parsed)) {
-                // Skip reserved keys and hidden jobs (starting with .)
-                if (APIRouter.YAML_RESERVED_KEYS.has(key) || key.startsWith(".") || typeof value !== "object" || value === null) {
-                    continue;
-                }
-
-                const jobDef = value as Record<string, any>;
-                const jobStage = jobDef.stage || "test";
-                usedStages.add(jobStage);
-
-                // Extract needs - can be array of strings or array of objects with 'job' property
-                let needs: string[] | null = null;
-                if (Array.isArray(jobDef.needs)) {
-                    needs = jobDef.needs.map((n: string | {job: string}) => {
-                        if (typeof n === "string") return n;
-                        if (typeof n === "object" && n.job) return n.job;
-                        return null;
-                    }).filter((n): n is string => n !== null);
-                }
-
-                jobs.push({
-                    id: `yaml-${key}`,
-                    name: key,
-                    stage: jobStage,
-                    status: "pending",
-                    needs,
-                    when: jobDef.when || null,
-                    allowFailure: jobDef.allow_failure || false,
-                });
-            }
-
-            // Build final stages list: .pre first, user stages, .post last
-            // Only include .pre/.post if they have jobs or are explicitly in stages list
-            const stages: string[] = [];
-
-            // Add .pre if it has jobs or is explicitly listed
-            if (usedStages.has(".pre") || userStages.includes(".pre")) {
-                stages.push(".pre");
-            }
-
-            // Add user stages (excluding .pre and .post which we handle specially)
-            for (const stage of userStages) {
-                if (stage !== ".pre" && stage !== ".post") {
-                    stages.push(stage);
-                }
-            }
-
-            // Add .post if it has jobs or is explicitly listed
-            if (usedStages.has(".post") || userStages.includes(".post")) {
-                stages.push(".post");
-            }
-
-            // Sort jobs by stage order (.pre = -1, .post = Infinity, others by position)
-            const stageOrder = new Map<string, number>();
-            stageOrder.set(".pre", -1);
-            stages.forEach((s, i) => {
-                if (s !== ".pre" && s !== ".post") {
-                    stageOrder.set(s, i);
-                }
-            });
-            stageOrder.set(".post", Infinity);
-
-            jobs.sort((a, b) => {
-                const aOrder = stageOrder.get(a.stage) ?? 999;
-                const bOrder = stageOrder.get(b.stage) ?? 999;
-                return aOrder - bOrder;
-            });
-
-            this.json(res, {
-                exists: true,
-                stages,
-                jobs,
-            });
+            const structure = await this.structureLoader.getStructure(this.cwd, this.stateDir);
+            this.json(res, structure);
         } catch (error) {
+            console.error("Error loading pipeline structure:", error);
             this.json(res, {
                 exists: false,
                 stages: [],
                 jobs: [],
-                error: error instanceof Error ? error.message : "Failed to parse YAML",
+                error: error instanceof Error ? error.message : "Unknown error",
             });
         }
     }
 
     // Create pending pipeline and jobs from YAML before subprocess starts
     private async createPendingPipeline (requestedJobs: string[]): Promise<string> {
-        const yamlPath = path.join(this.cwd, ".gitlab-ci.yml");
-
         // Get next pipeline IID from database (ensures uniqueness)
         const pipelineIid = this.db.getNextPipelineIid();
 
@@ -747,45 +650,28 @@ export class APIRouter {
             git_sha: null,
         });
 
-        // Parse YAML to get jobs
+        // Use PipelineStructureLoader to get all jobs (includes, extends, matrix, etc.)
         try {
-            const content = await fs.readFile(yamlPath, "utf-8");
-            const parsed = yaml.parse(content);
+            const structure = await this.structureLoader.getStructure(this.cwd, this.stateDir);
 
             let jobIndex = 0;
-            for (const [key, value] of Object.entries(parsed)) {
-                if (APIRouter.YAML_RESERVED_KEYS.has(key) || key.startsWith(".") || typeof value !== "object" || value === null) {
-                    continue;
-                }
-
+            for (const structJob of structure.jobs) {
                 // If specific jobs requested, only include those
-                if (requestedJobs.length > 0 && !requestedJobs.includes(key)) {
+                if (requestedJobs.length > 0 && !requestedJobs.includes(structJob.name)) {
                     continue;
-                }
-
-                const jobDef = value as Record<string, unknown>;
-
-                // Extract needs
-                let needs: string[] | null = null;
-                if (Array.isArray(jobDef.needs)) {
-                    needs = (jobDef.needs as Array<string | {job: string}>).map(n => {
-                        if (typeof n === "string") return n;
-                        if (typeof n === "object" && n.job) return n.job;
-                        return null;
-                    }).filter((n): n is string => n !== null);
                 }
 
                 const jobId = `${pipelineIid}-${jobIndex++}`;
                 this.db.createJob({
                     id: jobId,
                     pipeline_id: pipelineId,
-                    name: key,
-                    base_name: key,
-                    stage: (jobDef.stage as string) || "test",
+                    name: structJob.name,
+                    base_name: structJob.name,
+                    stage: structJob.stage,
                     status: "pending",
-                    when_condition: (jobDef.when as string) || null,
-                    allow_failure: jobDef.allow_failure ? 1 : 0,
-                    needs: needs ? JSON.stringify(needs) : null,
+                    when_condition: structJob.when,
+                    allow_failure: structJob.allowFailure ? 1 : 0,
+                    needs: structJob.needs ? JSON.stringify(structJob.needs) : null,
                     started_at: null,
                     finished_at: null,
                     duration: null,
@@ -799,7 +685,7 @@ export class APIRouter {
                 });
             }
         } catch (e) {
-            console.error("Error parsing YAML for pending jobs:", e);
+            console.error("Error loading pipeline structure for pending jobs:", e);
         }
 
         return pipelineId;
@@ -812,16 +698,18 @@ export class APIRouter {
             return;
         }
 
-        // Parse request body for optional job names
+        // Parse request body for optional job names and manual jobs
         let body = "";
         req.on("data", chunk => body += chunk);
         await new Promise<void>(resolve => req.on("end", resolve));
 
         let requestedJobs: string[] = [];
+        let requestedManualJobs: string[] = [];
         if (body) {
             try {
                 const data = JSON.parse(body);
                 requestedJobs = data.jobs || [];
+                requestedManualJobs = data.manualJobs || [];
             } catch {
                 // Ignore parse errors, run full pipeline
             }
@@ -836,11 +724,19 @@ export class APIRouter {
             args.push(...requestedJobs);
         }
 
+        // Add manual job flags
+        if (requestedManualJobs.length > 0) {
+            requestedManualJobs.forEach(jobName => {
+                args.push("--manual", jobName);
+            });
+        }
+
         const {cmd, cmdArgs} = this.buildSpawnCommand(args);
 
         // Get the pipeline IID from the pending pipeline we just created
         const pendingPipeline = this.db.getPipeline(pipelineId);
         const pipelineIid = pendingPipeline?.iid ?? 0;
+
 
         try {
             this.runningProcess = spawn(cmd, cmdArgs, {
@@ -905,6 +801,12 @@ export class APIRouter {
 
         // Build command to run specific job
         const args = this.buildBaseArgs();
+
+        // If job is manual, add --manual flag
+        if (job.when_condition === "manual") {
+            args.push("--manual", job.name);
+        }
+
         args.push(job.name);
 
         const {cmd, cmdArgs} = this.buildSpawnCommand(args);

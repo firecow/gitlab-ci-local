@@ -238,6 +238,11 @@ export class Argv {
         return this.map.get("privileged") ?? false;
     }
 
+    get securityOpt (): string[] {
+        const val = this.map.get("security-opt") ?? [];
+        return typeof val == "string" ? val.split(" ") : val;
+    }
+
     get device (): string[] {
         const val = this.map.get("device") ?? [];
         return typeof val == "string" ? val.split(" ") : val;

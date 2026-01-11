@@ -9,12 +9,48 @@ import {Argv} from "./argv.js";
 
 const MAX_ERRORS = 5;
 
+// gitlab-ci-local specific properties that are valid in .gitlab-ci-local.yml
+// but are not part of the GitLab CI schema (these are CLI options)
+const GITLAB_CI_LOCAL_PROPERTIES = new Set([
+    "privileged",
+    "security-opt",
+    "mountCache",
+    "mountCwd",
+    "containerExecutable",
+    "shellIsolation",
+    "shellExecutorNoImage",
+    "forceShellExecutor",
+    "umask",
+    "userns",
+    "device",
+    "ulimit",
+    "volume",
+    "volumesFromDockerHost",
+    "network",
+    "helperImage",
+    "defaultImage",
+    "artifactsToSource",
+    "autoMount",
+    "cpus",
+    "memory",
+    "memorySwap",
+]);
+
 export class Validator {
     static jsonSchemaValidation ({pathToExpandedGitLabCi, gitLabCiConfig, argv}: {
         pathToExpandedGitLabCi: string;
         gitLabCiConfig: object;
         argv: Argv;
     }) {
+        // Strip gitlab-ci-local specific properties before validation
+        // These are CLI options that can be set in .gitlab-ci-local.yml but aren't valid GitLab CI schema properties
+        const configToValidate: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(gitLabCiConfig)) {
+            if (!GITLAB_CI_LOCAL_PROPERTIES.has(key)) {
+                configToValidate[key] = value;
+            }
+        }
+
         const ajv = new Ajv({
             verbose: true,
             allErrors: true,
@@ -24,10 +60,10 @@ export class Validator {
             keywords: ["markdownDescription"],
         });
         const validate = ajv.compile(schema);
-        const valid = validate(gitLabCiConfig);
+        const valid = validate(configToValidate);
         if (valid) return;
         const betterErrors = betterAjvErrors({
-            data: gitLabCiConfig,
+            data: configToValidate,
             errors: validate.errors,
         }).filter(betterError => !argv.ignoreSchemaPaths.includes(betterError.schemaPath));
 

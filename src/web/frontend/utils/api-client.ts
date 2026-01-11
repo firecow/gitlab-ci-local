@@ -78,17 +78,22 @@ export interface PipelineResponse {
 }
 
 export interface StructureJob {
+    id: string;
     name: string;
     stage: string;
+    status: string;
     needs: string[] | null;
-    when?: string;
-    id?: string;
+    when: string | null;
+    allowFailure: boolean;
+    isManual: boolean;
+    description?: string;
 }
 
 export interface PipelineStructure {
     exists: boolean;
     stages: string[];
     jobs: StructureJob[];
+    error?: string;
 }
 
 export interface ConfigResponse {
@@ -218,11 +223,18 @@ export class APIClient {
         return this.fetch("/pipeline-structure");
     }
 
-    async runPipeline (jobs?: string[]): Promise<RunPipelineResponse> {
+    async runPipeline (jobs?: string[], manualJobs?: string[]): Promise<RunPipelineResponse> {
+        const body: any = {};
+        if (jobs && jobs.length > 0) {
+            body.jobs = jobs;
+        }
+        if (manualJobs && manualJobs.length > 0) {
+            body.manualJobs = manualJobs;
+        }
         return this.fetch("/pipelines/run", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: jobs ? JSON.stringify({jobs}) : "{}",
+            body: JSON.stringify(body),
         });
     }
 

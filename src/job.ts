@@ -1039,6 +1039,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += "--privileged ";
             }
 
+            for (const opt of this.argv.securityOpt) {
+                dockerCmd += `--security-opt ${opt} `;
+            }
+
             for (const device of this.argv.device) {
                 dockerCmd += `--device ${device} `;
             }
@@ -1798,6 +1802,10 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         if (this.argv.privileged) {
             dockerCmd += "--privileged ";
+        }
+
+        for (const opt of this.argv.securityOpt) {
+            dockerCmd += `--security-opt ${opt} `;
         }
 
         for (const device of this.argv.device) {

@@ -96,6 +96,8 @@ export function normalize (gitlabData: any) {
     normalizeGlobalVariables(gitlabData);
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        // Skip non-object entries (e.g., boolean anchors)
+        if (typeof jobData !== "object" || jobData === null) continue;
         if (Job.illegalJobNames.has(jobName) || jobName.startsWith(".")) continue;
         needsEach(jobName, gitlabData);
         cacheEach(jobName, gitlabData);
@@ -201,6 +203,9 @@ export function imageEach (jobName: string, gitlabData: any) {
 
 export function inheritDefault (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        // Skip non-object entries (e.g., boolean anchors)
+        if (typeof jobData !== "object" || jobData === null) continue;
+
         if (jobData.inherit?.default === false) continue;
 
         if (Job.illegalJobNames.has(jobName) || jobName.startsWith(".")) {

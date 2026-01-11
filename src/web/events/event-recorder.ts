@@ -161,30 +161,50 @@ export class EventRecorder {
             const pipeline = this.db.getPipeline(jobEvent.pipelineId) || this.db.getPipelineByIid(jobEvent.pipelineIid);
             const actualPipelineId = pipeline?.id || jobEvent.pipelineId;
 
-            this.db.createJob({
-                id: jobEvent.jobId,
-                pipeline_id: actualPipelineId,
-                name: jobEvent.jobName,
-                base_name: jobEvent.jobName.replace(/\s*\[.*\]$/, ""), // Remove matrix suffix
-                stage: jobEvent.data.stage || "unknown",
-                status: "pending",
-                when_condition: jobEvent.data.when || null,
-                allow_failure: jobEvent.data.allowFailure ? 1 : 0,
-                needs: jobEvent.data.needs ? JSON.stringify(jobEvent.data.needs) : null,
-                started_at: null,
-                finished_at: null,
-                duration: null,
-                exit_code: null,
-                coverage_percent: null,
-                container_id: null,
-                avg_cpu_percent: null,
-                avg_memory_percent: null,
-                peak_cpu_percent: null,
-                peak_memory_percent: null,
-            });
+            // Check if job already exists by ID or by pipeline+name (for pending jobs created by web UI)
+            let existing = this.db.getJob(jobEvent.jobId);
+            if (!existing) {
+                existing = this.db.getJobByPipelineAndName(actualPipelineId, jobEvent.jobName);
+            }
 
-            this.lineNumbers.set(jobEvent.jobId, 0); // Initialize line number counter
-            this.jobPipelineMap.set(jobEvent.jobId, actualPipelineId); // Track pipeline for file logging
+            if (!existing) {
+                // Create new job
+                this.db.createJob({
+                    id: jobEvent.jobId,
+                    pipeline_id: actualPipelineId,
+                    name: jobEvent.jobName,
+                    base_name: jobEvent.jobName.replace(/\s*\[.*\]$/, ""), // Remove matrix suffix
+                    stage: jobEvent.data.stage || "unknown",
+                    status: "pending",
+                    when_condition: jobEvent.data.when || null,
+                    allow_failure: jobEvent.data.allowFailure ? 1 : 0,
+                    needs: jobEvent.data.needs ? JSON.stringify(jobEvent.data.needs) : null,
+                    started_at: null,
+                    finished_at: null,
+                    duration: null,
+                    exit_code: null,
+                    coverage_percent: null,
+                    container_id: null,
+                    avg_cpu_percent: null,
+                    avg_memory_percent: null,
+                    peak_cpu_percent: null,
+                    peak_memory_percent: null,
+                });
+                this.lineNumbers.set(jobEvent.jobId, 0);
+                this.jobPipelineMap.set(jobEvent.jobId, actualPipelineId);
+            } else {
+                // Update existing pending job status (may have been created by web UI)
+                this.db.updateJob(existing.id, {
+                    status: "pending",
+                    stage: jobEvent.data.stage || existing.stage,
+                });
+                this.lineNumbers.set(existing.id, 0);
+                this.jobPipelineMap.set(existing.id, actualPipelineId);
+                // Map the event's jobId to the actual database jobId
+                if (existing.id !== jobEvent.jobId) {
+                    this.jobIdMap.set(jobEvent.jobId, existing.id);
+                }
+            }
         } catch (error) {
             console.error("Error recording job queued event:", error);
         }

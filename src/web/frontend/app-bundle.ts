@@ -34,6 +34,7 @@ declare global {
         handleCancelPipeline: () => Promise<void>;
         handleRunJob: (jobId: string, jobName: string) => Promise<void>;
         handleRunJobLegacy: (jobId: string) => Promise<void>;
+        handleTriggerManualJob: (jobId: string, jobName: string) => Promise<void>;
         handleRunStage: (stageName: string) => Promise<void>;
         handleLogScroll: () => void;
         showPipeline: (id: string) => void;
@@ -42,6 +43,7 @@ declare global {
         closeLogPanel: () => void;
         toggleResourceMonitor: () => void;
         toggleYamlView: (mode: "source" | "rendered") => void;
+        toggleTheme: () => void;
     }
 }
 
@@ -73,6 +75,66 @@ let cachedExpandedYaml: any = null;
 // Router state
 let refreshInterval: number | null = null;
 let routerCounter = 0;
+
+// =============================================================================
+// Theme Management
+// =============================================================================
+type Theme = "system" | "light" | "dark";
+
+function getStoredTheme (): Theme {
+    return (localStorage.getItem("gcl-theme") as Theme) || "system";
+}
+
+function applyTheme (theme: Theme): void {
+    const root = document.documentElement;
+    root.classList.remove("light-theme", "dark-theme");
+
+    if (theme === "light") {
+        root.classList.add("light-theme");
+    } else if (theme === "dark") {
+        root.classList.add("dark-theme");
+    }
+    // "system" = no class, uses prefers-color-scheme media query
+
+    localStorage.setItem("gcl-theme", theme);
+    updateThemeIcon(theme);
+}
+
+function updateThemeIcon (theme: Theme): void {
+    const icon = document.getElementById("theme-icon");
+    if (!icon) return;
+
+    // Icons: sun (☀), moon (☾), auto (◐)
+    if (theme === "light") {
+        icon.innerHTML = "&#9788;"; // ☼ sun
+        icon.title = "Light mode (click for dark)";
+    } else if (theme === "dark") {
+        icon.innerHTML = "&#9789;"; // ☽ moon
+        icon.title = "Dark mode (click for system)";
+    } else {
+        icon.innerHTML = "&#9680;"; // ◐ half circle
+        icon.title = "System theme (click for light)";
+    }
+}
+
+function toggleTheme (): void {
+    const current = getStoredTheme();
+    let next: Theme;
+
+    // Cycle: system -> light -> dark -> system
+    if (current === "system") {
+        next = "light";
+    } else if (current === "light") {
+        next = "dark";
+    } else {
+        next = "system";
+    }
+
+    applyTheme(next);
+}
+
+// Apply theme on script load (before DOMContentLoaded to prevent flash)
+applyTheme(getStoredTheme());
 
 // =============================================================================
 // API wrapper functions (for compatibility with inline JS patterns)
@@ -118,8 +180,8 @@ async function fetchPipelineStructure (): Promise<PipelineStructure> {
     return apiClient.getPipelineStructure();
 }
 
-async function runPipeline (jobs?: string[]): Promise<any> {
-    return apiClient.runPipeline(jobs);
+async function runPipeline (jobs?: string[], manualJobs?: string[]): Promise<any> {
+    return apiClient.runPipeline(jobs, manualJobs);
 }
 
 async function runSingleJob (jobId: string): Promise<any> {
@@ -159,6 +221,94 @@ function updateNav (hash: string): void {
     } else {
         document.getElementById("nav-pipelines")?.classList.add("active");
     }
+}
+
+// =============================================================================
+// Manual Job Dialog functions
+// =============================================================================
+let manualJobDialogResolve: ((jobs: string[] | null) => void) | null = null;
+
+function renderManualJobDialog (manualJobs: any[]): string {
+    // Group by stage
+    const byStage: Record<string, any[]> = {};
+    manualJobs.forEach(j => {
+        if (!byStage[j.stage]) byStage[j.stage] = [];
+        byStage[j.stage].push(j);
+    });
+
+    let html = "<div class=\"modal-backdrop\" onclick=\"closeManualDialog()\"></div>";
+    html += "<div class=\"modal-dialog manual-job-dialog\">";
+    html += "<div class=\"modal-header\">";
+    html += "<h3>Select Manual Jobs</h3>";
+    html += "<button class=\"close-btn\" onclick=\"closeManualDialog()\">&times;</button>";
+    html += "</div>";
+    html += "<div class=\"modal-body\">";
+    html += "<p>Select which manual jobs to run with the pipeline:</p>";
+
+    for (const [stage, jobs] of Object.entries(byStage)) {
+        html += "<div class=\"stage-group\">";
+        html += "<h4>" + escapeHtml(stage) + "</h4>";
+        jobs.forEach(job => {
+            html += "<label class=\"manual-job-option\">";
+            html += "<input type=\"checkbox\" name=\"manual-job\" value=\"" + escapeHtml(job.name) + "\" />";
+            html += "<span class=\"job-name\">" + escapeHtml(job.name) + "</span>";
+            if (job.description) {
+                html += "<span class=\"job-description\">" + escapeHtml(job.description) + "</span>";
+            }
+            html += "</label>";
+        });
+        html += "</div>";
+    }
+
+    html += "</div>";
+    html += "<div class=\"modal-footer\">";
+    html += "<button onclick=\"selectAllManualJobs()\">Select All</button>";
+    html += "<button onclick=\"selectNoManualJobs()\">Select None</button>";
+    html += "<button class=\"btn-secondary\" onclick=\"closeManualDialog()\">Cancel</button>";
+    html += "<button class=\"btn-primary\" onclick=\"confirmManualJobs()\">Run Pipeline</button>";
+    html += "</div>";
+    html += "</div>";
+
+    return html;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function showManualJobDialog (manualJobs: any[]): Promise<string[] | null> {
+    return new Promise(resolve => {
+        manualJobDialogResolve = resolve;
+        const dialogHtml = renderManualJobDialog(manualJobs);
+        document.body.insertAdjacentHTML("beforeend", dialogHtml);
+    });
+}
+
+function closeManualDialog (): void {
+    document.querySelector(".modal-backdrop")?.remove();
+    document.querySelector(".manual-job-dialog")?.remove();
+    if (manualJobDialogResolve) {
+        manualJobDialogResolve(null); // User cancelled
+        manualJobDialogResolve = null;
+    }
+}
+
+function confirmManualJobs (): void {
+    const checkboxes = document.querySelectorAll<HTMLInputElement>("input[name=\"manual-job\"]:checked");
+    const selected = Array.from(checkboxes).map(cb => cb.value);
+    document.querySelector(".modal-backdrop")?.remove();
+    document.querySelector(".manual-job-dialog")?.remove();
+    if (manualJobDialogResolve) {
+        manualJobDialogResolve(selected);
+        manualJobDialogResolve = null;
+    }
+}
+
+function selectAllManualJobs (): void {
+    document.querySelectorAll<HTMLInputElement>("input[name=\"manual-job\"]")
+        .forEach(cb => cb.checked = true);
+}
+
+function selectNoManualJobs (): void {
+    document.querySelectorAll<HTMLInputElement>("input[name=\"manual-job\"]")
+        .forEach(cb => cb.checked = false);
 }
 
 // =============================================================================
@@ -345,33 +495,53 @@ function renderResourceChart (): string {
 // =============================================================================
 // DAG Visualization
 // =============================================================================
-function renderDagVisualization (jobs: any[], selectedId: string | null, pipelineId?: string | null): string {
+function renderDagVisualization (jobs: any[], selectedId: string | null, pipelineId?: string | null, stageOrderOverride?: string[]): string {
     // Group jobs by stage
     const stageMap: Record<string, any[]> = {};
-    const stageOrder: string[] = [];
+    const stageOrder: string[] = stageOrderOverride || [];
+
+    // If no stage order provided, derive from jobs
     jobs.forEach((j) => {
         if (!stageMap[j.stage]) {
             stageMap[j.stage] = [];
-            stageOrder.push(j.stage);
+            if (!stageOrderOverride) {
+                stageOrder.push(j.stage);
+            }
         }
         stageMap[j.stage].push(j);
     });
 
-    // Build DAG stages HTML with circles
-    const stagesHtml = stageOrder.map((stage) => {
+    // Build DAG stages HTML with circles (filter out stages with no jobs)
+    const stagesHtml = stageOrder.filter((stage) => stageMap[stage] && stageMap[stage].length > 0).map((stage) => {
         const stageJobs = stageMap[stage];
         const jobsHtml = stageJobs.map((j) => {
             const needs = j.needs || [];
             const needsInfo = needs.length > 0 ? "Needs: " + needs.join(", ") : "";
             const selectedClass = selectedId === j.id ? " selected" : "";
+            const manualClass = j.isManual ? " manual" : "";
             const icon = getStatusIcon(j.status);
-            const clickHandler = pipelineId ?
-                `location.hash='#/pipeline/${pipelineId}'; setTimeout(function() { selectJob('${j.id}'); }, 100);` :
-                `selectJob('${j.id}')`;
-            return "<div class=\"dag-job status-" + j.status + selectedClass + "\" data-job-id=\"" + j.id + "\" data-job-name=\"" + escapeHtml(j.name) + "\" data-needs=\"" + escapeHtml(needs.join(",")) + "\" onclick=\"" + clickHandler + "\">" +
+
+            // For manual jobs that are pending, clicking should trigger them
+            // For all other jobs, clicking just selects them
+            let clickHandler;
+            if (j.isManual && j.status === "pending") {
+                clickHandler = `handleTriggerManualJob('${j.id}', '${escapeHtml(j.name).replace(/'/g, "\\'")}')`;
+            } else if (pipelineId) {
+                clickHandler = `location.hash='#/pipeline/${pipelineId}'; setTimeout(function() { selectJob('${j.id}'); }, 100);`;
+            } else {
+                clickHandler = `selectJob('${j.id}')`;
+            }
+
+            const manualTooltip = j.isManual && j.status === "pending" ?
+                "<div class=\"dag-job-tooltip-info\">\u23F8 Manual job \u2022 Click to trigger</div>" :
+                (j.isManual ? "<div class=\"dag-job-tooltip-info\">\u23F8 Manual job</div>" : "");
+
+            return "<div class=\"dag-job status-" + j.status + selectedClass + manualClass + "\" data-job-id=\"" + j.id + "\" data-job-name=\"" + escapeHtml(j.name) + "\" data-needs=\"" + escapeHtml(needs.join(",")) + "\" onclick=\"" + clickHandler + "\">" +
                 "<span class=\"dag-job-icon\">" + icon + "</span>" +
                 "<div class=\"dag-job-tooltip\">" +
                 "<div class=\"dag-job-tooltip-name\">" + escapeHtml(j.name) + "</div>" +
+                manualTooltip +
+                (j.description ? "<div class=\"dag-job-tooltip-info\">" + escapeHtml(j.description) + "</div>" : "") +
                 "<div class=\"dag-job-tooltip-info\">" + j.status + (j.duration ? " \u2022 " + formatDuration(j.duration) : "") + "</div>" +
                 (needsInfo ? "<div class=\"dag-job-tooltip-info\">" + needsInfo + "</div>" : "") +
                 "</div></div>";
@@ -491,7 +661,7 @@ function buildStructureJobs (structure: PipelineStructure, recentPipelineJobs: J
             };
         });
     }
-    return structure.jobs.map((j) => {
+    return (structure?.jobs || []).map((j) => {
         const recentJob = jobStatusMap[j.name];
         return {
             id: recentJob ? recentJob.id : j.id,
@@ -500,6 +670,8 @@ function buildStructureJobs (structure: PipelineStructure, recentPipelineJobs: J
             status: recentJob ? recentJob.status : "pending",
             needs: j.needs || null,
             duration: recentJob ? recentJob.duration : null,
+            isManual: j.isManual || false,
+            description: j.description,
         };
     });
 }
@@ -532,7 +704,7 @@ function renderPipelineList (pipelines: Pipeline[], status: any, structure: Pipe
     let dagSection = "";
     if (structure && structure.exists && structure.jobs && structure.jobs.length > 0) {
         const structureJobs = buildStructureJobs(structure, recentPipelineJobs);
-        const dagHtml = renderDagVisualization(structureJobs, null, recentPipelineId);
+        const dagHtml = renderDagVisualization(structureJobs, null, recentPipelineId, structure?.stages);
         dagSection = "<div class=\"card\"><div class=\"card-header\"><h2>Pipeline Structure</h2>" + actionBtn + "</div><div class=\"card-body\"><div id=\"dag-content\">" + dagHtml + "</div></div></div>";
     } else {
         dagSection = "<div class=\"card\"><div class=\"card-header\"><h2>Pipeline Structure</h2>" + actionBtn + "</div>" +
@@ -567,10 +739,11 @@ function updatePipelineListContent (pipelines: Pipeline[], status: any, structur
 
         if (existingDagJobs.length === structureJobs.length && existingDagJobs.length > 0) {
             // Update statuses in place
-            structureJobs.forEach((job) => {
+            structureJobs.forEach((job: any) => {
                 const jobEl = dagContent.querySelector(".dag-job[data-job-name=\"" + escapeHtml(job.name) + "\"]");
                 if (jobEl) {
-                    jobEl.className = "dag-job status-" + job.status;
+                    const manualClass = job.isManual ? " manual" : "";
+                    jobEl.className = "dag-job status-" + job.status + manualClass;
                     const iconEl = jobEl.querySelector(".dag-job-icon");
                     if (iconEl) {
                         iconEl.textContent = getStatusIcon(job.status);
@@ -583,7 +756,7 @@ function updatePipelineListContent (pipelines: Pipeline[], status: any, structur
             });
         } else {
             // Structure changed, do full re-render
-            dagContent.innerHTML = renderDagVisualization(structureJobs, null, recentPipelineId);
+            dagContent.innerHTML = renderDagVisualization(structureJobs, null, recentPipelineId, structure?.stages);
             scheduleDependencyLinesDraw();
         }
     }
@@ -613,10 +786,10 @@ function renderInitProgress (p: any): string {
         "</div>";
 }
 
-function renderPipelineDetail (data: PipelineResponse, selectedJob: Job | null, logData: any): string {
+function renderPipelineDetail (data: PipelineResponse, selectedJob: Job | null, logData: any, structure?: PipelineStructure): string {
     const p = data.pipeline;
     const jobs = data.jobs || [];
-    const dagHtml = renderDagVisualization(jobs, selectedJobId);
+    const dagHtml = renderDagVisualization(jobs, selectedJobId, null, structure?.stages);
     const initProgressHtml = renderInitProgress(p);
 
     const leftPanelClass = selectedJob ? "split-left" : "split-left full-width";
@@ -832,10 +1005,21 @@ async function refreshPipelineView (): Promise<void> {
     if (!hash.startsWith("/pipeline/")) return;
 
     const pipelineId = hash.split("/")[2];
-    const [data, status] = await Promise.all([fetchPipeline(pipelineId), fetchPipelineStatus()]);
+    const [data, status, structure] = await Promise.all([fetchPipeline(pipelineId), fetchPipelineStatus(), fetchPipelineStructure()]);
     pipelineRunning = status && status.running;
     const p = data.pipeline;
-    const jobs = data.jobs || [];
+
+    // Merge structure data (isManual, description) with actual pipeline jobs
+    const enrichedJobs = (data.jobs || []).map(job => {
+        const structJob = structure?.jobs?.find(sj => sj.name === job.name);
+        return {
+            ...job,
+            isManual: structJob?.isManual || false,
+            description: structJob?.description,
+        };
+    });
+    const enrichedData = {...data, jobs: enrichedJobs};
+    const jobs = enrichedJobs;
 
     // Check if we need a full render (structure changed)
     const logPanelExists = document.getElementById("live-log-viewer") !== null;
@@ -852,7 +1036,7 @@ async function refreshPipelineView (): Promise<void> {
         }
         const root = document.getElementById("app-root");
         if (root) {
-            root.innerHTML = renderPipelineDetail(data, selectedJob, logData);
+            root.innerHTML = renderPipelineDetail(enrichedData, selectedJob, logData, structure);
             renderedLogCount = logData && logData.logs ? logData.logs.length : 0;
             scheduleDependencyLinesDraw();
             if (resourceChart) {
@@ -896,10 +1080,12 @@ async function refreshPipelineView (): Promise<void> {
         const jobsChanged = dagJobs.length !== jobs.length;
 
         if (!jobsChanged) {
-            jobs.forEach((job) => {
+            jobs.forEach((job: any) => {
                 const jobEl = pipelineDag.querySelector(".dag-job[data-job-id=\"" + job.id + "\"]");
                 if (jobEl) {
-                    jobEl.className = "dag-job status-" + job.status + (job.id === selectedJobId ? " selected" : "");
+                    const manualClass = job.isManual ? " manual" : "";
+                    const selectedClass = job.id === selectedJobId ? " selected" : "";
+                    jobEl.className = "dag-job status-" + job.status + selectedClass + manualClass;
                     const iconEl = jobEl.querySelector(".dag-job-icon");
                     if (iconEl) {
                         iconEl.textContent = getStatusIcon(job.status);
@@ -911,7 +1097,7 @@ async function refreshPipelineView (): Promise<void> {
                 }
             });
         } else {
-            pipelineDag.innerHTML = renderDagVisualization(jobs, selectedJobId);
+            pipelineDag.innerHTML = renderDagVisualization(jobs, selectedJobId, null, structure?.stages);
             scheduleDependencyLinesDraw();
         }
     }
@@ -991,7 +1177,9 @@ async function refreshPipelineView (): Promise<void> {
 // =============================================================================
 window.handleRunPipeline = async () => {
     try {
+        // Run pipeline - manual jobs will stay pending until user clicks them
         const result = await runPipeline();
+
         if (result.success) {
             pipelineRunning = true;
             router();
@@ -999,9 +1187,16 @@ window.handleRunPipeline = async () => {
             alert("Failed to start pipeline: " + (result.error || "Unknown error"));
         }
     } catch (e: any) {
+        console.error("Error running pipeline:", e);
         alert("Error: " + e.message);
     }
 };
+
+// Expose manual job dialog functions to window
+(window as any).closeManualDialog = closeManualDialog;
+(window as any).confirmManualJobs = confirmManualJobs;
+(window as any).selectAllManualJobs = selectAllManualJobs;
+(window as any).selectNoManualJobs = selectNoManualJobs;
 
 window.handleCancelPipeline = async () => {
     if (!confirm("Cancel the running pipeline?")) return;
@@ -1058,6 +1253,29 @@ window.handleRunJobLegacy = async (jobId: string) => {
             alert("Failed to start job: " + (result.error || "Unknown error"));
         }
     } catch (e: any) {
+        alert("Error: " + e.message);
+    }
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+window.handleTriggerManualJob = async (jobId: string, _jobName: string) => {
+    try {
+        // Trigger the manual job
+        const result = await apiClient.runJob(jobId);
+
+        if (result.success) {
+            // Update UI to show job is running
+            const jobEl = document.querySelector(`[data-job-id="${jobId}"]`);
+            if (jobEl) {
+                jobEl.className = jobEl.className.replace(/status-[a-zA-Z0-9_]+/, "status-running");
+                const iconEl = jobEl.querySelector(".dag-job-icon");
+                if (iconEl) iconEl.textContent = "\u25B6";
+            }
+        } else {
+            alert("Failed to trigger manual job: " + (result.error || "Unknown error"));
+        }
+    } catch (e: any) {
+        console.error("Error triggering manual job:", e);
         alert("Error: " + e.message);
     }
 };
@@ -1169,6 +1387,7 @@ window.closeLogPanel = () => {
 };
 
 window.toggleResourceMonitor = toggleResourceMonitor;
+window.toggleTheme = toggleTheme;
 
 window.toggleYamlView = (mode: "source" | "rendered") => {
     yamlViewMode = mode;
@@ -1218,9 +1437,21 @@ async function router (): Promise<void> {
                 resourceChart.destroy();
                 resourceChart = null;
             }
-            const data = await fetchPipeline(id);
+            const [data, structure] = await Promise.all([fetchPipeline(id), fetchPipelineStructure()]);
             if (thisRoute !== routerCounter) return;
-            root.innerHTML = renderPipelineDetail(data, null, null);
+
+            // Merge structure data (isManual, description) with actual pipeline jobs
+            const enrichedJobs = (data.jobs || []).map(job => {
+                const structJob = structure?.jobs?.find(sj => sj.name === job.name);
+                return {
+                    ...job,
+                    isManual: structJob?.isManual || false,
+                    description: structJob?.description,
+                };
+            });
+            const enrichedData = {...data, jobs: enrichedJobs};
+
+            root.innerHTML = renderPipelineDetail(enrichedData, null, null, structure);
             scheduleDependencyLinesDraw();
             initResourceChart();
             if (data.resourceMonitor && data.resourceMonitor.containerStats) {
@@ -1294,5 +1525,6 @@ async function router (): Promise<void> {
 // =============================================================================
 document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("hashchange", router);
+    updateThemeIcon(getStoredTheme()); // Update icon now that DOM is ready
     router();
 });

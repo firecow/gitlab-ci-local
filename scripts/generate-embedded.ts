@@ -62,6 +62,9 @@ ${css}
                         <div class="status-dot idle"></div>
                         <span>Ready</span>
                     </div>
+                    <button class="nav-link" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme" style="border:none;cursor:pointer;background:none;">
+                        <span id="theme-icon">&#9789;</span>
+                    </button>
                 </nav>
             </div>
         </div>

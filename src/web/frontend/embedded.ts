@@ -22,6 +22,8 @@ export const INDEX_HTML = `<!DOCTYPE html>
 /* ==========================================================================
    CSS Variables (Theme)
    ========================================================================== */
+
+/* Default: Dark theme */
 :root {
     --bg-color: #1a1a2e;
     --surface-color: #16213e;
@@ -33,6 +35,63 @@ export const INDEX_HTML = `<!DOCTYPE html>
     --error-color: #f81515ff;
     --border-color: #2a2a4a;
     --hover-color: #1f2f4f;
+    /* Log viewer colors */
+    --log-bg: #0d1117;
+    --log-text: #c9d1d9;
+    --log-line-number: #484f58;
+}
+
+/* Light theme via system preference (when not manually overridden to dark) */
+@media (prefers-color-scheme: light) {
+    :root:not(.dark-theme) {
+        --bg-color: #f5f5f5;
+        --surface-color: #ffffff;
+        --text-color: #1a1a1a;
+        --text-muted: #666;
+        --accent-color: #d4a017;
+        --success-color: #2e7d32;
+        --warning-color: #e65100;
+        --error-color: #c62828;
+        --border-color: #e0e0e0;
+        --hover-color: #f0f0f0;
+        --log-bg: #fafafa;
+        --log-text: #24292f;
+        --log-line-number: #8b949e;
+    }
+}
+
+/* Force light theme via class (overrides system preference) */
+:root.light-theme {
+    --bg-color: #f5f5f5;
+    --surface-color: #ffffff;
+    --text-color: #1a1a1a;
+    --text-muted: #666;
+    --accent-color: #d4a017;
+    --success-color: #2e7d32;
+    --warning-color: #e65100;
+    --error-color: #c62828;
+    --border-color: #e0e0e0;
+    --hover-color: #f0f0f0;
+    --log-bg: #fafafa;
+    --log-text: #24292f;
+    --log-line-number: #8b949e;
+}
+
+/* Force dark theme via class (overrides system preference) */
+:root.dark-theme {
+    --bg-color: #1a1a2e;
+    --surface-color: #16213e;
+    --text-color: #eee;
+    --text-muted: #888;
+    --accent-color: #f8c22fff;
+    --success-color: #4caf50;
+    --warning-color: #ff8800ff;
+    --error-color: #f81515ff;
+    --border-color: #2a2a4a;
+    --hover-color: #1f2f4f;
+    --log-bg: #0d1117;
+    --log-text: #c9d1d9;
+    --log-line-number: #484f58;
 }
 
 /* ==========================================================================
@@ -132,17 +191,17 @@ body {
 .dag-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 .dag-line { stroke: var(--border-color); stroke-width: 2; fill: none; opacity: 0.6; marker-end: url(#arrowhead); }
 .dag-line-same-stage { stroke: var(--accent-color); opacity: 0.8; }
-.dag-stages { display: flex; gap: 2rem; min-width: max-content; align-items: flex-start; position: relative; z-index: 2; }
-.dag-stage { min-width: 100px; display: flex; flex-direction: column; align-items: center; }
-.dag-stage-header { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem; padding: 0.25rem 0.75rem; background: var(--hover-color); border-radius: 12px; text-align: center; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s; }
+.dag-stages { display: flex; gap: 0; min-width: max-content; align-items: flex-start; position: relative; z-index: 2; }
+.dag-stage { min-width: 48px; display: flex; flex-direction: column; align-items: center; }
+.dag-stage-header { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; padding: 0.2rem 0.5rem; background: var(--hover-color); border-radius: 10px; text-align: center; white-space: nowrap; display: flex; align-items: center; gap: 0.25rem; cursor: pointer; transition: all 0.2s; }
 .dag-stage-header:hover { background: var(--border-color); }
 .run-stage-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.7rem; padding: 0; opacity: 0; transition: opacity 0.2s; }
 .dag-stage-header:hover .run-stage-btn { opacity: 1; }
 .run-stage-btn:hover { color: var(--accent-color); }
-.dag-jobs { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+.dag-jobs { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
 
 /* DAG Job Circles */
-.dag-job { width: 48px; height: 48px; border-radius: 50%; cursor: pointer; transition: all 0.2s; position: relative; display: flex; align-items: center; justify-content: center; border: none; background: var(--border-color); color: white; }
+.dag-job { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; transition: all 0.2s; position: relative; display: flex; align-items: center; justify-content: center; border: none; background: var(--border-color); color: white; }
 .dag-job:hover { transform: scale(1.1); box-shadow: 0 0 12px rgba(233, 69, 96, 0.5); }
 .dag-job.selected { box-shadow: 0 0 0 3px var(--accent-color); }
 .dag-job.status-success { background: var(--success-color); }
@@ -150,7 +209,14 @@ body {
 .dag-job.status-warning { background: var(--warning-color); color: black; }
 .dag-job.status-running { background: var(--accent-color); animation: pulse-ring 1.5s infinite; }
 .dag-job.status-pending { background: var(--text-muted); }
-.dag-job-icon { font-size: 1.1rem; color: inherit; }
+.dag-job-icon { font-size: 0.85rem; color: inherit; }
+
+/* Manual jobs */
+.dag-job.manual { border: 2px solid #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
+.dag-job.manual.status-pending { cursor: pointer; }
+.dag-job.manual.status-pending:hover { border-color: #d97706; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4); }
+.dag-job.manual::before { content: '\\23F8'; position: absolute; top: 1px; right: 1px; font-size: 8px; color: #f59e0b; opacity: 0.8; }
+.dag-job.manual:hover::before { opacity: 1; }
 
 /* DAG Tooltips */
 .dag-job-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--surface-color); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 6px; white-space: nowrap; font-size: 0.75rem; opacity: 0; visibility: hidden; transition: all 0.2s; z-index: 1000; pointer-events: none; margin-bottom: 8px; color: var(--text-color); }
@@ -181,17 +247,17 @@ body {
 /* ==========================================================================
    Log Viewer
    ========================================================================== */
-.live-log-viewer { flex: 1; background: #0d1117; color: #c9d1d9; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.75rem; overflow: auto; padding: 0.5rem; min-height: 0; }
+.live-log-viewer { flex: 1; background: var(--log-bg); color: var(--log-text); font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.75rem; overflow: auto; padding: 0.5rem; min-height: 0; }
 .live-log-line { display: flex; line-height: 1.4; }
-.live-log-line-number { color: #484f58; min-width: 40px; text-align: right; padding-right: 0.75rem; user-select: none; }
+.live-log-line-number { color: var(--log-line-number); min-width: 40px; text-align: right; padding-right: 0.75rem; user-select: none; }
 .live-log-content { white-space: pre-wrap; word-break: break-all; }
 .log-status-bar { padding: 0.5rem 1rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; background: var(--hover-color); }
 .auto-scroll-indicator { display: flex; align-items: center; gap: 0.5rem; }
 .auto-scroll-indicator.active { color: var(--success-color); }
 
-.log-viewer, .yaml-viewer { background: #0d1117; color: #c9d1d9; font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.8rem; padding: 1rem; max-height: 600px; overflow: auto; border-radius: 4px; white-space: pre; tab-size: 2; }
+.log-viewer, .yaml-viewer { background: var(--log-bg); color: var(--log-text); font-family: 'Monaco', 'Menlo', 'Consolas', monospace; font-size: 0.8rem; padding: 1rem; max-height: 600px; overflow: auto; border-radius: 4px; white-space: pre; tab-size: 2; }
 .log-line { display: flex; }
-.log-line-number { color: #484f58; width: 50px; text-align: right; padding-right: 1rem; user-select: none; }
+.log-line-number { color: var(--log-line-number); width: 50px; text-align: right; padding-right: 1rem; user-select: none; }
 
 /* ==========================================================================
    ANSI Color Classes
@@ -364,6 +430,9 @@ h2 { margin-bottom: 1rem; }
                         <div class="status-dot idle"></div>
                         <span>Ready</span>
                     </div>
+                    <button class="nav-link" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme" style="border:none;cursor:pointer;background:none;">
+                        <span id="theme-icon">&#9789;</span>
+                    </button>
                 </nav>
             </div>
         </div>
@@ -383,7 +452,7 @@ h2 { margin-bottom: 1rem; }
   var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // src/web/frontend/utils/api-client.js
+  // src/web/frontend/utils/api-client.ts
   var APIClient = class {
     constructor(baseURL = "/api") {
       __publicField(this, "baseURL");
@@ -459,11 +528,18 @@ h2 { margin-bottom: 1rem; }
     async getPipelineStructure() {
       return this.fetch("/pipeline-structure");
     }
-    async runPipeline(jobs) {
+    async runPipeline(jobs, manualJobs) {
+      const body = {};
+      if (jobs && jobs.length > 0) {
+        body.jobs = jobs;
+      }
+      if (manualJobs && manualJobs.length > 0) {
+        body.manualJobs = manualJobs;
+      }
       return this.fetch("/pipelines/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: jobs ? JSON.stringify({ jobs }) : "{}"
+        body: JSON.stringify(body)
       });
     }
     async runJob(jobId) {
@@ -475,7 +551,7 @@ h2 { margin-bottom: 1rem; }
   };
   var apiClient = new APIClient();
 
-  // src/web/frontend/utils/format-utils.js
+  // src/web/frontend/utils/format-utils.ts
   var JOB_COLORS = [
     { cpu: "#4CAF50", memory: "#81C784" },
     // Green
@@ -495,14 +571,12 @@ h2 { margin-bottom: 1rem; }
     // Blue Grey
   ];
   function formatDate(timestamp) {
-    if (!timestamp)
-      return "N/A";
+    if (!timestamp) return "N/A";
     const date = new Date(timestamp);
     return date.toLocaleString();
   }
   function formatDuration(duration) {
-    if (!duration)
-      return "N/A";
+    if (!duration) return "N/A";
     const seconds = Math.floor(duration / 1e3);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
@@ -515,8 +589,7 @@ h2 { margin-bottom: 1rem; }
     }
   }
   function formatBytes(bytes) {
-    if (!bytes || bytes === 0)
-      return "0 B";
+    if (!bytes || bytes === 0) return "0 B";
     const units = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, i)).toFixed(1) + " " + units[i];
@@ -552,7 +625,7 @@ h2 { margin-bottom: 1rem; }
     return div.innerHTML;
   }
 
-  // src/web/frontend/utils/ansi-parser.js
+  // src/web/frontend/utils/ansi-parser.ts
   var ANSI_COLOR_MAP = {
     "30": "ansi-black",
     "31": "ansi-red",
@@ -615,7 +688,7 @@ h2 { margin-bottom: 1rem; }
     return result || escapeHtml2(text);
   }
 
-  // src/web/frontend/utils/yaml-highlighter.js
+  // src/web/frontend/utils/yaml-highlighter.ts
   var GITLAB_KEYWORDS = [
     "stages",
     "variables",
@@ -653,8 +726,7 @@ h2 { margin-bottom: 1rem; }
     "id_tokens"
   ];
   function highlightValue(text) {
-    if (!text)
-      return "";
+    if (!text) return "";
     if (/^(true|false)$/.test(text.trim())) {
       return \`<span class="yaml-boolean">\${text}</span>\`;
     }
@@ -743,6 +815,47 @@ h2 { margin-bottom: 1rem; }
   var cachedExpandedYaml = null;
   var refreshInterval = null;
   var routerCounter = 0;
+  function getStoredTheme() {
+    return localStorage.getItem("gcl-theme") || "system";
+  }
+  function applyTheme(theme) {
+    const root = document.documentElement;
+    root.classList.remove("light-theme", "dark-theme");
+    if (theme === "light") {
+      root.classList.add("light-theme");
+    } else if (theme === "dark") {
+      root.classList.add("dark-theme");
+    }
+    localStorage.setItem("gcl-theme", theme);
+    updateThemeIcon(theme);
+  }
+  function updateThemeIcon(theme) {
+    const icon = document.getElementById("theme-icon");
+    if (!icon) return;
+    if (theme === "light") {
+      icon.innerHTML = "&#9788;";
+      icon.title = "Light mode (click for dark)";
+    } else if (theme === "dark") {
+      icon.innerHTML = "&#9789;";
+      icon.title = "Dark mode (click for system)";
+    } else {
+      icon.innerHTML = "&#9680;";
+      icon.title = "System theme (click for light)";
+    }
+  }
+  function toggleTheme() {
+    const current = getStoredTheme();
+    let next;
+    if (current === "system") {
+      next = "light";
+    } else if (current === "light") {
+      next = "dark";
+    } else {
+      next = "system";
+    }
+    applyTheme(next);
+  }
+  applyTheme(getStoredTheme());
   async function fetchPipelines() {
     const res = await apiClient.listPipelines();
     return res.pipelines || [];
@@ -774,8 +887,8 @@ h2 { margin-bottom: 1rem; }
   async function fetchPipelineStructure() {
     return apiClient.getPipelineStructure();
   }
-  async function runPipeline(jobs) {
-    return apiClient.runPipeline(jobs);
+  async function runPipeline(jobs, manualJobs) {
+    return apiClient.runPipeline(jobs, manualJobs);
   }
   async function runSingleJob(jobId) {
     return apiClient.runJob(jobId);
@@ -807,6 +920,31 @@ h2 { margin-bottom: 1rem; }
     } else {
       document.getElementById("nav-pipelines")?.classList.add("active");
     }
+  }
+  var manualJobDialogResolve = null;
+  function closeManualDialog() {
+    document.querySelector(".modal-backdrop")?.remove();
+    document.querySelector(".manual-job-dialog")?.remove();
+    if (manualJobDialogResolve) {
+      manualJobDialogResolve(null);
+      manualJobDialogResolve = null;
+    }
+  }
+  function confirmManualJobs() {
+    const checkboxes = document.querySelectorAll('input[name="manual-job"]:checked');
+    const selected = Array.from(checkboxes).map((cb) => cb.value);
+    document.querySelector(".modal-backdrop")?.remove();
+    document.querySelector(".manual-job-dialog")?.remove();
+    if (manualJobDialogResolve) {
+      manualJobDialogResolve(selected);
+      manualJobDialogResolve = null;
+    }
+  }
+  function selectAllManualJobs() {
+    document.querySelectorAll('input[name="manual-job"]').forEach((cb) => cb.checked = true);
+  }
+  function selectNoManualJobs() {
+    document.querySelectorAll('input[name="manual-job"]').forEach((cb) => cb.checked = false);
   }
   function toggleResourceMonitor() {
     resourceMonitorEnabled = !resourceMonitorEnabled;
@@ -960,25 +1098,36 @@ h2 { margin-bottom: 1rem; }
     const btnText = resourceMonitorEnabled ? "Disable" : "Enable";
     return '<div class="card resource-chart-card"><div class="card-header"><h3 style="font-size:0.9rem;margin:0">Resource Usage</h3><button id="resource-toggle-btn" class="' + btnClass + '" onclick="toggleResourceMonitor()">' + btnText + '</button></div><div class="card-body" style="padding:0.5rem"><div id="resource-chart-container" class="resource-chart-container" style="display:' + displayStyle + '"><canvas id="resource-chart"></canvas></div><div id="resource-disabled-msg" class="resource-disabled-msg" style="display:' + disabledStyle + '">Resource monitoring disabled</div></div></div>';
   }
-  function renderDagVisualization(jobs, selectedId, pipelineId) {
+  function renderDagVisualization(jobs, selectedId, pipelineId, stageOrderOverride) {
     const stageMap = {};
-    const stageOrder = [];
+    const stageOrder = stageOrderOverride || [];
     jobs.forEach((j) => {
       if (!stageMap[j.stage]) {
         stageMap[j.stage] = [];
-        stageOrder.push(j.stage);
+        if (!stageOrderOverride) {
+          stageOrder.push(j.stage);
+        }
       }
       stageMap[j.stage].push(j);
     });
-    const stagesHtml = stageOrder.map((stage) => {
+    const stagesHtml = stageOrder.filter((stage) => stageMap[stage] && stageMap[stage].length > 0).map((stage) => {
       const stageJobs = stageMap[stage];
       const jobsHtml = stageJobs.map((j) => {
         const needs = j.needs || [];
         const needsInfo = needs.length > 0 ? "Needs: " + needs.join(", ") : "";
         const selectedClass = selectedId === j.id ? " selected" : "";
+        const manualClass = j.isManual ? " manual" : "";
         const icon = getStatusIcon(j.status);
-        const clickHandler = pipelineId ? \`location.hash='#/pipeline/\${pipelineId}'; setTimeout(function() { selectJob('\${j.id}'); }, 100);\` : \`selectJob('\${j.id}')\`;
-        return '<div class="dag-job status-' + j.status + selectedClass + '" data-job-id="' + j.id + '" data-job-name="' + escapeHtml(j.name) + '" data-needs="' + escapeHtml(needs.join(",")) + '" onclick="' + clickHandler + '"><span class="dag-job-icon">' + icon + '</span><div class="dag-job-tooltip"><div class="dag-job-tooltip-name">' + escapeHtml(j.name) + '</div><div class="dag-job-tooltip-info">' + j.status + (j.duration ? " \\u2022 " + formatDuration(j.duration) : "") + "</div>" + (needsInfo ? '<div class="dag-job-tooltip-info">' + needsInfo + "</div>" : "") + "</div></div>";
+        let clickHandler;
+        if (j.isManual && j.status === "pending") {
+          clickHandler = \`handleTriggerManualJob('\${j.id}', '\${escapeHtml(j.name).replace(/'/g, "\\\\'")}')\`;
+        } else if (pipelineId) {
+          clickHandler = \`location.hash='#/pipeline/\${pipelineId}'; setTimeout(function() { selectJob('\${j.id}'); }, 100);\`;
+        } else {
+          clickHandler = \`selectJob('\${j.id}')\`;
+        }
+        const manualTooltip = j.isManual && j.status === "pending" ? '<div class="dag-job-tooltip-info">\\u23F8 Manual job \\u2022 Click to trigger</div>' : j.isManual ? '<div class="dag-job-tooltip-info">\\u23F8 Manual job</div>' : "";
+        return '<div class="dag-job status-' + j.status + selectedClass + manualClass + '" data-job-id="' + j.id + '" data-job-name="' + escapeHtml(j.name) + '" data-needs="' + escapeHtml(needs.join(",")) + '" onclick="' + clickHandler + '"><span class="dag-job-icon">' + icon + '</span><div class="dag-job-tooltip"><div class="dag-job-tooltip-name">' + escapeHtml(j.name) + "</div>" + manualTooltip + (j.description ? '<div class="dag-job-tooltip-info">' + escapeHtml(j.description) + "</div>" : "") + '<div class="dag-job-tooltip-info">' + j.status + (j.duration ? " \\u2022 " + formatDuration(j.duration) : "") + "</div>" + (needsInfo ? '<div class="dag-job-tooltip-info">' + needsInfo + "</div>" : "") + "</div></div>";
       }).join("");
       return '<div class="dag-stage"><div class="dag-stage-header"><span>' + escapeHtml(stage) + \`</span><button class="run-stage-btn" onclick="event.stopPropagation(); handleRunStage('\` + escapeHtml(stage) + \`')" title="Run stage">\\u25B6</button></div><div class="dag-jobs">\` + jobsHtml + "</div></div>";
     }).join("");
@@ -1062,7 +1211,7 @@ h2 { margin-bottom: 1rem; }
         };
       });
     }
-    return structure.jobs.map((j) => {
+    return (structure?.jobs || []).map((j) => {
       const recentJob = jobStatusMap[j.name];
       return {
         id: recentJob ? recentJob.id : j.id,
@@ -1070,7 +1219,9 @@ h2 { margin-bottom: 1rem; }
         stage: j.stage,
         status: recentJob ? recentJob.status : "pending",
         needs: j.needs || null,
-        duration: recentJob ? recentJob.duration : null
+        duration: recentJob ? recentJob.duration : null,
+        isManual: j.isManual || false,
+        description: j.description
       };
     });
   }
@@ -1092,7 +1243,7 @@ h2 { margin-bottom: 1rem; }
     let dagSection = "";
     if (structure && structure.exists && structure.jobs && structure.jobs.length > 0) {
       const structureJobs = buildStructureJobs(structure, recentPipelineJobs);
-      const dagHtml = renderDagVisualization(structureJobs, null, recentPipelineId);
+      const dagHtml = renderDagVisualization(structureJobs, null, recentPipelineId, structure?.stages);
       dagSection = '<div class="card"><div class="card-header"><h2>Pipeline Structure</h2>' + actionBtn + '</div><div class="card-body"><div id="dag-content">' + dagHtml + "</div></div></div>";
     } else {
       dagSection = '<div class="card"><div class="card-header"><h2>Pipeline Structure</h2>' + actionBtn + '</div><div class="empty-state"><div class="empty-state-icon">\\u{1F4C4}</div><div>No .gitlab-ci.yml found</div><div class="text-muted">Create a .gitlab-ci.yml file to get started</div></div></div>';
@@ -1117,7 +1268,8 @@ h2 { margin-bottom: 1rem; }
         structureJobs.forEach((job) => {
           const jobEl = dagContent.querySelector('.dag-job[data-job-name="' + escapeHtml(job.name) + '"]');
           if (jobEl) {
-            jobEl.className = "dag-job status-" + job.status;
+            const manualClass = job.isManual ? " manual" : "";
+            jobEl.className = "dag-job status-" + job.status + manualClass;
             const iconEl = jobEl.querySelector(".dag-job-icon");
             if (iconEl) {
               iconEl.textContent = getStatusIcon(job.status);
@@ -1129,7 +1281,7 @@ h2 { margin-bottom: 1rem; }
           }
         });
       } else {
-        dagContent.innerHTML = renderDagVisualization(structureJobs, null, recentPipelineId);
+        dagContent.innerHTML = renderDagVisualization(structureJobs, null, recentPipelineId, structure?.stages);
         scheduleDependencyLinesDraw();
       }
     }
@@ -1146,10 +1298,10 @@ h2 { margin-bottom: 1rem; }
     const message = p.init_message || "Initializing...";
     return '<div class="init-progress" id="init-progress"><div class="init-progress-header"><span class="init-progress-label"><span class="init-spinner"></span> ' + escapeHtml(message) + '</span><span class="init-progress-phase">' + progress + '%</span></div><div class="init-progress-bar"><div class="init-progress-fill" style="width: ' + progress + '%"></div></div></div>';
   }
-  function renderPipelineDetail(data, selectedJob, logData) {
+  function renderPipelineDetail(data, selectedJob, logData, structure) {
     const p = data.pipeline;
     const jobs = data.jobs || [];
-    const dagHtml = renderDagVisualization(jobs, selectedJobId);
+    const dagHtml = renderDagVisualization(jobs, selectedJobId, null, structure?.stages);
     const initProgressHtml = renderInitProgress(p);
     const leftPanelClass = selectedJob ? "split-left" : "split-left full-width";
     const resourceChartHtml = renderResourceChart();
@@ -1274,10 +1426,19 @@ h2 { margin-bottom: 1rem; }
     const hash = location.hash.slice(1);
     if (!hash.startsWith("/pipeline/")) return;
     const pipelineId = hash.split("/")[2];
-    const [data, status] = await Promise.all([fetchPipeline(pipelineId), fetchPipelineStatus()]);
+    const [data, status, structure] = await Promise.all([fetchPipeline(pipelineId), fetchPipelineStatus(), fetchPipelineStructure()]);
     pipelineRunning = status && status.running;
     const p = data.pipeline;
-    const jobs = data.jobs || [];
+    const enrichedJobs = (data.jobs || []).map((job) => {
+      const structJob = structure?.jobs?.find((sj) => sj.name === job.name);
+      return {
+        ...job,
+        isManual: structJob?.isManual || false,
+        description: structJob?.description
+      };
+    });
+    const enrichedData = { ...data, jobs: enrichedJobs };
+    const jobs = enrichedJobs;
     const logPanelExists = document.getElementById("live-log-viewer") !== null;
     const needsLogPanel = selectedJobId !== null;
     if (needsLogPanel !== logPanelExists) {
@@ -1291,7 +1452,7 @@ h2 { margin-bottom: 1rem; }
       }
       const root = document.getElementById("app-root");
       if (root) {
-        root.innerHTML = renderPipelineDetail(data, selectedJob, logData);
+        root.innerHTML = renderPipelineDetail(enrichedData, selectedJob, logData, structure);
         renderedLogCount = logData && logData.logs ? logData.logs.length : 0;
         scheduleDependencyLinesDraw();
         if (resourceChart) {
@@ -1332,7 +1493,9 @@ h2 { margin-bottom: 1rem; }
         jobs.forEach((job) => {
           const jobEl = pipelineDag.querySelector('.dag-job[data-job-id="' + job.id + '"]');
           if (jobEl) {
-            jobEl.className = "dag-job status-" + job.status + (job.id === selectedJobId ? " selected" : "");
+            const manualClass = job.isManual ? " manual" : "";
+            const selectedClass = job.id === selectedJobId ? " selected" : "";
+            jobEl.className = "dag-job status-" + job.status + selectedClass + manualClass;
             const iconEl = jobEl.querySelector(".dag-job-icon");
             if (iconEl) {
               iconEl.textContent = getStatusIcon(job.status);
@@ -1344,7 +1507,7 @@ h2 { margin-bottom: 1rem; }
           }
         });
       } else {
-        pipelineDag.innerHTML = renderDagVisualization(jobs, selectedJobId);
+        pipelineDag.innerHTML = renderDagVisualization(jobs, selectedJobId, null, structure?.stages);
         scheduleDependencyLinesDraw();
       }
     }
@@ -1417,9 +1580,14 @@ h2 { margin-bottom: 1rem; }
         alert("Failed to start pipeline: " + (result.error || "Unknown error"));
       }
     } catch (e) {
+      console.error("Error running pipeline:", e);
       alert("Error: " + e.message);
     }
   };
+  window.closeManualDialog = closeManualDialog;
+  window.confirmManualJobs = confirmManualJobs;
+  window.selectAllManualJobs = selectAllManualJobs;
+  window.selectNoManualJobs = selectNoManualJobs;
   window.handleCancelPipeline = async () => {
     if (!confirm("Cancel the running pipeline?")) return;
     try {
@@ -1470,6 +1638,24 @@ h2 { margin-bottom: 1rem; }
         alert("Failed to start job: " + (result.error || "Unknown error"));
       }
     } catch (e) {
+      alert("Error: " + e.message);
+    }
+  };
+  window.handleTriggerManualJob = async (jobId, _jobName) => {
+    try {
+      const result = await apiClient.runJob(jobId);
+      if (result.success) {
+        const jobEl = document.querySelector(\`[data-job-id="\${jobId}"]\`);
+        if (jobEl) {
+          jobEl.className = jobEl.className.replace(/status-[a-zA-Z0-9_]+/, "status-running");
+          const iconEl = jobEl.querySelector(".dag-job-icon");
+          if (iconEl) iconEl.textContent = "\\u25B6";
+        }
+      } else {
+        alert("Failed to trigger manual job: " + (result.error || "Unknown error"));
+      }
+    } catch (e) {
+      console.error("Error triggering manual job:", e);
       alert("Error: " + e.message);
     }
   };
@@ -1563,6 +1749,7 @@ h2 { margin-bottom: 1rem; }
     refreshPipelineView();
   };
   window.toggleResourceMonitor = toggleResourceMonitor;
+  window.toggleTheme = toggleTheme;
   window.toggleYamlView = (mode) => {
     yamlViewMode = mode;
     updateYamlView();
@@ -1600,9 +1787,18 @@ h2 { margin-bottom: 1rem; }
           resourceChart.destroy();
           resourceChart = null;
         }
-        const data = await fetchPipeline(id);
+        const [data, structure] = await Promise.all([fetchPipeline(id), fetchPipelineStructure()]);
         if (thisRoute !== routerCounter) return;
-        root.innerHTML = renderPipelineDetail(data, null, null);
+        const enrichedJobs = (data.jobs || []).map((job) => {
+          const structJob = structure?.jobs?.find((sj) => sj.name === job.name);
+          return {
+            ...job,
+            isManual: structJob?.isManual || false,
+            description: structJob?.description
+          };
+        });
+        const enrichedData = { ...data, jobs: enrichedJobs };
+        root.innerHTML = renderPipelineDetail(enrichedData, null, null, structure);
         scheduleDependencyLinesDraw();
         initResourceChart();
         if (data.resourceMonitor && data.resourceMonitor.containerStats) {
@@ -1676,6 +1872,7 @@ h2 { margin-bottom: 1rem; }
   }
   document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("hashchange", router);
+    updateThemeIcon(getStoredTheme());
     router();
   });
 })();
