@@ -35,7 +35,7 @@
     "dotenv": "17.x",
     "execa": "5.x.x",
     "fs-extra": "11.x.x",
-    "globby": "16.x.x",
+    "globby": "16.1.0",
     "js-yaml": "4.x.x",
     "jsonpointer": "5.x.x",
     "micromatch": "4.x.x",
