@@ -532,7 +532,7 @@ export class Utils {
     static async stopDockerRegistry (containerExecutable: string): Promise<void> {
         await Utils.spawn([containerExecutable, "rm", "-f", this.gclRegistryPrefix]);
     }
-    
+
     static async getTrackedFiles (cwd: string): Promise<string[]> {
         const lsFilesRes = await Utils.bash("git ls-files --deduplicate", cwd);
         if (lsFilesRes.exitCode != 0) {
