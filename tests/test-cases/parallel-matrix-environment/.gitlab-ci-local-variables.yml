@@ -1,0 +1,5 @@
+CI_ENVIRONMENT_URL:
+  values:
+    cluster-a: "https://cluster-a.example.com"
+    cluster-b: "https://cluster-b.example.com"
+    cluster-c: "https://cluster-c.example.com"
