@@ -1,3 +1,4 @@
+---
 CI_ENVIRONMENT_URL:
   values:
     cluster-a: "https://cluster-a.example.com"

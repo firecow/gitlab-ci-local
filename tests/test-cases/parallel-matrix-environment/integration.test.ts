@@ -23,14 +23,14 @@ beforeAll(() => {
 test("parallel-matrix-environment - environment object cloning prevents mutation", () => {
     // Simulate what the Job constructor does with environment
     const jobData = {
-        environment: { name: "$CLUSTER" }
+        environment: {name: "$CLUSTER"},
     };
 
     // THE FIX: Clone the environment object instead of assigning by reference
     // Fixed code:   this.environment = {...jobData.environment}
     // Buggy code:   this.environment = jobData.environment
     const cloneEnvironment = (env: any) => {
-        return typeof env === "string" ? { name: env } : (env ? { ...env } : env);
+        return typeof env === "string" ? {name: env} : (env ? {...env} : env);
     };
 
     // Simulate creating two jobs from the same jobData
@@ -57,12 +57,12 @@ test("parallel-matrix-environment - environment object cloning prevents mutation
  */
 test("parallel-matrix-environment - demonstrates bug without cloning", () => {
     const jobData = {
-        environment: { name: "$CLUSTER" }
+        environment: {name: "$CLUSTER"},
     };
 
     // BUGGY CODE: Direct assignment without cloning
     const buggyAssign = (env: any) => {
-        return typeof env === "string" ? { name: env } : env; // No spread!
+        return typeof env === "string" ? {name: env} : env; // No spread!
     };
 
     const job1Env = buggyAssign(jobData.environment);
