@@ -46,7 +46,7 @@
     "semver": "7.x.x",
     "split2": "4.x.x",
     "terminal-link": "5.x.x",
-    "yargs": "17.x.x"
+    "yargs": "18.x"
   },
   "devDependencies": {
     "@eslint/js": "9.x.x",
