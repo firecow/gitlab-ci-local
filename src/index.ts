@@ -335,6 +335,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             default: true,
             description: "Enables color",
         })
+        .option("registry", {
+            type: "boolean",
+            requiresArg: false,
+            description: "Start a local docker registry and configure gitlab-ci-local containers to use that by default",
+        })
         .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {
             try {
                 if (current.startsWith("-")) {
