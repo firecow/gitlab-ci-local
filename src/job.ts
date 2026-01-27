@@ -162,7 +162,7 @@ export class Job {
         this.allowFailure = jobData.allow_failure ?? false;
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
-        this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
+        this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : (jobData.environment ? {...jobData.environment} : jobData.environment);
 
         const matrixVariables = opt.matrixVariables ?? {};
         const fileVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
