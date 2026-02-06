@@ -1101,7 +1101,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         });
 
         // eslint-disable-next-line no-control-regex
-        const sectionRegex = /\x1b\[0Ksection_(start|end):(\d+):(\S+?)(?:\[[^\]]*\])?\r\x1b\[0K/;
+        const sectionRegex = /\x1b\[0Ksection_(start|end):(\d+):([^\s[]+)(?:\[[^\]]*\])?\r\x1b\[0K/;
         const sectionStartTimes = new Map<string, number>();
 
         const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
