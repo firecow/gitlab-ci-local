@@ -1100,8 +1100,24 @@ If you know what you're doing and would like to suppress this warning, use one o
             env: imageName ? process.env : expanded,
         });
 
+        // eslint-disable-next-line no-control-regex
+        const sectionRegex = /\x1b\[0Ksection_(start|end):(\d+):(\S+?)(?:\[[^\]]*\])?\r\x1b\[0K/;
+        const sectionStartTimes = new Map<string, number>();
+
         const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
             this.refreshLongRunningSilentTimeout(writeStreams);
+
+            const m = line.match(sectionRegex);
+            if (m) {
+                if (m[1] === "start") {
+                    sectionStartTimes.set(m[3], Number(m[2]));
+                    line = `section ${m[3]} started`;
+                } else {
+                    line = `section ${m[3]} took ${Number(m[2]) - (sectionStartTimes.get(m[3]) ?? Number(m[2]))}s`;
+                    sectionStartTimes.delete(m[3]);
+                }
+            }
+
             stream(`${this.formattedJobName} `);
             if (line.startsWith(GCL_SHELL_PROMPT_PLACEHOLDER)) {
                 // replace the GCL_SHELL_PROMPT_PLACEHOLDER with `$` and make the SHELL_PROMPT line green color
