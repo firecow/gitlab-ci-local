@@ -206,9 +206,7 @@ export class Utils {
             when = rule.when ? rule.when : jobWhen;
             allowFailure = rule.allow_failure ?? allowFailure;
             ruleVariable = rule.variables;
-            if (rule.needs) {
-                ruleNeeds = rule.needs.map((n: any) => needsComplex(n));
-            }
+            ruleNeeds = rule.needs?.map((n: any) => needsComplex(n));
 
             break; // Early return, will not evaluate the remaining rules
         }
