@@ -81,6 +81,7 @@ export type JobRule = {
     exists?: string[];
     allow_failure?: boolean;
     variables?: {[name: string]: string};
+    needs?: any[];
 };
 
 export class Job {
@@ -205,6 +206,9 @@ export class Job {
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
             ruleVariables = ruleResult.variables;
+            if (ruleResult.needs) {
+                this.jobData["needs"] = ruleResult.needs;
+            }
             this._variables = {...this._variables, ...ruleVariables, ...argvVariables};
         }
 
