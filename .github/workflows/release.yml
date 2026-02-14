@@ -90,7 +90,7 @@ jobs:
       - name: Upload ppa to Cloudflare R2
         if: env.DRY_RUN != 'true'
         run: |
-          rclone sync ppa/ r2:${R2_BUCKET}/ \
+          rclone copy ppa/ r2:${R2_BUCKET}/ \
             --s3-provider=Cloudflare \
             --s3-access-key-id="${R2_ACCESS_KEY_ID}" \
             --s3-secret-access-key="${R2_SECRET_ACCESS_KEY}" \
