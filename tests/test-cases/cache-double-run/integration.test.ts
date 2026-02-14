@@ -9,7 +9,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("cache-double-run <test-job> --shell-isolation", async () => {
+test.concurrent("cache-double-run <test-job> --shell-isolation", async () => {
     await fs.rm("tests/test-cases/cache-double-run/.gitlab-ci-local", {recursive: true, force: true});
 
     let writeStreams = new WriteStreamsMock();

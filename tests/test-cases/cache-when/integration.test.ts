@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("cache:when = on_success", async () => {
+test.concurrent("cache:when = on_success", async () => {
     await fs.rm("tests/test-cases/cache-directives/.gitlab-ci-local/cache/", {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
     await handler({
@@ -20,7 +20,7 @@ test("cache:when = on_success", async () => {
     await expect(fs.pathExists("tests/test-cases/cache-when/.gitlab-ci-local/cache/on_success_without_error/cache/file1.txt")).resolves.toBe(true);
     await expect(fs.pathExists("tests/test-cases/cache-when/.gitlab-ci-local/cache/on_success_with_error/cache/file1.txt")).resolves.toBe(false);
 });
-test("cache:when = on_failure", async () => {
+test.concurrent("cache:when = on_failure", async () => {
     await fs.rm("tests/test-cases/cache-directives/.gitlab-ci-local/cache/", {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
     await handler({
@@ -32,7 +32,7 @@ test("cache:when = on_failure", async () => {
     await expect(fs.pathExists("tests/test-cases/cache-when/.gitlab-ci-local/cache/on_failure_without_error/cache/file1.txt")).resolves.toBe(false);
     await expect(fs.pathExists("tests/test-cases/cache-when/.gitlab-ci-local/cache/on_failure_with_error/cache/file1.txt")).resolves.toBe(true);
 });
-test("cache:when = always", async () => {
+test.concurrent("cache:when = always", async () => {
     await fs.rm("tests/test-cases/cache-directives/.gitlab-ci-local/cache/", {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
     await handler({

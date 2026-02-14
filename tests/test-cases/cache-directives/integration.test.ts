@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("cache-directives <test-job> --shell-isolation --needs", async () => {
+test.concurrent("cache-directives <test-job> --shell-isolation --needs", async () => {
     await fs.rm("tests/test-cases/cache-directives/.gitlab-ci-local/cache/", {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
     await handler({

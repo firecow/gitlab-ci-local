@@ -9,7 +9,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("cache-key-invalid-files <issue-910-three> --shell-isolation", async () => {
+test.concurrent("cache-key-invalid-files <issue-910-three> --shell-isolation", async () => {
     await fs.rm("tests/test-cases/cache-key-invalid-files/.gitlab-ci-local/cache/", {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
 
@@ -23,7 +23,7 @@ test("cache-key-invalid-files <issue-910-three> --shell-isolation", async () => 
     ).rejects.toThrow(AssertionError);
 });
 
-test("cache-key-invalid-files <issue-910-empty> --shell-isolation", async () => {
+test.concurrent("cache-key-invalid-files <issue-910-empty> --shell-isolation", async () => {
     await fs.rm("tests/test-cases/cache-key-invalid-files/.gitlab-ci-local/cache/", {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
 

@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("pull-policy <alpine-guest> --pull-policy=always", async () => {
+test.concurrent("pull-policy <alpine-guest> --pull-policy=always", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         pullPolicy: "always",

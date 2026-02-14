@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("artifacts-shell-fail-always <consume> --needs --shell-isolation", async () => {
+test.concurrent("artifacts-shell-fail-always <consume> --needs --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-shell-fail-always",

@@ -7,7 +7,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("cache-shell-fail <consume-cache> --shell-isolation --needs", async () => {
+test.concurrent("cache-shell-fail <consume-cache> --shell-isolation --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/cache-shell-fail",

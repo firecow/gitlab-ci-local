@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("cache-paths-not-array <test-job> --shell-isolation", async () => {
+test.concurrent("cache-paths-not-array <test-job> --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await expect(handler({
         cwd: "tests/test-cases/cache-paths-not-array",

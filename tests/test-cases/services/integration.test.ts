@@ -9,7 +9,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("services <pre-job>", async () => {
+test.concurrent("services <pre-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
@@ -23,7 +23,7 @@ test("services <pre-job>", async () => {
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStdErr));
 });
 
-test("services <test-job>", async () => {
+test.concurrent("services <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
@@ -42,7 +42,7 @@ test("services <test-job>", async () => {
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expectedStdErr));
 });
 
-test("services <build-job>", async () => {
+test.concurrent("services <build-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
@@ -55,7 +55,7 @@ test("services <build-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("services <deploy-job>", async () => {
+test.concurrent("services <deploy-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
@@ -68,7 +68,7 @@ test("services <deploy-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("services <multiport-job>", async () => {
+test.concurrent("services <multiport-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
@@ -81,7 +81,7 @@ test("services <multiport-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 }, 120000);
 
-test("services <alias-job>", async () => {
+test.concurrent("services <alias-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
@@ -94,7 +94,7 @@ test("services <alias-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("services <alias-job-multiple-slashes>", async () => {
+test.concurrent("services <alias-job-multiple-slashes>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
@@ -107,7 +107,7 @@ test("services <alias-job-multiple-slashes>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("services <multie-job>", async () => {
+test.concurrent("services <multie-job>", async () => {
     await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-0.log", {force: true});
     await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-1.log", {force: true});
     await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-2.log", {force: true});
@@ -126,7 +126,7 @@ test("services <multie-job>", async () => {
     expect(await fs.readFile("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-2.log", "utf-8")).toMatch(/Service 3/);
 });
 
-test("services <no-tmp>", async () => {
+test.concurrent("services <no-tmp>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
@@ -139,7 +139,7 @@ test("services <no-tmp>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("services <services:entrypoint should support variable expansion and double quotes>", async () => {
+test.concurrent("services <services:entrypoint should support variable expansion and double quotes>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
@@ -155,7 +155,7 @@ job1 > should support variable expansion [1.27.4]
 `.trim());
 });
 
-test("services <unnamed services should be ignored>", async () => {
+test.concurrent("services <unnamed services should be ignored>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",

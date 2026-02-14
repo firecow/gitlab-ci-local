@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("artifacts-to-source-no <produce> --needs --shell-isolation", async () => {
+test.concurrent("artifacts-to-source-no <produce> --needs --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-to-source-no",
@@ -20,7 +20,7 @@ test("artifacts-to-source-no <produce> --needs --shell-isolation", async () => {
     expect(await fs.pathExists("tests/test-cases/artifacts-to-source-no/path/file-descriptor")).toEqual(false);
 });
 
-test("artifacts-to-source-no <produce-global> --needs --shell-isolation", async () => {
+test.concurrent("artifacts-to-source-no <produce-global> --needs --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-to-source-no",

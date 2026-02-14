@@ -13,7 +13,7 @@ beforeAll(() => {
     initBashSpy([spyGitArchive]);
 });
 
-test("remote-variables-file <test-job>", async () => {
+test.concurrent("remote-variables-file <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/remote-variables-file",

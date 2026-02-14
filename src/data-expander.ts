@@ -69,7 +69,7 @@ function hasCircularChain (data: any) {
     try {
         JSON.stringify(data);
     } catch (e) {
-        if (e instanceof TypeError) {
+        if (e instanceof TypeError && (e.message.startsWith("Converting circular structure") || e.message.includes("cyclic structures"))) {
             return true;
         }
     }
