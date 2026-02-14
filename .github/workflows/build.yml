@@ -13,16 +13,16 @@ jobs:
   yamllint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: ibiqlik/action-yamllint@v3
+      - uses: actions/checkout@v6.0.2
+      - uses: ibiqlik/action-yamllint@v3.1.1
         with:
           strict: true
 
   smoke-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v6.0.2
+      - uses: oven-sh/setup-bun@v2.1.2
         with:
           bun-version: 1.3.7
       - run: bun install --frozen-lockfile
@@ -33,8 +33,8 @@ jobs:
   eslint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v6.0.2
+      - uses: oven-sh/setup-bun@v2.1.2
         with:
           bun-version: 1.3.7
       - run: bun install --frozen-lockfile
@@ -43,8 +43,8 @@ jobs:
   unused-deps:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v6.0.2
+      - uses: oven-sh/setup-bun@v2.1.2
         with:
           bun-version: 1.3.7
       - run: bun install --frozen-lockfile
@@ -53,10 +53,10 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.2.0.2
         with:
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2.1.2
         with:
           bun-version: 1.3.7
       - run: bun install --frozen-lockfile
@@ -78,15 +78,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v4.3.0
         with:
           languages: 'typescript'
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v4
+        uses: github/codeql-action/autobuild@v4.3.0
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v4.3.0
