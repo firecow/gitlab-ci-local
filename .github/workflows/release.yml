@@ -1,0 +1,97 @@
+---
+name: release
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Dry run (npm --dry-run, draft release, skip R2 upload)'
+        type: boolean
+        default: true
+
+env:
+  PKG_CACHE_PATH: .pkg
+  DRY_RUN: ${{ inputs.dry-run || false }}
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: actions/cache@v5.0.3
+        with:
+          path: ${{ env.PKG_CACHE_PATH }}
+          key: pkg-cache
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm run esbuild
+      - run: npm run pkg-all
+
+      - name: Install rclone
+        run: sudo apt-get update && sudo apt-get install -y rclone
+
+      - name: Download existing ppa from R2
+        run: |
+          rclone copy r2:${R2_BUCKET}/ ppa/ \
+            --s3-provider=Cloudflare \
+            --s3-access-key-id="${R2_ACCESS_KEY_ID}" \
+            --s3-secret-access-key="${R2_SECRET_ACCESS_KEY}" \
+            --s3-endpoint="${R2_ENDPOINT}" \
+            --s3-no-check-bucket
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+
+      - name: Import GPG key and preset passphrase
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent
+          gpgconf --launch gpg-agent
+          for keygrip in $(gpg --list-secret-keys --with-keygrip --with-colons madsjon@gmail.com | awk -F: '/grp/{print $10}'); do
+            /usr/lib/gnupg/gpg-preset-passphrase --preset --passphrase "${{ secrets.GPG_PASSPHRASE }}" "$keygrip"
+          done
+
+      - name: Build .deb and sign
+        run: ./publish-deb
+
+      - name: Publish to npm
+        run: npm publish ${{ env.DRY_RUN == 'true' && '--dry-run' || '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        run: >
+          gh release create "${GITHUB_REF_NAME}" bin/*.gz --generate-notes
+          ${{ env.DRY_RUN == 'true' && '--draft' || '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload ppa to Cloudflare R2
+        if: env.DRY_RUN != 'true'
+        run: |
+          rclone sync ppa/ r2:${R2_BUCKET}/ \
+            --s3-provider=Cloudflare \
+            --s3-access-key-id="${R2_ACCESS_KEY_ID}" \
+            --s3-secret-access-key="${R2_SECRET_ACCESS_KEY}" \
+            --s3-endpoint="${R2_ENDPOINT}" \
+            --s3-no-check-bucket
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
