@@ -63,8 +63,6 @@ export function initSyncSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any
 export function initSpawnSpy (spyMocks: {cmdArgs: any[]; returnValue: any}[]) {
     spawnResolveMocks = spyMocks;
     spawnRejectMocks = [];
-    bashMocks = [];
-    syncSpawnMocks = [];
     return spawnSpy;
 }
 

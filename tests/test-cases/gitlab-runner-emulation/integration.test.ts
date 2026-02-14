@@ -23,6 +23,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
     await cleanupJobResources(jobs);
+    initBashSpy([]);
 });
 
 test("--container-emulate some_unexisting_runner", async () => {
