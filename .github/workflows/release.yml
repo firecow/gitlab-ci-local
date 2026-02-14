@@ -75,7 +75,9 @@ jobs:
 
       - name: Create GitHub Release
         if: github.ref_type == 'tag'
-        run: gh release create "${GITHUB_REF_NAME}" bin/*.gz --generate-notes
+        run: |
+          gh release create "${GITHUB_REF_NAME}" bin/*.gz --generate-notes ||
+          gh release upload "${GITHUB_REF_NAME}" bin/*.gz --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
