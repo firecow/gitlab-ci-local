@@ -6,9 +6,6 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
 
-env:
-  PKG_CACHE_PATH: .pkg
-
 jobs:
   release:
     runs-on: ubuntu-24.04
@@ -23,21 +20,28 @@ jobs:
         run: |
           sed -i "s/0.0.0/${GITHUB_REF_NAME}/g" package.json src/index.ts
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.7
+
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-          cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
-      - uses: actions/cache@v5.0.3
-        with:
-          path: ${{ env.PKG_CACHE_PATH }}
-          key: pkg-cache
+      - run: bun install --frozen-lockfile
 
-      - run: npm ci
-      - run: npm run build
-      - run: npm run esbuild
-      - run: npm run pkg-all
+      - run: bun run build:linux
+      - run: gzip -c bin/linux/gitlab-ci-local > bin/linux.gz
+
+      - run: bun run build:win
+      - run: gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz
+
+      - run: bun run build:macos-x64
+      - run: gzip -c bin/macos-x64/gitlab-ci-local > bin/macos.gz
+
+      - run: bun run build:macos-arm64
+      - run: gzip -c bin/macos-arm64/gitlab-ci-local > bin/macos-arm64.gz
 
       - name: Install rclone
         run: sudo apt-get update && sudo apt-get install -y rclone

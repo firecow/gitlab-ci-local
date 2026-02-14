@@ -3,14 +3,6 @@
 /bin/
 /ppa/
 /*.sh
-tsconfig.tsbuildinfo
-
-/src/**/*.js
-/src/**/*.d.ts
-
-/scripts/**/*.js
-/tests/**/*.js
-/tests/**/*.d.ts
 
 /coverage
 
@@ -21,6 +13,5 @@ tsconfig.tsbuildinfo
 .DS_Store
 
 .vscode
-pkg
 
 /.gitlab-ci.yml

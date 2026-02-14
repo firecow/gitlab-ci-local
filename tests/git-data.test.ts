@@ -142,16 +142,16 @@ describe("initRemoteData", () => {
         test(t.input, async () => {
             const writeStreams = new WriteStreamsMock();
 
+            initSpawnSpy([{
+                cmdArgs: "git remote get-url origin".split(" "),
+                returnValue: {stdout: t.input},
+            }]);
             initSpawnSpyReject([{
                 cmdArgs: "git remote get-url gcl-origin".split(" "),
                 rejection: {
                     exitCode: 2,
                     stderr: "error: No such remote 'gcl-origin'",
                 },
-            }]);
-            initSpawnSpy([{
-                cmdArgs: "git remote get-url origin".split(" "),
-                returnValue: {stdout: t.input},
             }]);
 
             const {remote} = await GitData.init("tests", writeStreams);

@@ -1,42 +1,63 @@
-import {when} from "jest-when";
+import {spyOn} from "bun:test";
 import {Utils} from "../../src/utils.js";
 
+const originalBash = Utils.bash.bind(Utils);
+const originalSpawn = Utils.spawn.bind(Utils);
+const originalSyncSpawn = Utils.syncSpawn.bind(Utils);
+
 export function initBashSpy (spyMocks: {cmd: string; returnValue: any}[]) {
-    const spyOn = import.meta.jest.spyOn(Utils, "bash");
+    const spy = spyOn(Utils, "bash");
 
-    for (const spyMock of spyMocks) {
-        when(spyOn).calledWith(spyMock.cmd, expect.any(String)).mockResolvedValue(spyMock.returnValue);
-        when(spyOn).calledWith(spyMock.cmd).mockResolvedValue(spyMock.returnValue);
-    }
+    spy.mockImplementation(async (cmd: string, cwd?: string) => {
+        for (const spyMock of spyMocks) {
+            if (cmd === spyMock.cmd) return spyMock.returnValue;
+        }
+        return originalBash(cmd, cwd);
+    });
 
-    return spyOn;
+    return spy;
 }
 
 export function initSyncSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[]) {
-    const spyOn = import.meta.jest.spyOn(Utils, "syncSpawn");
+    const spy = spyOn(Utils, "syncSpawn");
 
-    for (const spyMock of spyMocks) {
-        when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockReturnValue(spyMock.returnValue);
-        when(spyOn).calledWith(spyMock.cmdArgs).mockReturnValue(spyMock.returnValue);
-    }
+    spy.mockImplementation((cmdArgs: string[], cwd?: string) => {
+        for (const spyMock of spyMocks) {
+            if (JSON.stringify(cmdArgs) === JSON.stringify(spyMock.cmdArgs)) {
+                return spyMock.returnValue;
+            }
+        }
+        return originalSyncSpawn(cmdArgs, cwd);
+    });
+}
+
+let spawnResolveMocks: {cmdArgs: string[]; returnValue: any}[] = [];
+let spawnRejectMocks: {cmdArgs: string[]; rejection: any}[] = [];
+
+function rebuildSpawnSpy () {
+    const resolves = [...spawnResolveMocks];
+    const rejects = [...spawnRejectMocks];
+    const spy = spyOn(Utils, "spawn");
+    spy.mockImplementation(async (cmdArgs: string[], cwd?: string) => {
+        const key = JSON.stringify(cmdArgs);
+        for (const mock of rejects) {
+            if (key === JSON.stringify(mock.cmdArgs)) throw mock.rejection;
+        }
+        for (let i = resolves.length - 1; i >= 0; i--) {
+            if (key === JSON.stringify(resolves[i].cmdArgs)) return resolves[i].returnValue;
+        }
+        return originalSpawn(cmdArgs, cwd);
+    });
+    return spy;
 }
 
 export function initSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[]) {
-    const spyOn = import.meta.jest.spyOn(Utils, "spawn");
-
-    for (const spyMock of spyMocks) {
-        when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockResolvedValue(spyMock.returnValue);
-        when(spyOn).calledWith(spyMock.cmdArgs).mockResolvedValue(spyMock.returnValue);
-    }
-
-    return spyOn;
+    spawnResolveMocks = spyMocks;
+    spawnRejectMocks = [];
+    return rebuildSpawnSpy();
 }
 
 export function initSpawnSpyReject (spyMocks: {cmdArgs: string[]; rejection: any}[]) {
-    const spyOn = import.meta.jest.spyOn(Utils, "spawn");
-
-    for (const spyMock of spyMocks) {
-        when(spyOn).calledWith(spyMock.cmdArgs, expect.any(String)).mockRejectedValue(spyMock.rejection);
-        when(spyOn).calledWith(spyMock.cmdArgs).mockRejectedValue(spyMock.rejection);
-    }
+    spawnRejectMocks = spyMocks;
+    return rebuildSpawnSpy();
 }

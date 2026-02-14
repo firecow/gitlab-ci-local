@@ -8,9 +8,6 @@ on:
       - master
   pull_request:
 
-env:
-  PKG_CACHE_PATH: .pkg
-
 jobs:
 
   yamllint:
@@ -25,18 +22,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: '24'
-          cache: 'npm'
-      - uses: actions/cache@v5.0.3
-        with:
-          path: ${{ env.PKG_CACHE_PATH }}
-          key: pkg-cache-${{ matrix.node-version }}
-      - run: npm ci
-      - run: npm run esbuild
-      - run: npm run pkg-linux
-      - run: node bin/index.cjs --version
+          bun-version: 1.3.7
+      - run: bun install --frozen-lockfile
+      - run: bun run build:linux
       - run: bin/linux/gitlab-ci-local --version
       - run: bin/linux/gitlab-ci-local --help
 
@@ -44,37 +34,34 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: '24'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint
+          bun-version: 1.3.7
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
 
   unused-deps:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: '24'
-          cache: 'npm'
-      - run: npm ci
-      - run: npx depcheck --ignores depcheck
+          bun-version: 1.3.7
+      - run: bun install --frozen-lockfile
+      - run: bunx depcheck --ignores depcheck
 
-  jest:
+  test:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v6.2.0
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: '24'
-          cache: 'npm'
-      - run: npm ci
+          bun-version: 1.3.7
+      - run: bun install --frozen-lockfile
       - name: Run Tests
-        run: npm run coverage
+        run: bun run coverage
       - uses: sonarsource/sonarqube-scan-action@v7.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -90,16 +77,16 @@ jobs:
       security-events: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
-      with:
-        languages: 'typescript'
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: 'typescript'
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v4
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
