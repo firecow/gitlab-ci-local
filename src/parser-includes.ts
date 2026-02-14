@@ -11,9 +11,6 @@ import path from "path";
 import semver from "semver";
 import {RE2JS} from "re2js";
 
-// Use fetch adapter instead of bun's xhr adapter which returns incorrect responses for some URLs
-axios.defaults.adapter = "fetch";
-
 type ParserIncludesInitOptions = {
     argv: Argv;
     cwd: string;

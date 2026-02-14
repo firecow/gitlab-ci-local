@@ -27,5 +27,7 @@ test("include-invalid-remote", async () => {
             "Error: Request failed with status code 404",
         ];
         expect(e.message).toBe(msg.join("\n"));
+    } finally {
+        mock.restore();
     }
 });
