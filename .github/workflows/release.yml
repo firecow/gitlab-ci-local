@@ -26,9 +26,7 @@ jobs:
 
       - name: Set version from tag
         run: |
-          VERSION="${GITHUB_REF_NAME}"
-          npm version "${VERSION}" --no-git-tag-version
-          sed -i "s/.version(\".*\")/.version(\"${VERSION}\")/" src/index.ts
+          sed -i "s/0.0.0/${GITHUB_REF_NAME}/g" package.json src/index.ts
 
       - uses: actions/setup-node@v6
         with:
