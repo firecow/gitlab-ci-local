@@ -286,13 +286,19 @@ export class ParserIncludes {
         try {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
             if (await fs.pathExists(target) && !fetchIncludes) return;
-            const axiosConfig: AxiosRequestConfig = {
-                adapter: ["http", "fetch"],
-                headers: {"User-Agent": "gitlab-ci-local"},
-                ...Utils.getAxiosProxyConfig(),
-            };
-            const res = await axios.get(url, axiosConfig);
-            await fs.outputFile(target, res.data);
+            const proxyConfig = Utils.getAxiosProxyConfig();
+            const baseConfig = {headers: {"User-Agent": "gitlab-ci-local"}, ...proxyConfig};
+            let lastError;
+            for (const adapter of [undefined, "http", "fetch"] as const) {
+                try {
+                    const res = await axios.get(url, {...baseConfig, ...(adapter ? {adapter} : {})});
+                    await fs.outputFile(target, res.data);
+                    return;
+                } catch (e) {
+                    lastError = e;
+                }
+            }
+            throw lastError;
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});
         }
