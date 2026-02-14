@@ -1116,10 +1116,11 @@ If you know what you're doing and would like to suppress this warning, use one o
             if (m) {
                 isSection = true;
                 if (m[1] === "start") {
-                    sectionStartTimes.set(m[3], Number(m[2]));
+                    sectionStartTimes.set(m[3], Date.now());
                     line = chalk`{cyanBright #${m[3]}_started}`;
                 } else {
-                    line = chalk`{cyanBright #${m[3]}} took ${Number(m[2]) - (sectionStartTimes.get(m[3]) ?? Number(m[2]))}s`;
+                    const elapsed = Date.now() - (sectionStartTimes.get(m[3]) ?? Date.now());
+                    line = chalk`{cyanBright #${m[3]}} took ${elapsed}ms`;
                     sectionStartTimes.delete(m[3]);
                 }
             }

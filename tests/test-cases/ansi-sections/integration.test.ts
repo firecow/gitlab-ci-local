@@ -15,10 +15,10 @@ test("ansi-sections <test-job>", async () => {
         job: ["test-job"],
     }, writeStreams);
 
-    const expected = [
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
         chalk`{blueBright test-job} {cyanBright #my_section_started}`,
         chalk`{blueBright test-job} {greenBright >} inside section`,
-        chalk`{blueBright test-job} {cyanBright #my_section} took 12s`,
-    ];
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    ]));
+    const sectionEnd = writeStreams.stdoutLines.find((l: string) => l.includes("#my_section") && l.includes("took"));
+    expect(sectionEnd).toMatch(/took \d+ms/);
 });
