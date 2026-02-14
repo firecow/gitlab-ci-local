@@ -9,7 +9,7 @@ ignore: |
   examples/docker-swarm-php/vendor/
   MergeRequest-Pipelines.gitlab-ci.yml
   PHP.gitlab-ci.yml
-  /.github/workflows/build.yml
+  /.github/workflows/
 
 rules:
   line-length: { max: 160 }
