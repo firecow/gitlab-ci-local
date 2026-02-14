@@ -16,9 +16,9 @@ test("ansi-sections <test-job>", async () => {
     }, writeStreams);
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
-        chalk`{blueBright test-job} {cyanBright #my_section_started}`,
+        chalk`{blueBright test-job} {cyanBright my_section_started}`,
         chalk`{blueBright test-job} {greenBright >} inside section`,
     ]));
-    const sectionEnd = writeStreams.stdoutLines.find((l: string) => l.includes("#my_section") && l.includes("took"));
+    const sectionEnd = writeStreams.stdoutLines.find((l: string) => l.includes("my_section") && l.includes("took"));
     expect(sectionEnd).toMatch(/took \d+ms/);
 });
