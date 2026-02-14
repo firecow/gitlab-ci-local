@@ -48,7 +48,7 @@ jobs:
         with:
           bun-version: 1.3.7
       - run: bun install --frozen-lockfile
-      - run: bunx depcheck --ignores depcheck,@types/bun,bun:test
+      - run: bunx depcheck --ignores depcheck,@types/bun,@types/bun-types,bun:test
 
   test:
     runs-on: ubuntu-24.04

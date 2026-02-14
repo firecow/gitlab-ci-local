@@ -18,76 +18,57 @@ function matchArgs (actual: any[], expected: any[]): boolean {
 }
 
 let bashMocks: {cmd: any; returnValue: any}[] = [];
+let syncSpawnMocks: {cmdArgs: string[]; returnValue: any}[] = [];
+let spawnResolveMocks: {cmdArgs: any[]; returnValue: any}[] = [];
+let spawnRejectMocks: {cmdArgs: any[]; rejection: any}[] = [];
 
-function rebuildBashSpy () {
-    const mocks = [...bashMocks];
-    const spy = spyOn(Utils, "bash");
-    spy.mockImplementation(async (cmd: string, cwd?: string) => {
-        for (const spyMock of mocks) {
-            if (matchValue(cmd, spyMock.cmd)) return spyMock.returnValue;
-        }
-        return originalBash(cmd, cwd);
-    });
-    return spy;
-}
+// Create spies once at module load, reading from module-level state
+const bashSpy = spyOn(Utils, "bash");
+bashSpy.mockImplementation(async (cmd: string, cwd?: string) => {
+    for (const spyMock of bashMocks) {
+        if (matchValue(cmd, spyMock.cmd)) return spyMock.returnValue;
+    }
+    return originalBash(cmd, cwd);
+});
+
+const syncSpawnSpy = spyOn(Utils, "syncSpawn");
+syncSpawnSpy.mockImplementation((cmdArgs: string[], cwd?: string) => {
+    for (const spyMock of syncSpawnMocks) {
+        if (matchArgs(cmdArgs, spyMock.cmdArgs)) return spyMock.returnValue;
+    }
+    return originalSyncSpawn(cmdArgs, cwd);
+});
+
+const spawnSpy = spyOn(Utils, "spawn");
+spawnSpy.mockImplementation(async (cmdArgs: string[], cwd?: string) => {
+    for (const mock of spawnRejectMocks) {
+        if (matchArgs(cmdArgs, mock.cmdArgs)) throw mock.rejection;
+    }
+    for (let i = spawnResolveMocks.length - 1; i >= 0; i--) {
+        if (matchArgs(cmdArgs, spawnResolveMocks[i].cmdArgs)) return spawnResolveMocks[i].returnValue;
+    }
+    return originalSpawn(cmdArgs, cwd);
+});
 
 export function initBashSpy (spyMocks: {cmd: any; returnValue: any}[]) {
     bashMocks = spyMocks;
-    return rebuildBashSpy();
-}
-
-let syncSpawnMocks: {cmdArgs: string[]; returnValue: any}[] = [];
-
-function rebuildSyncSpawnSpy () {
-    const mocks = [...syncSpawnMocks];
-    const spy = spyOn(Utils, "syncSpawn");
-    spy.mockImplementation((cmdArgs: string[], cwd?: string) => {
-        for (const spyMock of mocks) {
-            if (matchArgs(cmdArgs, spyMock.cmdArgs)) {
-                return spyMock.returnValue;
-            }
-        }
-        return originalSyncSpawn(cmdArgs, cwd);
-    });
-    return spy;
+    return bashSpy;
 }
 
 export function initSyncSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[]) {
     syncSpawnMocks = spyMocks;
-    return rebuildSyncSpawnSpy();
-}
-
-let spawnResolveMocks: {cmdArgs: any[]; returnValue: any}[] = [];
-let spawnRejectMocks: {cmdArgs: any[]; rejection: any}[] = [];
-
-function rebuildSpawnSpy () {
-    const resolves = [...spawnResolveMocks];
-    const rejects = [...spawnRejectMocks];
-    const spy = spyOn(Utils, "spawn");
-    spy.mockImplementation(async (cmdArgs: string[], cwd?: string) => {
-        for (const mock of rejects) {
-            if (matchArgs(cmdArgs, mock.cmdArgs)) throw mock.rejection;
-        }
-        for (let i = resolves.length - 1; i >= 0; i--) {
-            if (matchArgs(cmdArgs, resolves[i].cmdArgs)) return resolves[i].returnValue;
-        }
-        return originalSpawn(cmdArgs, cwd);
-    });
-    return spy;
+    return syncSpawnSpy;
 }
 
 export function initSpawnSpy (spyMocks: {cmdArgs: any[]; returnValue: any}[]) {
     spawnResolveMocks = spyMocks;
     spawnRejectMocks = [];
-    // Reset bash and syncSpawn mocks to prevent cross-file contamination
     bashMocks = [];
-    rebuildBashSpy();
     syncSpawnMocks = [];
-    rebuildSyncSpawnSpy();
-    return rebuildSpawnSpy();
+    return spawnSpy;
 }
 
 export function initSpawnSpyReject (spyMocks: {cmdArgs: string[]; rejection: any}[]) {
     spawnRejectMocks = spyMocks;
-    return rebuildSpawnSpy();
+    return spawnSpy;
 }
