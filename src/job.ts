@@ -1112,12 +1112,14 @@ If you know what you're doing and would like to suppress this warning, use one o
             this.refreshLongRunningSilentTimeout(writeStreams);
 
             const m = line.match(sectionRegex);
+            let isSection = false;
             if (m) {
+                isSection = true;
                 if (m[1] === "start") {
                     sectionStartTimes.set(m[3], Number(m[2]));
-                    line = `section ${m[3]} started`;
+                    line = chalk`{cyanBright #${m[3]}_started}`;
                 } else {
-                    line = `section ${m[3]} took ${Number(m[2]) - (sectionStartTimes.get(m[3]) ?? Number(m[2]))}s`;
+                    line = chalk`{cyanBright #${m[3]}} took ${Number(m[2]) - (sectionStartTimes.get(m[3]) ?? Number(m[2]))}s`;
                     sectionStartTimes.delete(m[3]);
                 }
             }
@@ -1127,7 +1129,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 // replace the GCL_SHELL_PROMPT_PLACEHOLDER with `$` and make the SHELL_PROMPT line green color
                 line = line.slice(GCL_SHELL_PROMPT_PLACEHOLDER.length);
                 line = chalk`{green $${line}}`;
-            } else {
+            } else if (!isSection) {
                 stream(`${colorize(">")} `);
             }
             stream(`${line}\n`);

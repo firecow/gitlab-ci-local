@@ -16,9 +16,9 @@ test("ansi-sections <test-job>", async () => {
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job} {greenBright >} section my_section started`,
+        chalk`{blueBright test-job} {cyanBright #my_section_started}`,
         chalk`{blueBright test-job} {greenBright >} inside section`,
-        chalk`{blueBright test-job} {greenBright >} section my_section took 12s`,
+        chalk`{blueBright test-job} {cyanBright #my_section} took 12s`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
