@@ -16,7 +16,7 @@
     "lint": "eslint .",
     "test": "FORCE_COLOR=1 bun test --timeout 60000",
     "test-except-dind": "bun test --timeout 60000 --filter '(?!.*dind)'",
-    "coverage": "FORCE_COLOR=1 bun test --timeout 60000 --coverage --verbose",
+    "coverage": "FORCE_COLOR=1 bun test --timeout 60000 --coverage --coverage-reporter=text --coverage-reporter=lcov --verbose",
     "start": "bun src/index.ts --cwd examples/docker-compose-nodejs",
     "typecheck": "tsc --noEmit",
     "fetch-and-patch-schema": "curl https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json -sf | jq 'del(.. | .pattern?)' > src/schema/schema.json"
