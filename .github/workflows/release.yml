@@ -58,13 +58,16 @@ jobs:
 
       - name: Import GPG key and preset passphrase
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "${GPG_PRIVATE_KEY}" | gpg --batch --import
           echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
           gpgconf --kill gpg-agent
           gpgconf --launch gpg-agent
           for keygrip in $(gpg --list-secret-keys --with-keygrip --with-colons madsjon@gmail.com | awk -F: '/grp/{print $10}'); do
-            /usr/lib/gnupg/gpg-preset-passphrase --preset --passphrase "${{ secrets.GPG_PASSPHRASE }}" "$keygrip"
+            /usr/lib/gnupg/gpg-preset-passphrase --preset --passphrase "${GPG_PASSPHRASE}" "$keygrip"
           done
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Build .deb and sign
         run: ./publish-deb
