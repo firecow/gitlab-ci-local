@@ -24,6 +24,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Set version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          npm version "${VERSION}" --no-git-tag-version
+          sed -i "s/.version(\".*\")/.version(\"${VERSION}\")/" src/index.ts
+
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
