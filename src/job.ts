@@ -1104,14 +1104,33 @@ If you know what you're doing and would like to suppress this warning, use one o
             env: imageName ? process.env : expanded,
         });
 
+        // eslint-disable-next-line no-control-regex
+        const sectionRegex = /\x1b\[0Ksection_(start|end):(\d+):([^\s[]+)(?:\[[^\]]*\])?\r\x1b\[0K/;
+        const sectionStartTimes = new Map<string, number>();
+
         const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
             this.refreshLongRunningSilentTimeout(writeStreams);
+
+            const m = sectionRegex.exec(line);
+            let isSection = false;
+            if (m) {
+                isSection = true;
+                if (m[1] === "start") {
+                    sectionStartTimes.set(m[3], Date.now());
+                    line = chalk`{cyanBright ${m[3]}_started}`;
+                } else {
+                    const elapsed = Date.now() - (sectionStartTimes.get(m[3]) ?? Date.now());
+                    line = chalk`{cyanBright ${m[3]}} took {magenta ${elapsed}ms}`;
+                    sectionStartTimes.delete(m[3]);
+                }
+            }
+
             stream(`${this.formattedJobName} `);
             if (line.startsWith(GCL_SHELL_PROMPT_PLACEHOLDER)) {
                 // replace the GCL_SHELL_PROMPT_PLACEHOLDER with `$` and make the SHELL_PROMPT line green color
                 line = line.slice(GCL_SHELL_PROMPT_PLACEHOLDER.length);
                 line = chalk`{green $${line}}`;
-            } else {
+            } else if (!isSection) {
                 stream(`${colorize(">")} `);
             }
             stream(`${line}\n`);
