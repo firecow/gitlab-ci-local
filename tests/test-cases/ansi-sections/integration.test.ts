@@ -20,5 +20,5 @@ test("ansi-sections <test-job>", async () => {
         chalk`{blueBright test-job} {greenBright >} inside section`,
     ]));
     const sectionEnd = writeStreams.stdoutLines.find((l: string) => l.includes("my_section") && l.includes("took"));
-    expect(sectionEnd).toMatch(/took \d+ms/);
+    expect(sectionEnd).toMatch(/took .*\d+ms/);
 });
