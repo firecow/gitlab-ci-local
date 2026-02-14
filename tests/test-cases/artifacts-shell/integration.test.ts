@@ -9,7 +9,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("artifacts-shell <consume> --needs --shell-isolation", async () => {
+test("artifacts-shell <consume> --needs --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-shell",
@@ -28,7 +28,7 @@ test.concurrent("artifacts-shell <consume> --needs --shell-isolation", async () 
     expect(await fs.pathExists("tests/test-cases/artifacts-shell/path/file1")).toEqual(true);
 });
 
-test.concurrent("artifacts-shell --file .gitlab-ci-when-never.yml --shell-isolation", async () => {
+test("artifacts-shell --file .gitlab-ci-when-never.yml --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-shell",
@@ -39,7 +39,7 @@ test.concurrent("artifacts-shell --file .gitlab-ci-when-never.yml --shell-isolat
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
-test.concurrent("artifacts-shell <deploy> --file .gitlab-ci-when-never.yml --shell-isolation --no-shell-executor-no-image", async () => {
+test("artifacts-shell <deploy> --file .gitlab-ci-when-never.yml --shell-isolation --no-shell-executor-no-image", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-shell",

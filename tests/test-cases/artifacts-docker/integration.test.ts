@@ -8,7 +8,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("artifacts-docker <consume artifacts> --needs", async () => {
+test("artifacts-docker <consume artifacts> --needs", async () => {
     await fs.promises.rm("tests/test-cases/artifacts-docker/.gitlab-ci-local", {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
     await handler({

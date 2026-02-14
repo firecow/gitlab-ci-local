@@ -47,7 +47,7 @@ test("project-variables-file <issue-1508>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("project-variables-file <issue-1333>", async () => {
+test("project-variables-file <issue-1333>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
@@ -60,7 +60,7 @@ test.concurrent("project-variables-file <issue-1333>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("project-variables-file custom-path", async () => {
+test("project-variables-file custom-path", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
@@ -75,7 +75,7 @@ test.concurrent("project-variables-file custom-path", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("project-variables-file empty-variable-file", async () => {
+test("project-variables-file empty-variable-file", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
@@ -103,7 +103,7 @@ job2:
     - env | grep SECRET | sort`);
 });
 
-test.concurrent("project-variables-file custom-path (.env)", async () => {
+test("project-variables-file custom-path (.env)", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
@@ -118,7 +118,7 @@ test.concurrent("project-variables-file custom-path (.env)", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("project-variables-file custom-path (.envs)", async () => {
+test("project-variables-file custom-path (.envs)", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
