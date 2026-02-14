@@ -1,4 +1,4 @@
-import {spyOn} from "bun:test";
+import {spyOn, expect} from "bun:test";
 import {Utils} from "../../src/utils.js";
 
 const originalBash = Utils.bash.bind(Utils);
@@ -6,15 +6,21 @@ const originalSpawn = Utils.spawn.bind(Utils);
 const originalSyncSpawn = Utils.syncSpawn.bind(Utils);
 
 function matchValue (actual: any, expected: any): boolean {
-    if (expected != null && typeof expected === "object" && typeof expected.asymmetricMatch === "function") {
-        return expected.asymmetricMatch(actual);
+    try {
+        expect(actual).toEqual(expected);
+        return true;
+    } catch {
+        return false;
     }
-    return actual === expected;
 }
 
 function matchArgs (actual: any[], expected: any[]): boolean {
-    if (actual.length !== expected.length) return false;
-    return expected.every((e, i) => matchValue(actual[i], e));
+    try {
+        expect(actual).toEqual(expected);
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 let bashMocks: {cmd: any; returnValue: any}[] = [];
