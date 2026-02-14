@@ -1111,7 +1111,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
             this.refreshLongRunningSilentTimeout(writeStreams);
 
-            const m = line.match(sectionRegex);
+            const m = sectionRegex.exec(line);
             let isSection = false;
             if (m) {
                 isSection = true;
