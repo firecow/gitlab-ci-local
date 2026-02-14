@@ -1,0 +1,23 @@
+---
+stages:
+  - build
+  - test
+
+build-dev:
+  stage: build
+  script: echo "build-dev"
+
+build-production:
+  stage: build
+  script: echo "build-production"
+
+test-job:
+  stage: test
+  script: echo "test-job"
+  needs:
+    - build-dev
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      needs:
+        - build-production
+    - when: on_success

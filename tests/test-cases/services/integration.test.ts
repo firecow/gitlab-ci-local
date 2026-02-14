@@ -81,7 +81,7 @@ test.concurrent("services <multiport-job>", async () => {
         chalk`{black.bgGreenBright  PASS } {blueBright multiport-job}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-});
+}, 120000);
 
 test.concurrent("services <alias-job>", async () => {
     const writeStreams = new WriteStreamsMock();

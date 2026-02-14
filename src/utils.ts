@@ -1,7 +1,8 @@
 import "./global.js";
 import {RE2JS} from "re2js";
 import chalk from "chalk-template";
-import {Job, JobRule} from "./job.js";
+import {Job, JobRule, Need} from "./job.js";
+import {needsComplex} from "./data-expander.js";
 import fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
@@ -92,7 +93,7 @@ export class Utils {
         if (matches.length === 0) return "0";
 
         const lastMatch = matches[matches.length - 1];
-        const digits = /\d+(?:\.\d+)?/.exec(lastMatch[1] ?? lastMatch[0]);
+        const digits = /\d+(?:\.\d+)?/.exec(lastMatch[1] ?? lastMatch[0] ?? "");
         if (!digits) return "0";
         return digits[0] ?? "0";
     }
@@ -188,13 +189,14 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} = false): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}} {
+    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} = false): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}; needs?: Need[]} {
         let when = "never";
         const {evaluateRuleChanges} = opt.argv;
 
         // optional manual jobs allowFailure defaults to true https://docs.gitlab.com/ee/ci/jobs/job_control.html#types-of-manual-jobs
         let allowFailure = jobWhen === "manual" ? true : jobAllowFailure;
         let ruleVariable: {[name: string]: string} | undefined;
+        let ruleNeeds: Need[] | undefined;
 
         for (const rule of opt.rules) {
             if (!Utils.evaluateRuleIf(rule.if, opt.variables)) continue;
@@ -204,11 +206,12 @@ export class Utils {
             when = rule.when ? rule.when : jobWhen;
             allowFailure = rule.allow_failure ?? allowFailure;
             ruleVariable = rule.variables;
+            ruleNeeds = rule.needs?.map((n: any) => needsComplex(n));
 
             break; // Early return, will not evaluate the remaining rules
         }
 
-        return {when, allowFailure, variables: ruleVariable};
+        return {when, allowFailure, variables: ruleVariable, needs: ruleNeeds};
     }
 
     static evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]: string}): boolean {
