@@ -131,6 +131,7 @@ describe("evaluateRuleChanges", () => {
             const spy = spyOn(GitData, "changedFiles");
             spy.mockReturnValue(t.input);
             expect(Utils.evaluateRuleChanges("origin/master", t.pattern, ".")).toBe(t.hasChanges);
+            spy.mockRestore();
         });
     });
 });
