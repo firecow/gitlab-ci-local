@@ -6,10 +6,13 @@ import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "assert";
 import chalk from "chalk-template";
 import {Parser} from "./parser.js";
-import axios, {AxiosRequestConfig} from "axios";
+import axios from "axios";
 import path from "path";
 import semver from "semver";
 import {RE2JS} from "re2js";
+
+// Use http adapter instead of bun's xhr adapter which returns incorrect responses for some URLs
+axios.defaults.adapter = "http";
 
 type ParserIncludesInitOptions = {
     argv: Argv;
@@ -286,19 +289,11 @@ export class ParserIncludes {
         try {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
             if (await fs.pathExists(target) && !fetchIncludes) return;
-            const proxyConfig = Utils.getAxiosProxyConfig();
-            const baseConfig = {headers: {"User-Agent": "gitlab-ci-local"}, ...proxyConfig};
-            let lastError;
-            for (const adapter of [undefined, "http", "fetch"] as const) {
-                try {
-                    const res = await axios.get(url, {...baseConfig, ...(adapter ? {adapter} : {})});
-                    await fs.outputFile(target, res.data);
-                    return;
-                } catch (e) {
-                    lastError = e;
-                }
-            }
-            throw lastError;
+            const res = await axios.get(url, {
+                headers: {"User-Agent": "gitlab-ci-local"},
+                ...Utils.getAxiosProxyConfig(),
+            });
+            await fs.outputFile(target, res.data);
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});
         }
