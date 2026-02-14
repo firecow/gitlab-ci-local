@@ -290,8 +290,17 @@ export class ParserIncludes {
                 headers: {"User-Agent": "gitlab-ci-local"},
                 ...Utils.getAxiosProxyConfig(),
             };
-            const res = await axios.get(url, axiosConfig);
-            await fs.outputFile(target, res.data);
+            let lastError;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    const res = await axios.get(url, axiosConfig);
+                    await fs.outputFile(target, res.data);
+                    return;
+                } catch (e) {
+                    lastError = e;
+                }
+            }
+            throw lastError;
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});
         }
