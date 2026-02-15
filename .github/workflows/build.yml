@@ -26,9 +26,9 @@ jobs:
         with:
           bun-version: 1.3.7
       - run: bun install --frozen-lockfile
-      - run: bun run build:linux
-      - run: bin/linux/gitlab-ci-local --version
-      - run: bin/linux/gitlab-ci-local --help
+      - run: bun run build:linux-amd64
+      - run: bin/linux-amd64/gitlab-ci-local --version
+      - run: bin/linux-amd64/gitlab-ci-local --help
 
   eslint:
     runs-on: ubuntu-24.04

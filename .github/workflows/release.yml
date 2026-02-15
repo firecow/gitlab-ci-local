@@ -31,8 +31,11 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - run: bun run build:linux
-      - run: gzip -c bin/linux/gitlab-ci-local > bin/linux.gz
+      - run: bun run build:linux-amd64
+      - run: gzip -c bin/linux-amd64/gitlab-ci-local > bin/linux-amd64.gz
+
+      - run: bun run build:linux-arm64
+      - run: gzip -c bin/linux-arm64/gitlab-ci-local > bin/linux-arm64.gz
 
       - run: bun run build:win
       - run: gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz
