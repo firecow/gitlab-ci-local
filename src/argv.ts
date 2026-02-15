@@ -237,6 +237,10 @@ export class Argv {
         return ulimit;
     }
 
+    get shmSize (): string | undefined {
+        return this.map.get("shmSize");
+    }
+
     get needs (): boolean {
         return this.map.get("needs") ?? false;
     }
