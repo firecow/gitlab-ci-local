@@ -28,7 +28,3 @@ CLI tool to run GitLab CI pipelines locally. Written in TypeScript, built with B
 - GitHub releases: `linux-amd64.gz`, `linux-arm64.gz`, `macos-x64.gz`, `macos-arm64.gz`, `win.gz`
 - Debian PPA: amd64 and arm64 `.deb` packages, hosted on Cloudflare R2
 - npm: `dist/index.js` bundle targeting Node.js
-
-## Sourcemap gotcha
-
-- `bun build --sourcemap` with `--outfile` places `.map` next to the **source** file, not the output. Use `--outdir` instead to keep both bundle and map together.
