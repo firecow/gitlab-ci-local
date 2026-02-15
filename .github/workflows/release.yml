@@ -41,7 +41,7 @@ jobs:
       - run: gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz
 
       - run: bun run build:macos-x64
-      - run: gzip -c bin/macos-x64/gitlab-ci-local > bin/macos.gz
+      - run: gzip -c bin/macos-x64/gitlab-ci-local > bin/macos-x64.gz
 
       - run: bun run build:macos-arm64
       - run: gzip -c bin/macos-arm64/gitlab-ci-local > bin/macos-arm64.gz
