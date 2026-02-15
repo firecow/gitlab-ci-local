@@ -18,7 +18,7 @@ jobs:
       - name: Set version from tag
         if: github.ref_type == 'tag'
         run: |
-          sed -i "s/0.0.0/${GITHUB_REF_NAME}/g" package.json src/index.ts
+          sed -i "s/0.0.0/${GITHUB_REF_NAME}/g" package.json
 
       - uses: oven-sh/setup-bun@v2.1.2
         with:
