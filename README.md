@@ -410,7 +410,7 @@ You need [bun](https://bun.sh/) installed.
 bun install
 
 # Run all tests
-bun run test
+bun test
 
 # Run individual test-case
 bun test tests/test-cases/cache-paths-not-array
@@ -425,11 +425,11 @@ It's also possible to run individual `.gitlab-ci.yml`, via `bun src/index.ts --c
 bun install
 
 # According to your needs:
-bun run build:linux-amd64
-bun run build:linux-arm64
-bun run build:win
-bun run build:macos-x64
-bun run build:macos-arm64
-bun run build-all
+bun build:linux-amd64
+bun build:linux-arm64
+bun build:win
+bun build:macos-x64
+bun build:macos-arm64
+bun build-all
 # the binary will be generated in the respective ./bin/<os>/gitlab-ci-local
 ```
