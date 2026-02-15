@@ -305,7 +305,7 @@ export class Utils {
         let res;
         try {
             (global as any).RE2JS = RE2JS; // Assign RE2JS to the global object
-            res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
+            res = (0, eval)(evalStr); // indirect eval
             delete (global as any).RE2JS; // Cleanup
         } catch {
             const assertMsg = [

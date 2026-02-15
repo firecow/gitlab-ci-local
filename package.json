@@ -3,7 +3,7 @@
   "name": "gitlab-ci-local",
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
   "main": "src/index.ts",
-  "bin": "src/index.ts",
+  "bin": "dist/index.js",
   "version": "0.0.0",
   "scripts": {
     "build": "bun build --compile --minify --sourcemap src/index.ts --outfile bin/gitlab-ci-local",
@@ -12,6 +12,7 @@
     "build:macos-x64": "bun build --compile --minify --sourcemap --target=bun-darwin-x64 src/index.ts --outfile bin/macos-x64/gitlab-ci-local",
     "build:macos-arm64": "bun build --compile --minify --sourcemap --target=bun-darwin-arm64 src/index.ts --outfile bin/macos-arm64/gitlab-ci-local",
     "build:win": "bun build --compile --minify --sourcemap --target=bun-windows-x64 src/index.ts --outfile bin/win/gitlab-ci-local.exe",
+    "build:node": "bun build --minify --sourcemap src/index.ts --outfile dist/index.js --target=node",
     "build-all": "bun run build:linux-amd64 && bun run build:linux-arm64 && bun run build:win && bun run build:macos-x64 && bun run build:macos-arm64",
     "check-all": "bun run lint && bun run coverage",
     "lint": "eslint .",
@@ -20,7 +21,7 @@
     "coverage": "FORCE_COLOR=1 bun test --timeout 60000 --coverage --coverage-reporter=text --coverage-reporter=lcov --verbose",
     "start": "bun src/index.ts --cwd examples/docker-compose-nodejs",
     "typecheck": "tsc --noEmit",
-    "fetch-and-patch-schema": "curl https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json -sf | jq 'del(.. | .pattern?)' > src/schema/schema.json"
+    "fetch-schema": "curl https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json -sf > src/schema.json"
   },
   "dependencies": {
     "ajv": "8.x.x",
@@ -90,7 +91,7 @@
     "gitlab-ci"
   ],
   "files": [
-    "src/**/*.ts",
-    "src/**/*.json"
+    "dist/index.js",
+    "dist/index.js.map"
   ]
 }

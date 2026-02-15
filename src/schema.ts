@@ -1,4 +1,4 @@
-import {schema} from "./schema.js";
+import schema from "./schema.json";
 
 // @ts-expect-error ts-expect-error
 schema.definitions.job_template.properties.gclInjectSSHAgent = {

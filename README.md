@@ -99,6 +99,12 @@ paru -S gitlab-ci-local
 npm install -g gitlab-ci-local
 ```
 
+### Bun
+
+```bash
+bun install -g gitlab-ci-local
+```
+
 ### Macos
 
 *bash version must be above or equal 4.x.x*

@@ -2,16 +2,11 @@
 /node_modules/
 /bin/
 /ppa/
+/dist/
 /*.sh
-
 /coverage
-
 !/docker-npm
-
 /.gitlab-ci-local/
-
 .DS_Store
-
 .vscode
-
 /.gitlab-ci.yml

@@ -76,6 +76,8 @@ jobs:
       - name: Build .deb and sign
         run: ./publish-deb
 
+      - run: bun run build:node
+
       - name: Publish to npm
         if: github.ref_type == 'tag'
         run: npm publish --provenance
