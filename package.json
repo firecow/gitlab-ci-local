@@ -2,7 +2,7 @@
   "type": "module",
   "name": "gitlab-ci-local",
   "description": "Tired of pushing to test your .gitlab-ci.yml?",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "bin": "dist/index.js",
   "version": "0.0.0",
   "scripts": {
