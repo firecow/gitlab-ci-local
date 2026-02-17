@@ -121,7 +121,7 @@ brew install gitlab-ci-local
 Download and put binary in `C:\Program Files\Git\mingw64\bin`
 
 ```bash
-curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/win.gz | gunzip -c > /c/Program\ Files/Git/mingw64/bin/gitlab-ci-local.exe
+curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/gitlab-ci-local-windows-amd64.zip -o gcl.zip && unzip -o gcl.zip -d /c/Program\ Files/Git/mingw64/bin && rm gcl.zip
 ```
 
 Executing `gitlab-ci-local` with `--variable MSYS_NO_PATHCONV=1` can be useful in certain situations
