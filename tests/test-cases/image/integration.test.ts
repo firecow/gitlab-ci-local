@@ -15,6 +15,7 @@ test.concurrent("image <test job>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test job"],
+        stateDir: ".gitlab-ci-local-test-job",
     }, writeStreams);
 
     const projectDirOnHost = `${process.cwd()}/tests/test-cases/image`;
@@ -29,6 +30,7 @@ test.concurrent("image <test-entrypoint>", async () => {
         cwd: "tests/test-cases/image",
         job: ["test-entrypoint"],
         privileged: true,
+        stateDir: ".gitlab-ci-local-test-entrypoint",
     }, writeStreams);
 
     const expected = [
@@ -46,6 +48,7 @@ test.concurrent("image <test-entrypoint-override>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test-entrypoint-override"],
+        stateDir: ".gitlab-ci-local-test-entrypoint-override",
     }, writeStreams);
 
     const expected = [
@@ -59,6 +62,7 @@ test.concurrent("image <test-from-scratch>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test-from-scratch"],
+        stateDir: ".gitlab-ci-local-test-from-scratch",
     }, writeStreams);
 
     const expected = [
@@ -74,7 +78,7 @@ test.concurrent("image <test-from-scratch>", async () => {
 // ignored. The bug would cause this to also ignore test-file.txt in ./folder,
 // which it should not. Expected output will differ if ./folder/test-file.txt
 // is also ignored.
-test.concurrent("image <test-ignore-regression>", async () => {
+test("image <test-ignore-regression>", async () => {
     const writeStreams = new WriteStreamsMock();
 
     try {
@@ -82,6 +86,7 @@ test.concurrent("image <test-ignore-regression>", async () => {
         await handler({
             cwd: "tests/test-cases/image",
             job: ["test-entrypoint"],
+            stateDir: ".gitlab-ci-local-test-ignore-regression",
         }, writeStreams);
     } finally {
         await fs.rm("tests/test-cases/image/test-file.txt", {force: true});
@@ -99,6 +104,7 @@ test.concurrent("image <issue-206>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["issue-206"],
+        stateDir: ".gitlab-ci-local-issue-206",
     }, writeStreams);
 
     const expected = [
@@ -113,6 +119,7 @@ test.concurrent("image <image-user>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["image-user"],
+        stateDir: ".gitlab-ci-local-image-user",
     }, writeStreams);
 
     const expected = [
