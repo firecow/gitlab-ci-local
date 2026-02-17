@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import chalk from "chalk-template";
 import yargs from "yargs";
 import {Parser} from "./parser.js";
