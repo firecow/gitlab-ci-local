@@ -194,7 +194,7 @@ export class Utils {
         const {evaluateRuleChanges} = opt.argv;
 
         // optional manual jobs allowFailure defaults to true https://docs.gitlab.com/ee/ci/jobs/job_control.html#types-of-manual-jobs
-        let allowFailure: boolean | {exit_codes: number | number[]} = jobAllowFailure ?? (jobWhen === "manual" ? true : false);
+        let allowFailure: boolean | {exit_codes: number | number[]} = jobAllowFailure ?? jobWhen === "manual";
         let ruleVariable: {[name: string]: string} | undefined;
         let ruleNeeds: Need[] | undefined;
 
