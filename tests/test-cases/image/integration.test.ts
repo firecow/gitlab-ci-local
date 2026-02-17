@@ -10,7 +10,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("image <test job>", async () => {
+test("image <test job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
@@ -23,7 +23,7 @@ test.concurrent("image <test job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <test-entrypoint>", async () => {
+test("image <test-entrypoint>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
@@ -41,7 +41,7 @@ test.concurrent("image <test-entrypoint>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <test-entrypoint-override>", async () => {
+test("image <test-entrypoint-override>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
@@ -54,7 +54,7 @@ test.concurrent("image <test-entrypoint-override>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <test-from-scratch>", async () => {
+test("image <test-from-scratch>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/image",
@@ -93,7 +93,7 @@ test("image <test-ignore-regression>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <issue-206>", async () => {
+test("image <issue-206>", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
@@ -107,7 +107,7 @@ test.concurrent("image <issue-206>", async () => {
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("image <image-user>", async () => {
+test("image <image-user>", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
