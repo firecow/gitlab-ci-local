@@ -74,7 +74,7 @@ test.concurrent("image <test-from-scratch>", async () => {
 // ignored. The bug would cause this to also ignore test-file.txt in ./folder,
 // which it should not. Expected output will differ if ./folder/test-file.txt
 // is also ignored.
-test.concurrent("image <test-ignore-regression>", async () => {
+test("image <test-ignore-regression>", async () => {
     const writeStreams = new WriteStreamsMock();
 
     try {
