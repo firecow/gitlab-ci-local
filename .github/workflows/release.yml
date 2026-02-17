@@ -32,19 +32,19 @@ jobs:
       - run: bun install --frozen-lockfile
 
       - run: bun run build:linux-amd64
-      - run: gzip -c bin/linux-amd64/gitlab-ci-local > bin/linux-amd64.gz
+      - run: tar czf bin/gitlab-ci-local-linux-amd64.tar.gz -C bin/linux-amd64 gitlab-ci-local
 
       - run: bun run build:linux-arm64
-      - run: gzip -c bin/linux-arm64/gitlab-ci-local > bin/linux-arm64.gz
+      - run: tar czf bin/gitlab-ci-local-linux-arm64.tar.gz -C bin/linux-arm64 gitlab-ci-local
 
       - run: bun run build:win
-      - run: gzip -c bin/win/gitlab-ci-local.exe > bin/win.gz
+      - run: (cd bin/win && zip ../gitlab-ci-local-windows-amd64.zip gitlab-ci-local.exe)
 
       - run: bun run build:macos-x64
-      - run: gzip -c bin/macos-x64/gitlab-ci-local > bin/macos-x64.gz
+      - run: tar czf bin/gitlab-ci-local-darwin-amd64.tar.gz -C bin/macos-x64 gitlab-ci-local
 
       - run: bun run build:macos-arm64
-      - run: gzip -c bin/macos-arm64/gitlab-ci-local > bin/macos-arm64.gz
+      - run: tar czf bin/gitlab-ci-local-darwin-arm64.tar.gz -C bin/macos-arm64 gitlab-ci-local
 
       - name: Install rclone
         run: sudo apt-get update && sudo apt-get install -y rclone
@@ -73,9 +73,9 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Sign release binaries
+      - name: Sign release archives
         run: |
-          for f in bin/*.gz; do
+          for f in bin/gitlab-ci-local-*; do
             gpg --batch --default-key "madsjon@gmail.com" --detach-sign --armor "$f"
           done
 
@@ -91,8 +91,8 @@ jobs:
       - name: Create GitHub Release
         if: github.ref_type == 'tag'
         run: |
-          gh release create "${GITHUB_REF_NAME}" bin/*.gz bin/*.gz.asc --generate-notes ||
-          gh release upload "${GITHUB_REF_NAME}" bin/*.gz bin/*.gz.asc --clobber
+          gh release create "${GITHUB_REF_NAME}" bin/gitlab-ci-local-* --generate-notes ||
+          gh release upload "${GITHUB_REF_NAME}" bin/gitlab-ci-local-* --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

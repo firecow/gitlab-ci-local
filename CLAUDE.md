@@ -25,6 +25,6 @@ CLI tool to run GitLab CI pipelines locally. Written in TypeScript, built with B
 
 ## Release artifacts
 
-- GitHub releases: `linux-amd64.gz`, `linux-arm64.gz`, `macos-x64.gz`, `macos-arm64.gz`, `win.gz`
+- GitHub releases: `gitlab-ci-local-{os}-{arch}.tar.gz` (linux/darwin) and `.zip` (windows), plus `.asc` signatures
 - Debian PPA: amd64 and arm64 `.deb` packages, hosted on Cloudflare R2
 - npm: `dist/index.js` bundle targeting Node.js
