@@ -357,19 +357,8 @@ export class Utils {
     }
 
     static isSubpath (lhs: string, rhs: string, cwd: string = process.cwd()) {
-        let absLhs = "";
-        if (path.isAbsolute(lhs)) {
-            absLhs = lhs;
-        } else {
-            absLhs = path.resolve(cwd, lhs);
-        }
-
-        let absRhs = "";
-        if (path.isAbsolute(rhs)) {
-            absRhs = rhs;
-        } else {
-            absRhs = path.resolve(cwd, rhs);
-        }
+        const absLhs = path.isAbsolute(lhs) ? lhs : path.resolve(cwd, lhs);
+        const absRhs = path.isAbsolute(rhs) ? rhs : path.resolve(cwd, rhs);
 
         const relative = path.relative(absRhs, absLhs);
         return !relative.startsWith("..");
