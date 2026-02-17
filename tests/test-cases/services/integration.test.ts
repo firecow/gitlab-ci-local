@@ -5,8 +5,6 @@ import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import fs from "fs-extra";
 
-import.meta.jest.setTimeout(60000);
-
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
@@ -141,7 +139,7 @@ test.concurrent("services <no-tmp>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("services <services:entrypoint should support variable expansion and double quotes>", async () => {
+test.concurrent("services <services:entrypoint should support variable expansion and double quotes>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
@@ -157,7 +155,7 @@ job1 > should support variable expansion [1.27.4]
 `.trim());
 });
 
-test("services <unnamed services should be ignored>", async () => {
+test.concurrent("services <unnamed services should be ignored>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",

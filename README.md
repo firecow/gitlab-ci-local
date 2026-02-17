@@ -99,6 +99,12 @@ paru -S gitlab-ci-local
 npm install -g gitlab-ci-local
 ```
 
+### Bun
+
+```bash
+bun install -g gitlab-ci-local
+```
+
 ### Macos
 
 *bash version must be above or equal 4.x.x*
@@ -401,40 +407,35 @@ CI_SERVER_SHELL_SSH_PORT: 8022
 
 ## Development
 
-You need nodejs 18+
+You need [bun](https://bun.sh/) installed.
 
 ### Scripts
 
 ```bash
-# Install node_modules
-npm install
+# Install dependencies
+bun install
 
 # Run all tests
-npm run test
-
-# Run the program with hot-reloading enabled using the `.gitlab-ci.yml` in the root directory
-npm run dev
-
-# Pass --help flag into the program
-npm run dev -- -- --help # (equivalent of gitlab-ci-local --help)
+bun test
 
 # Run individual test-case
-npx jest tests/test-cases/cache-paths-not-array
+bun test tests/test-cases/cache-paths-not-array
 ```
 
 ![example](./docs/images/example.png)
 
-It's also possible to run individual `.gitlab-ci.yml`, via `npx tsx src/index.ts --cwd examples/docker-compose-nodejs`
+It's also possible to run individual `.gitlab-ci.yml`, via `bun src/index.ts --cwd examples/docker-compose-nodejs`
 
 ## Creating single executable binaries from source
 ```bash
-npm install
-npm run esbuild
+bun install
 
 # According to your needs:
-npm run pkg-linux
-npm run pkg-win
-npm run pkg-macos
-npm run pkg-all
+bun build:linux-amd64
+bun build:linux-arm64
+bun build:win
+bun build:macos-x64
+bun build:macos-arm64
+bun build-all
 # the binary will be generated in the respective ./bin/<os>/gitlab-ci-local
 ```

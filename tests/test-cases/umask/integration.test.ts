@@ -4,13 +4,11 @@ import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import chalk from "chalk-template";
 
-import.meta.jest.setTimeout(60000);
-
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("umask <alpine-guest> --umask", async () => {
+test("umask <alpine-guest> --umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
@@ -25,7 +23,7 @@ test.concurrent("umask <alpine-guest> --umask", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test.concurrent("umask <alpine-guest> --no-umask", async () => {
+test("umask <alpine-guest> --no-umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
@@ -40,7 +38,7 @@ test.concurrent("umask <alpine-guest> --no-umask", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test.concurrent("umask <alpine-root> --umask", async () => {
+test("umask <alpine-root> --umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
@@ -55,7 +53,7 @@ test.concurrent("umask <alpine-root> --umask", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test.concurrent("umask <alpine-root> --no-umask", async () => {
+test("umask <alpine-root> --no-umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
@@ -70,7 +68,7 @@ test.concurrent("umask <alpine-root> --no-umask", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test.concurrent("umask <kaniko-root> --umask", async () => {
+test("umask <kaniko-root> --umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
@@ -85,7 +83,7 @@ test.concurrent("umask <kaniko-root> --umask", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test.concurrent("umask <kaniko-root> --no-umask", async () => {
+test("umask <kaniko-root> --no-umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",

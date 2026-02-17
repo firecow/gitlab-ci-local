@@ -1,7 +1,8 @@
+import {spyOn, afterEach, afterAll, test, expect} from "bun:test";
 import {WriteStreamsProcess} from "../src/write-streams.js";
 
-const spyStdout = import.meta.jest.spyOn(process.stdout, "write").mockImplementation();
-const spyStderr = import.meta.jest.spyOn(process.stderr, "write").mockImplementation();
+const spyStdout = spyOn(process.stdout, "write").mockImplementation(() => true);
+const spyStderr = spyOn(process.stderr, "write").mockImplementation(() => true);
 
 afterEach(() => {
     spyStdout.mockClear();

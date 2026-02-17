@@ -67,7 +67,7 @@ describe("dependency-proxy", () => {
             cmdArgs: "docker login gitlab.com:443".split(" "),
             returnValue: "Login Succeeded",
         };
-        initSpawnSpy([ciDependencyProxyServerAuthenticated]);
+        initSpawnSpy([...WhenStatics.all, ciDependencyProxyServerAuthenticated]);
 
         try {
             await handler({

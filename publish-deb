@@ -5,16 +5,22 @@ set -e
 VERSION=$(jq -r ".version" < package.json)
 DESCRIPTION=$(jq -r ".description" < package.json)
 
-rm -rf "bin/gitlab-ci-local_${VERSION}_amd64"
 mkdir -p ppa
 
-# Generate package info file
-mkdir -p "bin/gitlab-ci-local_${VERSION}_amd64/DEBIAN/"
-cat << EOF > "bin/gitlab-ci-local_${VERSION}_amd64/DEBIAN/control"
+for arch in amd64 arm64; do
+  if [ "$arch" = "amd64" ]; then
+    binary="bin/linux-amd64/gitlab-ci-local"
+  else
+    binary="bin/linux-arm64/gitlab-ci-local"
+  fi
+
+  rm -rf "bin/gitlab-ci-local_${VERSION}_${arch}"
+  mkdir -p "bin/gitlab-ci-local_${VERSION}_${arch}/DEBIAN/"
+  cat << EOF > "bin/gitlab-ci-local_${VERSION}_${arch}/DEBIAN/control"
 Name: gitlab-ci-local
 Package: gitlab-ci-local
 Version: ${VERSION}
-Architecture: amd64
+Architecture: ${arch}
 Author: Mads Jon Nielsen <madsjon@gmail.com>
 Maintainer: Mads Jon Nielsen <madsjon@gmail.com>
 Description: ${DESCRIPTION}
@@ -23,11 +29,12 @@ Website: https://github.com/firecow/gitlab-ci-local
 Depends: rsync
 EOF
 
-mkdir -p "bin/gitlab-ci-local_${VERSION}_amd64/usr/local/bin/"
-cp bin/linux/gitlab-ci-local "bin/gitlab-ci-local_${VERSION}_amd64/usr/local/bin/"
+  mkdir -p "bin/gitlab-ci-local_${VERSION}_${arch}/usr/local/bin/"
+  cp "$binary" "bin/gitlab-ci-local_${VERSION}_${arch}/usr/local/bin/"
 
-(cd bin/ && (dpkg-deb --root-owner-group --build "gitlab-ci-local_${VERSION}_amd64" || rm "bin/gitlab-ci-local_${VERSION}_amd64.deb"))
-mv "bin/gitlab-ci-local_${VERSION}_amd64.deb" "ppa/"
+  (cd bin/ && (dpkg-deb --root-owner-group --build "gitlab-ci-local_${VERSION}_${arch}" || rm "gitlab-ci-local_${VERSION}_${arch}.deb"))
+  mv "bin/gitlab-ci-local_${VERSION}_${arch}.deb" "ppa/"
+done
 
 # Packages & Packages.gz
 (cd ppa && dpkg-scanpackages --multiversion . > Packages)

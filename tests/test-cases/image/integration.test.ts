@@ -6,8 +6,6 @@ import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import {cleanupJobResources, Job} from "../../../src/job.js";
 
-import.meta.jest.setTimeout(30000);
-
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
@@ -123,7 +121,7 @@ test.concurrent("image <image-user>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("pull invalid image", async () => {
+test("pull invalid image", async () => {
     const jobs: Job[] = [];
     const writeStreams = new WriteStreamsMock();
     const handlerPromise = handler({
@@ -136,7 +134,7 @@ test.concurrent("pull invalid image", async () => {
     await cleanupJobResources(jobs);
 });
 
-test.concurrent("no variable substitution in entrpoint", async () => {
+test("no variable substitution in entrpoint", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({

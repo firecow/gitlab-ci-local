@@ -5,8 +5,6 @@ import {WhenStatics} from "../../mocks/when-statics.js";
 import assert, {AssertionError} from "assert";
 import chalk from "chalk-template";
 
-import.meta.jest.setTimeout(30000);
-
 beforeAll(() => {
     const spyGitRemote = {
         cmdArgs: ["git", "remote", "get-url", "origin"],
