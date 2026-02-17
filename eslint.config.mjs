@@ -36,7 +36,7 @@ export default tseslint.config(
             ],
             "@stylistic/operator-linebreak": ["error", "after"],
             "@stylistic/type-annotation-spacing": [ "error" ],
-            "@stylistic/func-call-spacing": [
+            "@stylistic/function-call-spacing": [
                 "error",
             ],
             "@stylistic/comma-spacing": [
