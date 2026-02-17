@@ -7,7 +7,7 @@ import pMap from "p-map";
 export class Executor {
 
     static async runLoop (argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]) {
-        let startCandidates = [];
+        let startCandidates: Job[];
 
         do {
             startCandidates = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);

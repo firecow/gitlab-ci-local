@@ -27,7 +27,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     const cwd = argv.cwd;
     const stateDir = argv.stateDir;
     const file = argv.file;
-    let parser: Parser | null = null;
+    let parser: Parser;
 
     if (argv.completion) {
         yargs(process.argv.slice(2)).showCompletionScript();
