@@ -73,6 +73,12 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
+      - name: Sign release binaries
+        run: |
+          for f in bin/*.gz; do
+            gpg --batch --default-key "madsjon@gmail.com" --detach-sign --armor "$f"
+          done
+
       - name: Build .deb and sign
         run: ./publish-deb
 
@@ -85,8 +91,8 @@ jobs:
       - name: Create GitHub Release
         if: github.ref_type == 'tag'
         run: |
-          gh release create "${GITHUB_REF_NAME}" bin/*.gz --generate-notes ||
-          gh release upload "${GITHUB_REF_NAME}" bin/*.gz --clobber
+          gh release create "${GITHUB_REF_NAME}" bin/*.gz bin/*.gz.asc --generate-notes ||
+          gh release upload "${GITHUB_REF_NAME}" bin/*.gz bin/*.gz.asc --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
