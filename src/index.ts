@@ -233,6 +233,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Set docker executor ulimit",
             requiresArg: false,
         })
+        .option("shm-size", {
+            type: "string",
+            description: "Set docker executor shared memory size, docker default is 64m (e.g., '256m', '1g')",
+            requiresArg: false,
+        })
         .option("network", {
             type: "array",
             description: "Add networks to docker executor",

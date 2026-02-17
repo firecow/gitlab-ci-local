@@ -942,6 +942,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += `--userns=${this.argv.userns} `;
             }
 
+            if (this.argv.shmSize != undefined) {
+                dockerCmd += `--shm-size=${this.argv.shmSize} `;
+            }
+
             if (this.argv.containerMacAddress) {
                 dockerCmd += `--mac-address "${this.argv.containerMacAddress}" `;
             }
@@ -1549,6 +1553,10 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         if (this.argv.ulimit !== null) {
             dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
+        }
+
+        if (this.argv.shmSize != undefined) {
+            dockerCmd += `--shm-size=${this.argv.shmSize} `;
         }
 
         for (const volume of this.argv.volume) {
