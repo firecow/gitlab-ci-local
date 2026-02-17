@@ -76,7 +76,7 @@ jobs:
       - name: Sign release binaries
         run: |
           for f in bin/*.gz; do
-            gpg --default-key "madsjon@gmail.com" --detach-sign --armor "$f"
+            gpg --batch --default-key "madsjon@gmail.com" --detach-sign --armor "$f"
           done
 
       - name: Build .deb and sign
