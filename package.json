@@ -49,7 +49,7 @@
     "yargs": "18.x"
   },
   "devDependencies": {
-    "@eslint/js": "9.x.x",
+    "@eslint/js": "10.x",
     "@stylistic/eslint-plugin": "5.x",
     "@types/base64url": "2.x.x",
     "@types/bun": "1.x.x",
@@ -64,7 +64,7 @@
     "@types/yargs": "17.x.x",
     "axios-mock-adapter": "2.x",
     "depcheck": "1.x.x",
-    "eslint": "9.x.x",
+    "eslint": "10.x",
     "typescript": "5.x.x",
     "typescript-eslint": "8.x.x"
   },
