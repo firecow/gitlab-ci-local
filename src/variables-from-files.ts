@@ -3,6 +3,7 @@ import {GitData} from "./git-data.js";
 import fs from "fs-extra";
 import * as yaml from "js-yaml";
 import chalk from "chalk-template";
+import prettyHrtime from "pretty-hrtime";
 import {Argv} from "./argv.js";
 import assert from "assert";
 import {Utils} from "./utils.js";
@@ -40,7 +41,9 @@ export class VariablesFromFiles {
                 const url = match.groups?.url;
                 const file = match.groups?.file;
                 const ref = match.groups?.ref;
+                const time = process.hrtime();
                 const res = await Utils.bash(`set -eou pipefail; git archive --remote=${url} ${ref} ${file} | tar -xO ${file}`, cwd);
+                writeStreams.stderr(chalk`{grey downloaded ${url} ${ref} ${file} in ${prettyHrtime(process.hrtime(time))}}\n`);
                 const loadedYaml = yaml.load(`${res.stdout}`);
                 // Check if loadedYaml is an object
                 if (typeof loadedYaml === "object" && loadedYaml !== null) {
