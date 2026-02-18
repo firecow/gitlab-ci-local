@@ -16,9 +16,9 @@
     "build-all": "bun run build:linux-amd64 && bun run build:linux-arm64 && bun run build:win && bun run build:macos-x64 && bun run build:macos-arm64",
     "check-all": "bun run lint && bun run coverage",
     "lint": "eslint .",
-    "test": "FORCE_COLOR=1 bun test --timeout 60000",
-    "test-except-dind": "bun test --timeout 60000 --filter '(?!.*dind)'",
-    "coverage": "FORCE_COLOR=1 bun test --timeout 60000 --coverage --coverage-reporter=text --coverage-reporter=lcov --verbose",
+    "test": "HOME=/tmp/gcl-test-home FORCE_COLOR=1 bun test --timeout 60000",
+    "test-except-dind": "HOME=/tmp/gcl-test-home bun test --timeout 60000 --filter '(?!.*dind)'",
+    "coverage": "HOME=/tmp/gcl-test-home FORCE_COLOR=1 bun test --timeout 60000 --coverage --coverage-reporter=text --coverage-reporter=lcov --verbose",
     "start": "bun src/index.ts --cwd examples/docker-compose-nodejs",
     "typecheck": "tsc --noEmit",
     "fetch-schema": "curl https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json -sf > src/schema.json"
