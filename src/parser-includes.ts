@@ -80,7 +80,7 @@ export class ParserIncludes {
             }
             if (value["file"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
-                    promises.push(this.downloadIncludeProjectFile(cwd, stateDir, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes, writeStreams));
+                    promises.push(this.downloadIncludeProjectFile(opts, value["project"], value["ref"] || "HEAD", fileValue));
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
@@ -93,7 +93,7 @@ export class ParserIncludes {
                 componentParseCache.set(index, component);
                 if (!component.isLocal)
                 {
-                    promises.push(this.downloadIncludeComponent(cwd, stateDir, component.projectPath, component.ref, component.name, gitData, fetchIncludes, writeStreams));
+                    promises.push(this.downloadIncludeComponent(opts, component.projectPath, component.ref, component.name));
                 }
             }
 
@@ -299,7 +299,8 @@ export class ParserIncludes {
         }
     }
 
-    static async downloadIncludeProjectFile (cwd: string, stateDir: string, project: string, ref: string, file: string, gitData: GitData, fetchIncludes: boolean, writeStreams: WriteStreams): Promise<void> {
+    static async downloadIncludeProjectFile (opts: ParserIncludesInitOptions, project: string, ref: string, file: string): Promise<void> {
+        const {cwd, stateDir, gitData, fetchIncludes, writeStreams} = opts;
         const remote = gitData.remote;
         const normalizedFile = file.replace(/^\/+/, "");
         let tmpDir = null;
@@ -338,7 +339,8 @@ export class ParserIncludes {
         }
     }
 
-    static async downloadIncludeComponent (cwd: string, stateDir: string, project: string, ref: string, componentName: string, gitData: GitData, fetchIncludes: boolean, writeStreams: WriteStreams): Promise<void> {
+    static async downloadIncludeComponent (opts: ParserIncludesInitOptions, project: string, ref: string, componentName: string): Promise<void> {
+        const {cwd, stateDir, gitData, fetchIncludes, writeStreams} = opts;
         const remote = gitData.remote;
         const files = [`${componentName}.yml`, `${componentName}/template.yml`];
         let tmpDir = null;
