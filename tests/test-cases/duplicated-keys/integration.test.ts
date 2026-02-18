@@ -9,11 +9,12 @@ beforeAll(() => {
 });
 
 
-test("duplicated-keys <duplicated-keys>", async () => {
+test.concurrent("duplicated-keys <duplicated-keys>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/duplicated-keys",
         job: ["duplicated-keys"],
+        stateDir: ".gitlab-ci-local-duplicated-keys-duplicated-keys",
     }, writeStreams);
 
     const expected = [
@@ -27,11 +28,12 @@ test("duplicated-keys <duplicated-keys>", async () => {
     expect(writeStreams.stdoutLines.join("\n")).toContain(expected.join("\n"));
 });
 
-test("duplicated-keys <duplicated-keys variables overwritten>", async () => {
+test.concurrent("duplicated-keys <duplicated-keys variables overwritten>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/duplicated-keys",
         job: ["duplicated-keys variables overwritten"],
+        stateDir: ".gitlab-ci-local-duplicated-keys-duplicated-keys-variables-overwrit",
     }, writeStreams);
 
     const expected = [
@@ -45,11 +47,12 @@ test("duplicated-keys <duplicated-keys variables overwritten>", async () => {
     expect(writeStreams.stdoutLines.join("\n")).toContain(expected.join("\n"));
 });
 
-test("duplicated-keys <duplicated-keys anchor tag can still be referenced>", async () => {
+test.concurrent("duplicated-keys <duplicated-keys anchor tag can still be referenced>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/duplicated-keys",
         job: ["duplicated-keys anchor tag can still be referenced"],
+        stateDir: ".gitlab-ci-local-duplicated-keys-duplicated-keys-anchor-tag-can-sti",
     }, writeStreams);
 
     const expected = [

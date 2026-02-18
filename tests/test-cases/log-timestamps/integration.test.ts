@@ -10,11 +10,12 @@ beforeAll(() => {
 
 const pipelineDirectory = "tests/test-cases/log-timestamps";
 
-test("logs - show timestamps", async () => {
+test.concurrent("logs - show timestamps", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: pipelineDirectory,
         timestamps: true,
+        stateDir: ".gitlab-ci-local-logs-show-timestamps",
     }, writeStreams);
 
 
@@ -24,10 +25,11 @@ test("logs - show timestamps", async () => {
     assert(writeStreams.stdoutLines.some(line => /FAIL.*\[[0-9.ms ]+].*failed-job/.test(line)));
 });
 
-test("logs - without timestamps", async () => {
+test.concurrent("logs - without timestamps", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: pipelineDirectory,
+        stateDir: ".gitlab-ci-local-logs-without-timestamps",
     }, writeStreams);
 
 

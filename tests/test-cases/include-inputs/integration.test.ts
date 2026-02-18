@@ -9,7 +9,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("include-inputs basic example", async () => {
+test.concurrent("include-inputs basic example", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-inputs/input-templates/basic-example",
@@ -35,7 +35,7 @@ scan-db:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("include-inputs required inputs", async () => {
+test.concurrent("include-inputs required inputs", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -54,7 +54,7 @@ test("include-inputs required inputs", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-inputs unknown interpolation key (TypeError)", async () => {
+test.concurrent("include-inputs unknown interpolation key (TypeError)", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -73,7 +73,7 @@ test("include-inputs unknown interpolation key (TypeError)", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-inputs unknown interpolation key (AssertionError)", async () => {
+test.concurrent("include-inputs unknown interpolation key (AssertionError)", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -92,7 +92,7 @@ test("include-inputs unknown interpolation key (AssertionError)", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-inputs defaults", async () => {
+test.concurrent("include-inputs defaults", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-inputs/input-templates/default",
@@ -116,7 +116,7 @@ scan-website:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("include-inputs interpolation key containing hyphen", async () => {
+test.concurrent("include-inputs interpolation key containing hyphen", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-inputs/input-templates/interpolation-key-hyphen",
@@ -135,7 +135,7 @@ scan-website:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("include-inputs interpolation repeated", async () => {
+test.concurrent("include-inputs interpolation repeated", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-inputs/input-templates/interpolation-repeat",
@@ -154,7 +154,7 @@ job foo foo:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("include-inputs inputs validation for array", async () => {
+test.concurrent("include-inputs inputs validation for array", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -169,7 +169,7 @@ test("include-inputs inputs validation for array", async () => {
     }
 });
 
-test("include-inputs inputs validation for string", async () => {
+test.concurrent("include-inputs inputs validation for string", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -184,7 +184,7 @@ test("include-inputs inputs validation for string", async () => {
     }
 });
 
-test("include-inputs inputs validation for number", async () => {
+test.concurrent("include-inputs inputs validation for number", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -201,7 +201,7 @@ test("include-inputs inputs validation for number", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-inputs for type array", async () => {
+test.concurrent("include-inputs for type array", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-inputs/input-templates/types/array",
@@ -224,7 +224,7 @@ test_job:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("include-inputs for type boolean (truthy)", async () => {
+test.concurrent("include-inputs for type boolean (truthy)", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-inputs/input-templates/types/boolean",
@@ -245,7 +245,7 @@ scan-website:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("include-inputs for type boolean (falsy)", async () => {
+test.concurrent("include-inputs for type boolean (falsy)", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-inputs/input-templates/types/boolean",
@@ -266,7 +266,7 @@ scan-website:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("include-inputs inputs validation for boolean", async () => {
+test.concurrent("include-inputs inputs validation for boolean", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -283,7 +283,7 @@ test("include-inputs inputs validation for boolean", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-inputs inputs validation for unsupported type", async () => {
+test.concurrent("include-inputs inputs validation for unsupported type", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -302,7 +302,7 @@ test("include-inputs inputs validation for unsupported type", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-inputs options validation", async () => {
+test.concurrent("include-inputs options validation", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -321,7 +321,7 @@ test("include-inputs options validation", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-inputs too many functions in interpolation block", async () => {
+test.concurrent("include-inputs too many functions in interpolation block", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -339,7 +339,7 @@ test("include-inputs too many functions in interpolation block", async () => {
 });
 
 
-test("include-inputs interpolation value containing escapes", async () => {
+test.concurrent("include-inputs interpolation value containing escapes", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-inputs/input-templates/interpolation-value-escapes",

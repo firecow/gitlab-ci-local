@@ -9,13 +9,14 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("never-needs <test-job> --needs", async () => {
+test.concurrent("never-needs <test-job> --needs", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/never-needs/",
             job: ["test-job"],
             needs: true,
+            stateDir: ".gitlab-ci-local-never-needs-test-job-needs",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
@@ -24,12 +25,13 @@ test("never-needs <test-job> --needs", async () => {
     }
 });
 
-test("never-needs <test-job-optional> --needs", async () => {
+test.concurrent("never-needs <test-job-optional> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/never-needs/",
         job: ["test-job-optional"],
         needs: true,
+        stateDir: ".gitlab-ci-local-never-needs-test-job-optional-needs",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);

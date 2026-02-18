@@ -9,24 +9,26 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("interactive <fake-shell-job>", async () => {
+test.concurrent("interactive <fake-shell-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/interactive",
         job: ["fake-shell-job"],
         shellExecutorNoImage: true,
+        stateDir: ".gitlab-ci-local-interactive-fake-shell-job",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
-test("interactive <fake-shell-job> --no-shell-executor-no-image", async () => {
+test.concurrent("interactive <fake-shell-job> --no-shell-executor-no-image", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/interactive",
             job: ["fake-shell-job"],
             shellExecutorNoImage: false,
+            stateDir: ".gitlab-ci-local-interactive-fake-shell-job-no-shell-executor-no-im",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {

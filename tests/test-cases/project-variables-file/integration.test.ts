@@ -17,11 +17,12 @@ afterAll(() => {
     fs.removeSync(path.join(cwd, emptyFileVariable));
 });
 
-test("project-variables-file <test-job>", async () => {
+test.concurrent("project-variables-file <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-test-job",
     }, writeStreams);
 
     const expected = [
@@ -31,12 +32,13 @@ test("project-variables-file <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("project-variables-file <issue-1508>", async () => {
+test.concurrent("project-variables-file <issue-1508>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
         job: ["issue-1508"],
         variable: ["XDEBUG_MODE=debug,develop"],
+        stateDir: ".gitlab-ci-local-issue-1508",
     }, writeStreams);
 
     const expected = [
