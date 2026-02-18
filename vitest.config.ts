@@ -7,6 +7,7 @@ export default defineConfig({
         exclude: [...configDefaults.exclude, "**/.gitlab-ci-local*/**"],
         env: {
             FORCE_COLOR: "1",
+            HOME: "/tmp/gcl-test-home",
         },
         coverage: {
             provider: "v8",
