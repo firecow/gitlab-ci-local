@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("succesfull-ping", async () => {
+test.concurrent("succesfull-ping", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/network-alias-build",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-netbuild-success",
     }, writeStreams);
 
     const expected = [
@@ -22,11 +23,12 @@ test("succesfull-ping", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("unsuccesfull-ping", async () => {
+test.concurrent("unsuccesfull-ping", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/network-alias-build",
         job: ["test-job-failure"],
+        stateDir: ".gitlab-ci-local-netbuild-failure",
     }, writeStreams);
 
     const expected = [
