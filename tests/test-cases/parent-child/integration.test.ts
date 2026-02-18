@@ -9,13 +9,14 @@ beforeAll(() => {
 
 const cwd = "tests/test-cases/parent-child";
 
-test("by default inherit all global variables", async () => {
+test.concurrent("by default inherit all global variables", async () => {
 
     const writeStreams = new WriteStreamsMock();
     await handler({
         file: ".gitlab-ci-1.yml",
         cwd: cwd,
         noColor: true,
+        stateDir: ".gitlab-ci-local-by-default-inherit-all-global-variables",
     }, writeStreams);
 
     const expected = `	[parent] -> child $ env | sort | grep VAR
@@ -27,13 +28,14 @@ test("by default inherit all global variables", async () => {
     expect(filteredStdout).toEqual(expected);
 });
 
-test("prevent global variables from being inherited", async () => {
+test.concurrent("prevent global variables from being inherited", async () => {
 
     const writeStreams = new WriteStreamsMock();
     await handler({
         file: ".gitlab-ci-2.yml",
         cwd: cwd,
         noColor: true,
+        stateDir: ".gitlab-ci-local-prevent-global-variables-from-being-inherited",
     }, writeStreams);
 
     const expected = `	[parent] -> child $ env | sort | grep VAR
@@ -44,13 +46,14 @@ test("prevent global variables from being inherited", async () => {
     expect(filteredStdout).toEqual(expected);
 });
 
-test("inherit selective global variable", async () => {
+test.concurrent("inherit selective global variable", async () => {
 
     const writeStreams = new WriteStreamsMock();
     await handler({
         file: ".gitlab-ci-4.yml",
         cwd: cwd,
         noColor: true,
+        stateDir: ".gitlab-ci-local-inherit-selective-global-variable",
     }, writeStreams);
 
     const expected = `	[parent] -> child $ env | sort | grep VAR
@@ -61,7 +64,7 @@ test("inherit selective global variable", async () => {
     expect(filteredStdout).toEqual(expected);
 });
 
-test("dynamic pipeline", async () => {
+test.concurrent("dynamic pipeline", async () => {
 
     const writeStreams = new WriteStreamsMock();
     await handler({
@@ -69,6 +72,7 @@ test("dynamic pipeline", async () => {
         cwd: cwd,
         noColor: true,
         concurrency: 1,
+        stateDir: ".gitlab-ci-local-dynamic-pipeline",
     }, writeStreams);
 
     const expected = `	[dynamic-pipeline] -> child $ echo i am generated
@@ -78,12 +82,13 @@ test("dynamic pipeline", async () => {
 });
 
 
-test("nested child pipeline", async () => {
+test.concurrent("nested child pipeline", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         file: ".gitlab-ci-6.yml",
         cwd: cwd,
         noColor: true,
+        stateDir: ".gitlab-ci-local-nested-child-pipeline",
     }, writeStreams);
 
     const expected = `		[parent -> nested-child-1] -> nested-child-2 $ echo i am nested child 2
@@ -93,13 +98,14 @@ test("nested child pipeline", async () => {
     expect(filteredStdout).toEqual(expected);
 });
 
-test("2 dynamic pipeline with concurrency set to 1", async () => {
+test.concurrent("2 dynamic pipeline with concurrency set to 1", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         file: ".gitlab-ci-7.yml",
         cwd: cwd,
         noColor: true,
         concurrency: 1,
+        stateDir: ".gitlab-ci-local-2-dynamic-pipeline-with-concurrency-set-to-1",
     }, writeStreams);
 
     const expected = `	[dynamic-pipeline-1] -> child $ echo i am generated
@@ -116,12 +122,13 @@ test("2 dynamic pipeline with concurrency set to 1", async () => {
     expect(filteredStdout).toEqual(expected);
 });
 
-test("trigger:include:local should support variable substitution", async () => {
+test.concurrent("trigger:include:local should support variable substitution", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
         file: ".gitlab-ci-8.yml",
         noColor: true,
+        stateDir: ".gitlab-ci-local-trigger-include-local-should-support-variable-subs",
     }, writeStreams);
 
     const expected = `	[trigger] -> job $ echo yay variable substitution works

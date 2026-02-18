@@ -8,13 +8,14 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("artifacts-globstar <test-job> --needs --shell-isolation", async () => {
+test.concurrent("artifacts-globstar <test-job> --needs --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-globstar",
         job: ["test-job"],
         needs: true,
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-artifacts-globstar-test-job-needs-shell-isolation",
     }, writeStreams);
 
     const expected = [
@@ -23,12 +24,13 @@ test("artifacts-globstar <test-job> --needs --shell-isolation", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("artifacts-globstar <no-match> --shell-isolation", async () => {
+test.concurrent("artifacts-globstar <no-match> --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-globstar",
         job: ["no-match"],
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-artifacts-globstar-no-match-shell-isolation",
     }, writeStreams);
 
     const expected = [

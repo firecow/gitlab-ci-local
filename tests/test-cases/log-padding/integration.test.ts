@@ -25,7 +25,7 @@ async function verifyLogs ({maxJobNamePadding, expectedJobNamePadding}: {maxJobN
     );
 }
 
-test("logs - maxJobNamePadding set to 0", async () => {
+test.concurrent("logs - maxJobNamePadding set to 0", async () => {
     await verifyLogs({maxJobNamePadding: 0, expectedJobNamePadding: 0});
 });
 
@@ -47,6 +47,7 @@ test("logs - log padding should only take needs and targeted jobs into account",
         cwd: pipelineDirectory,
         needs: true,
         job: ["short-name with needs"],
+        stateDir: ".gitlab-ci-local-logs-maxjobnamepadding-set-to-0",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
@@ -54,12 +55,13 @@ test("logs - log padding should only take needs and targeted jobs into account",
     );
 });
 
-test("logs - log padding should only take targeted jobs into account", async () => {
+test.concurrent("logs - log padding should only take targeted jobs into account", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: pipelineDirectory,
         needs: true,
         job: ["short-name"],
+        stateDir: ".gitlab-ci-local-logs-log-padding-should-only-take-targeted-jobs-in",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(

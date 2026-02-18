@@ -7,60 +7,65 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("artifacts-reports-dotenv <deploy-image> --needs", async () => {
+test.concurrent("artifacts-reports-dotenv <deploy-image> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-reports-dotenv",
         job: ["deploy-image"],
         needs: true,
+        stateDir: ".gitlab-ci-local-artifacts-reports-dotenv-deploy-image-needs",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
-test("artifacts-reports-dotenv <deploy-shell-iso> --needs", async () => {
+test.concurrent("artifacts-reports-dotenv <deploy-shell-iso> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-reports-dotenv",
         job: ["deploy-shell-iso"],
         needs: true,
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-artifacts-reports-dotenv-deploy-shell-iso-needs",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
-test("artifacts-reports-dotenv <deploy-shell-noiso> --needs", async () => {
+test.concurrent("artifacts-reports-dotenv <deploy-shell-noiso> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-reports-dotenv",
         job: ["deploy-shell-noiso"],
         needs: true,
         shellIsolation: false,
+        stateDir: ".gitlab-ci-local-artifacts-reports-dotenv-deploy-shell-noiso-needs",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
-test("artifacts-reports-dotenv <test-multi-dotenv> --needs", async () => {
+test.concurrent("artifacts-reports-dotenv <test-multi-dotenv> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-reports-dotenv",
         job: ["test-multi-dotenv"],
         needs: true,
         file: ".gitlab-ci-issue-1160.yml",
+        stateDir: ".gitlab-ci-local-artifacts-reports-dotenv-test-multi-dotenv-needs",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
-test("artifacts-reports-dotenv <test-multi-dotenv-with-missing-file> --needs", async () => {
+test.concurrent("artifacts-reports-dotenv <test-multi-dotenv-with-missing-file> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-reports-dotenv",
         job: ["test-multi-dotenv-with-missing-file"],
         needs: true,
         file: ".gitlab-ci-issue-1160.yml",
+        stateDir: ".gitlab-ci-local-artifacts-reports-dotenv-test-multi-dotenv-with-mi",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).toContain("artifact reports dotenv 'multi4.env' could not be found");

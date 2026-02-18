@@ -8,12 +8,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("cache-paths-undefined-array <test-job>", async () => {
+test.concurrent("cache-paths-undefined-array <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/cache-paths-undefined-array",
         job: ["test-job"],
         maxJobNamePadding: 0,
+        stateDir: ".gitlab-ci-local-cache-paths-undefined-array-test-job",
     }, writeStreams);
 
 
@@ -24,12 +25,13 @@ test("cache-paths-undefined-array <test-job>", async () => {
 });
 
 
-test("cache-paths-empty-object <test-job>", async () => {
+test.concurrent("cache-paths-empty-object <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/cache-paths-undefined-array",
         job: ["test-empty-cache-object"],
         maxJobNamePadding: 0,
+        stateDir: ".gitlab-ci-local-cache-paths-empty-object-test-job",
     }, writeStreams);
 
 
