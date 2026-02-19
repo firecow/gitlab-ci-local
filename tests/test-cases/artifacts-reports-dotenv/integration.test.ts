@@ -65,7 +65,7 @@ test.concurrent("artifacts-reports-dotenv <test-multi-dotenv-with-missing-file> 
         job: ["test-multi-dotenv-with-missing-file"],
         needs: true,
         file: ".gitlab-ci-issue-1160.yml",
-        stateDir: ".gitlab-ci-local-artifacts-reports-dotenv-test-multi-dotenv-with-mi",
+        stateDir: ".gitlab-ci-local-artifacts-reports-dotenv-test-multi-dotenv-with-missing-file-needs",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).toContain("artifact reports dotenv 'multi4.env' could not be found");

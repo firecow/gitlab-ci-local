@@ -128,7 +128,7 @@ test.concurrent("trigger:include:local should support variable substitution", as
         cwd: cwd,
         file: ".gitlab-ci-8.yml",
         noColor: true,
-        stateDir: ".gitlab-ci-local-trigger-include-local-should-support-variable-subs",
+        stateDir: ".gitlab-ci-local-trigger-include-local-should-support-variable-substitution",
     }, writeStreams);
 
     const expected = `	[trigger] -> job $ echo yay variable substitution works
