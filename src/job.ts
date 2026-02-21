@@ -1470,7 +1470,10 @@ If you know what you're doing and would like to suppress this warning, use one o
         await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName(this._variables)) {
-            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${cmd.replace(/"/g, "\\\"")}"`, cwd);
+            const cmdWithWritablePerms = `${cmd}\nchmod -R u+w /${type} 2>/dev/null || true`;
+            // eslint-disable-next-line @stylistic/quotes
+            const escapedCmd = cmdWithWritablePerms.replaceAll('"', String.raw`\"`);
+            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${escapedCmd}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
             await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
