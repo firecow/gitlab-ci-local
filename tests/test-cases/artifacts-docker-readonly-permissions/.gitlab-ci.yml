@@ -1,0 +1,11 @@
+---
+produce-artifacts:
+  stage: build
+  image: busybox
+  script:
+    - mkdir -p readonly-dir/subdir
+    - echo "hello" > readonly-dir/subdir/file.txt
+    - chmod -R a-w readonly-dir
+  artifacts:
+    paths:
+      - readonly-dir
