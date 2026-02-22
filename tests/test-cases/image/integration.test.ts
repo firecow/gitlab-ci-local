@@ -141,12 +141,13 @@ test("pull invalid image", async () => {
     await cleanupJobResources(jobs);
 });
 
-test("no variable substitution in entrpoint", async () => {
+test.concurrent("no variable substitution in entrpoint", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
         cwd: "tests/test-cases/image",
         job: ["image-entrypoint-with-variables"],
+        stateDir: ".gitlab-ci-local-entrypoint-with-variables",
     }, writeStreams);
 
     const expected = [

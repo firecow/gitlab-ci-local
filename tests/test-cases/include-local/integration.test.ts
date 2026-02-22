@@ -9,12 +9,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("include-local <build-job>", async () => {
+test.concurrent("include-local <build-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-local",
         file: ".gitlab-ci.yml",
         job: ["build-job"],
+        stateDir: ".gitlab-ci-local-include-local-build-job",
     }, writeStreams);
 
     const expected = [
@@ -24,12 +25,13 @@ test("include-local <build-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("include-local <test-job> (short-list)", async () => {
+test.concurrent("include-local <test-job> (short-list)", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-local",
         file: ".gitlab-ci-short-list.yml",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-include-local-test-job-short-list",
     }, writeStreams);
 
     const expected = [
@@ -38,12 +40,13 @@ test("include-local <test-job> (short-list)", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("include-local <deploy-job> (short-single)", async () => {
+test.concurrent("include-local <deploy-job> (short-single)", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-local",
         file: ".gitlab-ci-short-single.yml",
         job: ["deploy-job"],
+        stateDir: ".gitlab-ci-local-include-local-deploy-job-short-single",
     }, writeStreams);
 
     const expected = [
@@ -52,12 +55,13 @@ test("include-local <deploy-job> (short-single)", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("include-local invalid config (directory traversal)", async () => {
+test.concurrent("include-local invalid config (directory traversal)", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/include-local",
             file: ".gitlab-ci-invalid-config-directory-traversal.yml",
+            stateDir: ".gitlab-ci-local-include-local-invalid-config-directory-traversal",
         }, writeStreams);
     } catch (e: any) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
@@ -67,12 +71,13 @@ test("include-local invalid config (directory traversal)", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-local invalid config (relative path)", async () => {
+test.concurrent("include-local invalid config (relative path)", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/include-local",
             file: ".gitlab-ci-invalid-config-relative-path.yml",
+            stateDir: ".gitlab-ci-local-include-local-invalid-config-relative-path",
         }, writeStreams);
     } catch (e: any) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");

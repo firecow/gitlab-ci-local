@@ -2,11 +2,12 @@ import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import chalk from "chalk-template";
 
-test("parallel-matrix - ensure successful", async () => {
+test.concurrent("parallel-matrix - ensure successful", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel-matrix",
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-parallel-matrix-ensure-successful",
     }, writeStreams);
 
     const expected = [
@@ -28,12 +29,13 @@ test("parallel-matrix - ensure successful", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("parallel-matrix <test-job>", async () => {
+test.concurrent("parallel-matrix <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel-matrix",
         jobs: ["test-job"],
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-parallel-matrix-test-job",
     }, writeStreams);
 
     const expected = [
@@ -53,12 +55,13 @@ test("parallel-matrix <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("parallel-matrix 'test-job [beb]'", async () => {
+test.concurrent("parallel-matrix 'test-job [beb]'", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel-matrix",
         job: ["test-job: [beb]"],
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-parallel-matrix-test-job-beb",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([

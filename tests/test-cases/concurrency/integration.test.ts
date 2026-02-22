@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("--concurrency 1 - should run sequentially", async () => {
+test.concurrent("--concurrency 1 - should run sequentially", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/concurrency",
         concurrency: 1,
+        stateDir: ".gitlab-ci-local-concurrency-1-should-run-sequentially",
     }, writeStreams);
 
     const jobOneFinishedIndex = writeStreams.stdoutLines.findIndex((line) => {
@@ -27,10 +28,11 @@ test("--concurrency 1 - should run sequentially", async () => {
     expect(jobOneFinishedIndex + 1 === jobTwoStartingIndex).toBe(true);
 });
 
-test("--concurrency not set", async () => {
+test.concurrent("--concurrency not set", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/concurrency",
+        stateDir: ".gitlab-ci-local-concurrency-not-set",
     }, writeStreams);
 
     const jobOneStartingIndex = writeStreams.stdoutLines.findIndex((line) => {

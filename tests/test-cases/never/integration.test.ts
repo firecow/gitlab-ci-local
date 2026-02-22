@@ -8,10 +8,11 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("never", async () => {
+test.concurrent("never", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/never/",
+        stateDir: ".gitlab-ci-local-never",
     }, writeStreams);
 
     const found = writeStreams.stdoutLines.find((l) => {
@@ -20,11 +21,12 @@ test("never", async () => {
     expect(found).toEqual(undefined);
 });
 
-test("never <test-job>", async () => {
+test.concurrent("never <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/never/",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-never-test-job",
     }, writeStreams);
 
     const expected = [
@@ -38,12 +40,13 @@ test("never <test-job>", async () => {
     expect(found).toEqual(undefined);
 });
 
-test("never <test-job> --needs", async () => {
+test.concurrent("never <test-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/never/",
         job: ["test-job"],
         needs: true,
+        stateDir: ".gitlab-ci-local-never-test-job-needs",
     }, writeStreams);
 
     const expected = [
