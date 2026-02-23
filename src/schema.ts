@@ -5,6 +5,10 @@ import schema from "./schema.json";
 delete schema.definitions.include_item.oneOf[0].pattern; // include shorthand rejects glob wildcards
 // @ts-expect-error ts-expect-error
 delete schema.definitions.cache_item.properties.key.oneOf[0].pattern; // cache key rejects paths with /
+// @ts-expect-error ts-expect-error
+delete schema.definitions.job_template.properties.environment.oneOf[1].properties.name.minLength; // environment name rejects unexpanded variables
+// @ts-expect-error ts-expect-error
+delete schema.definitions.job_template.properties.environment.oneOf[1].properties.url.pattern; // environment url rejects variables with underscores
 
 // @ts-expect-error ts-expect-error
 schema.definitions.job_template.properties.gclInjectSSHAgent = {
