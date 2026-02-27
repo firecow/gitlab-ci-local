@@ -1,0 +1,5 @@
+---
+test-job:
+  stage: test
+  script:
+    - echo "CI_PIPELINE_IID=$CI_PIPELINE_IID"
