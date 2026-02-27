@@ -167,7 +167,16 @@ test.concurrent("services <service-user should preserve image default user>", as
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 
     const serviceLog = await fs.readFile(serviceLogFile, "utf-8");
-    const serviceStdout = serviceLog.split("### stdout ###\n")[1]?.split("\n### stderr ###")[0]?.trim();
+    const stdoutMarker = "### stdout ###\n";
+    const stderrMarker = "\n### stderr ###";
+    const stdoutStart = serviceLog.indexOf(stdoutMarker);
+    const stderrStart = serviceLog.indexOf(stderrMarker, stdoutStart + stdoutMarker.length);
+
+    expect(stdoutStart).toBeGreaterThanOrEqual(0);
+    expect(stderrStart).toBeGreaterThan(stdoutStart + stdoutMarker.length);
+
+    const serviceStdout = serviceLog.slice(stdoutStart + stdoutMarker.length, stderrStart).trim();
+    expect(serviceStdout.length).toBeGreaterThan(0);
     expect(serviceStdout).not.toEqual("0");
 });
 
