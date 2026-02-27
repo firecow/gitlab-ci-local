@@ -100,3 +100,11 @@ issue-904:
   services: !reference [.service-entry-ref]
   script:
     - echo "I shouldn't combust into flames"
+
+service-user:
+  services:
+    - name: docker.io/curlimages/curl:8.8.0
+      command: ["id", "-u"]
+  image: docker.io/library/alpine
+  script:
+    - echo "bye"
