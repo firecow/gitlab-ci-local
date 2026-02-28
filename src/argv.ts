@@ -8,6 +8,17 @@ import {WriteStreams} from "./write-streams.js";
 import chalkBase from "chalk";
 import chalk from "chalk-template";
 
+export function splitSemicolonEnvVars (argv: Record<string, any>, arrayKeys: Set<string>, env: Record<string, string | undefined>): void {
+    for (const [envKey, envValue] of Object.entries(env)) {
+        if (!envKey.startsWith("GCL_") || envValue == null) continue;
+        const optionName = camelCase(envKey.slice(4));
+        if (!arrayKeys.has(optionName)) continue;
+        const currentVal = argv[optionName];
+        if (!Array.isArray(currentVal) || currentVal.length !== 1 || currentVal[0] !== envValue) continue;
+        argv[optionName] = envValue.split(";");
+    }
+}
+
 async function isInGitRepository () {
     try {
         await Utils.spawn(["git", "rev-parse", "--is-inside-work-tree"]);
@@ -79,34 +90,39 @@ export class Argv {
     }
 
     private injectDotenv (potentialDotenvFilepath: string, argv: any) {
-        if (fs.existsSync(potentialDotenvFilepath)) {
-            const config = dotenv.parse(fs.readFileSync(potentialDotenvFilepath));
-            for (const [key, value] of Object.entries(config)) {
-                const argKey = camelCase(key);
+        if (!fs.existsSync(potentialDotenvFilepath)) return;
 
-                // Special handle KEY=VALUE variable keys
-                if (argKey === "variable") {
-                    let currentVal = argv[argKey];
-                    if (currentVal == null) {
-                        currentVal = [];
-                        this.map.set(argKey, currentVal);
-                    }
-                    if (!Array.isArray(currentVal)) {
-                        continue;
-                    }
-                    for (const pair of value.split(" ")) {
-                        currentVal.unshift(pair);
-                    }
-                } else if (argv[argKey] == null) {
-                    // Work around `dotenv.parse` limitation https://github.com/motdotla/dotenv/issues/51#issuecomment-552559070
-                    if (value === "true") this.map.set(argKey, true);
-                    else if (value === "false") this.map.set(argKey, false);
-                    else if (value === "null") this.map.set(argKey, null);
-                    else if (!isNaN(Number(value))) this.map.set(argKey, Number(value));
-                    else this.map.set(argKey, value);
+        const config = dotenv.parse(fs.readFileSync(potentialDotenvFilepath));
+        for (const [key, value] of Object.entries(config)) {
+            const argKey = camelCase(key);
+
+            // variable is additive — merge dotenv values with CLI values
+            if (argKey === "variable") {
+                let currentVal = argv[argKey];
+                if (currentVal == null) {
+                    currentVal = [];
+                    this.map.set(argKey, currentVal);
                 }
+                if (!Array.isArray(currentVal)) {
+                    continue;
+                }
+                for (const pair of value.split(" ")) {
+                    currentVal.unshift(pair);
+                }
+            } else if (argv[argKey] == null) {
+                // Work around `dotenv.parse` limitation https://github.com/motdotla/dotenv/issues/51#issuecomment-552559070
+                if (value === "true") this.map.set(argKey, true);
+                else if (value === "false") this.map.set(argKey, false);
+                else if (value === "null") this.map.set(argKey, null);
+                else if (!isNaN(Number(value))) this.map.set(argKey, Number(value));
+                else this.map.set(argKey, value);
             }
         }
+    }
+
+    private getStringArray (key: string): string[] {
+        const val = this.map.get(key) ?? [];
+        return Array.isArray(val) ? val : val.split(" ");
     }
 
     get cwd (): string {
@@ -139,20 +155,11 @@ export class Argv {
         return (this.map.get("home") ?? process.env.HOME ?? "").replace(/\/$/, "");
     }
 
-    get volume (): string[] {
-        const val = this.map.get("volume") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
-    }
+    get volume (): string[] { return this.getStringArray("volume"); }
 
-    get network (): string[] {
-        const val = this.map.get("network") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
-    }
+    get network (): string[] { return this.getStringArray("network"); }
 
-    get extraHost (): string[] {
-        const val = this.map.get("extraHost") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
-    }
+    get extraHost (): string[] { return this.getStringArray("extraHost"); }
 
     get caFile (): string | null {
         return this.map.get("caFile") ?? null;
@@ -170,21 +177,16 @@ export class Argv {
         return this.map.get("pullPolicy") ?? "if-not-present";
     }
 
-    get remoteVariables (): string[] {
-        const val = this.map.get("remoteVariables") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
-    }
+    get remoteVariables (): string[] { return this.getStringArray("remoteVariables"); }
 
     get variable (): {[key: string]: string} {
-        const val = this.map.get("variable");
         const variables: {[key: string]: string} = {};
-        const pairs = typeof val == "string" ? val.split(" ") : val;
-        (pairs ?? []).forEach((variablePair: string) => {
-            const exec = /(?<key>\w*?)(=)(?<value>(.|\n|\r)*)/.exec(variablePair);
+        for (const pair of this.getStringArray("variable")) {
+            const exec = /(?<key>\w*?)(=)(?<value>(.|\n|\r)*)/.exec(pair);
             if (exec?.groups?.key) {
-                variables[exec.groups.key] = exec?.groups?.value;
+                variables[exec.groups.key] = exec.groups.value;
             }
-        });
+        }
         return variables;
     }
 
@@ -192,10 +194,7 @@ export class Argv {
         return this.map.get("unsetVariable") ?? [];
     }
 
-    get manual (): string[] {
-        const val = this.map.get("manual") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
-    }
+    get manual (): string[] { return this.getStringArray("manual"); }
 
     get job (): string[] {
         return this.map.get("job") ?? [];
@@ -226,10 +225,7 @@ export class Argv {
         return this.map.get("privileged") ?? false;
     }
 
-    get device (): string[] {
-        const val = this.map.get("device") ?? [];
-        return typeof val == "string" ? val.split(" ") : val;
-    }
+    get device (): string[] { return this.getStringArray("device"); }
 
     get ulimit (): string | null {
         const ulimit = this.map.get("ulimit");

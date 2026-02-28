@@ -25,3 +25,21 @@ line string`],
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test("cli-option-variables --variable with semicolons in value preserves them", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/cli-option-variables",
+        job: ["test-job"],
+        variable: ["CLI_VAR=host=db;port=5432", "CLI_VAR_DOT=dotdot", `CLI_MULTILINE=This is a multi
+line string`],
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright test-job} {greenBright >} host=db;port=5432`,
+        chalk`{blueBright test-job} {greenBright >} dotdot`,
+        chalk`{blueBright test-job} {greenBright >} This is a multi`,
+        chalk`{blueBright test-job} {greenBright >} line string`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});

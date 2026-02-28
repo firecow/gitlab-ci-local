@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import chalk from "chalk-template";
 import yargs from "yargs";
+import camelCase from "camelcase";
+import {splitSemicolonEnvVars} from "./argv.js";
 import {Parser} from "./parser.js";
 import * as state from "./state.js";
 import {WriteStreamsProcess, WriteStreamsMock} from "./write-streams.js";
@@ -31,6 +33,8 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         .command({
             handler: async (argv) => {
                 try {
+                    const arrayKeys = new Set(yparser.getOptions().array.map((k: string) => camelCase(k)));
+                    splitSemicolonEnvVars(argv, arrayKeys, process.env);
                     await handler(argv, new WriteStreamsProcess(), jobs);
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
