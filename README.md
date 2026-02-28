@@ -416,10 +416,10 @@ You need [bun](https://bun.sh/) installed.
 bun install
 
 # Run all tests
-bun test
+bun run test
 
 # Run individual test-case
-bun test tests/test-cases/cache-paths-not-array
+bunx vitest run tests/test-cases/cache-paths-not-array
 ```
 
 ![example](./docs/images/example.png)
