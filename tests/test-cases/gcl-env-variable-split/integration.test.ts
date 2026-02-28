@@ -169,11 +169,13 @@ test("does not split non-array argv value", () => {
 
 test("GCL_VARIABLE env split reaches handler as separate variables", async () => {
     const writeStreams = new WriteStreamsMock();
-    await handler({
+    const argv: Record<string, any> = {
         cwd: "tests/test-cases/gcl-env-variable-split",
         job: ["test-job"],
-        variable: ["VAR1=hello", "VAR2=world"],
-    }, writeStreams);
+        variable: ["VAR1=hello;VAR2=world"],
+    };
+    splitSemicolonEnvVars(argv, new Set(["variable"]), {GCL_VARIABLE: "VAR1=hello;VAR2=world"});
+    await handler(argv, writeStreams);
 
     const expected = [
         chalk`{blueBright test-job} {greenBright >} hello`,
