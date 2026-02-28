@@ -122,7 +122,9 @@ export class Argv {
 
     private getStringArray (key: string): string[] {
         const val = this.map.get(key) ?? [];
-        return Array.isArray(val) ? val : typeof val === "string" ? val.split(" ") : [];
+        if (Array.isArray(val)) return val;
+        if (typeof val === "string") return val.split(" ");
+        return [];
     }
 
     get cwd (): string {
