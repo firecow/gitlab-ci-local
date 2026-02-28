@@ -1,4 +1,4 @@
-import {spyOn, beforeAll, afterAll, test, expect} from "bun:test";
+import {vi} from "vitest";
 import {WriteStreamsMock} from "../src/write-streams.js";
 import chalk from "chalk-template";
 import {handler} from "../src/handler.js";
@@ -16,7 +16,7 @@ afterAll(() => {
 });
 
 test("--completion", async () => {
-    const spy = spyOn(console, "log").mockImplementation(() => {});
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
     const writeStreams = new WriteStreamsMock();
     await handler({
         completion: true,

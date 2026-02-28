@@ -1,4 +1,4 @@
-import {spyOn, expect} from "bun:test";
+import {vi, expect} from "vitest";
 import {Utils} from "../../src/utils.js";
 
 const originalBash = Utils.bash.bind(Utils);
@@ -21,7 +21,7 @@ let spawnRejectMocks: {cmdArgs: any[]; rejection: any}[] = [];
 
 export function initBashSpy (spyMocks: {cmd: any; returnValue: any}[]) {
     bashMocks = spyMocks;
-    const spy = spyOn(Utils, "bash");
+    const spy = vi.spyOn(Utils, "bash");
     spy.mockImplementation(async (cmd: string, cwd?: string) => {
         for (const spyMock of bashMocks) {
             if (matches(cmd, spyMock.cmd)) return spyMock.returnValue;
@@ -33,7 +33,7 @@ export function initBashSpy (spyMocks: {cmd: any; returnValue: any}[]) {
 
 export function initSyncSpawnSpy (spyMocks: {cmdArgs: string[]; returnValue: any}[]) {
     syncSpawnMocks = spyMocks;
-    const spy = spyOn(Utils, "syncSpawn");
+    const spy = vi.spyOn(Utils, "syncSpawn");
     spy.mockImplementation((cmdArgs: string[], cwd?: string) => {
         for (const spyMock of syncSpawnMocks) {
             if (matches(cmdArgs, spyMock.cmdArgs)) return spyMock.returnValue;
@@ -56,14 +56,14 @@ async function spawnMockImpl (cmdArgs: string[], cwd?: string) {
 export function initSpawnSpy (spyMocks: {cmdArgs: any[]; returnValue: any}[]) {
     spawnResolveMocks = spyMocks;
     spawnRejectMocks = [];
-    const spy = spyOn(Utils, "spawn");
+    const spy = vi.spyOn(Utils, "spawn");
     spy.mockImplementation(spawnMockImpl);
     return spy;
 }
 
 export function initSpawnSpyReject (spyMocks: {cmdArgs: string[]; rejection: any}[]) {
     spawnRejectMocks = spyMocks;
-    const spy = spyOn(Utils, "spawn");
+    const spy = vi.spyOn(Utils, "spawn");
     spy.mockImplementation(spawnMockImpl);
     return spy;
 }

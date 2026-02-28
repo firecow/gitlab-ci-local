@@ -16,9 +16,9 @@
     "build-all": "bun run build:linux-amd64 && bun run build:linux-arm64 && bun run build:win && bun run build:macos-x64 && bun run build:macos-arm64",
     "check-all": "bun run lint && bun run coverage",
     "lint": "eslint .",
-    "test": "FORCE_COLOR=1 bun test --timeout 60000",
-    "test-except-dind": "bun test --timeout 60000 --filter '(?!.*dind)'",
-    "coverage": "FORCE_COLOR=1 bun test --timeout 60000 --coverage --coverage-reporter=text --coverage-reporter=lcov --verbose",
+    "test": "vitest run",
+    "test-except-dind": "vitest run --exclude '**/dind-*/**'",
+    "coverage": "vitest run --coverage",
     "start": "bun src/index.ts --cwd examples/docker-compose-nodejs",
     "typecheck": "tsc --noEmit",
     "fetch-schema": "curl https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json -sf > src/schema.json"
@@ -62,11 +62,13 @@
     "@types/semver": "7.x.x",
     "@types/split2": "4.x.x",
     "@types/yargs": "17.x.x",
+    "@vitest/coverage-v8": "^4.0.18",
     "axios-mock-adapter": "2.x",
     "depcheck": "1.x.x",
     "eslint": "10.x",
     "typescript": "5.x.x",
-    "typescript-eslint": "8.x.x"
+    "typescript-eslint": "8.x.x",
+    "vitest": "^4.0.18"
   },
   "repository": {
     "type": "git",

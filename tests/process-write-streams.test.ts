@@ -1,8 +1,8 @@
-import {spyOn, afterEach, afterAll, test, expect} from "bun:test";
+import {vi} from "vitest";
 import {WriteStreamsProcess} from "../src/write-streams.js";
 
-const spyStdout = spyOn(process.stdout, "write").mockImplementation(() => true);
-const spyStderr = spyOn(process.stderr, "write").mockImplementation(() => true);
+const spyStdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+const spyStderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 
 afterEach(() => {
     spyStdout.mockClear();
