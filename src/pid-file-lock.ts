@@ -1,6 +1,6 @@
 import fs from "fs-extra";
-import path from "path";
-import {randomInt} from "crypto";
+import path from "node:path";
+import {randomInt} from "node:crypto";
 
 const LOCK_TIMEOUT_MS = 30_000;
 const LOCK_RETRY_BASE_MS = 50;
@@ -26,8 +26,8 @@ const tryRemoveStaleLock = (lockPath: string): boolean => {
         return true;
     }
 
-    const pid = parseInt(content, 10);
-    if (isNaN(pid)) {
+    const pid = Number.parseInt(content, 10);
+    if (Number.isNaN(pid)) {
         try {
             fs.unlinkSync(lockPath);
         } catch {

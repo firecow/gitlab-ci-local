@@ -23,7 +23,7 @@ const incrementPipelineIid = async (cwd: string, stateDir: string): Promise<numb
 
     return withFileLock(lockPath, async () => {
         const ymlData = await loadStateYML(stateFile);
-        const newIid = ymlData["pipelineIid"] != null ? ymlData["pipelineIid"] + 1 : 0;
+        const newIid = ymlData["pipelineIid"] == null ? 0 : ymlData["pipelineIid"] + 1;
         ymlData["pipelineIid"] = newIid;
 
         const tmpFile = `${stateFile}.tmp.${process.pid}`;
