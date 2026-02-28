@@ -28,14 +28,21 @@ const tryRemoveStaleLock = (lockPath: string): boolean => {
 
     const pid = parseInt(content, 10);
     if (isNaN(pid)) {
-        return false;
+        try {
+            fs.unlinkSync(lockPath);
+        } catch {
+            // Another process already cleaned it up
+        }
+        return true;
     }
 
     try {
         process.kill(pid, 0);
         return false;
-    } catch {
-        // Process is dead — remove stale lock
+    } catch (err: any) {
+        if (err.code !== "ESRCH") {
+            return false;
+        }
     }
 
     try {
