@@ -137,7 +137,7 @@ describe("evaluateRuleChanges", () => {
 });
 
 describe("isSubPath where process.cwd() have been mocked to return /home/user/gitlab-ci-local", () => {
-    let cwdSpy: ReturnType<typeof spyOn>;
+    let cwdSpy: ReturnType<typeof vi.spyOn>;
     beforeAll(() => {
         cwdSpy = vi.spyOn(process, "cwd");
         cwdSpy.mockReturnValue("/home/user/gitlab-ci-local");
