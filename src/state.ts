@@ -1,5 +1,6 @@
 import fs from "fs-extra";
 import * as yaml from "js-yaml";
+import {withFileLock} from "./pid-file-lock.js";
 
 const loadStateYML = async (stateFile: string): Promise<any> => {
     if (!fs.existsSync(stateFile)) {
@@ -16,12 +17,21 @@ const getPipelineIid = async (cwd: string, stateDir: string) => {
     return ymlData["pipelineIid"] ? ymlData["pipelineIid"] : 0;
 };
 
-const incrementPipelineIid = async (cwd: string, stateDir: string) => {
+const incrementPipelineIid = async (cwd: string, stateDir: string): Promise<number> => {
     const stateFile = `${cwd}/${stateDir}/state.yml`;
-    const ymlData = await loadStateYML(stateFile);
+    const lockPath = `${cwd}/${stateDir}/state.lock`;
 
-    ymlData["pipelineIid"] = ymlData["pipelineIid"] != null ? ymlData["pipelineIid"] + 1 : 0;
-    await fs.outputFile(stateFile, `---\n${yaml.dump(ymlData)}`);
+    return withFileLock(lockPath, async () => {
+        const ymlData = await loadStateYML(stateFile);
+        const newIid = ymlData["pipelineIid"] == null ? 0 : ymlData["pipelineIid"] + 1;
+        ymlData["pipelineIid"] = newIid;
+
+        const tmpFile = `${stateFile}.tmp.${process.pid}`;
+        await fs.outputFile(tmpFile, `---\n${yaml.dump(ymlData)}`);
+        await fs.rename(tmpFile, stateFile);
+
+        return newIid;
+    });
 };
 
 export {getPipelineIid, incrementPipelineIid};
