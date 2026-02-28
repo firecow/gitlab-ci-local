@@ -182,7 +182,7 @@ export class Argv {
     get variable (): {[key: string]: string} {
         const variables: {[key: string]: string} = {};
         for (const pair of this.getStringArray("variable")) {
-            const exec = /(?<key>\w*?)(=)(?<value>(.|\n|\r)*)/.exec(pair);
+            const exec = /(?<key>\w+)=(?<value>[\s\S]*)/.exec(pair);
             if (exec?.groups?.key) {
                 variables[exec.groups.key] = exec.groups.value;
             }
