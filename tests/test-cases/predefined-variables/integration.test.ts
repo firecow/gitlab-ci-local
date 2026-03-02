@@ -103,7 +103,7 @@ beforeAll(() => {
             if (args.length === 0) {
                 super(_mockDate.getTime());
             } else {
-                super(...args);
+                super(...(args as [number]));
             }
         }
     } as any;
