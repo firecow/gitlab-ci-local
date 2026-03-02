@@ -7,11 +7,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("include-local-wildcard <build-job>", async () => {
+test.concurrent("include-local-wildcard <build-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-local-wildcard",
         file: ".gitlab-ci.yml",
+        stateDir: ".gitlab-ci-local-include-local-wildcard-build-job",
     }, writeStreams);
     const output = writeStreams.stdoutLines.join();
     expect(output).toContain("build-images executed!");
@@ -19,13 +20,14 @@ test("include-local-wildcard <build-job>", async () => {
     expect(output).toContain("docs executed!");
 });
 
-test("expect `configs/**.yml` to match all `.yml` files in `configs` and any subfolder in it.", async () => {
+test.concurrent("expect `configs/**.yml` to match all `.yml` files in `configs` and any subfolder in it.", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-local-wildcard",
         file: ".gitlab-ci-1.yml",
         preview: true,
         noColor: true,
+        stateDir: ".gitlab-ci-local-expect-configs-yml-to-match-all-yml-files-in-confi",
     }, writeStreams);
     expect(writeStreams.stdoutLines.join()).toEqual(`
 ---
@@ -47,13 +49,14 @@ configs/subfolder/subfolder/.gitlab-ci.yml:
 `.trim());
 });
 
-test("expect `configs/**/*.yml` to match files only in subfolders of `configs`", async () => {
+test.concurrent("expect `configs/**/*.yml` to match files only in subfolders of `configs`", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-local-wildcard",
         file: ".gitlab-ci-2.yml",
         preview: true,
         noColor: true,
+        stateDir: ".gitlab-ci-local-expect-configs-yml-to-match-files-only-in-subfolde",
     }, writeStreams);
     expect(writeStreams.stdoutLines.join()).toEqual(`
 ---
@@ -72,13 +75,14 @@ configs/subfolder/subfolder/.gitlab-ci.yml:
 `.trim());
 });
 
-test("expect `configs/*.yml` to match only `.yml` files in `configs`.", async () => {
+test.concurrent("expect `configs/*.yml` to match only `.yml` files in `configs`.", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-local-wildcard",
         file: ".gitlab-ci-3.yml",
         preview: true,
         noColor: true,
+        stateDir: ".gitlab-ci-local-expect-configs-yml-to-match-only-yml-files-in-conf",
     }, writeStreams);
     expect(writeStreams.stdoutLines.join()).toEqual(`
 ---

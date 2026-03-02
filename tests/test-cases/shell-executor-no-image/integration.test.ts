@@ -1,7 +1,7 @@
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 
-test("shell-executor-no-image false default-image alpine", async () => {
+test.concurrent("shell-executor-no-image false default-image alpine", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         pullPolicy: "if-not-present",
@@ -10,12 +10,13 @@ test("shell-executor-no-image false default-image alpine", async () => {
         defaultImage: "alpine:latest",
         job: ["test-job"],
         noColor: true,
+        stateDir: ".gitlab-ci-local-shell-executor-no-image-false-default-image-alpine",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toMatch(/test-job starting alpine:latest \(test\)/);
 });
 
-test("shell-executor-no-image false default-image null", async () => {
+test.concurrent("shell-executor-no-image false default-image null", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         pullPolicy: "if-not-present",
@@ -24,12 +25,13 @@ test("shell-executor-no-image false default-image null", async () => {
         defaultImage: null,
         job: ["test-job"],
         noColor: true,
+        stateDir: ".gitlab-ci-local-shell-executor-no-image-false-default-image-null",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toMatch(/test-job starting docker.io\/ruby:3.1 \(test\)/);
 });
 
-test("shell-executor-no-image true default-image doesnt-matter", async () => {
+test.concurrent("shell-executor-no-image true default-image doesnt-matter", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         pullPolicy: "if-not-present",
@@ -38,6 +40,7 @@ test("shell-executor-no-image true default-image doesnt-matter", async () => {
         defaultImage: "doesnt-matter",
         job: ["test-job"],
         noColor: true,
+        stateDir: ".gitlab-ci-local-shell-executor-no-image-true-default-image-doesnt-",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toMatch(/test-job starting shell \(test\)/);

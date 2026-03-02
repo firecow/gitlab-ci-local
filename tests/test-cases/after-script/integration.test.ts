@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("after-script <test-job>", async () => {
+test.concurrent("after-script <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/after-script",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-after-script-test-job",
     }, writeStreams);
 
     const expected = [
@@ -21,11 +22,12 @@ test("after-script <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("after-script <build-job> (default)", async () => {
+test.concurrent("after-script <build-job> (default)", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/after-script",
         job: ["build-job"],
+        stateDir: ".gitlab-ci-local-after-script-build-job-default",
     }, writeStreams);
 
     const expected = [
@@ -34,11 +36,12 @@ test("after-script <build-job> (default)", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("after-script <deploy-job>", async () => {
+test.concurrent("after-script <deploy-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/after-script",
         job: ["deploy-job"],
+        stateDir: ".gitlab-ci-local-after-script-deploy-job",
     }, writeStreams);
 
     const expected = [
@@ -48,11 +51,12 @@ test("after-script <deploy-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("after-script <post-job>", async () => {
+test.concurrent("after-script <post-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/after-script",
         job: ["post-job"],
+        stateDir: ".gitlab-ci-local-after-script-post-job",
     }, writeStreams);
 
     const expected = [

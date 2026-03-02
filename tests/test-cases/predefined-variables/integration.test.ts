@@ -111,6 +111,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
+    jobIdSpy.mockRestore();
     globalThis.Date = OrigDate;
 });
 

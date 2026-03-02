@@ -7,11 +7,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("rules-needs - default branch uses rule needs", async () => {
+test.concurrent("rules-needs - default branch uses rule needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/rules-needs",
         variable: ["CI_COMMIT_BRANCH=main"],
+        stateDir: ".gitlab-ci-local-rules-needs-default-branch-uses-rule-needs",
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join("\n");
@@ -19,11 +20,12 @@ test("rules-needs - default branch uses rule needs", async () => {
     expect(output).not.toContain("build-dev started");
 });
 
-test("rules-needs - non-default branch uses job-level needs", async () => {
+test.concurrent("rules-needs - non-default branch uses job-level needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/rules-needs",
         variable: ["CI_COMMIT_BRANCH=feature"],
+        stateDir: ".gitlab-ci-local-rules-needs-non-default-branch-uses-job-level-need",
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join("\n");

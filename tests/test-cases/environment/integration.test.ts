@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("environment <deploy-dev-job>", async () => {
+test.concurrent("environment <deploy-dev-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/environment",
         job: ["deploy-dev-job"],
+        stateDir: ".gitlab-ci-local-environment-deploy-dev-job",
     }, writeStreams);
 
     const expected = [
@@ -22,11 +23,12 @@ test("environment <deploy-dev-job>", async () => {
 
 });
 
-test("environment <deploy-stage-job>", async () => {
+test.concurrent("environment <deploy-stage-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/environment",
         job: ["deploy-stage-job"],
+        stateDir: ".gitlab-ci-local-environment-deploy-stage-job",
     }, writeStreams);
 
     const expected = [
@@ -41,11 +43,12 @@ test("environment <deploy-stage-job>", async () => {
 
 });
 
-test("environment <deploy-stage-job-with-expansion>", async () => {
+test.concurrent("environment <deploy-stage-job-with-expansion>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/environment",
         job: ["deploy-stage-job-with-expansion"],
+        stateDir: ".gitlab-ci-local-environment-deploy-stage-job-with-expansion",
     }, writeStreams);
 
     const expected = [

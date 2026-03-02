@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("needs-sequence <deploy-job>", async () => {
+test.concurrent("needs-sequence <deploy-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-sequence",
         job: ["deploy-job"],
+        stateDir: ".gitlab-ci-local-needs-sequence-deploy-job",
     }, writeStreams);
 
     const expected = [
@@ -26,12 +27,13 @@ test("needs-sequence <deploy-job>", async () => {
     expect(found.length).toEqual(0);
 });
 
-test("needs-sequence <deploy-job> --needs", async () => {
+test.concurrent("needs-sequence <deploy-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-sequence",
         job: ["deploy-job"],
         needs: true,
+        stateDir: ".gitlab-ci-local-needs-sequence-deploy-job-needs",
     }, writeStreams);
 
     const expected = [
@@ -51,12 +53,13 @@ test("needs-sequence <deploy-job> --needs", async () => {
     expect(found.length).toEqual(0);
 });
 
-test("needs-sequence <no-needs-job> --needs", async () => {
+test.concurrent("needs-sequence <no-needs-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-sequence",
         job: ["no-needs-job"],
         needs: true,
+        stateDir: ".gitlab-ci-local-needs-sequence-no-needs-job-needs",
     }, writeStreams);
 
     const expected = [
@@ -77,10 +80,11 @@ test("needs-sequence <no-needs-job> --needs", async () => {
     expect(foundDeploy.length).toEqual(0);
 });
 
-test("needs-sequence", async () => {
+test.concurrent("needs-sequence", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-sequence",
+        stateDir: ".gitlab-ci-local-needs-sequence",
     }, writeStreams);
 
     const expected = [

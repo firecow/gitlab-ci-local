@@ -1,7 +1,7 @@
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 
-test("force-shell-executor false default-image alpine", async () => {
+test.concurrent("force-shell-executor false default-image alpine", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         pullPolicy: "if-not-present",
@@ -10,12 +10,13 @@ test("force-shell-executor false default-image alpine", async () => {
         defaultImage: "alpine:latest",
         job: ["test-job"],
         noColor: true,
+        stateDir: ".gitlab-ci-local-force-shell-executor-false-default-image-alpine",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toMatch(/test-job starting alpine:latest \(test\)/);
 });
 
-test("force-shell-executor false default-image null but job image alpine", async () => {
+test.concurrent("force-shell-executor false default-image null but job image alpine", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         pullPolicy: "if-not-present",
@@ -24,12 +25,13 @@ test("force-shell-executor false default-image null but job image alpine", async
         defaultImage: null,
         job: ["test-job"],
         noColor: true,
+        stateDir: ".gitlab-ci-local-force-shell-executor-false-default-image-null-but-",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toMatch(/test-job starting alpine:latest \(test\)/);
 });
 
-test("force-shell-executor true default-image doesnt-matter", async () => {
+test.concurrent("force-shell-executor true default-image doesnt-matter", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         pullPolicy: "if-not-present",
@@ -38,6 +40,7 @@ test("force-shell-executor true default-image doesnt-matter", async () => {
         defaultImage: "doesnt-matter",
         job: ["test-job"],
         noColor: true,
+        stateDir: ".gitlab-ci-local-force-shell-executor-true-default-image-doesnt-mat",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toMatch(/test-job starting shell \(test\)/);

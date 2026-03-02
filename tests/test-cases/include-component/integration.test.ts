@@ -16,6 +16,7 @@ test("include-component no component template file (protocol: https)", async () 
         await handler({
             cwd: "tests/test-cases/include-component/no-component-template-file",
             preview: true,
+            stateDir: ".gitlab-ci-local-include-component-no-component-template-file-proto",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e: any) {
@@ -31,6 +32,7 @@ test("include-component component (protocol: https)", async () => {
     await handler({
         cwd: "tests/test-cases/include-component/component",
         preview: true,
+        stateDir: ".gitlab-ci-local-include-component-component-protocol-https",
     }, writeStreams);
 
 
@@ -75,6 +77,7 @@ test("include-component component (protocol: https) (minor semver)", async () =>
     await handler({
         cwd: "tests/test-cases/include-component/component-minor-semver",
         preview: true,
+        stateDir: ".gitlab-ci-local-include-component-component-protocol-https-minor-s",
     }, writeStreams);
 
 
@@ -119,6 +122,7 @@ test("include-component component (protocol: https) (major semver)", async () =>
     await handler({
         cwd: "tests/test-cases/include-component/component-minor-semver",
         preview: true,
+        stateDir: ".gitlab-ci-local-include-component-component-protocol-https-major-s",
     }, writeStreams);
 
 
@@ -163,18 +167,20 @@ test("include-component component (protocol: https) (~latest semver)", async () 
     await handler({
         cwd: "tests/test-cases/include-component/component-latest-semver",
         preview: true,
+        stateDir: ".gitlab-ci-local-include-component-component-protocol-https-latest-",
     }, writeStreams);
 
     // Should not throw error
     // NOTE: potentially this test might be flaky as we're pulling the latest gitlab component
 });
 
-test("include-component local component", async () => {
+test.concurrent("include-component local component", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
         cwd: "tests/test-cases/include-component/component-local",
         preview: true,
+        stateDir: ".gitlab-ci-local-include-component-local-component",
     }, writeStreams);
 
     const expected = `---
