@@ -13,7 +13,7 @@ beforeAll(() => {
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 });
 
-test("cache-docker-mount-globstar <consume-cache> --needs", async () => {
+test.concurrent("cache-docker-mount-globstar <consume-cache> --needs", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -21,6 +21,7 @@ test("cache-docker-mount-globstar <consume-cache> --needs", async () => {
             job: ["consume-cache"],
             needs: true,
             mountCache: true,
+            stateDir: ".gitlab-ci-local-cache-docker-mount-globstar",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {

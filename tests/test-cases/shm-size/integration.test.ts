@@ -17,7 +17,7 @@ afterEach(async () => {
     await cleanupJobResources(jobs);
 });
 
-test("shm-size <test-job> --shm-size=256m", async () => {
+test.concurrent("shm-size <test-job> --shm-size=256m", async () => {
     const bashSpy = initBashSpy([]);
 
     const writeStreams = new WriteStreamsMock();
@@ -25,12 +25,13 @@ test("shm-size <test-job> --shm-size=256m", async () => {
         cwd: "tests/test-cases/shm-size",
         job: ["test-job"],
         shmSize: "256m",
+        stateDir: ".gitlab-ci-local-shm-size-256m",
     }, writeStreams);
 
     expect(bashSpy).toHaveBeenCalledWith(expect.stringMatching(/--shm-size=256m/), expect.any(String));
 });
 
-test("shm-size <test-job> without --shm-size", async () => {
+test.concurrent("shm-size <test-job> without --shm-size", async () => {
     const bashSpy = initBashSpy([]);
     const callsBefore = bashSpy.mock.calls.length;
 
@@ -38,6 +39,7 @@ test("shm-size <test-job> without --shm-size", async () => {
     await handler({
         cwd: "tests/test-cases/shm-size",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-shm-size-without",
     }, writeStreams);
 
     const newCalls = bashSpy.mock.calls.slice(callsBefore).map((c: any[]) => c[0]);
@@ -45,7 +47,7 @@ test("shm-size <test-job> without --shm-size", async () => {
     expect(shmCalls.length).toBe(0);
 });
 
-test("shm-size <service-job> --shm-size=1g", async () => {
+test.concurrent("shm-size <service-job> --shm-size=1g", async () => {
     const bashSpy = initBashSpy([]);
 
     const writeStreams = new WriteStreamsMock();
@@ -53,6 +55,7 @@ test("shm-size <service-job> --shm-size=1g", async () => {
         cwd: "tests/test-cases/shm-size",
         job: ["service-job"],
         shmSize: "1g",
+        stateDir: ".gitlab-ci-local-shm-size-1g",
     }, writeStreams, jobs);
 
     const bashCalls = bashSpy.mock.calls.map((c: any[]) => c[0]);

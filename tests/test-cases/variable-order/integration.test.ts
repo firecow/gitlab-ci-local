@@ -7,7 +7,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("variable-order <test-job> --needs", async () => {
+test.concurrent("variable-order <test-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variable-order",
@@ -15,6 +15,7 @@ test("variable-order <test-job> --needs", async () => {
         variable: ["PROJECT_VARIABLE=project-value"],
         home: "tests/test-cases/variable-order/.home",
         noColor: true,
+        stateDir: ".gitlab-ci-local-variable-order",
     }, writeStreams);
 
     const expected = `

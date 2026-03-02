@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("include-invalid-local", async () => {
+test.concurrent("include-invalid-local", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/include-invalid-local",
+            stateDir: ".gitlab-ci-local-include-invalid-local",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {

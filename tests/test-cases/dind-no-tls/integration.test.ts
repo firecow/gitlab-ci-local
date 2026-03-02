@@ -8,13 +8,14 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("dind-no-tls <test-job> --needs", async () => {
+test.concurrent("dind-no-tls <test-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/dind-no-tls",
         job: ["test-job"],
         needs: true,
         privileged: true,
+        stateDir: ".gitlab-ci-local-dind-no-tls",
     }, writeStreams);
 
     const expectedStdout = [

@@ -7,12 +7,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("--container-executable some_unexisting_executable", async () => {
+test.concurrent("--container-executable some_unexisting_executable", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/container-executable",
             containerExecutable: "some_unexisting_executable",
+            stateDir: ".gitlab-ci-local-container-executable",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e: unknown) {

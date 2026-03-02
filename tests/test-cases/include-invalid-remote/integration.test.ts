@@ -10,13 +10,14 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("include-invalid-remote", async () => {
+test.concurrent("include-invalid-remote", async () => {
     const mock = new AxiosMockAdapter(axios);
     mock.onGet("https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml").reply(404);
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/include-invalid-remote",
+            stateDir: ".gitlab-ci-local-include-invalid-remote",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {

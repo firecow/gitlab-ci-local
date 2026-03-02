@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("ansi-sections <test-job>", async () => {
+test.concurrent("ansi-sections <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/ansi-sections",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-ansi-sections",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([

@@ -12,12 +12,13 @@ beforeAll(() => {
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 });
 
-test("custom-home <test-staging>", async () => {
+test.concurrent("custom-home <test-staging>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-staging"],
         home: "tests/test-cases/custom-home/.home",
+        stateDir: ".gitlab-ci-local-custom-home-test-staging",
     }, writeStreams);
 
     const expected = [
@@ -32,12 +33,13 @@ test("custom-home <test-staging>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("custom-home <test-production>", async () => {
+test.concurrent("custom-home <test-production>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-production"],
         home: "tests/test-cases/custom-home/.home",
+        stateDir: ".gitlab-ci-local-custom-home-test-production",
     }, writeStreams);
 
     const expected = [
@@ -48,12 +50,13 @@ test("custom-home <test-production>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("custom-home <test-image>", async () => {
+test.concurrent("custom-home <test-image>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-image"],
         home: "tests/test-cases/custom-home/.home",
+        stateDir: ".gitlab-ci-local-custom-home-test-image",
     }, writeStreams);
 
     const expected = [
@@ -64,12 +67,13 @@ test("custom-home <test-image>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("custom-home <test-normalize-key>", async () => {
+test.concurrent("custom-home <test-normalize-key>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-normalize-key"],
         home: "tests/test-cases/custom-home/.home-normalize-key",
+        stateDir: ".gitlab-ci-local-custom-home-test-normalize-key",
     }, writeStreams);
 
     const expected = [
@@ -79,12 +83,13 @@ test("custom-home <test-normalize-key>", async () => {
     expect(writeStreams.stderrLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("custom-home <test-predefined-overwrite>", async () => {
+test.concurrent("custom-home <test-predefined-overwrite>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["test-predefined-overwrite"],
         home: "tests/test-cases/custom-home/.home",
+        stateDir: ".gitlab-ci-local-custom-home-test-predefined-overwrite",
     }, writeStreams);
 
     const expected = [
@@ -94,12 +99,13 @@ test("custom-home <test-predefined-overwrite>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("custom-home <build-job>", async () => {
+test.concurrent("custom-home <build-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-home",
         job: ["build-job"],
         home: "tests/test-cases/custom-home/.home",
+        stateDir: ".gitlab-ci-local-custom-home-build-job",
     }, writeStreams);
 
     const expected = [

@@ -8,10 +8,11 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("trigger", async () => {
+test.concurrent("trigger", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/trigger",
+        stateDir: ".gitlab-ci-local-trigger",
     }, writeStreams);
 
     const expected = [

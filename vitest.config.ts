@@ -5,6 +5,8 @@ export default defineConfig({
         globals: true,
         testTimeout: 60_000,
         exclude: [...configDefaults.exclude, "**/.gitlab-ci-local*/**"],
+        pool: "threads",
+        maxConcurrency: 25,
         env: {
             FORCE_COLOR: "1",
             HOME: "/tmp/gcl-test-home",

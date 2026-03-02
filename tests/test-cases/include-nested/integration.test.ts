@@ -14,23 +14,25 @@ beforeEach(() => {
     ParserIncludes.resetCount();
 });
 
-test("include-nested 150 nested include", async () => {
+test.concurrent("include-nested 150 nested include", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-nested",
         file: ".150-nested-include-gitlab-ci.yml",
         preview: true,
+        stateDir: ".gitlab-ci-local-include-nested-150",
     }, writeStreams);
 
 });
 
-test("include-nested 151 nested include", async () => {
+test.concurrent("include-nested 151 nested include", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/include-nested",
             file: ".151-nested-include-gitlab-ci.yml",
             preview: true,
+            stateDir: ".gitlab-ci-local-include-nested-151",
         }, writeStreams);
     } catch (e: any) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
@@ -41,22 +43,24 @@ test("include-nested 151 nested include", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-nested 150 complex nested include", async () => {
+test.concurrent("include-nested 150 complex nested include", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-nested",
         file: ".150-complex-nested-include-gitlab-ci.yml",
         preview: true,
+        stateDir: ".gitlab-ci-local-include-nested-150-complex",
     }, writeStreams);
 });
 
-test("include-nested 151 complex nested include", async () => {
+test.concurrent("include-nested 151 complex nested include", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/include-nested",
             file: ".151-complex-nested-include-gitlab-ci.yml",
             preview: true,
+            stateDir: ".gitlab-ci-local-include-nested-151-complex",
         }, writeStreams);
     } catch (e: any) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
@@ -67,7 +71,7 @@ test("include-nested 151 complex nested include", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-test("include-nested maximumIncludes args", async () => {
+test.concurrent("include-nested maximumIncludes args", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -75,6 +79,7 @@ test("include-nested maximumIncludes args", async () => {
             file: ".151-complex-nested-include-gitlab-ci.yml",
             maximumIncludes: 3,
             preview: true,
+            stateDir: ".gitlab-ci-local-include-nested-maximum-includes",
         }, writeStreams);
     } catch (e: any) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");

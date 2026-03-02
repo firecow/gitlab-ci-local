@@ -8,12 +8,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("umask <alpine-guest> --umask", async () => {
+test.concurrent("umask <alpine-guest> --umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
         umask: true,
         job: ["alpine-guest"],
+        stateDir: ".gitlab-ci-local-umask-alpine-guest-umask",
     }, writeStreams);
 
     const expectedStdOut = [
@@ -23,12 +24,13 @@ test("umask <alpine-guest> --umask", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test("umask <alpine-guest> --no-umask", async () => {
+test.concurrent("umask <alpine-guest> --no-umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
         umask: false,
         job: ["alpine-guest"],
+        stateDir: ".gitlab-ci-local-umask-alpine-guest-no-umask",
     }, writeStreams);
 
     const expectedStdOut = [
@@ -38,12 +40,13 @@ test("umask <alpine-guest> --no-umask", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test("umask <alpine-root> --umask", async () => {
+test.concurrent("umask <alpine-root> --umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
         umask: true,
         job: ["alpine-root"],
+        stateDir: ".gitlab-ci-local-umask-alpine-root-umask",
     }, writeStreams);
 
     const expectedStdOut = [
@@ -53,12 +56,13 @@ test("umask <alpine-root> --umask", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test("umask <alpine-root> --no-umask", async () => {
+test.concurrent("umask <alpine-root> --no-umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
         umask: false,
         job: ["alpine-root"],
+        stateDir: ".gitlab-ci-local-umask-alpine-root-no-umask",
     }, writeStreams);
 
     const expectedStdOut = [
@@ -68,12 +72,13 @@ test("umask <alpine-root> --no-umask", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test("umask <kaniko-root> --umask", async () => {
+test.concurrent("umask <kaniko-root> --umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
         umask: true,
         job: ["kaniko-root"],
+        stateDir: ".gitlab-ci-local-umask-kaniko-root-umask",
     }, writeStreams);
 
     const expectedStdOut = [
@@ -83,12 +88,13 @@ test("umask <kaniko-root> --umask", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expectedStdOut));
 });
 
-test("umask <kaniko-root> --no-umask", async () => {
+test.concurrent("umask <kaniko-root> --no-umask", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/umask/",
         umask: false,
         job: ["kaniko-root"],
+        stateDir: ".gitlab-ci-local-umask-kaniko-root-no-umask",
     }, writeStreams);
 
     const expectedStdOut = [

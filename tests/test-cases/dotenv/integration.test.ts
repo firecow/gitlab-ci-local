@@ -9,12 +9,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("dotenv <test-job>", async () => {
-    await fs.rm("tests/test-cases/dotenv/.gitlab-ci-local", {force: true, recursive: true});
+test.concurrent("dotenv <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/dotenv",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-dotenv",
     }, writeStreams);
 
     const expected = [

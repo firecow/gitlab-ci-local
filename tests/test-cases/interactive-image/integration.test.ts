@@ -9,12 +9,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("interactive-image <image-job>", async () => {
+test.concurrent("interactive-image <image-job>", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/interactive-image",
             job: ["image-job"],
+            stateDir: ".gitlab-ci-local-interactive-image",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {

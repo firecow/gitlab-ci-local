@@ -9,12 +9,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("needs-unspecified-job <build-job> --needs", async () => {
+test.concurrent("needs-unspecified-job <build-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     try {
         await handler({
             cwd: "tests/test-cases/needs-unspecified-job",
             job: ["test-job"],
+            stateDir: ".gitlab-ci-local-needs-unspecified-job",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {

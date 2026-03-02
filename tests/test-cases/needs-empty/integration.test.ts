@@ -7,12 +7,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("needs-empty <deploy-job> --shell-isolation", async () => {
+test.concurrent("needs-empty <deploy-job> --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-empty",
         job: ["deploy-job"],
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-needs-empty",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
