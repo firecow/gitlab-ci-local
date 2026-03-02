@@ -20,7 +20,7 @@ afterEach(async () => {
     await cleanupJobResources(jobs);
 });
 
-test.concurrent("network-host <test-job>", async () => {
+test("network-host <test-job>", async () => {
     const bashSpy = initBashSpy([]);
 
     const writeStreams = new WriteStreamsMock();
@@ -28,7 +28,6 @@ test.concurrent("network-host <test-job>", async () => {
         cwd: "tests/test-cases/network-arg",
         job: ["test-job"],
         network: ["host"],
-        stateDir: ".gitlab-ci-local-network-host-test-job",
     }, writeStreams);
 
     const expected = [
@@ -39,14 +38,13 @@ test.concurrent("network-host <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("network-host <service-job>", async () => {
+test("network-host <service-job>", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/network-arg",
             job: ["service-job"],
             network: ["host"],
-            stateDir: ".gitlab-ci-local-network-host-service-job",
         }, writeStreams, jobs);
     } catch (e) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
@@ -54,7 +52,7 @@ test.concurrent("network-host <service-job>", async () => {
     }
 });
 
-test.concurrent("network-none <test-job>", async () => {
+test("network-none <test-job>", async () => {
     const bashSpy = initBashSpy([]);
 
     const writeStreams = new WriteStreamsMock();
@@ -62,7 +60,6 @@ test.concurrent("network-none <test-job>", async () => {
         cwd: "tests/test-cases/network-arg",
         job: ["test-job"],
         network: ["none"],
-        stateDir: ".gitlab-ci-local-network-none-test-job",
     }, writeStreams);
 
     const expected = [
@@ -73,14 +70,13 @@ test.concurrent("network-none <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test.concurrent("network-none <service-job>", async () => {
+test("network-none <service-job>", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/network-arg",
             job: ["service-job"],
             network: ["none"],
-            stateDir: ".gitlab-ci-local-network-none-service-job",
         }, writeStreams, jobs);
     } catch (e) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
@@ -88,7 +84,7 @@ test.concurrent("network-none <service-job>", async () => {
     }
 });
 
-test.concurrent("network-custom <test-job>", async () => {
+test("network-custom <test-job>", async () => {
     const bashSpy = initBashSpy([]);
     const networkSpy = initSpawnSpy([{
         cmdArgs: expect.arrayContaining(["docker", "network", "connect"]),
@@ -101,7 +97,6 @@ test.concurrent("network-custom <test-job>", async () => {
         cwd: "tests/test-cases/network-arg",
         job: ["test-job"],
         network: ["host", "custom-network1", "custom-network2"],
-        stateDir: ".gitlab-ci-local-network-custom-test-job",
     }, writeStreams);
 
     expect(bashSpy).toHaveBeenCalledWith(expect.stringMatching(/--network host/), expect.any(String));
@@ -109,7 +104,7 @@ test.concurrent("network-custom <test-job>", async () => {
     expect(networkSpy).toHaveBeenCalledWith(expect.arrayContaining(["docker", "network", "connect", "custom-network2"]));
 });
 
-test.concurrent("network-custom <service-job>", async () => {
+test("network-custom <service-job>", async () => {
     const networkSpy = initSpawnSpy([{
         cmdArgs: expect.arrayContaining(["docker", "network", "connect"]),
         returnValue: {stdout: "", stderr: "", exitCode: 0},
@@ -121,7 +116,6 @@ test.concurrent("network-custom <service-job>", async () => {
         cwd: "tests/test-cases/network-arg",
         job: ["service-job"],
         network: ["custom-network1", "custom-network2"],
-        stateDir: ".gitlab-ci-local-network-custom-service-job",
     }, writeStreams);
 
     expect(networkSpy).toHaveBeenCalledWith(expect.arrayContaining(["docker", "network", "connect", "custom-network1"]));

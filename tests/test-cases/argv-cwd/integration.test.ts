@@ -16,7 +16,7 @@ beforeAll(() => {
 
 describe("fallback cwd", () => {
     beforeEach(() => {
-        fs.mkdirSync(currentRelativeDir);
+        fs.mkdirSync(currentRelativeDir, {recursive: true});
     });
 
     afterEach(() => {

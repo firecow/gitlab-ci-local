@@ -14,7 +14,6 @@ test.concurrent("dotenv <test-job>", async () => {
     await handler({
         cwd: "tests/test-cases/dotenv",
         job: ["test-job"],
-        stateDir: ".gitlab-ci-local-dotenv",
     }, writeStreams);
 
     const expected = [
