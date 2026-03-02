@@ -1,0 +1,11 @@
+---
+produce-cache:
+  stage: build
+  image: busybox
+  cache:
+    paths:
+      - .readonly-cache
+  script:
+    - mkdir -p .readonly-cache/subdir
+    - echo "hello" > .readonly-cache/subdir/file.txt
+    - chmod -R a-w .readonly-cache
