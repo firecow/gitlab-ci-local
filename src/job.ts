@@ -1538,10 +1538,6 @@ If you know what you're doing and would like to suppress this warning, use one o
         let dockerCmd = `${this.argv.containerExecutable} create --interactive `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
-        if (this.argv.umask) {
-            dockerCmd += "--user 0:0 ";
-        }
-
         if (this.argv.userns != undefined) {
             dockerCmd += `--userns=${this.argv.userns} `;
         }

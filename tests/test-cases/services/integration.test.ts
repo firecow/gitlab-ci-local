@@ -149,6 +149,37 @@ test.concurrent("services <no-tmp>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
+test.concurrent("services <service-user should preserve image default user>", async () => {
+    const stateDir = ".gitlab-ci-local-service-user";
+    const serviceLogFile = `tests/test-cases/services/${stateDir}/services-output/service-user/docker.io/curlimages/curl:8.8.0-0.log`;
+    await fs.promises.rm(serviceLogFile, {force: true});
+
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["service-user"],
+        stateDir,
+    }, writeStreams);
+
+    const expected = [
+        chalk`{black.bgGreenBright  PASS } {blueBright service-user}`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+
+    const serviceLog = await fs.readFile(serviceLogFile, "utf-8");
+    const stdoutMarker = "### stdout ###\n";
+    const stderrMarker = "\n### stderr ###";
+    const stdoutStart = serviceLog.indexOf(stdoutMarker);
+    const stderrStart = serviceLog.indexOf(stderrMarker, stdoutStart + stdoutMarker.length);
+
+    expect(stdoutStart).toBeGreaterThanOrEqual(0);
+    expect(stderrStart).toBeGreaterThan(stdoutStart + stdoutMarker.length);
+
+    const serviceStdout = serviceLog.slice(stdoutStart + stdoutMarker.length, stderrStart).trim();
+    expect(serviceStdout.length).toBeGreaterThan(0);
+    expect(serviceStdout).not.toEqual("0");
+});
+
 test.concurrent("services <services:entrypoint should support variable expansion and double quotes>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
