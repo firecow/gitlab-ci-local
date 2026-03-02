@@ -16,7 +16,7 @@ const jobs: Job[] = [];
 
 let cleanupAndExitPromise: Promise<void> | null = null;
 
-async function cleanupAndExit(code: number) {
+async function cleanupAndExit (code: number) {
     // First caller's exit code wins — subsequent callers join the in-flight cleanup.
     if (cleanupAndExitPromise) return cleanupAndExitPromise;
     cleanupAndExitPromise = cleanupJobResources(jobs).finally(() => process.exit(code));
