@@ -1703,14 +1703,14 @@ If you know what you're doing and would like to suppress this warning, use one o
                 }
 
                 for (const file of files) {
-                    const content = await Parser.loadYaml(file, {});
+                    const content = await Parser.loadYaml(file, {}, true, this.writeStreams);
                     contents = {
                         ...contents,
                         ...content,
                     };
                 }
             } else if (include["artifact"]) {
-                const content = await Parser.loadYaml(`${cwd}/${stateDir}/artifacts/${include["job"]}/${include["artifact"]}`, {});
+                const content = await Parser.loadYaml(`${cwd}/${stateDir}/artifacts/${include["job"]}/${include["artifact"]}`, {}, true, this.writeStreams);
                 contents = {
                     ...contents,
                     ...content,

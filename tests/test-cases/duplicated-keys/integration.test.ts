@@ -25,6 +25,7 @@ test("duplicated-keys <duplicated-keys>", async () => {
 
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(expected.join("\n"));
+    expect(writeStreams.stderrLines.join("\n")).toContain("duplicated mapping key detected");
 });
 
 test("duplicated-keys <duplicated-keys variables overwritten>", async () => {
