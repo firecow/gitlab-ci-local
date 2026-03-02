@@ -1,4 +1,4 @@
-import {spyOn, describe, test, expect, beforeAll, afterAll} from "bun:test";
+import {vi} from "vitest";
 import {GitData} from "../src/git-data.js";
 import {Utils} from "../src/utils.js";
 
@@ -128,7 +128,7 @@ describe("evaluateRuleChanges", () => {
     ];
     tests.forEach((t) => {
         test.concurrent(`${t.description} \t\t [input: ${t.input} pattern: ${t.pattern} hasChanges: ${t.hasChanges}]`, () => {
-            const spy = spyOn(GitData, "changedFiles");
+            const spy = vi.spyOn(GitData, "changedFiles");
             spy.mockReturnValue(t.input);
             expect(Utils.evaluateRuleChanges("origin/master", t.pattern, ".")).toBe(t.hasChanges);
             spy.mockRestore();
@@ -137,9 +137,9 @@ describe("evaluateRuleChanges", () => {
 });
 
 describe("isSubPath where process.cwd() have been mocked to return /home/user/gitlab-ci-local", () => {
-    let cwdSpy: ReturnType<typeof spyOn>;
+    let cwdSpy: ReturnType<typeof vi.spyOn>;
     beforeAll(() => {
-        cwdSpy = spyOn(process, "cwd");
+        cwdSpy = vi.spyOn(process, "cwd");
         cwdSpy.mockReturnValue("/home/user/gitlab-ci-local");
     });
     afterAll(() => {

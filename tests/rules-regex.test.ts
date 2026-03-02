@@ -1,4 +1,4 @@
-import {spyOn, mock, beforeEach, describe, test, expect} from "bun:test";
+import {vi} from "vitest";
 import "../src/global.js";
 import {Argv} from "../src/argv";
 import {Utils} from "../src/utils";
@@ -13,7 +13,7 @@ beforeEach(async () => {
     writeStreams = new WriteStreamsMock();
     gitData = await GitData.init("tests", writeStreams);
     argv = await Argv.build({}, writeStreams);
-    mock.restore();
+    vi.restoreAllMocks();
 });
 
 /* eslint-disable @stylistic/quotes */
@@ -128,8 +128,8 @@ describe("gitlab rules regex", () => {
         .forEach((t) => {
             test(`- if: '${t.rule}'\n\t => ${t.evalResult}`, async () => {
                 const rules = [ {if: t.rule} ];
-                const evalSpy = spyOn(global, "eval");
-                const evaluateRuleIfSpy = spyOn(Utils, "evaluateRuleIf");
+                const evalSpy = vi.spyOn(global, "eval");
+                const evaluateRuleIfSpy = vi.spyOn(Utils, "evaluateRuleIf");
 
                 Utils.getRulesResult({argv, cwd: "", rules, variables: {}}, gitData);
                 expect(evaluateRuleIfSpy).toHaveReturnedWith(t.evalResult);

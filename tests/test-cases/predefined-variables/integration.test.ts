@@ -1,4 +1,4 @@
-import {spyOn, type Mock, beforeAll, beforeEach, afterEach, afterAll, describe, test, expect} from "bun:test";
+import {vi, type Mock} from "vitest";
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import chalk from "chalk-template";
@@ -91,7 +91,7 @@ beforeAll(() => {
         returnValue: {stdout: "git@gitlab.com:GCL/predefined-variables.git"},
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
-    jobIdSpy = spyOn(
+    jobIdSpy = vi.spyOn(
         Job.prototype as any,
         "generateJobId",
     );
