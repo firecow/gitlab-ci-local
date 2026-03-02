@@ -10,11 +10,12 @@ beforeAll(() => {
 
 const pipelineDirectory = "tests/test-cases/log-padding";
 
-async function verifyLogs ({maxJobNamePadding, expectedJobNamePadding}: {maxJobNamePadding?: number; expectedJobNamePadding: number}) {
+async function verifyLogs ({maxJobNamePadding, expectedJobNamePadding, stateDir}: {maxJobNamePadding?: number; expectedJobNamePadding: number; stateDir: string}) {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: pipelineDirectory,
         maxJobNamePadding,
+        stateDir,
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
@@ -25,23 +26,23 @@ async function verifyLogs ({maxJobNamePadding, expectedJobNamePadding}: {maxJobN
     );
 }
 
-test("logs - maxJobNamePadding set to 0", async () => {
-    await verifyLogs({maxJobNamePadding: 0, expectedJobNamePadding: 0});
+test.concurrent("logs - maxJobNamePadding set to 0", async () => {
+    await verifyLogs({maxJobNamePadding: 0, expectedJobNamePadding: 0, stateDir: ".gitlab-ci-local-log-padding-0"});
 });
 
-test("logs - maxJobNamePadding set to 30", async () => {
-    await verifyLogs({maxJobNamePadding: 30, expectedJobNamePadding: 20});
+test.concurrent("logs - maxJobNamePadding set to 30", async () => {
+    await verifyLogs({maxJobNamePadding: 30, expectedJobNamePadding: 20, stateDir: ".gitlab-ci-local-log-padding-30"});
 });
 
-test("logs - maxJobNamePadding unset", async () => {
-    await verifyLogs({maxJobNamePadding: undefined, expectedJobNamePadding: 33});
+test.concurrent("logs - maxJobNamePadding unset", async () => {
+    await verifyLogs({maxJobNamePadding: undefined, expectedJobNamePadding: 33, stateDir: ".gitlab-ci-local-log-padding-unset"});
 });
 
-test("logs - maxJobNamePadding set to 100", async () => {
-    await verifyLogs({maxJobNamePadding: 100, expectedJobNamePadding: 33});
+test.concurrent("logs - maxJobNamePadding set to 100", async () => {
+    await verifyLogs({maxJobNamePadding: 100, expectedJobNamePadding: 33, stateDir: ".gitlab-ci-local-log-padding-100"});
 });
 
-test("logs - log padding should only take needs and targeted jobs into account", async () => {
+test.concurrent("logs - log padding should only take needs and targeted jobs into account", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: pipelineDirectory,

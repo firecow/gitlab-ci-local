@@ -39,13 +39,14 @@ job2 > GCL_TESTS_VAR2=This is variable 2`;
     });
 });
 
-test("inherit:default", async () => {
+test.concurrent("inherit:default", async () => {
 
     const writeStreams = new WriteStreamsMock();
     await handler({
         file: ".gitlab-ci-inherit-default.yml",
         cwd: "tests/test-cases/inherit",
         preview: true,
+        stateDir: ".gitlab-ci-local-inherit-default",
     }, writeStreams);
 
     const expected = `

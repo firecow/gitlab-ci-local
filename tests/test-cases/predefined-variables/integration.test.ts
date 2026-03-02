@@ -224,17 +224,18 @@ CI_SERVER_SHELL_SSH_PORT: 8022
     });
 });
 
-test("predefined-variables <shell-isolation> --shell-isolation", async () => {
+test.concurrent("predefined-variables <shell-isolation> --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/predefined-variables",
         job: ["shell-isolation"],
         shellIsolation: true,
         shellExecutorNoImage: false,
+        stateDir: ".gitlab-ci-local-predefined-variables-shell-isolation",
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright shell-isolation} {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables/.gitlab-ci-local/builds/shell-isolation`,
+        chalk`{blueBright shell-isolation} {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables/.gitlab-ci-local-predefined-variables-shell-isolation/builds/shell-isolation`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

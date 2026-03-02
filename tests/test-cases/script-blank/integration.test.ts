@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("script-blank <test-job>", async () => {
+test.concurrent("script-blank <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await expect(handler({
         cwd: "tests/test-cases/script-blank",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-script-blank",
     }, writeStreams)).rejects.toThrow(chalk`{blue test-job} has empty script`);
 });

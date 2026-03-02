@@ -14,7 +14,7 @@ afterAll(() => {
     spyStderr.mockRestore();
 });
 
-test("Check ProcessWriteStreams ", () => {
+test.concurrent("Check ProcessWriteStreams ", () => {
     const writeStreams = new WriteStreamsProcess();
     writeStreams.stdout("Stdout message");
     writeStreams.stderr("Stderr message");

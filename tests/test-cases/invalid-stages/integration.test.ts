@@ -9,11 +9,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("invalid-stages", async () => {
+test.concurrent("invalid-stages", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/invalid-stages",
+            stateDir: ".gitlab-ci-local-invalid-stages",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {

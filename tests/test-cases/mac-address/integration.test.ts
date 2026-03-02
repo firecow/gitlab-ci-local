@@ -10,11 +10,12 @@ beforeAll(() => {
 
 
 const macAddress = "aa:bb:cc:dd:ee:ff";
-test("mac-address", async () => {
+test.concurrent("mac-address", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/mac-address",
         containerMacAddress: macAddress,
+        stateDir: ".gitlab-ci-local-mac-address",
     }, writeStreams);
 
     const expected = [

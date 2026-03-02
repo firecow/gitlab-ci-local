@@ -7,11 +7,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("preview", async () => {
+test.concurrent("preview", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/preview",
         preview: true,
+        stateDir: ".gitlab-ci-local-preview",
     }, writeStreams);
 
     const expected = `---

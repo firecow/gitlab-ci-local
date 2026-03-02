@@ -9,11 +9,12 @@ beforeAll(() => {
 });
 
 const test_job_1 = "test $ character in CI/CD variable";
-test(`variable-escaping <${test_job_1}>`, async () => {
+test.concurrent(`variable-escaping <${test_job_1}>`, async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variable-escaping",
         job: [test_job_1],
+        stateDir: ".gitlab-ci-local-variable-escaping",
     }, writeStreams);
 
     const expected = chalk`
