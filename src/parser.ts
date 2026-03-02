@@ -105,12 +105,12 @@ export class Parser {
         const expanded = Utils.expandVariables(variables);
 
         let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
-        const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`, {}, this.expandVariables);
+        const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`, {}, this.expandVariables, writeStreams);
 
         yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, {argv, cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables, maximumIncludes: argv.maximumIncludes}));
         ParserIncludes.resetCount();
 
-        const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`, {}, this.expandVariables);
+        const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`, {}, this.expandVariables, writeStreams);
         yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, {argv, cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables, maximumIncludes: argv.maximumIncludes}));
         ParserIncludes.resetCount();
 
@@ -228,7 +228,7 @@ export class Parser {
         });
     }
 
-    static async loadYaml (filePath: string, ctx: any = {}, expandVariables: boolean = true): Promise<any> {
+    static async loadYaml (filePath: string, ctx: any = {}, expandVariables: boolean = true, writeStreams?: WriteStreams): Promise<any> {
         const ymlPath = `${filePath}`;
         if (!fs.existsSync(ymlPath)) {
             return {};
@@ -290,7 +290,7 @@ export class Parser {
             fileData = yaml.loadAll(fileSplitClone.join("\n"), null, {schema}) as any[];
         } catch (e: any) {
             if (e instanceof yaml.YAMLException && e.reason === "duplicated mapping key") {
-                console.log(chalk`{black.bgYellowBright  WARN } duplicated mapping key detected! Values will be overwritten!`);
+                writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } duplicated mapping key detected! Values will be overwritten!\n`);
                 fileData = yaml.loadAll(fileSplitClone.join("\n"), null, {schema, json: true}) as any[];
             } else {
                 throw e;
@@ -313,6 +313,7 @@ export class Parser {
                             interpolationFunctions,
                             inputsSpecification,
                             configFilePath,
+                            writeStreams,
                             ...ctx,
                         };
                         firstChar ??= "";
@@ -365,7 +366,7 @@ function validateInterpolationKey (ctx: any) {
 function validateInterpolationFunctions (ctx: any) {
     const {interpolationFunctions, configFilePath} = ctx;
     if (interpolationFunctions != "") {
-        console.log(chalk`{black.bgYellowBright  WARN } interpolation functions is currently not supported via gitlab-ci-local. Functions will just be a no-op.`);
+        ctx.writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } interpolation functions is currently not supported via gitlab-ci-local. Functions will just be a no-op.\n`);
     }
     assert(interpolationFunctions.split("|").length <= MAX_FUNCTIONS, chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: too many functions in interpolation block.`);
 }
@@ -390,7 +391,7 @@ function validateInput (ctx: any) {
 
     const regex = inputsSpecification.spec.inputs[interpolationKey]?.regex;
     if (regex) {
-        console.log(chalk`{black.bgYellowBright  WARN } spec:inputs:regex is currently not supported via gitlab-ci-local. This will just be a no-op.`);
+        ctx.writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } spec:inputs:regex is currently not supported via gitlab-ci-local. This will just be a no-op.\n`);
     }
 }
 

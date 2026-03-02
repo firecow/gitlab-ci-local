@@ -322,8 +322,8 @@ test("include-inputs options validation", async () => {
 });
 
 test("include-inputs too many functions in interpolation block", async () => {
+    const writeStreams = new WriteStreamsMock();
     try {
-        const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/include-inputs/input-templates/too-many-functions-in-interpolation-block",
             preview: true,
@@ -332,6 +332,7 @@ test("include-inputs too many functions in interpolation block", async () => {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");
         expect(e.message).toContain("This GitLab CI configuration is invalid:");
         expect(e.message).toContain("too many functions in interpolation block.");
+        expect(writeStreams.stderrLines.join("\n")).toContain("interpolation functions is currently not supported");
         return;
     }
 

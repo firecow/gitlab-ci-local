@@ -116,7 +116,7 @@ export class ParserIncludes {
                     throw new AssertionError({message: `Local include file cannot be found ${value["local"]}`});
                 }
                 for (const localFile of files) {
-                    const content = await Parser.loadYaml(localFile, {inputs: value.inputs ?? {}}, expandVariables);
+                    const content = await Parser.loadYaml(localFile, {inputs: value.inputs ?? {}}, expandVariables, writeStreams);
                     includeDatas = includeDatas.concat(await this.init(content, opts));
                 }
             } else if (value["project"]) {
@@ -124,7 +124,7 @@ export class ParserIncludes {
                     const fileDoc = await Parser.loadYaml(
                         `${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`
                         , {inputs: value.inputs || {}}
-                        , expandVariables);
+                        , expandVariables, writeStreams);
                     // Expand local includes inside a "project"-like include
                     fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], value["project"], value["ref"], opts);
                     includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
@@ -148,7 +148,7 @@ export class ParserIncludes {
                 assert(file !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the files [${files}] must exist in \`${component.domain}` +
                                     (component.port ? `:${component.port}` : "") + `/${component.projectPath}\``);
 
-                const fileDoc = await Parser.loadYaml(file, {inputs: value.inputs || {}}, expandVariables);
+                const fileDoc = await Parser.loadYaml(file, {inputs: value.inputs || {}}, expandVariables, writeStreams);
                 // Expand local includes inside to a "project"-like include
                 fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], component.projectPath, component.ref, opts);
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
@@ -156,13 +156,13 @@ export class ParserIncludes {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
                 const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables,
+                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables, writeStreams,
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
                 const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables,
+                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables, writeStreams,
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else {
