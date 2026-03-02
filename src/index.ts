@@ -18,7 +18,7 @@ let cleanupAndExitPromise: Promise<void> | null = null;
 
 async function cleanupAndExit (code: number) {
     if (cleanupAndExitPromise) return cleanupAndExitPromise;
-    cleanupAndExitPromise = cleanupJobResources(jobs).then(() => process.exit(code));
+    cleanupAndExitPromise = cleanupJobResources(jobs).finally(() => process.exit(code));
     return cleanupAndExitPromise;
 }
 
