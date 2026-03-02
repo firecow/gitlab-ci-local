@@ -772,11 +772,19 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
     }
 
+    private _cleanupPromise: Promise<void> | null = null;
+
     async cleanupResources () {
         clearTimeout(this._longRunningSilentTimeout);
 
         if (!this.argv.cleanup) return;
 
+        if (this._cleanupPromise) return this._cleanupPromise;
+        this._cleanupPromise = this._doCleanupResources();
+        return this._cleanupPromise;
+    }
+
+    private async _doCleanupResources () {
         if (this._containersToClean.length > 0) {
             try {
                 await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", ...this._containersToClean]);

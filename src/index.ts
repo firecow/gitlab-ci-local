@@ -14,10 +14,17 @@ import packageJson from "../package.json";
 
 const jobs: Job[] = [];
 
-process.on("SIGINT", async (_: string, code: number) => {
-    await cleanupJobResources(jobs);
-    process.exit(code);
-});
+let cleanupAndExitPromise: Promise<void> | null = null;
+
+async function cleanupAndExit (code: number) {
+    if (cleanupAndExitPromise) return cleanupAndExitPromise;
+    cleanupAndExitPromise = cleanupJobResources(jobs).then(() => process.exit(code));
+    return cleanupAndExitPromise;
+}
+
+process.on("SIGINT", () => cleanupAndExit(130));
+process.on("SIGTERM", () => cleanupAndExit(143));
+process.on("SIGHUP", () => cleanupAndExit(129));
 
 // Graceful shutdown for nodemon
 process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
@@ -42,8 +49,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                     } else {
                         process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
                     }
-                    await cleanupJobResources(jobs);
-                    process.exit(1);
+                    await cleanupAndExit(1);
                 }
             },
             builder: (y: any) => {
