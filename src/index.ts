@@ -16,7 +16,8 @@ const jobs: Job[] = [];
 
 let cleanupAndExitPromise: Promise<void> | null = null;
 
-async function cleanupAndExit (code: number) {
+async function cleanupAndExit(code: number) {
+    // First caller's exit code wins — subsequent callers join the in-flight cleanup.
     if (cleanupAndExitPromise) return cleanupAndExitPromise;
     cleanupAndExitPromise = cleanupJobResources(jobs).finally(() => process.exit(code));
     return cleanupAndExitPromise;
@@ -27,7 +28,9 @@ process.on("SIGTERM", () => cleanupAndExit(143));
 process.on("SIGHUP", () => cleanupAndExit(129));
 
 // Graceful shutdown for nodemon
-process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
+process.on("SIGUSR2", async () => {
+    if (!cleanupAndExitPromise) await cleanupJobResources(jobs);
+});
 
 (() => {
     const yparser = yargs(process.argv.slice(2));
