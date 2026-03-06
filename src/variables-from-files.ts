@@ -21,16 +21,22 @@ export interface CICDVariable {
     }[];
 }
 
+export interface VariablesFromFilesResult {
+    homeAndRemote: {[name: string]: CICDVariable};
+    projectLocal: {[name: string]: CICDVariable};
+}
+
 export class VariablesFromFiles {
 
-    static async init (argv: Argv, writeStreams: WriteStreams, gitData: GitData): Promise<{[name: string]: CICDVariable}> {
+    static async init (argv: Argv, writeStreams: WriteStreams, gitData: GitData): Promise<VariablesFromFilesResult> {
         const cwd = argv.cwd;
         const stateDir = argv.stateDir;
         const homeDir = argv.home;
         const remoteVariables = argv.remoteVariables;
         const autoCompleting = argv.autoCompleting;
         const homeVariablesFile = `${homeDir}/${stateDir}/variables.yml`;
-        const variables: {[name: string]: CICDVariable} = {};
+        const homeAndRemote: {[name: string]: CICDVariable} = {};
+        const projectLocal: {[name: string]: CICDVariable} = {};
         let remoteFileData: any = {};
         let homeFileData: any = {};
 
@@ -67,36 +73,36 @@ export class VariablesFromFiles {
             }
             return v;
         };
-        const addToVariables = async (key: string, val: any, scopePriority: number, isDotEnv = false) => {
+        const addToVariables = async (target: {[name: string]: CICDVariable}, key: string, val: any, scopePriority: number, isDotEnv = false) => {
             const {type, values} = unpack(val);
             for (const [matcher, content] of Object.entries(values)) {
                 assert(typeof content == "string", `${key}.${matcher} content must be text or multiline text`);
                 if (isDotEnv || type === "variable" || (type === null && !/^[/~]/.exec(content))) {
                     const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replace(/\*/g, ".*")}$`, "g");
-                    variables[key] = variables[key] ?? {type: "variable", environments: []};
-                    variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
+                    target[key] = target[key] ?? {type: "variable", environments: []};
+                    target[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
                 } else if (type === null && /^[/~]/.exec(content)) {
                     const fileSource = content.replace(/^~\/(.*)/, `${homeDir}/$1`);
                     const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replace(/\*/g, ".*")}$`, "g");
-                    variables[key] = variables[key] ?? {type: "file", environments: []};
+                    target[key] = target[key] ?? {type: "file", environments: []};
                     if (fs.existsSync(fileSource)) {
-                        variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority, fileSource});
+                        target[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority, fileSource});
                     } else {
-                        variables[key].environments.push({content: `warn: ${key} is pointing to invalid path\n`, regexp, regexpPriority: matcher.length, scopePriority});
+                        target[key].environments.push({content: `warn: ${key} is pointing to invalid path\n`, regexp, regexpPriority: matcher.length, scopePriority});
                     }
                 } else if (type === "file") {
                     const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replace(/\*/g, ".*")}$`, "g");
-                    variables[key] = variables[key] ?? {type: "file", environments: []};
-                    variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
+                    target[key] = target[key] ?? {type: "file", environments: []};
+                    target[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
                 } else {
                     assert(false, `${key} was not handled properly`);
                 }
             }
         };
 
-        const addVariableFileToVariables = async (fileData: any, filePriority: number) => {
+        const addVariableFileToVariables = async (target: {[name: string]: CICDVariable}, fileData: any, filePriority: number) => {
             for (const [globalKey, globalEntry] of Object.entries(fileData?.global ?? {})) {
-                await addToVariables(globalKey, globalEntry, 1 + filePriority);
+                await addToVariables(target, globalKey, globalEntry, 1 + filePriority);
             }
 
             const groupUrl = `${gitData.remote.host}/${gitData.remote.group}/`;
@@ -105,7 +111,7 @@ export class VariablesFromFiles {
                 assert(groupEntries != null, "groupEntries cannot be null/undefined");
                 assert(Utils.isObject(groupEntries), "group entries in variable files must be an object");
                 for (const [k, v] of Object.entries(groupEntries)) {
-                    await addToVariables(k, v, 2 + filePriority);
+                    await addToVariables(target, k, v, 2 + filePriority);
                 }
             }
 
@@ -115,13 +121,13 @@ export class VariablesFromFiles {
                 assert(projectEntries != null, "projectEntries cannot be null/undefined");
                 assert(Utils.isObject(projectEntries), "project entries in variable files must be an object");
                 for (const [k, v] of Object.entries(projectEntries)) {
-                    await addToVariables(k, v, 3 + filePriority);
+                    await addToVariables(target, k, v, 3 + filePriority);
                 }
             }
         };
 
-        await addVariableFileToVariables(remoteFileData, 0);
-        await addVariableFileToVariables(homeFileData, 10);
+        await addVariableFileToVariables(homeAndRemote, remoteFileData, 0);
+        await addVariableFileToVariables(homeAndRemote, homeFileData, 10);
 
         const projectVariablesFile = `${argv.cwd}/${argv.variablesFile}`;
         if (fs.existsSync(projectVariablesFile)) {
@@ -144,16 +150,20 @@ export class VariablesFromFiles {
             assert(projectVariablesFileData != null, "projectEntries cannot be null/undefined");
             assert(Utils.isObject(projectVariablesFileData), `${argv.cwd}/.gitlab-ci-local-variables.yml must contain an object`);
             for (const [k, v] of Object.entries(projectVariablesFileData)) {
-                await addToVariables(k, v, 24, isDotEnvFormat);
+                await addToVariables(projectLocal, k, v, 24, isDotEnvFormat);
             }
         }
 
-        for (const varObj of Object.values(variables)) {
-            varObj.environments.sort((a, b) => b.scopePriority - a.scopePriority);
-            varObj.environments.sort((a, b) => b.regexpPriority - a.regexpPriority);
-        }
+        const sortEnvironments = (variables: {[name: string]: CICDVariable}) => {
+            for (const varObj of Object.values(variables)) {
+                varObj.environments.sort((a, b) => b.scopePriority - a.scopePriority);
+                varObj.environments.sort((a, b) => b.regexpPriority - a.regexpPriority);
+            }
+        };
+        sortEnvironments(homeAndRemote);
+        sortEnvironments(projectLocal);
 
-        return variables;
+        return {homeAndRemote, projectLocal};
     }
 
     static normalizeProjectKey (key: string, writeStreams: WriteStreams): string {

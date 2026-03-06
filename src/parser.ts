@@ -99,7 +99,8 @@ export class Parser {
         const fetchIncludes = argv.fetchIncludes;
         const gitData = await GitData.init(cwd, writeStreams);
         const variablesFromFiles = await VariablesFromFiles.init(argv, writeStreams, gitData);
-        const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles);
+        const resolved = Utils.resolveVariablesFromFiles(variablesFromFiles);
+        const envMatchedVariables = {...resolved.homeAndRemote, ...resolved.projectLocal};
         const predefinedVariables = initPredefinedVariables({gitData, argv, envMatchedVariables});
         const variables = {...predefinedVariables, ...envMatchedVariables, ...argv.variable};
         const expanded = Utils.expandVariables(variables);
@@ -159,7 +160,7 @@ export class Parser {
         // Generate jobs and put them into stages
         Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
             assert(gitData != null, "gitData must be set");
-            assert(variablesFromFiles != null, "homeVariables must be set");
+            assert(variablesFromFiles != null, "variablesFromFiles must be set");
 
             let nodeIndex = 1;
             const parallelMatrixVariablesList = parallel.matrixVariablesList(jobData, jobName);

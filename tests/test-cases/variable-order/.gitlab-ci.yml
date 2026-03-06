@@ -22,6 +22,6 @@ test-job:
     - echo "OVERRIDDEN_BY_JOB=${OVERRIDDEN_BY_JOB}"
     - echo "CI_PIPELINE_ID=${CI_PIPELINE_ID}"  # Global overrides predefined
     - echo "CI_JOB_ID=${CI_JOB_ID}"  # Job overrides predefined
-    - echo "HOME_VARIABLE=${HOME_VARIABLE}"  # Home overrides all else
+    - echo "HOME_VARIABLE=${HOME_VARIABLE}"  # Job overrides home
     - echo "PROJECT_VARIABLE=${PROJECT_VARIABLE}"  # Project variables overrides everything
     - echo "PROD_ONLY_VARIABLE=${PROD_ONLY_VARIABLE}"

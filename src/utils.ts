@@ -8,7 +8,7 @@ import checksum from "checksum";
 import base64url from "base64url";
 import execa, {ExecaError} from "execa";
 import assert from "assert";
-import {CICDVariable} from "./variables-from-files.js";
+import {CICDVariable, type VariablesFromFilesResult} from "./variables-from-files.js";
 import {GitData} from "./git-data.js";
 import {globbySync} from "globby";
 import micromatch from "micromatch";
@@ -187,6 +187,13 @@ export class Utils {
             }
         }
         return envMatchedVariables;
+    }
+
+    static resolveVariablesFromFiles (result: VariablesFromFilesResult, fileVariablesDir?: string, environment?: {name: string}) {
+        return {
+            homeAndRemote: this.findEnvMatchedVariables(result.homeAndRemote, fileVariablesDir, environment),
+            projectLocal: this.findEnvMatchedVariables(result.projectLocal, fileVariablesDir, environment),
+        };
     }
 
     static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} | undefined = undefined): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}; needs?: Need[]} {

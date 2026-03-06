@@ -10,7 +10,7 @@ import assert, {AssertionError} from "assert";
 import {Mutex} from "./mutex.js";
 import {Argv} from "./argv.js";
 import execa from "execa";
-import {CICDVariable} from "./variables-from-files.js";
+import {VariablesFromFilesResult} from "./variables-from-files.js";
 import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues} from "./gitlab-preset.js";
 import {handler} from "./handler.js";
 import * as yaml from "js-yaml";
@@ -31,7 +31,7 @@ interface JobOptions {
     pipelineIid: number;
     gitData: GitData;
     globalVariables: {[name: string]: string};
-    variablesFromFiles: {[name: string]: CICDVariable};
+    variablesFromFiles: VariablesFromFilesResult;
     predefinedVariables: {[name: string]: any};
     matrixVariables: {[key: string]: string} | null;
     nodeIndex: number | null;
@@ -166,9 +166,9 @@ export class Job {
         this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : (jobData.environment ? {...jobData.environment} : jobData.environment);
 
         const matrixVariables = opt.matrixVariables ?? {};
-        const fileVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
+        const fileVars = Utils.resolveVariablesFromFiles(variablesFromFiles, this.fileVariablesDir);
         const predefinedVariables = this._predefinedVariables(opt);
-        this._variables = {...predefinedVariables, ...this.globalVariables, ...jobVariables, ...matrixVariables, ...fileVariables, ...argvVariables};
+        this._variables = {...predefinedVariables, ...fileVars.homeAndRemote, ...this.globalVariables, ...jobVariables, ...matrixVariables, ...fileVars.projectLocal, ...argvVariables};
 
         if (this.rules && expandVariables) {
             const expanded = Utils.expandVariables(this._variables);
@@ -223,9 +223,9 @@ export class Job {
             }
             this.environment.url = Utils.expandText(this.environment.url, expanded);
         }
-        const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
+        const envMatchedFileVars = Utils.resolveVariablesFromFiles(variablesFromFiles, this.fileVariablesDir, this.environment);
 
-        const userDefinedVariables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
+        const userDefinedVariables = {...envMatchedFileVars.homeAndRemote, ...this.globalVariables, ...jobVariables, ...matrixVariables, ...ruleVariables, ...envMatchedFileVars.projectLocal, ...argvVariables};
         this.discourageOverridingOfPredefinedVariables(predefinedVariables, userDefinedVariables, argv.ignorePredefinedVars);
 
         // Merge and expand after finding env matched variables

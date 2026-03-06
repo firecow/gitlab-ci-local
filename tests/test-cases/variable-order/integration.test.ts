@@ -23,7 +23,7 @@ test-job > JOB_VARIABLE=job-value
 test-job > OVERRIDDEN_BY_JOB=job-value
 test-job > CI_PIPELINE_ID=pipeline-value
 test-job > CI_JOB_ID=job-value
-test-job > HOME_VARIABLE=home-value
+test-job > HOME_VARIABLE=job-value
 test-job > PROJECT_VARIABLE=project-value
 test-job > PROD_ONLY_VARIABLE=notprod
 `.trim();
