@@ -350,6 +350,10 @@ export class Argv {
         return this.map.get("waitImage") ?? "docker.io/sumina46/wait-for-it:latest";
     }
 
+    get waitForServicesTimeout (): number {
+        return this.map.get("waitForServicesTimeout") ?? 30;
+    }
+
     get helperImage (): string {
         return this.map.get("helperImage") ?? "docker.io/firecow/gitlab-ci-local-util:latest";
     }
