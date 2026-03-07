@@ -20,12 +20,17 @@ jobs:
 
   smoke-test:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        node-version: [24, 25]
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: oven-sh/setup-bun@v2.1.3
         with:
           bun-version: 1.3.10
       - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
       - run: bun install --frozen-lockfile
       - run: bun run build:linux-amd64
       - run: bin/linux-amd64/gitlab-ci-local --version
