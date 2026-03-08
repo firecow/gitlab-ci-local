@@ -1645,6 +1645,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         const serviceAlias = service.alias;
         const serviceName = service.name;
         const waitImageName = this.argv.waitImage;
+        const waitForServicesTimeout = this.argv.waitForServicesTimeout;
 
         const {stdout} = await Utils.spawn([this.argv.containerExecutable, "image", "inspect", serviceName]);
         const imageInspect = JSON.parse(stdout);
@@ -1669,7 +1670,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
                 const containerName = `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`;
-                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${uniqueAlias}:${portNum}`, "-t", "30"];
+                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${uniqueAlias}:${portNum}`, "-t", `${waitForServicesTimeout}`];
                 this._containersToClean.push(containerName);
                 return Utils.spawn(spawnCmd);
             }));

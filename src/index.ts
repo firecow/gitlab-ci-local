@@ -207,6 +207,11 @@ process.on("SIGUSR2", async () => {
             description: "Which image to be used for the wait container. Defaults to docker.io/sumina46/wait-for-it:latest if not set.",
             requiresArg: false,
         })
+        .option("wait-for-services-timeout", {
+            type: "number",
+            description: "Timeout in seconds for service health checks. Defaults to 30.",
+            requiresArg: false,
+        })
         .option("helper-image", {
             type: "string",
             description: "When using --shell-executor-no-image=false which image to be used for the utils container. Defaults to docker.io/firecow/gitlab-ci-local-util:latest if not set.",
