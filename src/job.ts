@@ -1352,7 +1352,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             for (const path of c.paths) {
                 if (!Utils.isSubpath(path, this.argv.cwd, this.argv.cwd)) continue;
 
-                paths += " " + Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
+                paths += " ./" + Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
             }
 
             time = process.hrtime();
@@ -1425,7 +1425,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
         for (const artifactPath of this.artifacts?.paths ?? []) {
             const expandedPath = Utils.expandText(artifactPath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
-            cpCmd += `${expandedPath} `;
+            cpCmd += `./${expandedPath} `;
         }
         cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
         const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, expanded);
@@ -1436,7 +1436,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             reportDotenvs.forEach((reportDotenv) => {
                 cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
                 cpCmd += `if [ -f ${reportDotenv} ]; then\n`;
-                cpCmd += `  rsync -Ra ${reportDotenv} ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
+                cpCmd += `  rsync -Ra ./${reportDotenv} ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
                 cpCmd += "fi\n";
             });
         }
