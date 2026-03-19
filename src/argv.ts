@@ -22,6 +22,19 @@ async function gitRootPath () {
     return stdout;
 }
 
+export function injectGclVariableEnvVars (argv: {variable?: string[]}, env: Record<string, string | undefined>): void {
+    const prefix = "GCL_VARIABLE_";
+    for (const [envKey, envValue] of Object.entries(env)) {
+        if (!envKey.startsWith(prefix) || envValue == null) continue;
+        const varName = envKey.slice(prefix.length);
+        if (varName.length === 0) continue;
+        if (argv.variable == null) {
+            argv.variable = [];
+        }
+        argv.variable.unshift(`${varName}=${envValue}`);
+    }
+}
+
 export class Argv {
     static readonly default = {
         "variablesFile": ".gitlab-ci-local-variables.yml",
@@ -43,6 +56,7 @@ export class Argv {
     }
 
     static async build (args: any, writeStreams?: WriteStreams) {
+        injectGclVariableEnvVars(args, process.env);
         const argv = new Argv(args, writeStreams);
         await argv.fallbackCwd(args);
 

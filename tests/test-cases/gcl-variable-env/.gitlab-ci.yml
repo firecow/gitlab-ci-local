@@ -1,0 +1,6 @@
+---
+test-job:
+  script:
+    - echo ${MY_VAR}
+    - echo ${ANOTHER_VAR}
+    - echo ${EMPTY_VAR}
