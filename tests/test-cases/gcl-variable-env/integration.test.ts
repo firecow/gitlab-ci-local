@@ -80,19 +80,27 @@ describe("injectGclVariableEnvVars unit tests", () => {
     });
 });
 
-describe("injectGclVariableEnvVars integration", () => {
-    test.concurrent("GCL_VARIABLE_MY_VAR=hello injects variable into job", async () => {
-        const writeStreams = new WriteStreamsMock();
-        await handler({
-            cwd: "tests/test-cases/gcl-variable-env",
-            job: ["test-job"],
-            variable: ["MY_VAR=hello", "ANOTHER_VAR=world", "EMPTY_VAR="],
-        }, writeStreams);
+describe("injectGclVariableEnvVars integration via process.env", () => {
+    test.concurrent("GCL_VARIABLE_* env vars are injected into job output", async () => {
+        const envKeys = ["GCL_VARIABLE_MY_VAR", "GCL_VARIABLE_ANOTHER_VAR"];
+        process.env["GCL_VARIABLE_MY_VAR"] = "hello";
+        process.env["GCL_VARIABLE_ANOTHER_VAR"] = "world";
+        try {
+            const writeStreams = new WriteStreamsMock();
+            await handler({
+                cwd: "tests/test-cases/gcl-variable-env",
+                job: ["test-job"],
+            }, writeStreams);
 
-        const expected = [
-            chalk`{blueBright test-job} {greenBright >} hello`,
-            chalk`{blueBright test-job} {greenBright >} world`,
-        ];
-        expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+            const expected = [
+                chalk`{blueBright test-job} {greenBright >} hello`,
+                chalk`{blueBright test-job} {greenBright >} world`,
+            ];
+            expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+        } finally {
+            for (const key of envKeys) {
+                delete process.env[key];
+            }
+        }
     });
 });
