@@ -1,13 +1,8 @@
-import {WriteStreamsMock} from "../../../src/write-streams.js";
-import {handler} from "../../../src/handler.js";
 import {injectGclVariableEnvVars} from "../../../src/argv.js";
-import chalk from "chalk-template";
-import {initSpawnSpy} from "../../mocks/utils.mock.js";
-import {WhenStatics} from "../../mocks/when-statics.js";
+import {execFile} from "child_process";
+import {promisify} from "util";
 
-beforeAll(() => {
-    initSpawnSpy(WhenStatics.all);
-});
+const execFileAsync = promisify(execFile);
 
 describe("injectGclVariableEnvVars unit tests", () => {
     test("injects single GCL_VARIABLE_ entry", () => {
@@ -80,27 +75,15 @@ describe("injectGclVariableEnvVars unit tests", () => {
     });
 });
 
-describe("injectGclVariableEnvVars integration via process.env", () => {
-    test.concurrent("GCL_VARIABLE_* env vars are injected into job output", async () => {
-        const envKeys = ["GCL_VARIABLE_MY_VAR", "GCL_VARIABLE_ANOTHER_VAR"];
-        process.env["GCL_VARIABLE_MY_VAR"] = "hello";
-        process.env["GCL_VARIABLE_ANOTHER_VAR"] = "world";
-        try {
-            const writeStreams = new WriteStreamsMock();
-            await handler({
-                cwd: "tests/test-cases/gcl-variable-env",
-                job: ["test-job"],
-            }, writeStreams);
-
-            const expected = [
-                chalk`{blueBright test-job} {greenBright >} hello`,
-                chalk`{blueBright test-job} {greenBright >} world`,
-            ];
-            expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-        } finally {
-            for (const key of envKeys) {
-                delete process.env[key];
-            }
-        }
+test("GCL_VARIABLE_* env vars are injected into job output via CLI", async () => {
+    const {stdout} = await execFileAsync("bun", ["src/index.ts", "test-job", "--cwd", "tests/test-cases/gcl-variable-env"], {
+        env: {
+            ...process.env,
+            GCL_VARIABLE_MY_VAR: "hello",
+            GCL_VARIABLE_ANOTHER_VAR: "world",
+        },
     });
-});
+
+    expect(stdout).toContain("hello");
+    expect(stdout).toContain("world");
+}, 30_000);

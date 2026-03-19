@@ -6,7 +6,7 @@ import * as state from "./state.js";
 import {WriteStreamsProcess, WriteStreamsMock} from "./write-streams.js";
 import {handler} from "./handler.js";
 import {Executor} from "./executor.js";
-import {Argv} from "./argv.js";
+import {Argv, injectGclVariableEnvVars, injectGclEnvVars} from "./argv.js";
 import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job.js";
 import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
@@ -41,6 +41,8 @@ process.on("SIGUSR2", async () => {
         .command({
             handler: async (argv) => {
                 try {
+                    injectGclVariableEnvVars(argv, process.env);
+                    injectGclEnvVars(argv, yparser.getOptions(), process.env);
                     await handler(argv, new WriteStreamsProcess(), jobs);
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
@@ -74,7 +76,6 @@ process.on("SIGUSR2", async () => {
         })
         .usage("Find more information at https://github.com/firecow/gitlab-ci-local.\nNote: To negate an option use '--no-(option)'.")
         .strictOptions()
-        .env("GCL")
         .option("manual", {
             type: "array",
             description: "One or more manual jobs to run during a pipeline",
@@ -324,11 +325,10 @@ process.on("SIGUSR2", async () => {
             description: "The json schema paths that will be ignored",
         })
         .option("ignore-predefined-vars", {
-            type: "string",
-            coerce: (v) => v.split(","),
+            type: "array",
             requiresArg: false,
             default: Argv.default.ignorePredefinedVars,
-            describe: "Comma-seperated list of predefined pipeline variables for which warnings should be suppressed",
+            describe: "Predefined pipeline variables for which warnings should be suppressed",
         })
         .option("concurrency", {
             type: "number",
