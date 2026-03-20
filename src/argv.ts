@@ -22,55 +22,26 @@ async function gitRootPath () {
     return stdout;
 }
 
-export function injectGclVariableEnvVars (argv: {variable?: string[]; [key: string]: any}, env: Record<string, string | undefined>): void {
+export function stripGclVariableEnvVars (env: Record<string, string | undefined>): Record<string, string> {
     const prefix = "GCL_VARIABLE_";
-    for (const [envKey, envValue] of Object.entries(env)) {
-        if (!envKey.startsWith(prefix) || envValue == null) continue;
+    const stripped: Record<string, string> = {};
+    for (const key of Object.keys(env)) {
+        if (!key.startsWith(prefix) || env[key] == null) continue;
+        if (key.length <= prefix.length) continue;
+        stripped[key] = env[key]!;
+        delete env[key];
+    }
+    return stripped;
+}
+
+export function injectGclVariableEnvVars (argv: {variable?: string[]; [key: string]: any}, gclVars: Record<string, string>): void {
+    const prefix = "GCL_VARIABLE_";
+    for (const [envKey, envValue] of Object.entries(gclVars)) {
         const varName = envKey.slice(prefix.length);
-        if (varName.length === 0) continue;
         if (argv.variable == null) {
             argv.variable = [];
         }
         argv.variable.unshift(`${varName}=${envValue}`);
-    }
-}
-
-interface YargsOptionsMeta {
-    "array": string[];
-    "boolean": string[];
-    "number": string[];
-    "default": Record<string, any>;
-    "key": Record<string, boolean>;
-}
-
-export function injectGclEnvVars (
-    argv: Record<string, any>,
-    yargsOptions: YargsOptionsMeta,
-    env: Record<string, string | undefined>,
-    defaulted: Record<string, boolean> = {},
-): void {
-    const arrays = new Set(yargsOptions.array.map(String));
-    const booleans = new Set(yargsOptions.boolean.map(String));
-    const numbers = new Set(yargsOptions.number.map(String));
-
-    for (const key of Object.keys(yargsOptions.key)) {
-        if (key.includes("-") || key === "_" || key === "$0") continue;
-
-        const envKey = `GCL_${key.replace(/[A-Z]/g, c => `_${c}`).toUpperCase()}`;
-        const envValue = env[envKey];
-        if (envValue == null) continue;
-
-        if (arrays.has(key)) {
-            const cliValues = Array.isArray(argv[key]) ? argv[key] : [];
-            argv[key] = [...envValue.split(";"), ...cliValues];
-            continue;
-        }
-
-        if (argv[key] !== undefined && !defaulted[key]) continue;
-
-        if (booleans.has(key)) argv[key] = envValue === "true" || envValue === "1";
-        else if (numbers.has(key)) argv[key] = Number(envValue);
-        else argv[key] = envValue;
     }
 }
 

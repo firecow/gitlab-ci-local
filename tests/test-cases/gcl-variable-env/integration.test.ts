@@ -1,17 +1,56 @@
-import {injectGclVariableEnvVars, injectGclEnvVars} from "../../../src/argv.js";
+import {stripGclVariableEnvVars, injectGclVariableEnvVars} from "../../../src/argv.js";
 import {execFile} from "child_process";
 import {promisify} from "util";
 
 const execFileAsync = promisify(execFile);
 
-describe("injectGclVariableEnvVars unit tests", () => {
-    test("injects single GCL_VARIABLE_ entry", () => {
+describe("stripGclVariableEnvVars", () => {
+    test("strips GCL_VARIABLE_* entries and returns them", () => {
+        const env: Record<string, string | undefined> = {
+            "HOME": "/home/user",
+            "GCL_CWD": "/tmp",
+            "GCL_VARIABLE_MY_VAR": "hello",
+            "GCL_VARIABLE_OTHER": "world",
+        };
+        const stripped = stripGclVariableEnvVars(env);
+        expect(stripped).toEqual({
+            "GCL_VARIABLE_MY_VAR": "hello",
+            "GCL_VARIABLE_OTHER": "world",
+        });
+        expect(env["GCL_VARIABLE_MY_VAR"]).toBeUndefined();
+        expect(env["GCL_VARIABLE_OTHER"]).toBeUndefined();
+        expect(env["HOME"]).toBe("/home/user");
+        expect(env["GCL_CWD"]).toBe("/tmp");
+    });
+
+    test("skips GCL_VARIABLE_ with empty name", () => {
+        const env: Record<string, string | undefined> = {"GCL_VARIABLE_": "empty"};
+        const stripped = stripGclVariableEnvVars(env);
+        expect(stripped).toEqual({});
+        expect(env["GCL_VARIABLE_"]).toBe("empty");
+    });
+
+    test("skips null/undefined values", () => {
+        const env: Record<string, string | undefined> = {"GCL_VARIABLE_FOO": undefined};
+        const stripped = stripGclVariableEnvVars(env);
+        expect(stripped).toEqual({});
+    });
+
+    test("returns empty object when no matches", () => {
+        const env: Record<string, string | undefined> = {"HOME": "/home/user", "GCL_CWD": "/tmp"};
+        const stripped = stripGclVariableEnvVars(env);
+        expect(stripped).toEqual({});
+    });
+});
+
+describe("injectGclVariableEnvVars", () => {
+    test("injects single entry", () => {
         const argv: {variable?: string[]} = {};
         injectGclVariableEnvVars(argv, {"GCL_VARIABLE_MY_VAR": "hello"});
         expect(argv.variable).toEqual(["MY_VAR=hello"]);
     });
 
-    test("injects multiple GCL_VARIABLE_ entries", () => {
+    test("injects multiple entries", () => {
         const argv: {variable?: string[]} = {};
         injectGclVariableEnvVars(argv, {
             "GCL_VARIABLE_VAR1": "one",
@@ -34,28 +73,6 @@ describe("injectGclVariableEnvVars unit tests", () => {
         expect(argv.variable).toEqual(["SAME=from_env", "SAME=from_cli"]);
     });
 
-    test("skips non GCL_VARIABLE_ env vars", () => {
-        const argv: {variable?: string[]} = {};
-        injectGclVariableEnvVars(argv, {
-            "GCL_CWD": "/tmp",
-            "HOME": "/home/user",
-            "GCL_VARIABLE_REAL": "yes",
-        });
-        expect(argv.variable).toEqual(["REAL=yes"]);
-    });
-
-    test("skips GCL_VARIABLE_ with empty name", () => {
-        const argv: {variable?: string[]} = {};
-        injectGclVariableEnvVars(argv, {"GCL_VARIABLE_": "empty_name"});
-        expect(argv.variable).toBeUndefined();
-    });
-
-    test("skips null/undefined env values", () => {
-        const argv: {variable?: string[]} = {};
-        injectGclVariableEnvVars(argv, {"GCL_VARIABLE_FOO": undefined});
-        expect(argv.variable).toBeUndefined();
-    });
-
     test("handles empty value", () => {
         const argv: {variable?: string[]} = {};
         injectGclVariableEnvVars(argv, {"GCL_VARIABLE_FOO": ""});
@@ -72,89 +89,6 @@ describe("injectGclVariableEnvVars unit tests", () => {
         const argv: {variable?: string[]} = {};
         injectGclVariableEnvVars(argv, {"GCL_VARIABLE_FOO": "a;b;c"});
         expect(argv.variable).toEqual(["FOO=a;b;c"]);
-    });
-});
-
-describe("injectGclEnvVars unit tests", () => {
-    const baseOptions = {
-        array: ["volume"],
-        boolean: ["quiet"],
-        number: ["concurrency"],
-        default: {quiet: false, concurrency: 0, cwd: "."},
-        key: {quiet: true, concurrency: true, cwd: true, volume: true, _: true, $0: true, "some-kebab": true},
-    };
-
-    test("injects string env var", () => {
-        const argv: Record<string, any> = {cwd: ".", quiet: false};
-        injectGclEnvVars(argv, baseOptions, {"GCL_CWD": "/tmp/test"}, {cwd: true, quiet: true});
-        expect(argv.cwd).toBe("/tmp/test");
-    });
-
-    test("injects boolean env var", () => {
-        const argv: Record<string, any> = {quiet: false};
-        injectGclEnvVars(argv, baseOptions, {"GCL_QUIET": "true"}, {quiet: true});
-        expect(argv.quiet).toBe(true);
-    });
-
-    test("injects boolean env var from '1'", () => {
-        const argv: Record<string, any> = {quiet: false};
-        injectGclEnvVars(argv, baseOptions, {"GCL_QUIET": "1"}, {quiet: true});
-        expect(argv.quiet).toBe(true);
-    });
-
-    test("injects number env var", () => {
-        const argv: Record<string, any> = {concurrency: 0};
-        injectGclEnvVars(argv, baseOptions, {"GCL_CONCURRENCY": "4"}, {concurrency: true});
-        expect(argv.concurrency).toBe(4);
-    });
-
-    test("splits array env var on semicolons", () => {
-        const argv: Record<string, any> = {volume: []};
-        injectGclEnvVars(argv, baseOptions, {"GCL_VOLUME": "/a:/b;/c:/d"}, {volume: true});
-        expect(argv.volume).toEqual(["/a:/b", "/c:/d"]);
-    });
-
-    test("merges array env var with CLI values", () => {
-        const argv: Record<string, any> = {volume: ["/cli:/path"]};
-        injectGclEnvVars(argv, baseOptions, {"GCL_VOLUME": "/env:/path"}, {});
-        expect(argv.volume).toEqual(["/env:/path", "/cli:/path"]);
-    });
-
-    test("CLI explicit value takes precedence over env", () => {
-        const argv: Record<string, any> = {concurrency: 8};
-        injectGclEnvVars(argv, baseOptions, {"GCL_CONCURRENCY": "4"}, {});
-        expect(argv.concurrency).toBe(8);
-    });
-
-    test("CLI explicit value takes precedence even when matching default", () => {
-        const argv: Record<string, any> = {concurrency: 0};
-        injectGclEnvVars(argv, baseOptions, {"GCL_CONCURRENCY": "4"}, {});
-        expect(argv.concurrency).toBe(0);
-    });
-
-    test("env overrides when value was defaulted", () => {
-        const argv: Record<string, any> = {concurrency: 0};
-        injectGclEnvVars(argv, baseOptions, {"GCL_CONCURRENCY": "4"}, {concurrency: true});
-        expect(argv.concurrency).toBe(4);
-    });
-
-    test("skips keys with hyphens", () => {
-        const argv: Record<string, any> = {};
-        injectGclEnvVars(argv, baseOptions, {"GCL_SOME_KEBAB": "val"}, {});
-        expect(argv["some-kebab"]).toBeUndefined();
-    });
-
-    test("skips _ and $0 keys", () => {
-        const argv: Record<string, any> = {_: [], $0: "bin"};
-        injectGclEnvVars(argv, baseOptions, {"GCL__": "x", "GCL_$0": "y"}, {});
-        expect(argv._).toEqual([]);
-        expect(argv.$0).toBe("bin");
-    });
-
-    test("skips undefined env values", () => {
-        const argv: Record<string, any> = {quiet: false};
-        injectGclEnvVars(argv, baseOptions, {"GCL_QUIET": undefined}, {quiet: true});
-        expect(argv.quiet).toBe(false);
     });
 });
 

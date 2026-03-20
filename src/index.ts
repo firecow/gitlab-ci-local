@@ -6,7 +6,7 @@ import * as state from "./state.js";
 import {WriteStreamsProcess, WriteStreamsMock} from "./write-streams.js";
 import {handler} from "./handler.js";
 import {Executor} from "./executor.js";
-import {Argv, injectGclVariableEnvVars, injectGclEnvVars} from "./argv.js";
+import {Argv, stripGclVariableEnvVars, injectGclVariableEnvVars} from "./argv.js";
 import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job.js";
 import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
@@ -33,6 +33,7 @@ process.on("SIGUSR2", async () => {
 });
 
 (() => {
+    const gclVariableEnvVars = stripGclVariableEnvVars(process.env);
     const yparser = yargs(process.argv.slice(2));
     yparser.parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
@@ -41,9 +42,7 @@ process.on("SIGUSR2", async () => {
         .command({
             handler: async (argv) => {
                 try {
-                    const defaulted: Record<string, boolean> = (yparser as any).parsed?.defaulted ?? {};
-                    injectGclVariableEnvVars(argv, process.env);
-                    injectGclEnvVars(argv, (yparser as any).getOptions(), process.env, defaulted);
+                    injectGclVariableEnvVars(argv, gclVariableEnvVars);
                     await handler(argv, new WriteStreamsProcess(), jobs);
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
@@ -77,6 +76,7 @@ process.on("SIGUSR2", async () => {
         })
         .usage("Find more information at https://github.com/firecow/gitlab-ci-local.\nNote: To negate an option use '--no-(option)'.")
         .strictOptions()
+        .env("GCL")
         .option("manual", {
             type: "array",
             description: "One or more manual jobs to run during a pipeline",
@@ -366,9 +366,7 @@ process.on("SIGUSR2", async () => {
                 if (current.startsWith("-")) {
                     completionFilter();
                 } else {
-                    const completionDefaulted: Record<string, boolean> = (yparser as any).parsed?.defaulted ?? {};
-                    injectGclVariableEnvVars(yargsArgv, process.env);
-                    injectGclEnvVars(yargsArgv, (yparser as any).getOptions(), process.env, completionDefaulted);
+                    injectGclVariableEnvVars(yargsArgv, gclVariableEnvVars);
                     Argv.build({...yargsArgv, autoCompleting: true})
                         .then(argv => state.getPipelineIid(argv.cwd, argv.stateDir).then(pipelineIid => ({argv, pipelineIid})))
                         .then(({argv, pipelineIid}) => Parser.create(argv, new WriteStreamsMock(), pipelineIid, []))
