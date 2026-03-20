@@ -326,10 +326,11 @@ process.on("SIGUSR2", async () => {
             description: "The json schema paths that will be ignored",
         })
         .option("ignore-predefined-vars", {
-            type: "array",
+            type: "string",
+            coerce: (v) => v.split(","),
             requiresArg: false,
             default: Argv.default.ignorePredefinedVars,
-            describe: "Predefined pipeline variables for which warnings should be suppressed",
+            describe: "Comma-seperated list of predefined pipeline variables for which warnings should be suppressed",
         })
         .option("concurrency", {
             type: "number",

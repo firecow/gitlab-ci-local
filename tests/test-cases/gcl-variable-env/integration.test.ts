@@ -1,7 +1,6 @@
-import {stripGclVariableEnvVars, injectGclVariableEnvVars, Argv} from "../../../src/argv.js";
+import {stripGclVariableEnvVars, injectGclVariableEnvVars} from "../../../src/argv.js";
 import {execFile} from "child_process";
 import {promisify} from "util";
-import {WriteStreamsMock} from "../../../src/write-streams.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -90,28 +89,6 @@ describe("injectGclVariableEnvVars", () => {
         const argv: {variable?: string[]} = {};
         injectGclVariableEnvVars(argv, {"GCL_VARIABLE_FOO": "a;b;c"});
         expect(argv.variable).toEqual(["FOO=a;b;c"]);
-    });
-});
-
-describe("Argv.ignorePredefinedVars", () => {
-    test("returns empty array by default", async () => {
-        const argv = await Argv.build({cwd: "tests/test-cases/gcl-variable-env"}, new WriteStreamsMock());
-        expect(argv.ignorePredefinedVars).toEqual([]);
-    });
-
-    test("handles array input", async () => {
-        const argv = await Argv.build({cwd: "tests/test-cases/gcl-variable-env", ignorePredefinedVars: ["VAR1", "VAR2"]}, new WriteStreamsMock());
-        expect(argv.ignorePredefinedVars).toEqual(["VAR1", "VAR2"]);
-    });
-
-    test("splits comma-separated values in array elements", async () => {
-        const argv = await Argv.build({cwd: "tests/test-cases/gcl-variable-env", ignorePredefinedVars: ["VAR1,VAR2"]}, new WriteStreamsMock());
-        expect(argv.ignorePredefinedVars).toEqual(["VAR1", "VAR2"]);
-    });
-
-    test("handles string input for backwards compatibility", async () => {
-        const argv = await Argv.build({cwd: "tests/test-cases/gcl-variable-env", ignorePredefinedVars: "VAR1,VAR2"}, new WriteStreamsMock());
-        expect(argv.ignorePredefinedVars).toEqual(["VAR1", "VAR2"]);
     });
 });
 

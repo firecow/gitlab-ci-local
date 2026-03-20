@@ -51,7 +51,7 @@ export class Argv {
         "variablesFile": ".gitlab-ci-local-variables.yml",
         "evaluateRuleChanges": true,
         "ignoreSchemaPaths": [],
-        "ignorePredefinedVars": [] as string[],
+        "ignorePredefinedVars": "",
     };
 
     map: Map<string, any> = new Map<string, any>();
@@ -187,9 +187,7 @@ export class Argv {
     }
 
     get ignorePredefinedVars (): string[] {
-        const val = this.map.get("ignorePredefinedVars") ?? [];
-        if (!Array.isArray(val)) return val ? String(val).split(",") : [];
-        return val.flatMap((v: string) => v.split(","));
+        return this.map.get("ignorePredefinedVars") ?? Argv.default.ignorePredefinedVars;
     }
 
     get pullPolicy (): string {
