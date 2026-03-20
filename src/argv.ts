@@ -22,7 +22,7 @@ async function gitRootPath () {
     return stdout;
 }
 
-export function injectGclVariableEnvVars (argv: {variable?: string[]}, env: Record<string, string | undefined>): void {
+export function injectGclVariableEnvVars (argv: {variable?: string[]; [key: string]: any}, env: Record<string, string | undefined>): void {
     const prefix = "GCL_VARIABLE_";
     for (const [envKey, envValue] of Object.entries(env)) {
         if (!envKey.startsWith(prefix) || envValue == null) continue;
@@ -47,6 +47,7 @@ export function injectGclEnvVars (
     argv: Record<string, any>,
     yargsOptions: YargsOptionsMeta,
     env: Record<string, string | undefined>,
+    defaulted: Record<string, boolean> = {},
 ): void {
     const arrays = new Set(yargsOptions.array.map(String));
     const booleans = new Set(yargsOptions.boolean.map(String));
@@ -65,7 +66,7 @@ export function injectGclEnvVars (
             continue;
         }
 
-        if (argv[key] !== undefined && argv[key] !== yargsOptions.default[key]) continue;
+        if (argv[key] !== undefined && !defaulted[key]) continue;
 
         if (booleans.has(key)) argv[key] = envValue === "true" || envValue === "1";
         else if (numbers.has(key)) argv[key] = Number(envValue);
