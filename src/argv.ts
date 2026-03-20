@@ -27,8 +27,9 @@ export function stripGclVariableEnvVars (env: Record<string, string | undefined>
     const stripped: Record<string, string> = {};
     for (const key of Object.keys(env)) {
         if (!key.startsWith(prefix) || env[key] == null) continue;
-        if (key.length <= prefix.length) continue;
-        stripped[key] = env[key]!;
+        if (key.length > prefix.length) {
+            stripped[key] = env[key]!;
+        }
         delete env[key];
     }
     return stripped;
