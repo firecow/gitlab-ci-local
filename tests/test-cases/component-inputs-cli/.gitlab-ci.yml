@@ -1,0 +1,6 @@
+---
+include:
+  - component: $CI_SERVER_HOST/$CI_PROJECT_PATH/deploy@$CI_COMMIT_SHA
+
+stages:
+  - deploy

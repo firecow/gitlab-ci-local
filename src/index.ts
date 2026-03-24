@@ -132,6 +132,12 @@ process.on("SIGUSR2", async () => {
             requiresArg: true,
             default: Argv.default.variablesFile,
         })
+        .option("inputs-file", {
+            type: "string",
+            description: "Path to the component inputs file",
+            requiresArg: true,
+            default: Argv.default.inputsFile,
+        })
         .option("completion", {
             type: "boolean",
             description: "Generate tab completion script",
@@ -166,6 +172,11 @@ process.on("SIGUSR2", async () => {
         .option("unset-variable", {
             type: "array",
             description: "Unsets a variable (--unset-variable HELLO)",
+            requiresArg: false,
+        })
+        .option("input", {
+            type: "array",
+            description: "Add input to component includes (--input KEY=value)",
             requiresArg: false,
         })
         .option("remote-variables", {

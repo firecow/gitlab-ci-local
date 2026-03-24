@@ -1,0 +1,19 @@
+---
+spec:
+  inputs:
+    environment:
+      type: string
+      default: dev
+    replicas:
+      type: number
+      default: 1
+    enable_cache:
+      type: boolean
+      default: false
+---
+deploy-$[[ inputs.environment ]]:
+  stage: deploy
+  script:
+    - echo "Deploying to $[[ inputs.environment ]]"
+    - echo "Replicas $[[ inputs.replicas ]]"
+    - echo "Cache enabled $[[ inputs.enable_cache ]]"

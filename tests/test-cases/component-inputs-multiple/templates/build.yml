@@ -1,0 +1,15 @@
+---
+spec:
+  inputs:
+    go_version:
+      type: string
+      default: "1.20"
+    cache_enabled:
+      type: boolean
+      default: false
+---
+build-job:
+  stage: build
+  script:
+    - echo "Build with Go $[[ inputs.go_version ]]"
+    - echo "Cache $[[ inputs.cache_enabled ]]"

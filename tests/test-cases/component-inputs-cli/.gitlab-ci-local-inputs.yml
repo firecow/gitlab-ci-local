@@ -1,0 +1,4 @@
+---
+environment: production
+replicas: 5
+enable_cache: true

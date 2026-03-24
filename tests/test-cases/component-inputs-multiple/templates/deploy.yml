@@ -1,0 +1,14 @@
+---
+spec:
+  inputs:
+    environment:
+      type: string
+      default: dev
+    replicas:
+      type: number
+      default: 1
+---
+deploy-job:
+  stage: deploy
+  script:
+    - echo "Deploy to $[[ inputs.environment ]] with $[[ inputs.replicas ]] replicas"

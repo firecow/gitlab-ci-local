@@ -60,6 +60,7 @@ export function injectGclVariableEnvVars (argv: {variable?: string[]; [key: stri
 export class Argv {
     static readonly default = {
         "variablesFile": ".gitlab-ci-local-variables.yml",
+        "inputsFile": ".gitlab-ci-local-inputs.yml",
         "evaluateRuleChanges": true,
         "ignoreSchemaPaths": [],
         "ignorePredefinedVars": "",
@@ -165,6 +166,10 @@ export class Argv {
         return this.map.get("variablesFile") ?? Argv.default.variablesFile;
     }
 
+    get inputsFile (): string {
+        return this.map.get("inputsFile") ?? Argv.default.inputsFile;
+    }
+
     get evaluateRuleChanges (): boolean {
         return this.map.get("evaluateRuleChanges") ?? Argv.default.evaluateRuleChanges;
     }
@@ -216,6 +221,39 @@ export class Argv {
             }
         }
         return variables;
+    }
+
+    get input (): {[key: string]: any} {
+        const val = this.map.get("input");
+        const inputs: {[key: string]: any} = {};
+        const pairs = typeof val == "string" ? val.split(" ") : val;
+        (pairs ?? []).forEach((inputPair: string) => {
+            // Support component-specific syntax: component:key=value or key=value
+            const exec = /(?:(?<component>[\w-]+):)?(?<key>[\w-]+)(=)(?<value>(.|\n|\r)*)/.exec(inputPair);
+            if (exec?.groups?.key) {
+                const value = exec?.groups?.value;
+                const key = exec.groups.key;
+                const component = exec.groups.component;
+                
+                // Try to parse as JSON for arrays/objects/booleans/numbers
+                let parsedValue;
+                try {
+                    parsedValue = JSON.parse(value);
+                } catch {
+                    parsedValue = value;
+                }
+                
+                if (component) {
+                    // Component-specific input: store under component namespace
+                    if (!inputs[component]) inputs[component] = {};
+                    inputs[component][key] = parsedValue;
+                } else {
+                    // Global input
+                    inputs[key] = parsedValue;
+                }
+            }
+        });
+        return inputs;
     }
 
     get unsetVariables (): string[] {

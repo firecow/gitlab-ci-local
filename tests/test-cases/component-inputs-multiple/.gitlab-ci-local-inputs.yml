@@ -1,0 +1,10 @@
+---
+_global:
+  environment: production
+
+deploy:
+  replicas: 5
+
+build:
+  go_version: "1.21"
+  cache_enabled: true
