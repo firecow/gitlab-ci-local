@@ -179,6 +179,16 @@ test-job    Run Tests    test    on_success  false
 build-job                build   on_success  true           [test-job]
 ```
 
+#### --list-rule
+
+The command `gitlab-ci-local --list-rule` will return pretty output and will also display the rule that the job matched on.
+
+```text
+name        description  stage   when        allow_failure  needs        rule
+test-job    Run Tests    test    on_success  false
+build-job                build   on_success  true           [test-job]   RUN_PIPELINE == "true"
+```
+
 #### --list-all
 
 Same as `--list` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via rules).

@@ -106,6 +106,7 @@ export class Job {
         exit_codes: number | number[];
     };
     readonly when: string;
+    readonly matchedRule: string | undefined;
     readonly exists: string[];
     readonly pipelineIid: number;
     readonly gitData: GitData;
@@ -201,8 +202,11 @@ export class Job {
         let ruleVariables: {[name: string]: string} | undefined;
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
+            console.log(this.rules)
             const ruleResult = Utils.getRulesResult({argv, cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when, this.allowFailure);
+            console.log(ruleResult)
             this.when = ruleResult.when;
+            this.matchedRule = ruleResult.matchedRule
             this.allowFailure = ruleResult.allowFailure;
             ruleVariables = ruleResult.variables;
             this._variables = {...this._variables, ...ruleVariables, ...argvVariables};
@@ -220,7 +224,6 @@ export class Job {
             this.environment.url = Utils.expandText(this.environment.url, expanded);
         }
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
-
         const userDefinedVariables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
         this.discourageOverridingOfPredefinedVariables(predefinedVariables, userDefinedVariables, argv.ignorePredefinedVars);
 

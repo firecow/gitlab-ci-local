@@ -50,10 +50,10 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
             }
         }
         writeStreams.stdout(`---\n${yaml.dump(gitlabData, {lineWidth: 160})}`);
-    } else if (argv.list || argv.listAll) {
+    } else if (argv.list || argv.listAll || argv.listRule) {
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
-        Commander.runList(parser, writeStreams, argv.listAll);
+        Commander.runList(parser, writeStreams, argv.listAll, argv.listRule);
     } else if (argv.validateDependencyChain) {
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);

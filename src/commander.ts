@@ -195,7 +195,8 @@ export class Commander {
         }
     }
 
-    static runList (parser: Parser, writeStreams: WriteStreams, listAll: boolean) {
+
+    static runList (parser: Parser, writeStreams: WriteStreams, listAll: boolean, listRule: boolean) {
         const stages = parser.stages;
         let jobs = [...parser.jobs.values()];
         jobs.sort((a, b) => {
@@ -207,11 +208,14 @@ export class Commander {
 
         let stagePadEnd = 5;
         stages.forEach(s => stagePadEnd = Math.max(s.length, stagePadEnd));
+        console.log(stagePadEnd)
 
         let descriptionPadEnd = 11;
         jobs.forEach(j => descriptionPadEnd = Math.max(j.description.length, descriptionPadEnd));
 
         const jobNamePad = parser.jobNamePad;
+
+        const needsPadEnd = this.determineNeedsPad(jobs)
 
         if (!listAll) {
             jobs = jobs.filter(j => j.when !== "never");
@@ -219,7 +223,11 @@ export class Commander {
 
         writeStreams.stdout(chalk`{grey ${"name".padEnd(jobNamePad)}  ${"description".padEnd(descriptionPadEnd)}}  `);
         writeStreams.stdout(chalk`{grey ${"stage".padEnd(stagePadEnd)}  ${"when".padEnd(whenPadEnd)}}  `);
-        writeStreams.stdout(chalk`{grey allow_failure  needs}\n`);
+        writeStreams.stdout(chalk`{grey ${"allow_failure"}  ${"needs".padEnd(needsPadEnd)}}`);
+        if (listRule) {
+            writeStreams.stdout(chalk`{grey rule}`);
+        }
+        writeStreams.stdout(chalk`\n`);
 
         const renderLine = (job: Job) => {
             const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job);
@@ -227,12 +235,34 @@ export class Commander {
             let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
             jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
             if (needs) {
-                jobLine += chalk`    [{blueBright ${needs}}]`;
+                let needsString = chalk`    [ {blueBright ${needs}} ]`
+                jobLine += chalk`${needsString.padEnd(needsPadEnd)}`;
+            }
+            if (listRule && job.matchedRule){
+                jobLine += chalk`{yellow  ${job.matchedRule} }`
             }
             writeStreams.stdout(`${jobLine}\n`);
         };
 
         jobs.forEach((job) => renderLine(job));
+    }
+
+    static determineNeedsPad (jobs: Job[]) {
+        let longestNeeds = 0;
+
+        jobs.forEach((job) => {
+            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job);
+            if (!needs){
+                return
+            }
+            let needsLength = needs.toString().length
+            console.log(needsLength)
+            if (needsLength > longestNeeds) {
+                longestNeeds = needsLength
+            }
+        })
+
+        return longestNeeds+5;
     }
 
     static runJson (parser: Parser, writeStreams: WriteStreams) {

@@ -188,27 +188,33 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} = false): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}} {
+    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} = false): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}; matchedRule?: string} {
         let when = "never";
         const {evaluateRuleChanges} = opt.argv;
+        let matchedRule: string | undefined;
 
         // optional manual jobs allowFailure defaults to true https://docs.gitlab.com/ee/ci/jobs/job_control.html#types-of-manual-jobs
         let allowFailure = jobWhen === "manual" ? true : jobAllowFailure;
         let ruleVariable: {[name: string]: string} | undefined;
 
         for (const rule of opt.rules) {
+            console.log("evaluating ", rule)
+            console.log(typeof(rule))
             if (!Utils.evaluateRuleIf(rule.if, opt.variables)) continue;
+            console.log("evaluateRuleIf was true (?) for ", rule)
             if (!Utils.evaluateRuleExist(opt.cwd, rule.exists)) continue;
             if (evaluateRuleChanges && !Utils.evaluateRuleChanges(gitData.branches.default, rule.changes, opt.cwd)) continue;
 
             when = rule.when ? rule.when : jobWhen;
             allowFailure = rule.allow_failure ?? allowFailure;
             ruleVariable = rule.variables;
+            matchedRule = rule.if;
+            console.log(matchedRule, typeof(matchedRule))
 
             break; // Early return, will not evaluate the remaining rules
         }
 
-        return {when, allowFailure, variables: ruleVariable};
+        return {when, allowFailure, variables: ruleVariable, matchedRule};
     }
 
     static evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]: string}): boolean {
@@ -316,6 +322,7 @@ export class Utils {
             ];
             assert(false, assertMsg.join("\n"));
         }
+        console.log(res)
         return Boolean(res);
     }
 
