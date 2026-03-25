@@ -226,6 +226,7 @@ export class Job {
             this.environment.url = Utils.expandText(this.environment.url, expanded);
         }
         const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
+
         const userDefinedVariables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
         this.discourageOverridingOfPredefinedVariables(predefinedVariables, userDefinedVariables, argv.ignorePredefinedVars);
 

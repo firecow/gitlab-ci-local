@@ -187,12 +187,12 @@ build-job                build   on_success  true           [test-job]
 
 #### --list-rule
 
-The command `gitlab-ci-local --list-rule` will return pretty output and will also display the rule that the job matched on.
+The command `gitlab-ci-local --list-rule` will return pretty output and will also display the rule that a job matched on, if any.
 
 ```text
-name        description  stage   when        allow_failure  needs        rule
+name        description  stage   when        allow_failure  rule
 test-job    Run Tests    test    on_success  false
-build-job                build   on_success  true           [test-job]   RUN_PIPELINE == "true"
+build-job                build   on_success  true           RULE_VARIABLE == "true"
 ```
 
 #### --list-all
