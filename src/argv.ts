@@ -227,13 +227,18 @@ export class Argv {
         const val = this.map.get("input");
         const inputs: {[key: string]: any} = {};
         const pairs = typeof val == "string" ? val.split(" ") : val;
+        const dangerousKeys = new Set(["__proto__", "constructor", "prototype"]);
         (pairs ?? []).forEach((inputPair: string) => {
             // Support component-specific syntax: component:key=value or key=value
-            const exec = /(?:(?<component>[\w-]+):)?(?<key>[\w-]+)(=)(?<value>(.|\n|\r)*)/.exec(inputPair);
+            // Component names may contain word chars, hyphens, and slashes (e.g. templates/deploy)
+            const exec = /(?:(?<component>[\w\-/]+):)?(?<key>[\w-]+)(=)(?<value>(.|\n|\r)*)/.exec(inputPair);
             if (exec?.groups?.key) {
                 const value = exec?.groups?.value;
                 const key = exec.groups.key;
                 const component = exec.groups.component;
+
+                // Guard against prototype pollution
+                if (dangerousKeys.has(key) || dangerousKeys.has(component ?? "")) return;
                 
                 // Try to parse as JSON for arrays/objects/booleans/numbers
                 let parsedValue;

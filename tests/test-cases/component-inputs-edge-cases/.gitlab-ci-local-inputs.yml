@@ -1,0 +1,6 @@
+---
+_global:
+  environment: production
+
+deploy:
+  replicas: 3

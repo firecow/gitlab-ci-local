@@ -6,3 +6,4 @@ artifacts/log.txt
 !gitignore/.gitlab-ci-local
 !component-inputs-cli/.gitlab-ci-local-inputs.yml
 !component-inputs-multiple/.gitlab-ci-local-inputs.yml
+!component-inputs-edge-cases/.gitlab-ci-local-inputs.yml

@@ -174,7 +174,7 @@ export class ParserIncludes {
                 const componentName = component.name.replace(/^templates\//, "");
                 const fileComponentInputs = isStructured ? (fileInputs[componentName] ?? {}) : {};
                 const cliComponentSpecificInputs = cliComponentInputs[componentName] ?? {};
-                const mergedInputs = {...(value.inputs ?? {}), ...globalInputs, ...fileComponentInputs, ...cliComponentSpecificInputs, ...cliGlobalInputs};
+                const mergedInputs = {...(value.inputs ?? {}), ...globalInputs, ...fileComponentInputs, ...cliComponentSpecificInputs};
                 const fileDoc = await Parser.loadYaml(file, {inputs: mergedInputs}, expandVariables, writeStreams);
                 // Expand local includes inside to a "project"-like include
                 fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], component.projectPath, component.ref, opts);
