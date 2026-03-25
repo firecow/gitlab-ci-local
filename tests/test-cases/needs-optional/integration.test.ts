@@ -7,11 +7,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("needs-optional", async () => {
+test.concurrent("needs-optional", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-optional",
         needs: true,
+        stateDir: ".gitlab-ci-local-needs-optional",
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join();

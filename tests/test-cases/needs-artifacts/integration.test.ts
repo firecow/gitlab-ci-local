@@ -8,9 +8,9 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("needs-artifacts <test-job> --needs --shell-isolation", async () => {
+test.concurrent("needs-artifacts <test-job> --needs --shell-isolation", async () => {
     // Test if one.txt is actually remove from consumer (test-job) before script execution
-    await fs.outputFile("tests/test-cases/needs-artifacts/.gitlab-ci-local/builds/test-job/one.txt", "");
+    await fs.outputFile("tests/test-cases/needs-artifacts/.gitlab-ci-local-needs-artifacts/builds/test-job/one.txt", "");
 
     const writeStreams = new WriteStreamsMock();
     await handler({
@@ -18,6 +18,7 @@ test("needs-artifacts <test-job> --needs --shell-isolation", async () => {
         job: ["test-job"],
         needs: true,
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-needs-artifacts",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);

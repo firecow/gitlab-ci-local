@@ -8,12 +8,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("custom-ca-cert <test-ca-cert>", async () => {
+test.concurrent("custom-ca-cert <test-ca-cert>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/custom-ca-cert",
         job: ["test-ca-cert"],
         caFile: "ca-cert.crt",
+        stateDir: ".gitlab-ci-local-custom-ca-cert",
     }, writeStreams);
 
     const expected = [

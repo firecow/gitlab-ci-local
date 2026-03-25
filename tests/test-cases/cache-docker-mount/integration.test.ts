@@ -5,8 +5,6 @@ import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import {Utils} from "../../../src/utils.js";
 
-import.meta.jest.setTimeout(45000);
-
 beforeAll(() => {
     const spyGitRemote = {
         cmdArgs: ["git", "remote", "get-url", "origin"],
@@ -15,7 +13,7 @@ beforeAll(() => {
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 });
 
-test("cache-docker-mount <consume-cache> --mount-cache --needs", async () => {
+test.concurrent("cache-docker-mount <consume-cache> --mount-cache --needs", async () => {
     void Utils.spawn(["docker", "volume", "rm", "-f", "gcl-gcl-cache-docker-mount-mavenLw"]);
     const writeStreams = new WriteStreamsMock();
     await handler({
@@ -23,9 +21,10 @@ test("cache-docker-mount <consume-cache> --mount-cache --needs", async () => {
         job: ["consume-cache"],
         needs: true,
         mountCache: true,
+        stateDir: ".gitlab-ci-local-cache-docker-mount",
     }, writeStreams);
 
-    expect(await fs.pathExists("tests/test-cases/cache-docker-mount/.gitlab-ci-local/cache/maven/")).toEqual(false);
+    expect(await fs.pathExists("tests/test-cases/cache-docker-mount/.gitlab-ci-local-cache-docker-mount/cache/maven/")).toEqual(false);
     expect((await Utils.bash("docker volume ls | grep -w gcl-gcl-cache-docker-mount-mavenLw")).exitCode).toBe(0);
 
 });

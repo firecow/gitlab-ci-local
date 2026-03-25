@@ -8,73 +8,81 @@ on:
       - master
   pull_request:
 
-env:
-  PKG_CACHE_PATH: .pkg
-
 jobs:
 
   yamllint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: ibiqlik/action-yamllint@v3
+      - uses: actions/checkout@v6.0.2
+      - uses: ibiqlik/action-yamllint@v3.1.1
         with:
           strict: true
 
   smoke-test:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        node-version: [24, 25]
+        bun-version: [1.2.23, 1.3.10]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: ${{ matrix.bun-version }}
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
-          cache: 'npm'
-      - uses: actions/cache@v5.0.1
+          node-version: ${{ matrix.node-version }}
+      - run: bun install --frozen-lockfile
+      - run: bun run build:linux-amd64
+      - run: bin/linux-amd64/gitlab-ci-local --version
+      - run: bin/linux-amd64/gitlab-ci-local --help
+      - run: bun run build:node
+      - run: node dist/index.js --version
+      - run: node dist/index.js --help
+      - run: head -1 dist/index.js | grep -q '#!/usr/bin/env node'
+
+  typecheck:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: oven-sh/setup-bun@v2.2.0
         with:
-          path: ${{ env.PKG_CACHE_PATH }}
-          key: pkg-cache-${{ matrix.node-version }}
-      - run: npm ci
-      - run: npm run esbuild
-      - run: npm run pkg-linux
-      - run: node bin/index.cjs --version
-      - run: bin/linux/gitlab-ci-local --version
-      - run: bin/linux/gitlab-ci-local --help
+          bun-version: 1.3.11
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
 
   eslint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v6.0.2
+      - uses: oven-sh/setup-bun@v2.2.0
         with:
-          node-version: '24'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint
+          bun-version: 1.3.11
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
 
   unused-deps:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v6.0.2
+      - uses: oven-sh/setup-bun@v2.2.0
         with:
-          node-version: '24'
-          cache: 'npm'
-      - run: npm ci
-      - run: npx depcheck --ignores depcheck
+          bun-version: 1.3.11
+      - run: bun install --frozen-lockfile
+      - run: bunx depcheck --ignores depcheck,@types/bun,@types/bun-types,vitest,@vitest/coverage-v8
 
-  jest:
+  test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6.0.1
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v6.1.0
+      - uses: oven-sh/setup-bun@v2.2.0
         with:
-          node-version: '24'
-          cache: 'npm'
-      - run: npm ci
+          bun-version: 1.3.11
+      - run: bun install --frozen-lockfile
       - name: Run Tests
-        run: npm run coverage
+        run: bun run coverage
       - uses: sonarsource/sonarqube-scan-action@v7.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -90,16 +98,16 @@ jobs:
       security-events: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
-      with:
-        languages: 'typescript'
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4.34.0
+        with:
+          languages: 'typescript'
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v4
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4.34.0
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4.34.0

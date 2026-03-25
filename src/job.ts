@@ -81,6 +81,7 @@ export type JobRule = {
     exists?: string[];
     allow_failure?: boolean;
     variables?: {[name: string]: string};
+    needs?: any[];
 };
 
 export class Job {
@@ -163,7 +164,7 @@ export class Job {
         this.allowFailure = jobData.allow_failure ?? false;
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
-        this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : jobData.environment;
+        this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : (jobData.environment ? {...jobData.environment} : jobData.environment);
 
         const matrixVariables = opt.matrixVariables ?? {};
         const fileVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
@@ -202,13 +203,14 @@ export class Job {
         let ruleVariables: {[name: string]: string} | undefined;
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
-            console.log(this.rules)
-            const ruleResult = Utils.getRulesResult({argv, cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when, this.allowFailure);
-            console.log(ruleResult)
+            const ruleResult = Utils.getRulesResult({argv, cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when, jobData.allow_failure);
             this.when = ruleResult.when;
             this.matchedRule = ruleResult.matchedRule
             this.allowFailure = ruleResult.allowFailure;
             ruleVariables = ruleResult.variables;
+            if (ruleResult.needs) {
+                this.jobData["needs"] = ruleResult.needs;
+            }
             this._variables = {...this._variables, ...ruleVariables, ...argvVariables};
         }
 
@@ -342,7 +344,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
         }
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
-        predefinedVariables["CI_REGISTRY"] = `local-registry.${this.gitData.remote.host}`;
+        predefinedVariables["CI_REGISTRY"] = predefinedVariables["CI_REGISTRY"] = this.argv.registry ? Utils.gclRegistryPrefix : `local-registry.${this.gitData.remote.host}`;
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${predefinedVariables["CI_PROJECT_PATH"].toLowerCase()}`;
         return predefinedVariables;
     }
@@ -771,11 +773,19 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
     }
 
+    private _cleanupPromise: Promise<void> | null = null;
+
     async cleanupResources () {
         clearTimeout(this._longRunningSilentTimeout);
 
         if (!this.argv.cleanup) return;
 
+        if (this._cleanupPromise) return this._cleanupPromise;
+        this._cleanupPromise = this._doCleanupResources();
+        return this._cleanupPromise;
+    }
+
+    private async _doCleanupResources () {
         if (this._containersToClean.length > 0) {
             try {
                 await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", ...this._containersToClean]);
@@ -912,6 +922,11 @@ If you know what you're doing and would like to suppress this warning, use one o
             });
         }
 
+        if (this.argv.registry) {
+            expanded["CI_REGISTRY_USER"] = expanded["CI_REGISTRY_USER"] ?? `${Utils.gclRegistryPrefix}.user`;
+            expanded["CI_REGISTRY_PASSWORD"] = expanded["CI_REGISTRY_PASSWORD"] ?? `${Utils.gclRegistryPrefix}.password`;
+        }
+
         this.refreshLongRunningSilentTimeout(writeStreams);
 
         if (imageName && !this._containerId) {
@@ -934,6 +949,10 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             if (this.argv.userns != undefined) {
                 dockerCmd += `--userns=${this.argv.userns} `;
+            }
+
+            if (this.argv.shmSize != undefined) {
+                dockerCmd += `--shm-size=${this.argv.shmSize} `;
             }
 
             if (this.argv.containerMacAddress) {
@@ -978,6 +997,12 @@ If you know what you're doing and would like to suppress this warning, use one o
             if (this._serviceNetworkId) {
                 // `build` alias: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/27060
                 dockerCmd += `--network ${this._serviceNetworkId} --network-alias build `;
+            }
+
+            if (this.argv.registry) {
+                dockerCmd += `--network ${Utils.gclRegistryPrefix}.net `;
+                dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
+                dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/docker/certs.d:ro `;
             }
 
             dockerCmd += `--volume ${buildVolumeName}:${this.ciProjectDir} `;
@@ -1092,14 +1117,33 @@ If you know what you're doing and would like to suppress this warning, use one o
             env: imageName ? process.env : expanded,
         });
 
+        // eslint-disable-next-line no-control-regex
+        const sectionRegex = /\x1b\[0Ksection_(start|end):(\d+):([^\s[]+)(?:\[[^\]]*\])?\r\x1b\[0K/;
+        const sectionStartTimes = new Map<string, number>();
+
         const outFunc = (line: string, stream: (txt: string) => void, colorize: (str: string) => string) => {
             this.refreshLongRunningSilentTimeout(writeStreams);
+
+            const m = sectionRegex.exec(line);
+            let isSection = false;
+            if (m) {
+                isSection = true;
+                if (m[1] === "start") {
+                    sectionStartTimes.set(m[3], Date.now());
+                    line = chalk`{cyanBright ${m[3]}_started}`;
+                } else {
+                    const elapsed = Date.now() - (sectionStartTimes.get(m[3]) ?? Date.now());
+                    line = chalk`{cyanBright ${m[3]}} took {magenta ${elapsed}ms}`;
+                    sectionStartTimes.delete(m[3]);
+                }
+            }
+
             stream(`${this.formattedJobName} `);
             if (line.startsWith(GCL_SHELL_PROMPT_PLACEHOLDER)) {
                 // replace the GCL_SHELL_PROMPT_PLACEHOLDER with `$` and make the SHELL_PROMPT line green color
                 line = line.slice(GCL_SHELL_PROMPT_PLACEHOLDER.length);
                 line = chalk`{green $${line}}`;
-            } else {
+            } else if (!isSection) {
                 stream(`${colorize(">")} `);
             }
             stream(`${line}\n`);
@@ -1309,7 +1353,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             for (const path of c.paths) {
                 if (!Utils.isSubpath(path, this.argv.cwd, this.argv.cwd)) continue;
 
-                paths += " " + Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
+                paths += " ./" + Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
             }
 
             time = process.hrtime();
@@ -1382,7 +1426,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
         for (const artifactPath of this.artifacts?.paths ?? []) {
             const expandedPath = Utils.expandText(artifactPath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
-            cpCmd += `${expandedPath} `;
+            cpCmd += `./${expandedPath} `;
         }
         cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
         const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, expanded);
@@ -1393,7 +1437,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             reportDotenvs.forEach((reportDotenv) => {
                 cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
                 cpCmd += `if [ -f ${reportDotenv} ]; then\n`;
-                cpCmd += `  rsync -Ra ${reportDotenv} ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
+                cpCmd += `  rsync -Ra ./${reportDotenv} ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
                 cpCmd += "fi\n";
             });
         }
@@ -1435,7 +1479,10 @@ If you know what you're doing and would like to suppress this warning, use one o
         await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName(this._variables)) {
-            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${cmd.replace(/"/g, "\\\"")}"`, cwd);
+            const cmdWithWritablePerms = `${cmd}\nchmod -R u+w /${type} 2>/dev/null || true`;
+            // eslint-disable-next-line @stylistic/quotes
+            const escapedCmd = cmdWithWritablePerms.replaceAll('"', String.raw`\"`);
+            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${escapedCmd}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
             await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
@@ -1500,10 +1547,6 @@ If you know what you're doing and would like to suppress this warning, use one o
         let dockerCmd = `${this.argv.containerExecutable} create --interactive `;
         this.refreshLongRunningSilentTimeout(writeStreams);
 
-        if (this.argv.umask) {
-            dockerCmd += "--user 0:0 ";
-        }
-
         if (this.argv.userns != undefined) {
             dockerCmd += `--userns=${this.argv.userns} `;
         }
@@ -1518,6 +1561,10 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         if (this.argv.ulimit !== null) {
             dockerCmd += `--ulimit nofile=${this.argv.ulimit} `;
+        }
+
+        if (this.argv.shmSize != undefined) {
+            dockerCmd += `--shm-size=${this.argv.shmSize} `;
         }
 
         for (const volume of this.argv.volume) {
@@ -1599,6 +1646,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         const serviceAlias = service.alias;
         const serviceName = service.name;
         const waitImageName = this.argv.waitImage;
+        const waitForServicesTimeout = this.argv.waitForServicesTimeout;
 
         const {stdout} = await Utils.spawn([this.argv.containerExecutable, "image", "inspect", serviceName]);
         const imageInspect = JSON.parse(stdout);
@@ -1623,7 +1671,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
                 const containerName = `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`;
-                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${uniqueAlias}:${portNum}`, "-t", "30"];
+                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${uniqueAlias}:${portNum}`, "-t", `${waitForServicesTimeout}`];
                 this._containersToClean.push(containerName);
                 return Utils.spawn(spawnCmd);
             }));
@@ -1665,14 +1713,14 @@ If you know what you're doing and would like to suppress this warning, use one o
                 }
 
                 for (const file of files) {
-                    const content = await Parser.loadYaml(file, {});
+                    const content = await Parser.loadYaml(file, {}, true, this.writeStreams);
                     contents = {
                         ...contents,
                         ...content,
                     };
                 }
             } else if (include["artifact"]) {
-                const content = await Parser.loadYaml(`${cwd}/${stateDir}/artifacts/${include["job"]}/${include["artifact"]}`, {});
+                const content = await Parser.loadYaml(`${cwd}/${stateDir}/artifacts/${include["job"]}/${include["artifact"]}`, {}, true, this.writeStreams);
                 contents = {
                     ...contents,
                     ...content,

@@ -6,8 +6,9 @@ import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "assert";
 import chalk from "chalk-template";
 import {Parser} from "./parser.js";
-import axios, {AxiosRequestConfig} from "axios";
+import axios from "axios";
 import path from "path";
+import prettyHrtime from "pretty-hrtime";
 import semver from "semver";
 import {RE2JS} from "re2js";
 
@@ -61,7 +62,7 @@ export class ParserIncludes {
         );
         let includeDatas: any[] = [];
         const promises = [];
-        const {stateDir, cwd, fetchIncludes, gitData, expandVariables} = opts;
+        const {stateDir, cwd, fetchIncludes, gitData, expandVariables, writeStreams} = opts;
         // cache the parsed component, because parseIncludeComponent is expensive and we would call it twice otherwise
         const componentParseCache = new Map<number, ParsedComponent>();
 
@@ -79,20 +80,20 @@ export class ParserIncludes {
             }
             if (value["file"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
-                    promises.push(this.downloadIncludeProjectFile(cwd, stateDir, value["project"], value["ref"] || "HEAD", fileValue, gitData, fetchIncludes));
+                    promises.push(this.downloadIncludeProjectFile(opts, value["project"], value["ref"] || "HEAD", fileValue));
                 }
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const url = `https://${domain}/${project}/-/raw/${ref}/${file}`;
-                promises.push(this.downloadIncludeRemote(cwd, stateDir, url, fetchIncludes));
+                promises.push(this.downloadIncludeRemote(cwd, stateDir, url, fetchIncludes, writeStreams));
             } else if (value["remote"]) {
-                promises.push(this.downloadIncludeRemote(cwd, stateDir, value["remote"], fetchIncludes));
+                promises.push(this.downloadIncludeRemote(cwd, stateDir, value["remote"], fetchIncludes, writeStreams));
             } else if (value["component"]) {
                 const component = this.parseIncludeComponent(value["component"], gitData);
                 componentParseCache.set(index, component);
                 if (!component.isLocal)
                 {
-                    promises.push(this.downloadIncludeComponent(cwd, stateDir, component.projectPath, component.ref, component.name, gitData, fetchIncludes));
+                    promises.push(this.downloadIncludeComponent(opts, component.projectPath, component.ref, component.name));
                 }
             }
 
@@ -115,7 +116,7 @@ export class ParserIncludes {
                     throw new AssertionError({message: `Local include file cannot be found ${value["local"]}`});
                 }
                 for (const localFile of files) {
-                    const content = await Parser.loadYaml(localFile, {inputs: value.inputs ?? {}}, expandVariables);
+                    const content = await Parser.loadYaml(localFile, {inputs: value.inputs ?? {}}, expandVariables, writeStreams);
                     includeDatas = includeDatas.concat(await this.init(content, opts));
                 }
             } else if (value["project"]) {
@@ -123,7 +124,7 @@ export class ParserIncludes {
                     const fileDoc = await Parser.loadYaml(
                         `${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`
                         , {inputs: value.inputs || {}}
-                        , expandVariables);
+                        , expandVariables, writeStreams);
                     // Expand local includes inside a "project"-like include
                     fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], value["project"], value["ref"], opts);
                     includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
@@ -147,7 +148,7 @@ export class ParserIncludes {
                 assert(file !== null, `This GitLab CI configuration is invalid: component: \`${value["component"]}\`. One of the files [${files}] must exist in \`${component.domain}` +
                                     (component.port ? `:${component.port}` : "") + `/${component.projectPath}\``);
 
-                const fileDoc = await Parser.loadYaml(file, {inputs: value.inputs || {}}, expandVariables);
+                const fileDoc = await Parser.loadYaml(file, {inputs: value.inputs || {}}, expandVariables, writeStreams);
                 // Expand local includes inside to a "project"-like include
                 fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], component.projectPath, component.ref, opts);
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
@@ -155,13 +156,13 @@ export class ParserIncludes {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
                 const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables,
+                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables, writeStreams,
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
                 const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables,
+                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: value.inputs || {}}, expandVariables, writeStreams,
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else {
@@ -281,29 +282,32 @@ export class ParserIncludes {
         return updatedIncludes;
     }
 
-    static async downloadIncludeRemote (cwd: string, stateDir: string, url: string, fetchIncludes: boolean): Promise<void> {
+    static async downloadIncludeRemote (cwd: string, stateDir: string, url: string, fetchIncludes: boolean, writeStreams: WriteStreams): Promise<void> {
         const fsUrl = Utils.fsUrl(url);
         try {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
             if (await fs.pathExists(target) && !fetchIncludes) return;
-            const axiosConfig: AxiosRequestConfig = {
+            const time = process.hrtime();
+            const res = await axios.get(url, {
                 headers: {"User-Agent": "gitlab-ci-local"},
                 ...Utils.getAxiosProxyConfig(),
-            };
-            const res = await axios.get(url, axiosConfig);
+            });
             await fs.outputFile(target, res.data);
+            writeStreams.stderr(chalk`{grey downloaded ${url} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});
         }
     }
 
-    static async downloadIncludeProjectFile (cwd: string, stateDir: string, project: string, ref: string, file: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
+    static async downloadIncludeProjectFile (opts: ParserIncludesInitOptions, project: string, ref: string, file: string): Promise<void> {
+        const {cwd, stateDir, gitData, fetchIncludes, writeStreams} = opts;
         const remote = gitData.remote;
         const normalizedFile = file.replace(/^\/+/, "");
         let tmpDir = null;
         try {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
             if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
+            const time = process.hrtime();
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
@@ -324,6 +328,7 @@ export class ParserIncludes {
                 await fs.mkdirp(`${cwd}/${target}`);
                 await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}/`, cwd);
             }
+            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
             throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }\n${e}`});
         } finally {
@@ -334,7 +339,8 @@ export class ParserIncludes {
         }
     }
 
-    static async downloadIncludeComponent (cwd: string, stateDir: string, project: string, ref: string, componentName: string, gitData: GitData, fetchIncludes: boolean): Promise<void> {
+    static async downloadIncludeComponent (opts: ParserIncludesInitOptions, project: string, ref: string, componentName: string): Promise<void> {
+        const {cwd, stateDir, gitData, fetchIncludes, writeStreams} = opts;
         const remote = gitData.remote;
         const files = [`${componentName}.yml`, `${componentName}/template.yml`];
         let tmpDir = null;
@@ -342,6 +348,7 @@ export class ParserIncludes {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
 
             if (!fetchIncludes && (await fs.pathExists(`${cwd}/${target}/${files[0]}`) || await fs.pathExists(`${cwd}/${target}/${files[1]}`))) return;
+            const time = process.hrtime();
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
@@ -368,6 +375,7 @@ export class ParserIncludes {
                 await fs.mkdirp(`${cwd}/${target}`);
                 await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${componentWildcard} | tar -f - -xC ${target}/`, cwd);
             }
+            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
             throw new AssertionError({message: `Component include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
         } finally {

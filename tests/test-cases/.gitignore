@@ -1,4 +1,4 @@
-.gitlab-ci-local
+.gitlab-ci-local*
 artifacts/log.txt
 
 !custom-home/.home/.gitlab-ci-local

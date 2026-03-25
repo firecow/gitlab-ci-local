@@ -5,8 +5,6 @@ import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import fs from "fs-extra";
 
-import.meta.jest.setTimeout(60000);
-
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
@@ -16,6 +14,7 @@ test.concurrent("services <pre-job>", async () => {
     await handler({
         cwd: "tests/test-cases/services",
         job: ["pre-job"],
+        stateDir: ".gitlab-ci-local-pre-job",
     }, writeStreams);
 
     const expectedStdErr = [
@@ -30,6 +29,7 @@ test.concurrent("services <test-job>", async () => {
     await handler({
         cwd: "tests/test-cases/services",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-test-job",
     }, writeStreams);
 
     const expected = [
@@ -49,6 +49,7 @@ test.concurrent("services <build-job>", async () => {
     await handler({
         cwd: "tests/test-cases/services",
         job: ["build-job"],
+        stateDir: ".gitlab-ci-local-build-job",
     }, writeStreams);
 
     const expected = [
@@ -62,6 +63,7 @@ test.concurrent("services <deploy-job>", async () => {
     await handler({
         cwd: "tests/test-cases/services",
         job: ["deploy-job"],
+        stateDir: ".gitlab-ci-local-deploy-job",
     }, writeStreams);
 
     const expected = [
@@ -75,19 +77,21 @@ test.concurrent("services <multiport-job>", async () => {
     await handler({
         cwd: "tests/test-cases/services",
         job: ["multiport-job"],
+        stateDir: ".gitlab-ci-local-multiport-job",
     }, writeStreams);
 
     const expected = [
         chalk`{black.bgGreenBright  PASS } {blueBright multiport-job}`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
-});
+}, 120000);
 
 test.concurrent("services <alias-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
         job: ["alias-job"],
+        stateDir: ".gitlab-ci-local-alias-job",
     }, writeStreams);
 
     const expected = [
@@ -101,6 +105,7 @@ test.concurrent("services <alias-job-multiple-slashes>", async () => {
     await handler({
         cwd: "tests/test-cases/services",
         job: ["alias-job-multiple-slashes"],
+        stateDir: ".gitlab-ci-local-alias-job-multiple-slashes",
     }, writeStreams);
 
     const expected = [
@@ -110,22 +115,24 @@ test.concurrent("services <alias-job-multiple-slashes>", async () => {
 });
 
 test.concurrent("services <multie-job>", async () => {
-    await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-0.log", {force: true});
-    await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-1.log", {force: true});
-    await fs.promises.rm("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-2.log", {force: true});
+    const stateDir = ".gitlab-ci-local-multie-job";
+    await fs.promises.rm(`tests/test-cases/services/${stateDir}/services-output/multie-job/docker.io/library/alpine:latest-0.log`, {force: true});
+    await fs.promises.rm(`tests/test-cases/services/${stateDir}/services-output/multie-job/docker.io/library/alpine:latest-1.log`, {force: true});
+    await fs.promises.rm(`tests/test-cases/services/${stateDir}/services-output/multie-job/docker.io/library/alpine:latest-2.log`, {force: true});
 
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
         job: ["multie-job"],
+        stateDir,
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toMatch(/Hello/);
-    expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-0.log")).toEqual(true);
-    expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-1.log")).toEqual(true);
-    expect(await fs.pathExists("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-2.log")).toEqual(true);
-    expect(await fs.readFile("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-0.log", "utf-8")).toMatch(/sh: line 0: echo Service 1: not found/);
-    expect(await fs.readFile("tests/test-cases/services/.gitlab-ci-local/services-output/multie-job/docker.io/library/alpine:latest-2.log", "utf-8")).toMatch(/Service 3/);
+    expect(await fs.pathExists(`tests/test-cases/services/${stateDir}/services-output/multie-job/docker.io/library/alpine:latest-0.log`)).toEqual(true);
+    expect(await fs.pathExists(`tests/test-cases/services/${stateDir}/services-output/multie-job/docker.io/library/alpine:latest-1.log`)).toEqual(true);
+    expect(await fs.pathExists(`tests/test-cases/services/${stateDir}/services-output/multie-job/docker.io/library/alpine:latest-2.log`)).toEqual(true);
+    expect(await fs.readFile(`tests/test-cases/services/${stateDir}/services-output/multie-job/docker.io/library/alpine:latest-0.log`, "utf-8")).toMatch(/sh: line 0: echo Service 1: not found/);
+    expect(await fs.readFile(`tests/test-cases/services/${stateDir}/services-output/multie-job/docker.io/library/alpine:latest-2.log`, "utf-8")).toMatch(/Service 3/);
 });
 
 test.concurrent("services <no-tmp>", async () => {
@@ -133,6 +140,7 @@ test.concurrent("services <no-tmp>", async () => {
     await handler({
         cwd: "tests/test-cases/services",
         job: ["no-tmp"],
+        stateDir: ".gitlab-ci-local-no-tmp",
     }, writeStreams);
 
     const expected = [
@@ -141,12 +149,44 @@ test.concurrent("services <no-tmp>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("services <services:entrypoint should support variable expansion and double quotes>", async () => {
+test.concurrent("services <service-user should preserve image default user>", async () => {
+    const stateDir = ".gitlab-ci-local-service-user";
+    const serviceLogFile = `tests/test-cases/services/${stateDir}/services-output/service-user/docker.io/curlimages/curl:8.8.0-0.log`;
+    await fs.promises.rm(serviceLogFile, {force: true});
+
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["service-user"],
+        stateDir,
+    }, writeStreams);
+
+    const expected = [
+        chalk`{black.bgGreenBright  PASS } {blueBright service-user}`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+
+    const serviceLog = await fs.readFile(serviceLogFile, "utf-8");
+    const stdoutMarker = "### stdout ###\n";
+    const stderrMarker = "\n### stderr ###";
+    const stdoutStart = serviceLog.indexOf(stdoutMarker);
+    const stderrStart = serviceLog.indexOf(stderrMarker, stdoutStart + stdoutMarker.length);
+
+    expect(stdoutStart).toBeGreaterThanOrEqual(0);
+    expect(stderrStart).toBeGreaterThan(stdoutStart + stdoutMarker.length);
+
+    const serviceStdout = serviceLog.slice(stdoutStart + stdoutMarker.length, stderrStart).trim();
+    expect(serviceStdout.length).toBeGreaterThan(0);
+    expect(serviceStdout).not.toEqual("0");
+});
+
+test.concurrent("services <services:entrypoint should support variable expansion and double quotes>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
         file: ".gitlab-ci-2.yml",
         noColor: true,
+        stateDir: ".gitlab-ci-local-entrypoint",
     }, writeStreams);
 
     const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job1 >")).join("\n");
@@ -157,11 +197,12 @@ job1 > should support variable expansion [1.27.4]
 `.trim());
 });
 
-test("services <unnamed services should be ignored>", async () => {
+test.concurrent("services <unnamed services should be ignored>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/services",
         file: ".gitlab-ci-3.yml",
         noColor: true,
+        stateDir: ".gitlab-ci-local-unnamed",
     }, writeStreams);
 });

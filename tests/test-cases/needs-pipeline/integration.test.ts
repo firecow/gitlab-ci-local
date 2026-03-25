@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("needs-pipeline", async () => {
+test.concurrent("needs-pipeline", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/needs-pipeline",
         needs: true,
+        stateDir: ".gitlab-ci-local-needs-pipeline",
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join();

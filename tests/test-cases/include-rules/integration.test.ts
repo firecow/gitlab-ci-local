@@ -8,13 +8,14 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("include-rules <build-job>", async () => {
+test.concurrent("include-rules <build-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/include-rules",
         file: ".gitlab-ci.yml",
         job: ["build-job", "test-job"],
         variable: ["CI_COMMIT_TAG=1.0.0"],
+        stateDir: ".gitlab-ci-local-include-rules",
     }, writeStreams);
 
     const expected = [

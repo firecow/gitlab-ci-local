@@ -1,5 +1,3 @@
 *
-!src/schema/schema.json
-!src/**/*.js
-!src/**/*.d.ts
-src/tests/**/*.js
+!dist/index.js
+!dist/index.js.map

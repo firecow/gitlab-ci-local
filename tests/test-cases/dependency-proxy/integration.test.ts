@@ -36,6 +36,16 @@ describe("dependency-proxy", () => {
         });
 
         test("docker", async () => {
+
+            initSpawnSpyReject([
+                {
+                    cmdArgs: "docker login gitlab.com:443".split(" "),
+                    rejection: {
+                        stderr: "Cannot perform an interactive login from a non TTY device",
+                    },
+                },
+            ]);
+
             try {
                 const writeStreams = new WriteStreamsMock();
                 await handler({
@@ -57,7 +67,7 @@ describe("dependency-proxy", () => {
             cmdArgs: "docker login gitlab.com:443".split(" "),
             returnValue: "Login Succeeded",
         };
-        initSpawnSpy([ciDependencyProxyServerAuthenticated]);
+        initSpawnSpy([...WhenStatics.all, ciDependencyProxyServerAuthenticated]);
 
         try {
             await handler({

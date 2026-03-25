@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("schema validation <test-job>", async () => {
+test.concurrent("schema validation <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     try {
         await handler({
             cwd: "tests/test-cases/schema-validation",
+            stateDir: ".gitlab-ci-local-schema-validation-test-job",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e: any) {
@@ -25,13 +26,14 @@ test("schema validation <test-job>", async () => {
     }
 });
 
-test("schema validation - default <test-job>", async () => {
+test.concurrent("schema validation - default <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
         file: ".gitlab-ci-issue-1277.yml",
         cwd: "tests/test-cases/schema-validation",
         preview: true,
+        stateDir: ".gitlab-ci-local-schema-validation-default-test-job",
     }, writeStreams);
 
     const expected = `---
@@ -57,13 +59,14 @@ my-job:
     expect(writeStreams.stderrLines.join("\n")).toContain("my-job.artifacts is null, ignoring.");
 });
 
-test("schema validation 4 errors", async () => {
+test.concurrent("schema validation 4 errors", async () => {
     const writeStreams = new WriteStreamsMock();
     try {
         await handler({
             file: ".gitlab-ci-4-errors.yml",
             cwd: "tests/test-cases/schema-validation",
             noColor: true,
+            stateDir: ".gitlab-ci-local-schema-validation-4-errors",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e: any) {
@@ -80,13 +83,14 @@ Invalid .gitlab-ci.yml configuration!
     }
 });
 
-test("schema validation 5 errors", async () => {
+test.concurrent("schema validation 5 errors", async () => {
     const writeStreams = new WriteStreamsMock();
     try {
         await handler({
             file: ".gitlab-ci-5-errors.yml",
             cwd: "tests/test-cases/schema-validation",
-
+            noColor: true,
+            stateDir: ".gitlab-ci-local-schema-validation-5-errors",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e: any) {
@@ -103,13 +107,14 @@ For further troubleshooting, consider either of the following:`;
     }
 });
 
-test("schema validation 6 errors", async () => {
+test.concurrent("schema validation 6 errors", async () => {
     const writeStreams = new WriteStreamsMock();
     try {
         await handler({
             file: ".gitlab-ci-6-errors.yml",
             cwd: "tests/test-cases/schema-validation",
-
+            noColor: true,
+            stateDir: ".gitlab-ci-local-schema-validation-6-errors",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e: any) {

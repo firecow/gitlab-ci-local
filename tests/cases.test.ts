@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import {WriteStreamsMock} from "../src/write-streams.js";
 import chalk from "chalk-template";
 import {handler} from "../src/handler.js";
@@ -14,8 +15,8 @@ afterAll(() => {
     fs.removeSync(dummyGitlabCiYmlPath);
 });
 
-test("--completion", async () => {
-    const spy = import.meta.jest.spyOn(console, "log").mockImplementation();
+test.concurrent("--completion", async () => {
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
     const writeStreams = new WriteStreamsMock();
     await handler({
         completion: true,
@@ -24,7 +25,7 @@ test("--completion", async () => {
     spy.mockRestore();
 });
 
-test("something/unknown-directory (non-existing dir)", async () => {
+test.concurrent("something/unknown-directory (non-existing dir)", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -37,7 +38,7 @@ test("something/unknown-directory (non-existing dir)", async () => {
     }
 });
 
-test("docs (no .gitlab-ci.yml)", async () => {
+test.concurrent("docs (no .gitlab-ci.yml)", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -50,7 +51,7 @@ test("docs (no .gitlab-ci.yml)", async () => {
     }
 });
 
-test("empty .gitlab-ci.yml", async () => {
+test.concurrent("empty .gitlab-ci.yml", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         file: dummyGitlabCiYmlPath,

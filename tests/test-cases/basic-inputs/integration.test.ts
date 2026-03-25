@@ -7,11 +7,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("basic-inputs defaults no inputs", async () => {
+test.concurrent("basic-inputs defaults no inputs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/basic-inputs/input-templates/default-no-inputs",
         preview: true,
+        stateDir: ".gitlab-ci-local-basic-inputs-defaults-no-inputs",
     }, writeStreams);
 
     const expected = `---

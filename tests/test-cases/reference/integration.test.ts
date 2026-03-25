@@ -7,12 +7,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("reference <test-job>", async () => {
+test.concurrent("reference <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/reference",
         job: ["test-job"],
         preview: true,
+        stateDir: ".gitlab-ci-local-reference-test-job",
     }, writeStreams);
 
     const expected = `---
@@ -38,12 +39,13 @@ issue-909:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("reference --file .gitlab-ci-complex.yml (issue 644)", async () => {
+test.concurrent("reference --file .gitlab-ci-complex.yml (issue 644)", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/reference",
         file: ".gitlab-ci-complex.yml",
         preview: true,
+        stateDir: ".gitlab-ci-local-reference-file-gitlab-ci-complex-yml-issue-644",
     }, writeStreams);
 
     const expected = `---
@@ -61,12 +63,13 @@ job:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("reference --file .gitlab-ci-issue-899.yml", async () => {
+test.concurrent("reference --file .gitlab-ci-issue-899.yml", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/reference",
         file: ".gitlab-ci-issue-899.yml",
         preview: true,
+        stateDir: ".gitlab-ci-local-reference-file-gitlab-ci-issue-899-yml",
     }, writeStreams);
 
     const expected = `---
@@ -84,12 +87,13 @@ job:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
-test("reference --file .gitlab-ci-issue-954.yml", async () => {
+test.concurrent("reference --file .gitlab-ci-issue-954.yml", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/reference",
         file: ".gitlab-ci-issue-954.yml",
         preview: true,
+        stateDir: ".gitlab-ci-local-reference-file-gitlab-ci-issue-954-yml",
     }, writeStreams);
 
     const expected = `---
@@ -112,12 +116,13 @@ normal_job:
 });
 
 
-test("should support 10 level deep", async () => {
+test.concurrent("should support 10 level deep", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         preview: true,
         file: ".gitlab-ci-10-level-deep.yml",
         cwd: "tests/test-cases/reference",
+        stateDir: ".gitlab-ci-local-should-support-10-level-deep",
     }, writeStreams);
 
     const expected = `
@@ -138,13 +143,14 @@ test:
     expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
 });
 
-test("should not support 11 level deep", async () => {
+test.concurrent("should not support 11 level deep", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             noColor: true,
             file: ".gitlab-ci-11-level-deep.yml",
             cwd: "tests/test-cases/reference",
+            stateDir: ".gitlab-ci-local-should-not-support-11-level-deep",
         }, writeStreams);
     } catch (e: any) {
         expect(e.message).toEqual("This Gitlab CI configuration is invalid: test.script config should be string or a nested array of strings up to 10 level deep");

@@ -1,3 +1,4 @@
+import {vi, type Mock} from "vitest";
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import chalk from "chalk-template";
@@ -7,9 +8,8 @@ import {Job} from "../../../src/job.js";
 import path from "path";
 import fs from "fs-extra";
 
-const jest = import.meta.jest;
-let jobIdSpy: jest.SpyInstance;
-let dateSpy: jest.SpyInstance;
+let jobIdSpy: Mock<any>;
+const OrigDate = globalThis.Date;
 
 const mockJobId = 123;
 const mockDate = "2020-01-05T00:00:00Z";
@@ -91,14 +91,28 @@ beforeAll(() => {
         returnValue: {stdout: "git@gitlab.com:GCL/predefined-variables.git"},
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
-    jobIdSpy = jest.spyOn(
+    jobIdSpy = vi.spyOn(
         Job.prototype as any,
         "generateJobId",
     );
     jobIdSpy.mockReturnValue(mockJobId);
 
-    const _mockDate = new Date(mockDate);
-    dateSpy = jest.spyOn(global, "Date").mockImplementation(() => _mockDate);
+    const _mockDate = new OrigDate(mockDate);
+    globalThis.Date = class extends OrigDate {
+        constructor (...args: any[]) {
+            if (args.length === 0) {
+                super(_mockDate.getTime());
+            } else {
+                super(...(args as [number]));
+            }
+        }
+    } as any;
+    globalThis.Date.now = OrigDate.now;
+});
+
+afterAll(() => {
+    jobIdSpy.mockRestore();
+    globalThis.Date = OrigDate;
 });
 
 describe("predefined-variables", () => {
@@ -107,7 +121,7 @@ describe("predefined-variables", () => {
     });
     afterEach(() => {
         fs.removeSync(fileVariable);
-        jest.clearAllMocks();
+        jobIdSpy.mockClear();
     });
 
     test("normal", async () => {
@@ -130,7 +144,6 @@ describe("predefined-variables", () => {
         const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ")).join("\n");
         expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
-        expect(dateSpy).toHaveBeenCalledTimes(3);
     });
 
     test("custom ports (via variable-file)", async () => {
@@ -168,7 +181,6 @@ CI_SERVER_SHELL_SSH_PORT: 8022
         const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ")).join("\n");
         expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
-        expect(dateSpy).toHaveBeenCalledTimes(3);
     });
 
     test("custom ports (via --variable)", async () => {
@@ -209,21 +221,21 @@ CI_SERVER_SHELL_SSH_PORT: 8022
         const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ")).join("\n");
         expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
-        expect(dateSpy).toHaveBeenCalledTimes(3);
     });
 });
 
-test("predefined-variables <shell-isolation> --shell-isolation", async () => {
+test.concurrent("predefined-variables <shell-isolation> --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/predefined-variables",
         job: ["shell-isolation"],
         shellIsolation: true,
         shellExecutorNoImage: false,
+        stateDir: ".gitlab-ci-local-predefined-variables-shell-isolation",
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright shell-isolation} {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables/.gitlab-ci-local/builds/shell-isolation`,
+        chalk`{blueBright shell-isolation} {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables/.gitlab-ci-local-predefined-variables-shell-isolation/builds/shell-isolation`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

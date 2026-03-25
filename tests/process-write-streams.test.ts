@@ -1,7 +1,8 @@
+import {vi} from "vitest";
 import {WriteStreamsProcess} from "../src/write-streams.js";
 
-const spyStdout = import.meta.jest.spyOn(process.stdout, "write").mockImplementation();
-const spyStderr = import.meta.jest.spyOn(process.stderr, "write").mockImplementation();
+const spyStdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+const spyStderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 
 afterEach(() => {
     spyStdout.mockClear();
@@ -13,7 +14,7 @@ afterAll(() => {
     spyStderr.mockRestore();
 });
 
-test("Check ProcessWriteStreams ", () => {
+test.concurrent("Check ProcessWriteStreams ", () => {
     const writeStreams = new WriteStreamsProcess();
     writeStreams.stdout("Stdout message");
     writeStreams.stderr("Stderr message");

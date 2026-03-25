@@ -10,25 +10,27 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("plain", async () => {
+test.concurrent("plain", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/plain",
         jsonSchemaValidation: true,
+        stateDir: ".gitlab-ci-local-plain",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.length).toEqual(16);
     expect(writeStreams.stderrLines.length).toEqual(4);
 
-    expect(await fs.pathExists("tests/test-cases/plain/.gitlab-ci-local/builds/test-job")).toBe(false);
-    expect(await fs.pathExists("tests/test-cases/plain/.gitlab-ci-local/builds/build-job")).toBe(false);
+    expect(await fs.pathExists("tests/test-cases/plain/.gitlab-ci-local-plain/builds/test-job")).toBe(false);
+    expect(await fs.pathExists("tests/test-cases/plain/.gitlab-ci-local-plain/builds/build-job")).toBe(false);
 });
 
-test("plain <test-job> <test-job>", async () => {
+test.concurrent("plain <test-job> <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/plain",
         job: ["test-job", "test-job"],
+        stateDir: ".gitlab-ci-local-plain-test-job-test-job",
     }, writeStreams);
 
     const found = writeStreams.stderrLines.filter((l) => {
@@ -37,12 +39,13 @@ test("plain <test-job> <test-job>", async () => {
     expect(found.length).toEqual(1);
 });
 
-test("plain <notfound>", async () => {
+test.concurrent("plain <notfound>", async () => {
     const writeStreams = new WriteStreamsMock();
     try {
         await handler({
             cwd: "tests/test-cases/plain",
             job: ["notfound"],
+            stateDir: ".gitlab-ci-local-plain-notfound",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {
@@ -51,12 +54,13 @@ test("plain <notfound>", async () => {
     }
 });
 
-test("plain <build-job> --unset-variable ", async () => {
+test.concurrent("plain <build-job> --unset-variable ", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/plain",
         job: ["build-job"],
         unsetVariable: ["TEST_VAR"],
+        stateDir: ".gitlab-ci-local-plain-build-job-unset-variable",
     }, writeStreams);
     const found = writeStreams.stdoutLines.filter((l) => {
         return l.match(/whatwhatwhat/) !== null;
@@ -64,11 +68,12 @@ test("plain <build-job> --unset-variable ", async () => {
     expect(found.length).toEqual(0);
 });
 
-test("plain --stage", async () => {
+test.concurrent("plain --stage", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/plain",
         stage: "test",
+        stateDir: ".gitlab-ci-local-plain-stage",
     }, writeStreams);
 
     const found = writeStreams.stdoutLines.filter((l) => {

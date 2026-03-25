@@ -1,0 +1,17 @@
+---
+# Test case for issue #1725: Environment-scoped variables with matrix jobs
+# Each matrix job should get its own environment-specific variable value
+
+run-all-clusters:
+  stage: test
+  parallel:
+    matrix:
+      - CLUSTER:
+          - cluster-a
+          - cluster-b
+          - cluster-c
+  environment:
+    name: $CLUSTER
+  script:
+    - echo "CLUSTER=${CLUSTER}"
+    - echo "URL=${CI_ENVIRONMENT_URL}"

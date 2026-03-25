@@ -7,11 +7,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("list-csv-case --list-csv", async () => {
+test.concurrent("list-csv-case --list-csv", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/list-csv-case/",
         listCsv: true,
+        stateDir: ".gitlab-ci-local-list-csv-case-list-csv",
     }, writeStreams);
 
     const expected = [
@@ -23,12 +24,13 @@ test("list-csv-case --list-csv", async () => {
 });
 
 
-test("list-csv-case --list-csv colon should add process descriptors with semicolons", async () => {
+test.concurrent("list-csv-case --list-csv colon should add process descriptors with semicolons", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/list-csv-case/",
         file: ".gitlab-ci-description-colon.yml",
         listCsv: true,
+        stateDir: ".gitlab-ci-local-list-csv-case-list-csv-colon-should-add-process-de",
     }, writeStreams);
 
     const expected = [

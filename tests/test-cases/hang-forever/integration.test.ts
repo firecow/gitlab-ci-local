@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("hang-forever <test-debian>", async () => {
+test.concurrent("hang-forever <test-debian>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/hang-forever",
         job: ["test-debian"],
+        stateDir: ".gitlab-ci-local-hang-forever-test-debian",
     }, writeStreams);
 
     const expected = [
@@ -22,11 +23,12 @@ test("hang-forever <test-debian>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("hang-forever <test-alpine>", async () => {
+test.concurrent("hang-forever <test-alpine>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/hang-forever",
         job: ["test-alpine"],
+        stateDir: ".gitlab-ci-local-hang-forever-test-alpine",
     }, writeStreams);
 
     const expected = [
@@ -36,11 +38,12 @@ test("hang-forever <test-alpine>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("hang-forever <test-shell>", async () => {
+test.concurrent("hang-forever <test-shell>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/hang-forever",
         job: ["test-shell"],
+        stateDir: ".gitlab-ci-local-hang-forever-test-shell",
     }, writeStreams);
 
     const expected = [

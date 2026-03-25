@@ -9,11 +9,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("manual --manual <build-job> --manual <pre-job>", async () => {
+test.concurrent("manual --manual <build-job> --manual <pre-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         manual: ["build-job", "pre-job"],
+        stateDir: ".gitlab-ci-local-manual-manual-build-job-manual-pre-job",
     }, writeStreams);
 
     const expected = [
@@ -24,11 +25,12 @@ test("manual --manual <build-job> --manual <pre-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("manual --manual <build-job> --manual <build-job> --manual <pre-job>", async () => {
+test.concurrent("manual --manual <build-job> --manual <build-job> --manual <pre-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         manual: ["build-job", "build-job", "pre-job"],
+        stateDir: ".gitlab-ci-local-manual-manual-build-job-manual-build-job-manual-pr",
     }, writeStreams);
 
     const filter = writeStreams.stdoutLines.filter(l => {
@@ -37,11 +39,12 @@ test("manual --manual <build-job> --manual <build-job> --manual <pre-job>", asyn
     expect(filter.length).toBe(2);
 });
 
-test("manual <deploy-job>", async () => {
+test.concurrent("manual <deploy-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         job: ["deploy-job"],
+        stateDir: ".gitlab-ci-local-manual-deploy-job",
     }, writeStreams);
 
     const foundBuildText = writeStreams.stdoutLines.find((l) => {
@@ -60,12 +63,13 @@ test("manual <deploy-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("manual <deploy-job> --needs", async () => {
+test.concurrent("manual <deploy-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         job: ["deploy-job"],
         needs: true,
+        stateDir: ".gitlab-ci-local-manual-deploy-job-needs",
     }, writeStreams);
 
     const foundPreText = writeStreams.stdoutLines.find((l) => {
@@ -89,11 +93,12 @@ test("manual <deploy-job> --needs", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("manual <build-job>", async () => {
+test.concurrent("manual <build-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         job: ["build-job"],
+        stateDir: ".gitlab-ci-local-manual-build-job",
     }, writeStreams);
 
     const expected = [
@@ -102,13 +107,14 @@ test("manual <build-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("manual <test-job> --needs --manual <pre-job>", async () => {
+test.concurrent("manual <test-job> --needs --manual <pre-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         job: ["test-job"],
         needs: true,
         manual: "pre-job",
+        stateDir: ".gitlab-ci-local-manual-test-job-needs-manual-pre-job",
     }, writeStreams);
 
     const expected = [
@@ -118,11 +124,12 @@ test("manual <test-job> --needs --manual <pre-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("manual --manual <pre-job>", async () => {
+test.concurrent("manual --manual <pre-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/manual/",
         manual: "pre-job",
+        stateDir: ".gitlab-ci-local-manual-manual-pre-job",
     }, writeStreams);
 
     const expected = [
@@ -133,11 +140,12 @@ test("manual --manual <pre-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("manual", async () => {
+test.concurrent("manual", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/manual/",
+            stateDir: ".gitlab-ci-local-manual",
         }, writeStreams);
         expect(true).toBe(false);
     } catch (e) {

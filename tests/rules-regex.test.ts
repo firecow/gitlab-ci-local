@@ -1,3 +1,4 @@
+import {vi} from "vitest";
 import "../src/global.js";
 import {Argv} from "../src/argv";
 import {Utils} from "../src/utils";
@@ -12,10 +13,10 @@ beforeEach(async () => {
     writeStreams = new WriteStreamsMock();
     gitData = await GitData.init("tests", writeStreams);
     argv = await Argv.build({}, writeStreams);
-    import.meta.jest.clearAllMocks();
+    vi.restoreAllMocks();
 });
 
-/* eslint-disable @stylistic/ts/quotes */
+/* eslint-disable @stylistic/quotes */
 const tests = [
     {
         rule: '"Hello World" =~ "/hello world/i"',
@@ -120,15 +121,15 @@ const tests = [
         evalResult: true,
     },
 ];
-/* eslint-enable @stylistic/ts/quotes */
+/* eslint-enable @stylistic/quotes */
 
 describe("gitlab rules regex", () => {
     tests.filter(t => !t.expectedErrSubStr)
         .forEach((t) => {
             test(`- if: '${t.rule}'\n\t => ${t.evalResult}`, async () => {
                 const rules = [ {if: t.rule} ];
-                const evalSpy = import.meta.jest.spyOn(global, "eval");
-                const evaluateRuleIfSpy = import.meta.jest.spyOn(Utils, "evaluateRuleIf");
+                const evalSpy = vi.spyOn(global, "eval");
+                const evaluateRuleIfSpy = vi.spyOn(Utils, "evaluateRuleIf");
 
                 Utils.getRulesResult({argv, cwd: "", rules, variables: {}}, gitData);
                 expect(evaluateRuleIfSpy).toHaveReturnedWith(t.evalResult);

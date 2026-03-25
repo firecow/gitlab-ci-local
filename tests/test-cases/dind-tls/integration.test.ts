@@ -4,18 +4,17 @@ import chalk from "chalk-template";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 
-import.meta.jest.setTimeout(60000);
-
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("dind-tls <test-job> --needs", async () => {
+test.concurrent("dind-tls <test-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/dind-tls",
         job: ["test-job"],
         needs: true,
+        stateDir: ".gitlab-ci-local-dind-tls",
     }, writeStreams);
 
     const expected = [

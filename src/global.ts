@@ -7,7 +7,7 @@ declare global {
     }
 }
 
-interface RegExpMatchAll extends Array<string> {
+interface RegExpMatchAll extends Array<string | null> {
     index?: number;
     input?: string;
     groups: Record<string, string> | undefined;
@@ -18,7 +18,7 @@ String.prototype.matchRE2JS = function (o: RE2JS): Array<string> | null {
     const matcher = o.matcher(this.toString());
     while (matcher.find()) {
         const g = matcher.group();
-        if (g == "") continue;
+        if (g == null || g == "") continue;
         results = results ?? [];
         results.push(g);
     }

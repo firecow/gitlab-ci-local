@@ -6,30 +6,43 @@ import * as state from "./state.js";
 import {WriteStreamsProcess, WriteStreamsMock} from "./write-streams.js";
 import {handler} from "./handler.js";
 import {Executor} from "./executor.js";
-import {Argv} from "./argv.js";
+import {Argv, stripGclVariableEnvVars, injectGclVariableEnvVars} from "./argv.js";
 import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job.js";
 import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
+import packageJson from "../package.json";
 
 const jobs: Job[] = [];
 
-process.on("SIGINT", async (_: string, code: number) => {
-    await cleanupJobResources(jobs);
-    process.exit(code);
-});
+let cleanupAndExitPromise: Promise<void> | null = null;
+
+async function cleanupAndExit (code: number) {
+    // First caller's exit code wins — subsequent callers join the in-flight cleanup.
+    if (cleanupAndExitPromise) return cleanupAndExitPromise;
+    cleanupAndExitPromise = cleanupJobResources(jobs).finally(() => process.exit(code));
+    return cleanupAndExitPromise;
+}
+
+process.on("SIGINT", () => cleanupAndExit(130));
+process.on("SIGTERM", () => cleanupAndExit(143));
+process.on("SIGHUP", () => cleanupAndExit(129));
 
 // Graceful shutdown for nodemon
-process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
+process.on("SIGUSR2", async () => {
+    if (!cleanupAndExitPromise) await cleanupJobResources(jobs);
+});
 
 (() => {
+    const gclVariableEnvVars = stripGclVariableEnvVars(process.env);
     const yparser = yargs(process.argv.slice(2));
     yparser.parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
-        .version("4.64.1")
+        .version(packageJson.version)
         .wrap(yparser.terminalWidth?.())
         .command({
             handler: async (argv) => {
                 try {
+                    injectGclVariableEnvVars(argv, gclVariableEnvVars);
                     await handler(argv, new WriteStreamsProcess(), jobs);
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
@@ -41,8 +54,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                     } else {
                         process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
                     }
-                    await cleanupJobResources(jobs);
-                    process.exit(1);
+                    await cleanupAndExit(1);
                 }
             },
             builder: (y: any) => {
@@ -202,6 +214,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             description: "Which image to be used for the wait container. Defaults to docker.io/sumina46/wait-for-it:latest if not set.",
             requiresArg: false,
         })
+        .option("wait-for-services-timeout", {
+            type: "number",
+            description: "Timeout in seconds for service health checks. Defaults to 30.",
+            requiresArg: false,
+        })
         .option("helper-image", {
             type: "string",
             description: "When using --shell-executor-no-image=false which image to be used for the utils container. Defaults to docker.io/firecow/gitlab-ci-local-util:latest if not set.",
@@ -235,6 +252,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         .option("ulimit", {
             type: "number",
             description: "Set docker executor ulimit",
+            requiresArg: false,
+        })
+        .option("shm-size", {
+            type: "string",
+            description: "Set docker executor shared memory size, docker default is 64m (e.g., '256m', '1g')",
             requiresArg: false,
         })
         .option("network", {
@@ -340,11 +362,17 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
             default: true,
             description: "Enables color",
         })
+        .option("registry", {
+            type: "boolean",
+            requiresArg: false,
+            description: "Start a local docker registry and configure gitlab-ci-local containers to use that by default",
+        })
         .completion("completion", false, (current: string, yargsArgv: any, completionFilter: any, done: (completions: string[]) => any) => {
             try {
                 if (current.startsWith("-")) {
                     completionFilter();
                 } else {
+                    injectGclVariableEnvVars(yargsArgv, gclVariableEnvVars);
                     Argv.build({...yargsArgv, autoCompleting: true})
                         .then(argv => state.getPipelineIid(argv.cwd, argv.stateDir).then(pipelineIid => ({argv, pipelineIid})))
                         .then(({argv, pipelineIid}) => Parser.create(argv, new WriteStreamsMock(), pipelineIid, []))

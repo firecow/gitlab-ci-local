@@ -4,37 +4,37 @@ import {Utils} from "../src/utils.js";
 import assert from "assert";
 import {AssertionError} from "assert";
 
-test("VAR w.o. brackets positive", () => {
+test.concurrent("VAR w.o. brackets positive", () => {
     const expanded = Utils.expandText("$VAR", {VAR: "success"});
     expect(expanded).toBe("success");
 });
 
-test("VAR w.o. brackets negative", () => {
+test.concurrent("VAR w.o. brackets negative", () => {
     const expanded = Utils.expandText("$VAR", {UNSET_VAR: "success"});
     expect(expanded).toBe("");
 });
 
-test("VAR w. brackets postive", () => {
+test.concurrent("VAR w. brackets postive", () => {
     const expanded = Utils.expandText("${VAR}", {VAR: "success"});
     expect(expanded).toBe("success");
 });
 
-test("VAR w. brackets negative", () => {
+test.concurrent("VAR w. brackets negative", () => {
     const expanded = Utils.expandText("${VAR}", {UNSET_VAR: "success"});
     expect(expanded).toBe("");
 });
 
-test("VAR w/ escapes", () => {
+test.concurrent("VAR w/ escapes", () => {
     const expanded = Utils.expandText("$$VAR $$$VAR $$$$VAR", {VAR: "success"});
     expect(expanded).toBe("$VAR $success $$VAR");
 });
 
-test("Expand null", () => {
+test.concurrent("Expand null", () => {
     const expanded = Utils.expandText(null, {});
     expect(expanded).toBe(null);
 });
 
-test("extends invalid job", () => {
+test.concurrent("extends invalid job", () => {
     try {
         DataExpander.jobExtends({
             "test-job": {extends: ["build-job"]},
@@ -46,7 +46,7 @@ test("extends invalid job", () => {
     }
 });
 
-test("extends infinite loop", () => {
+test.concurrent("extends infinite loop", () => {
     try {
         DataExpander.jobExtends({
             "build-job": {extends: ["test-job"]},
@@ -59,7 +59,7 @@ test("extends infinite loop", () => {
     }
 });
 
-test("extends simple", () => {
+test.concurrent("extends simple", () => {
     const gitlabData = {
         "test-job": {
             extends: ["build-job"],

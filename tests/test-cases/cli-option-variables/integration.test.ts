@@ -8,13 +8,14 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("cli-option-variables <test-job> --variable \"CLI_VAR=hello world\"", async () => {
+test.concurrent("cli-option-variables <test-job> --variable \"CLI_VAR=hello world\"", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/cli-option-variables",
         job: ["test-job"],
         variable: ["CLI_VAR=hello world", "CLI_VAR_DOT=dotdot", `CLI_MULTILINE=This is a multi
 line string`],
+        stateDir: ".gitlab-ci-local-cli-option-variables",
     }, writeStreams);
 
     const expected = [

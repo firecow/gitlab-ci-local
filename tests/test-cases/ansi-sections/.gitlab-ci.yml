@@ -1,0 +1,6 @@
+---
+test-job:
+  script:
+    - echo -e "\e[0Ksection_start:1000000:my_section\r\e[0KMy Section Title"
+    - echo "inside section"
+    - echo -e "\e[0Ksection_end:1000012:my_section\r\e[0K"

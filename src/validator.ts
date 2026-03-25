@@ -2,7 +2,7 @@ import Ajv from "ajv";
 import {Job} from "./job.js";
 import assert from "assert";
 import chalk from "chalk-template";
-import schema from "./schema/index.js";
+import schema from "./schema.js";
 import {betterAjvErrors} from "./schema-error.js";
 import terminalLink from "terminal-link";
 import {Argv} from "./argv.js";

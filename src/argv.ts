@@ -22,6 +22,30 @@ async function gitRootPath () {
     return stdout;
 }
 
+const GCL_VARIABLE_PREFIX = "GCL_VARIABLE_";
+
+// Removes GCL_VARIABLE_* entries from env (mutates) and returns the removed entries
+export function stripGclVariableEnvVars (env: Record<string, string | undefined>): Record<string, string> {
+    const stripped: Record<string, string> = {};
+    for (const key of Object.keys(env)) {
+        if (!key.startsWith(GCL_VARIABLE_PREFIX) || env[key] == null) continue;
+        if (key.length > GCL_VARIABLE_PREFIX.length) {
+            stripped[key] = env[key]!;
+        }
+        delete env[key];
+    }
+    return stripped;
+}
+
+// Prepends env vars so CLI --variable (later in array) takes precedence via last-wins
+export function injectGclVariableEnvVars (argv: {variable?: string[]; [key: string]: unknown}, gclVars: Record<string, string>): void {
+    for (const [envKey, envValue] of Object.entries(gclVars)) {
+        const varName = envKey.slice(GCL_VARIABLE_PREFIX.length);
+        argv.variable ??= [];
+        argv.variable.unshift(`${varName}=${envValue}`);
+    }
+}
+
 export class Argv {
     static readonly default = {
         "variablesFile": ".gitlab-ci-local-variables.yml",
@@ -237,6 +261,10 @@ export class Argv {
         return ulimit;
     }
 
+    get shmSize (): string | undefined {
+        return this.map.get("shmSize");
+    }
+
     get needs (): boolean {
         return this.map.get("needs") ?? false;
     }
@@ -350,6 +378,10 @@ export class Argv {
         return this.map.get("waitImage") ?? "docker.io/sumina46/wait-for-it:latest";
     }
 
+    get waitForServicesTimeout (): number {
+        return this.map.get("waitForServicesTimeout") ?? 30;
+    }
+
     get helperImage (): string {
         return this.map.get("helperImage") ?? "docker.io/firecow/gitlab-ci-local-util:latest";
     }
@@ -364,5 +396,9 @@ export class Argv {
 
     get childPipelineDepth (): number {
         return this.map.get("childPipelineDepth");
+    }
+
+    get registry (): boolean {
+        return this.map.get("registry") ?? false;
     }
 }

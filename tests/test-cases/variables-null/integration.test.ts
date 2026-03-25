@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("variable-null <test-job>", async () => {
+test.concurrent("variable-null <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variables-null",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-variables-null",
     }, writeStreams);
 
     const expected = chalk`

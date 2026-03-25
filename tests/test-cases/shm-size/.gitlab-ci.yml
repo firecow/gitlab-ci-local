@@ -1,0 +1,11 @@
+---
+test-job:
+  image: docker.io/alpine
+  script:
+    - echo hello
+
+service-job:
+  image: docker.io/alpine
+  services: [docker.io/redis]
+  script:
+    - echo hello

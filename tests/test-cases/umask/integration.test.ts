@@ -4,8 +4,6 @@ import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import chalk from "chalk-template";
 
-import.meta.jest.setTimeout(60000);
-
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
@@ -16,6 +14,7 @@ test.concurrent("umask <alpine-guest> --umask", async () => {
         cwd: "tests/test-cases/umask/",
         umask: true,
         job: ["alpine-guest"],
+        stateDir: ".gitlab-ci-local-umask-alpine-guest-umask",
     }, writeStreams);
 
     const expectedStdOut = [
@@ -31,6 +30,7 @@ test.concurrent("umask <alpine-guest> --no-umask", async () => {
         cwd: "tests/test-cases/umask/",
         umask: false,
         job: ["alpine-guest"],
+        stateDir: ".gitlab-ci-local-umask-alpine-guest-no-umask",
     }, writeStreams);
 
     const expectedStdOut = [
@@ -46,6 +46,7 @@ test.concurrent("umask <alpine-root> --umask", async () => {
         cwd: "tests/test-cases/umask/",
         umask: true,
         job: ["alpine-root"],
+        stateDir: ".gitlab-ci-local-umask-alpine-root-umask",
     }, writeStreams);
 
     const expectedStdOut = [
@@ -61,6 +62,7 @@ test.concurrent("umask <alpine-root> --no-umask", async () => {
         cwd: "tests/test-cases/umask/",
         umask: false,
         job: ["alpine-root"],
+        stateDir: ".gitlab-ci-local-umask-alpine-root-no-umask",
     }, writeStreams);
 
     const expectedStdOut = [
@@ -76,6 +78,7 @@ test.concurrent("umask <kaniko-root> --umask", async () => {
         cwd: "tests/test-cases/umask/",
         umask: true,
         job: ["kaniko-root"],
+        stateDir: ".gitlab-ci-local-umask-kaniko-root-umask",
     }, writeStreams);
 
     const expectedStdOut = [
@@ -91,6 +94,7 @@ test.concurrent("umask <kaniko-root> --no-umask", async () => {
         cwd: "tests/test-cases/umask/",
         umask: false,
         job: ["kaniko-root"],
+        stateDir: ".gitlab-ci-local-umask-kaniko-root-no-umask",
     }, writeStreams);
 
     const expectedStdOut = [

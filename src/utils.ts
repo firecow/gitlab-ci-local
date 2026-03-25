@@ -1,11 +1,12 @@
 import "./global.js";
 import {RE2JS} from "re2js";
 import chalk from "chalk-template";
-import {Job, JobRule} from "./job.js";
+import {Job, JobRule, Need} from "./job.js";
+import {needsComplex} from "./data-expander.js";
 import fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
-import execa from "execa";
+import execa, {ExecaError} from "execa";
 import assert from "assert";
 import {CICDVariable} from "./variables-from-files.js";
 import {GitData} from "./git-data.js";
@@ -92,7 +93,7 @@ export class Utils {
         if (matches.length === 0) return "0";
 
         const lastMatch = matches[matches.length - 1];
-        const digits = /\d+(?:\.\d+)?/.exec(lastMatch[1] ?? lastMatch[0]);
+        const digits = /\d+(?:\.\d+)?/.exec(lastMatch[1] ?? lastMatch[0] ?? "");
         if (!digits) return "0";
         return digits[0] ?? "0";
     }
@@ -188,14 +189,15 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} = false): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}; matchedRule?: string} {
+    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} | undefined = undefined): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}; needs?: Need[]} {
         let when = "never";
         const {evaluateRuleChanges} = opt.argv;
         let matchedRule: string | undefined;
 
         // optional manual jobs allowFailure defaults to true https://docs.gitlab.com/ee/ci/jobs/job_control.html#types-of-manual-jobs
-        let allowFailure = jobWhen === "manual" ? true : jobAllowFailure;
+        let allowFailure: boolean | {exit_codes: number | number[]} = jobAllowFailure ?? jobWhen === "manual";
         let ruleVariable: {[name: string]: string} | undefined;
+        let ruleNeeds: Need[] | undefined;
 
         for (const rule of opt.rules) {
             console.log("evaluating ", rule)
@@ -210,11 +212,12 @@ export class Utils {
             ruleVariable = rule.variables;
             matchedRule = rule.if;
             console.log(matchedRule, typeof(matchedRule))
+            ruleNeeds = rule.needs?.map((n: any) => needsComplex(n));
 
             break; // Early return, will not evaluate the remaining rules
         }
 
-        return {when, allowFailure, variables: ruleVariable, matchedRule};
+        return {when, allowFailure, variables: ruleVariable, needs: ruleNeeds, matchedRule};
     }
 
     static evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]: string}): boolean {
@@ -308,7 +311,7 @@ export class Utils {
         let res;
         try {
             (global as any).RE2JS = RE2JS; // Assign RE2JS to the global object
-            res = (0, eval)(evalStr); // https://esbuild.github.io/content-types/#direct-eval
+            res = (0, eval)(evalStr); // indirect eval
             delete (global as any).RE2JS; // Cleanup
         } catch {
             const assertMsg = [
@@ -361,19 +364,8 @@ export class Utils {
     }
 
     static isSubpath (lhs: string, rhs: string, cwd: string = process.cwd()) {
-        let absLhs = "";
-        if (path.isAbsolute(lhs)) {
-            absLhs = lhs;
-        } else {
-            absLhs = path.resolve(cwd, lhs);
-        }
-
-        let absRhs = "";
-        if (path.isAbsolute(rhs)) {
-            absRhs = rhs;
-        } else {
-            absRhs = path.resolve(cwd, rhs);
-        }
+        const absLhs = path.isAbsolute(lhs) ? lhs : path.resolve(cwd, lhs);
+        const absRhs = path.isAbsolute(rhs) ? rhs : path.resolve(cwd, rhs);
 
         const relative = path.relative(absRhs, absLhs);
         return !relative.startsWith("..");
@@ -412,6 +404,101 @@ export class Utils {
     static switchStatementExhaustiveCheck (param: never): never {
         // https://dev.to/babak/exhaustive-type-checking-with-typescript-4l3f
         throw new Error(`Unhandled case ${param}`);
+    }
+
+    static async dockerVolumeFileExists (containerExecutable: string, path: string, volume: string): Promise<boolean> {
+        try {
+            await Utils.spawn([containerExecutable, "run", "--rm", "-v", `${volume}:/mnt/vol`, "alpine", "ls", `/mnt/vol/${path}`]);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    static gclRegistryPrefix: string = "registry.gcl.local";
+    static async startDockerRegistry (argv: Argv): Promise<void> {
+        const gclRegistryCertVol = `${this.gclRegistryPrefix}.certs`;
+        const gclRegistryDataVol = `${this.gclRegistryPrefix}.data`;
+        const gclRegistryNet = `${this.gclRegistryPrefix}.net`;
+
+        // create cert volume
+        try {
+            await Utils.spawn(`${argv.containerExecutable} volume create ${gclRegistryCertVol}`.split(" "));
+        } catch (err) {
+            if (err instanceof Error && !err.message.endsWith("already exists"))
+                throw err;
+        }
+
+        // create self-signed cert/key files for https support
+        if (!await this.dockerVolumeFileExists(argv.containerExecutable, `${this.gclRegistryPrefix}.crt`, gclRegistryCertVol)) {
+            const opensslArgs = [
+                "req", "-newkey", "rsa:4096", "-nodes", "-sha256",
+                "-keyout", `/certs/${this.gclRegistryPrefix}.key`,
+                "-x509", "-days", "365",
+                "-out", `/certs/${this.gclRegistryPrefix}.crt`,
+                "-subj", `/CN=${this.gclRegistryPrefix}`,
+                "-addext", `subjectAltName=DNS:${this.gclRegistryPrefix}`,
+            ];
+            const generateCertsInPlace = [
+                argv.containerExecutable, "run", "--rm", "-v", `${gclRegistryCertVol}:/certs`, "--entrypoint", "sh", "alpine/openssl", "-c",
+                [
+                    "openssl", ...opensslArgs,
+                    "&&", "mkdir", "-p", `/certs/${this.gclRegistryPrefix}`,
+                    "&&", "cp", `/certs/${this.gclRegistryPrefix}.crt`, `/certs/${this.gclRegistryPrefix}/ca.crt`,
+                ].join(" "),
+            ];
+            await Utils.spawn(generateCertsInPlace);
+        }
+
+        // create data volume
+        try {
+            await Utils.spawn([argv.containerExecutable, "volume", "create", gclRegistryDataVol]);
+        } catch (err) {
+            if (err instanceof Error && !err.message.endsWith("already exists"))
+                throw err;
+        }
+
+        // create network
+        try {
+            await Utils.spawn([argv.containerExecutable, "network", "create", gclRegistryNet]);
+        } catch (err) {
+            if (err instanceof Error && !err.message.includes("already exists"))
+                throw err;
+        }
+
+        await Utils.spawn([argv.containerExecutable, "rm", "-f", this.gclRegistryPrefix]);
+        await Utils.spawn([
+            argv.containerExecutable, "run", "-d", "--name", this.gclRegistryPrefix,
+            "--network", gclRegistryNet,
+            "--volume", `${gclRegistryDataVol}:/var/lib/registry`,
+            "--volume", `${gclRegistryCertVol}:/certs:ro`,
+            "-e", "REGISTRY_HTTP_ADDR=0.0.0.0:443",
+            "-e", `REGISTRY_HTTP_TLS_CERTIFICATE=/certs/${this.gclRegistryPrefix}.crt`,
+            "-e", `REGISTRY_HTTP_TLS_KEY=/certs/${this.gclRegistryPrefix}.key`,
+            "registry",
+        ]);
+
+        try {
+            await execa(argv.containerExecutable, [
+                "run", "--rm",
+                "--network", gclRegistryNet,
+                "--entrypoint", "sh",
+                "curlimages/curl",
+                "-c", `until [ "$(curl -s -o /dev/null -k -w "%{http_code}" https://${this.gclRegistryPrefix}:443)" = "200" ]; do sleep 1; done;`,
+            ], {
+                timeout: 4000,
+            });
+        } catch (err) {
+            await this.stopDockerRegistry(argv.containerExecutable);
+            if ((err as ExecaError).timedOut) {
+                throw "local docker registry port check timed out";
+            }
+            throw err;
+        }
+    }
+
+    static async stopDockerRegistry (containerExecutable: string): Promise<void> {
+        await Utils.spawn([containerExecutable, "rm", "-f", this.gclRegistryPrefix]);
     }
 
     static async getTrackedFiles (cwd: string): Promise<string[]> {

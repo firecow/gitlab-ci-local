@@ -6,8 +6,6 @@ import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import {cleanupJobResources, Job} from "../../../src/job.js";
 
-import.meta.jest.setTimeout(30000);
-
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
@@ -17,6 +15,7 @@ test.concurrent("image <test job>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test job"],
+        stateDir: ".gitlab-ci-local-test-job",
     }, writeStreams);
 
     const projectDirOnHost = `${process.cwd()}/tests/test-cases/image`;
@@ -31,6 +30,7 @@ test.concurrent("image <test-entrypoint>", async () => {
         cwd: "tests/test-cases/image",
         job: ["test-entrypoint"],
         privileged: true,
+        stateDir: ".gitlab-ci-local-test-entrypoint",
     }, writeStreams);
 
     const expected = [
@@ -48,6 +48,7 @@ test.concurrent("image <test-entrypoint-override>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test-entrypoint-override"],
+        stateDir: ".gitlab-ci-local-test-entrypoint-override",
     }, writeStreams);
 
     const expected = [
@@ -61,6 +62,7 @@ test.concurrent("image <test-from-scratch>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["test-from-scratch"],
+        stateDir: ".gitlab-ci-local-test-from-scratch",
     }, writeStreams);
 
     const expected = [
@@ -84,6 +86,7 @@ test.concurrent("image <test-ignore-regression>", async () => {
         await handler({
             cwd: "tests/test-cases/image",
             job: ["test-entrypoint"],
+            stateDir: ".gitlab-ci-local-test-ignore-regression",
         }, writeStreams);
     } finally {
         await fs.rm("tests/test-cases/image/test-file.txt", {force: true});
@@ -101,6 +104,7 @@ test.concurrent("image <issue-206>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["issue-206"],
+        stateDir: ".gitlab-ci-local-issue-206",
     }, writeStreams);
 
     const expected = [
@@ -115,6 +119,7 @@ test.concurrent("image <image-user>", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["image-user"],
+        stateDir: ".gitlab-ci-local-image-user",
     }, writeStreams);
 
     const expected = [
@@ -129,6 +134,7 @@ test.concurrent("pull invalid image", async () => {
     const handlerPromise = handler({
         cwd: "tests/test-cases/image",
         file: ".gitlab-ci-invalid-image.yml",
+        stateDir: ".gitlab-ci-local-pull-invalid-image",
     }, writeStreams, jobs);
 
     await expect(handlerPromise).rejects.toThrow(/Command failed with exit code/);
@@ -142,6 +148,7 @@ test.concurrent("no variable substitution in entrpoint", async () => {
     await handler({
         cwd: "tests/test-cases/image",
         job: ["image-entrypoint-with-variables"],
+        stateDir: ".gitlab-ci-local-entrypoint-with-variables",
     }, writeStreams);
 
     const expected = [

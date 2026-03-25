@@ -4,17 +4,16 @@ import chalk from "chalk-template";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 
-import.meta.jest.setTimeout(13000);
-
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("long-running-silent-test-job <test-job>", async () => {
+test.concurrent("long-running-silent-test-job <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/long-running-silent-test-job",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-long-running-silent-test-job",
     }, writeStreams);
 
     const expected = [

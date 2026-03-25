@@ -7,10 +7,11 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("reference-circular-chain <test-job>", async () => {
+test.concurrent("reference-circular-chain <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await expect(handler({
         cwd: "tests/test-cases/reference-circular-chain",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-reference-circular-chain",
     }, writeStreams)).rejects.toThrow("!reference circular chain detected [test-job,script]");
 });

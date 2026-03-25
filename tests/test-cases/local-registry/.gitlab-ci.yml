@@ -1,0 +1,17 @@
+---
+registry-variables:
+  image: alpine:latest
+  script:
+    - echo "CI_REGISTRY=$CI_REGISTRY"
+    - echo "CI_REGISTRY_USER=$CI_REGISTRY_USER"
+    - echo "CI_REGISTRY_PASSWORD=$CI_REGISTRY_PASSWORD"
+
+registry-login-docker:
+  image: docker:dind
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+
+registry-login-oci:
+  image: quay.io/podman/stable
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | podman login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
