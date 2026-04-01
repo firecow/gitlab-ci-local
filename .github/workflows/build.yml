@@ -83,7 +83,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Run Tests
         run: bun run coverage
-      - uses: sonarsource/sonarqube-scan-action@v7.0.0
+      - uses: sonarsource/sonarqube-scan-action@v7.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
