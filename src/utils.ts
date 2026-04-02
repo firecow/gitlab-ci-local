@@ -1,7 +1,7 @@
 import "./global.js";
 import {RE2JS} from "re2js";
 import chalk from "chalk-template";
-import {Job, JobRule, Need} from "./job.js";
+import {Job, JobRule, Need, Service} from "./job.js";
 import {needsComplex} from "./data-expander.js";
 import fs from "fs-extra";
 import checksum from "checksum";
@@ -528,5 +528,27 @@ export class Utils {
         } else {
             return String(variable);
         }
+    }
+
+    static getAllServiceAliases (service: Service): Set<string> {
+        const aliases = new Set<string>();
+
+        if (service.alias) {
+            aliases.add(service.alias);
+        }
+
+        // Strip any port (:443), tag (:1.2.3), or digest (@sha256:...) suffix from each path segment
+        const serviceNameWithoutVersionAndPort = service.name.replaceAll(/[:@][^/]*/g, "");
+        aliases.add(serviceNameWithoutVersionAndPort.replaceAll("/", "-"));
+        aliases.add(serviceNameWithoutVersionAndPort.replaceAll("/", "__"));
+
+        return aliases;
+    }
+
+    static getServiceAlias (service: Service): string {
+        const aliases = Utils.getAllServiceAliases(service);
+
+        // Return the first alias in the set
+        return aliases.values().next().value!;
     }
 }

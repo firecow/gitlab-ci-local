@@ -108,3 +108,15 @@ service-user:
   image: docker.io/library/alpine
   script:
     - echo "bye"
+
+registry-port:
+  services:
+    - registry-1.docker.io:443/library/nginx:1.29.7
+  image: docker.io/curlimages/curl:8.18.0
+  script: curl -sS http://registry-1.docker.io-library-nginx/
+
+image-digest:
+  services:
+    - docker.io/library/nginx@sha256:e7257f1ef28ba17cf7c248cb8ccf6f0c6e0228ab9c315c152f9c203cd34cf6d1
+  image: docker.io/curlimages/curl:8.18.0
+  script: curl -sS http://docker.io-library-nginx/

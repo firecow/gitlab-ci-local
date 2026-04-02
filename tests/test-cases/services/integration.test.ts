@@ -206,3 +206,33 @@ test.concurrent("services <unnamed services should be ignored>", async () => {
         stateDir: ".gitlab-ci-local-unnamed",
     }, writeStreams);
 });
+
+test.concurrent("services <registry-port>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["registry-port"],
+        stateDir: ".gitlab-ci-local-registry-port",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright registry-port} {greenBright >} <title>Welcome to nginx!</title>`,
+        chalk`{black.bgGreenBright  PASS } {blueBright registry-port}`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});
+
+test.concurrent("services <image-digest>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["image-digest"],
+        stateDir: ".gitlab-ci-local-image-digest",
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright image-digest} {greenBright >} <title>Welcome to nginx!</title>`,
+        chalk`{black.bgGreenBright  PASS } {blueBright image-digest}`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+});

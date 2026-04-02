@@ -193,3 +193,76 @@ describe("isSubPath where process.cwd() have been mocked to return /home/user/gi
         });
     });
 });
+
+describe("getAllServiceAliases", () => {
+    const tests = [
+        {
+            input: "nginx",
+            expected: ["nginx"],
+        },
+        {
+            input: "library/nginx",
+            expected: ["library-nginx", "library__nginx"],
+        },
+        {
+            input: "docker.io/library/nginx",
+            expected: ["docker.io-library-nginx", "docker.io__library__nginx"],
+        },
+        {
+            input: "registry-1.docker.io/library/nginx",
+            expected: ["registry-1.docker.io-library-nginx", "registry-1.docker.io__library__nginx"],
+        },
+        {
+            input: "registry-1.docker.io:443/library/nginx",
+            expected: ["registry-1.docker.io-library-nginx", "registry-1.docker.io__library__nginx"],
+        },
+    ];
+
+    const suffixes = [
+        "",
+        ":1.29.7",
+        ":1.29.7@sha256:e7257f1ef28ba17cf7c248cb8ccf6f0c6e0228ab9c315c152f9c203cd34cf6d1",
+        "@sha256:e7257f1ef28ba17cf7c248cb8ccf6f0c6e0228ab9c315c152f9c203cd34cf6d1",
+    ];
+
+    tests.forEach(({input, expected}) => {
+        suffixes.forEach((suffix) => {
+            const serviceName = `${input}${suffix}`;
+            test.concurrent(`${serviceName}`, () => {
+                const service = {
+                    name: serviceName,
+                    entrypoint: null,
+                    command: null,
+                    alias: null,
+                    variables: {},
+                };
+                const aliases = Utils.getAllServiceAliases(service);
+                expect([...aliases]).toEqual(expected);
+            });
+        });
+    });
+
+    test.concurrent("should include custom alias when provided", () => {
+        const service = {
+            name: "docker.io/library/nginx:1.29.7",
+            entrypoint: null,
+            command: null,
+            alias: "my-nginx",
+            variables: {},
+        };
+        const aliases = Utils.getAllServiceAliases(service);
+        expect([...aliases]).toEqual(["my-nginx", "docker.io-library-nginx", "docker.io__library__nginx"]);
+    });
+});
+
+describe("getServiceAlias", () => {
+    const base = {entrypoint: null, command: null, variables: {}};
+
+    test.concurrent("returns - variant when no custom alias", () => {
+        expect(Utils.getServiceAlias({...base, name: "library/nginx", alias: null})).toBe("library-nginx");
+    });
+
+    test.concurrent("returns custom alias when provided", () => {
+        expect(Utils.getServiceAlias({...base, name: "library/nginx", alias: "my-nginx"})).toBe("my-nginx");
+    });
+});
