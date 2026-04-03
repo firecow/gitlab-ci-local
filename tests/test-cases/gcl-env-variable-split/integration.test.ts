@@ -4,6 +4,7 @@ import {splitSemicolonEnvVars} from "../../../src/argv.js";
 import chalk from "chalk-template";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
+import {execFile} from "child_process";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -186,63 +187,32 @@ test("GCL_VARIABLE env split reaches handler as separate variables", async () =>
 
 // --- Integration test: spawns real CLI with GCL_VARIABLE env ---
 
+function runCli (envVars: Record<string, string>): Promise<{stdout: string; exitCode: number}> {
+    return new Promise((resolve, reject) => {
+        execFile("bun", ["src/index.ts", "test-job", "--cwd", "tests/test-cases/gcl-env-variable-split"], {
+            env: {...process.env, ...envVars},
+        }, (error, stdout) => {
+            if (error && error.code === undefined) return reject(error);
+            resolve({stdout, exitCode: typeof error?.code === "number" ? error.code : 0});
+        });
+    });
+}
+
 test("GCL_VARIABLE env var is split by CLI middleware", async () => {
-    const proc = Bun.spawn(
-        ["bun", "src/index.ts", "test-job", "--cwd", "tests/test-cases/gcl-env-variable-split"],
-        {
-            env: {
-                ...process.env,
-                GCL_VARIABLE: "VAR1=from_env1;VAR2=from_env2",
-            },
-            stdout: "pipe",
-            stderr: "pipe",
-        },
-    );
-
-    const stdout = await new Response(proc.stdout).text();
-    const exitCode = await proc.exited;
-
+    const {stdout, exitCode} = await runCli({GCL_VARIABLE: "VAR1=from_env1;VAR2=from_env2"});
     expect(exitCode).toBe(0);
     expect(stdout).toContain("from_env1");
     expect(stdout).toContain("from_env2");
 }, 30_000);
 
 test("GCL_VARIABLE with single value (no semicolon) works via CLI", async () => {
-    const proc = Bun.spawn(
-        ["bun", "src/index.ts", "test-job", "--cwd", "tests/test-cases/gcl-env-variable-split"],
-        {
-            env: {
-                ...process.env,
-                GCL_VARIABLE: "VAR1=single_value",
-            },
-            stdout: "pipe",
-            stderr: "pipe",
-        },
-    );
-
-    const stdout = await new Response(proc.stdout).text();
-    const exitCode = await proc.exited;
-
+    const {stdout, exitCode} = await runCli({GCL_VARIABLE: "VAR1=single_value"});
     expect(exitCode).toBe(0);
     expect(stdout).toContain("single_value");
 }, 30_000);
 
 test("GCL_VARIABLE with three semicolon-separated values via CLI", async () => {
-    const proc = Bun.spawn(
-        ["bun", "src/index.ts", "test-job", "--cwd", "tests/test-cases/gcl-env-variable-split"],
-        {
-            env: {
-                ...process.env,
-                GCL_VARIABLE: "VAR1=first;VAR2=second;VAR3=third",
-            },
-            stdout: "pipe",
-            stderr: "pipe",
-        },
-    );
-
-    const stdout = await new Response(proc.stdout).text();
-    const exitCode = await proc.exited;
-
+    const {stdout, exitCode} = await runCli({GCL_VARIABLE: "VAR1=first;VAR2=second;VAR3=third"});
     expect(exitCode).toBe(0);
     expect(stdout).toContain("first");
     expect(stdout).toContain("second");
