@@ -1,5 +1,5 @@
 ---
-stages: [test, build]
+stages: [test, build, deploy]
 
 # @Description Run Tests
 test-job:
@@ -14,3 +14,18 @@ build-job:
   allow_failure: true
   script:
     - 'echo "Build something"'
+
+exit-codes-job:
+  stage: build
+  needs: []
+  allow_failure:
+    exit_codes: [42, 137]
+  script:
+    - 'echo "Exit codes"'
+
+deploy-job:
+  stage: deploy
+  allow_failure:
+    exit_codes: 1
+  script:
+    - 'echo "Deploy"'

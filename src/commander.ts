@@ -224,11 +224,11 @@ export class Commander {
         writeStreams.stdout(chalk`{grey allow_failure  needs}\n`);
 
         const renderLine = (job: Job) => {
-            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job);
-            const allowFailure = job.allowFailure ? "true " : "false ";
+            const needs = Commander.formatNeeds(job);
+            const allowFailure = Commander.formatAllowFailure(job.allowFailure);
             let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
             jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
-            if (needs) {
+            if (needs !== null) {
                 jobLine += chalk`    [{blueBright ${needs}}]`;
             }
             writeStreams.stdout(`${jobLine}\n`);
@@ -267,10 +267,14 @@ export class Commander {
             jobs = jobs.filter(j => j.when !== "never");
         }
 
-        writeStreams.stdout("name;description;stage;when;allowFailure;needs\n");
+        writeStreams.stdout("name;stage;when;allowFailure;needs\n");
+
         jobs.forEach((job) => {
-            const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job).join(",") ?? [];
-            writeStreams.stdout(`${job.name};"${job.description}";${job.stage};${job.when};${job.allowFailure ? "true" : "false"};[${needs}]\n`);
+            const needs = Commander.formatNeeds(job);
+            const needsStr = needs === null ? "" : `[${needs.join(",")}]`;
+            const allowFailure = Commander.formatAllowFailure(job.allowFailure);
+            const row = [job.name, job.stage, job.when, allowFailure, needsStr].join(";");
+            writeStreams.stdout(`${row}\n`);
         });
     }
 
@@ -293,5 +297,20 @@ export class Commander {
                 }
             }
         }
+    }
+
+    /** Returns `[code1,code2]` for exit_codes, `true`/`false` otherwise. */
+    private static formatAllowFailure (allowFailure: Job["allowFailure"]): string {
+        if (typeof allowFailure === "object") {
+            const codes = Array.isArray(allowFailure.exit_codes) ? allowFailure.exit_codes : [allowFailure.exit_codes];
+            return `[${codes.join(",")}]`;
+        }
+        return allowFailure ? "true" : "false";
+    }
+
+    /** Returns `[job1, job2]` when needs lists jobs, `[]` when explicitly set to no dependencies, or nothing when unset (job follows stage ordering). */
+    private static formatNeeds (job: Job): string[] | null {
+        if (job.needs === null) return null;
+        return job.needs.filter(n => !n.project && !n.pipeline).map(n => n.job);
     }
 }

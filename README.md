@@ -180,46 +180,58 @@ The command `gitlab-ci-local --list` will return pretty output and will also fil
 to `when: never`.
 
 ```text
-name        description  stage   when        allow_failure  needs
-test-job    Run Tests    test    on_success  false
-build-job                build   on_success  true           [test-job]
+name            description  stage   when        allow_failure  needs
+test-job        Run Tests    test    on_success  false
+build-job                    build   on_success  true           [test-job]
+exit-codes-job               build   on_success  [42,137]       []
+deploy-job                   deploy  on_success  [1]
 ```
+
+- **description**: always shown, empty when not set
+- **allow_failure**: `true`, `false`, or `[exit_code1,exit_code2]` when specific exit codes are allowed to fail
+- **needs**: omitted when not specified (job follows stage ordering), `[]` when explicitly set to no dependencies (job starts immediately)
 
 #### --list-all
 
 Same as `--list` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via rules).
 
 ```text
-name        description  stage   when        allow_failure  needs
-test-job    Run Tests    test    on_success  false
-build-job                build   on_success  true           [test-job]
-deploy-job               deploy  never       false          [build-job]
+name            description  stage   when        allow_failure  needs
+test-job        Run Tests    test    on_success  false
+build-job                    build   on_success  true           [test-job]
+exit-codes-job               build   on_success  [42,137]       []
+deploy-job                   deploy  on_success  [1]
+never-job                    test    never       false
 ```
 
 #### --list-csv
 
-The command `gitlab-ci-local --list-csv` will output the pipeline jobs as csv formatted list and will also filter all
-jobs which are set
-to `when: never`.
-The description will always be wrapped in quotes (even if there is none) to prevent semicolons in the description
-disturb the csv structure.
+The command `gitlab-ci-local --list-csv` will output the pipeline jobs as a CSV-formatted list and will also filter all
+jobs which are set to `when: never`.
 
 ```text
-name;description;stage;when;allow_failure;needs
-test-job;"Run Tests";test;on_success;false;[]
-build-job;"";build;on_success;true;[test-job]
+name;stage;when;allowFailure;needs
+test-job;test;on_success;false;
+build-job;build;on_success;true;[test-job]
+exit-codes-job;build;on_success;[42,137];[]
+deploy-job;deploy;on_success;[1];
 ```
+
+- **allowFailure**: `true`, `false`, or `[exit_code1,exit_code2]` when specific exit codes are allowed to fail
+- **needs**: empty when not specified (job follows stage ordering), `[]` when explicitly set to no dependencies (job starts immediately)
 
 #### --list-csv-all
 
-Same as `--list-csv-all` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via
+Same as `--list-csv` but will also print out jobs which are set to `when: never` (directly and implicit e.g. via
 rules).
 
 ```text
-name;description;stage;when;allow_failure;needs
-test-job;"Run Tests";test;on_success;false;[]
-build-job;"";build;on_success;true;[test-job]
-deploy-job;"";deploy;never;false;[build-job]
+name;stage;when;allowFailure;needs
+test-job;test;on_success;false;
+build-job;build;on_success;true;[test-job]
+exit-codes-job;build;on_success;[42,137];[]
+deploy-job;deploy;on_success;[1];
+never-job;test;never;false;
 ```
 
 ## Quirks

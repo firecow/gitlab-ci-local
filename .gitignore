@@ -9,4 +9,6 @@
 /.gitlab-ci-local/
 .DS_Store
 .vscode
+.history
+/tmp/
 /.gitlab-ci.yml
