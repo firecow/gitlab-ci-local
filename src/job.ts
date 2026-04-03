@@ -18,8 +18,8 @@ import {Parser} from "./parser.js";
 import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
 import {globbySync} from "globby";
 import terminalLink from "terminal-link";
-import * as crypto from "crypto";
-import * as path from "path";
+import * as crypto from "node:crypto";
+import * as path from "node:path";
 
 const GCL_SHELL_PROMPT_PLACEHOLDER = "<gclShellPromptPlaceholder>";
 interface JobOptions {
@@ -163,7 +163,13 @@ export class Job {
         this.allowFailure = jobData.allow_failure ?? false;
         this.dependencies = jobData.dependencies || null;
         this.rules = jobData.rules || null;
-        this.environment = typeof jobData.environment === "string" ? {name: jobData.environment} : (jobData.environment ? {...jobData.environment} : jobData.environment);
+        if (typeof jobData.environment === "string") {
+            this.environment = {name: jobData.environment, url: null, deployment_tier: null, action: null};
+        } else if (jobData.environment) {
+            this.environment = {...jobData.environment};
+        } else {
+            this.environment = jobData.environment;
+        }
 
         const matrixVariables = opt.matrixVariables ?? {};
         const fileVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
@@ -236,7 +242,7 @@ export class Job {
         }
         // Set GCL_PROJECT_DIR_ON_HOST if docker image
         if (this.imageName(this._variables)) {
-            this._variables = {...this._variables, ...{GCL_PROJECT_DIR_ON_HOST: cwd}};
+            this._variables = {...this._variables, GCL_PROJECT_DIR_ON_HOST: cwd};
         }
 
         assert(this.scripts || this.trigger, chalk`{blueBright ${this.name}} must have script specified`);
@@ -327,7 +333,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
         predefinedVariables["CI_PIPELINE_IID"] = `${this.pipelineIid}`;
         predefinedVariables["CI_JOB_NAME"] = `${this.name}`;
-        predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
+        predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replaceAll(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
         predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
         predefinedVariables["CI_BUILDS_DIR"] = ciBuildsDir;
         predefinedVariables["CI_PROJECT_DIR"] = this.ciProjectDir;
@@ -365,8 +371,8 @@ If you know what you're doing and would like to suppress this warning, use one o
         // 1. Lowercase, replace non-alphanumeric with '-', and squeeze repeating '-'
         let slug = name
             .toLowerCase()
-            .replace(/[^a-z0-9]/g, "-")
-            .replace(/-+/g, "-");
+            .replaceAll(/[^a-z0-9]/g, "-")
+            .replaceAll(/-+/g, "-");
 
         // 2. Must start with a letter
         if (!/^[a-z]/.test(slug)) {
@@ -1029,7 +1035,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             for (const [key, val] of Object.entries(expanded)) {
                 // Replacing `'` with `'\''` to correctly handle single quotes(if `val` contains `'`) in shell commands
-                dockerCmd += `  -e '${key}=${val.toString().replace(/'/g, "'\\''")}' \\\n`;
+                dockerCmd += `  -e '${key}=${val.toString().replaceAll("'", String.raw`'\''`)}' \\\n`;
             }
 
             if (this.imageEntrypoint) {
@@ -1588,7 +1594,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         for (const [key, val] of Object.entries(expanded)) {
             // Replacing `'` with `'\''` to correctly handle single quotes(if `val` contains `'`) in shell commands
-            dockerCmd += `  -e '${key}=${val.toString().replace(/'/g, "'\\''")}' \\\n`;
+            dockerCmd += `  -e '${key}=${val.toString().replaceAll("'", String.raw`'\''`)}' \\\n`;
         }
 
         const serviceEntrypoint = service.entrypoint;
@@ -1671,11 +1677,12 @@ If you know what you're doing and would like to suppress this warning, use one o
             });
         } finally {
             // Kill all wait-for-it containers, when one have been successful
-            await Promise.allSettled(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
-                if (!port.endsWith("/tcp")) return;
-                const portNum = parseInt(port.replace("/tcp", ""));
-                return Utils.spawn([this.argv.containerExecutable, "rm", "-vf", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
-            }));
+            await Promise.allSettled(Object.keys(imageInspect[0].Config.ExposedPorts)
+                .filter((port) => port.endsWith("/tcp"))
+                .map((port) => {
+                    const portNum = Number.parseInt(port.replace("/tcp", ""));
+                    return Utils.spawn([this.argv.containerExecutable, "rm", "-vf", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
+                }));
         }
     }
 

@@ -17,11 +17,11 @@ const SLASH_REGEX = /\//g;
 const AJV_ERROR_KEYWORD_WEIGHT_MAP: Partial<Record<DefinedError["keyword"], number>> = {enum: 1, type: 0};
 
 const pointerToDotNotation = (pointer: string): string => {
-    return pointer.replace(SLASH_REGEX, ".");
+    return pointer.replaceAll(SLASH_REGEX, ".");
 };
 
 const cleanAjvMessage = (message: string): string => {
-    return message.replace(QUOTES_REGEX, "'").replace(NOT_REGEX, "not");
+    return message.replaceAll(QUOTES_REGEX, "'").replaceAll(NOT_REGEX, "not");
 };
 
 const getLastSegment = (path: string): string => {

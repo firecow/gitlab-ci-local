@@ -390,7 +390,7 @@ export class ParserIncludes {
         const cache = new Map<string, string[]>();
         return async (path: string) => {
             let result = cache.get(path);
-            if (typeof result !== "undefined") return result;
+            if (result !== undefined) return result;
 
             result = (await Utils.getTrackedFiles(path)).map(p => `${path}/${p}`);
             cache.set(path, result);
@@ -429,15 +429,15 @@ export async function resolveIncludeLocal (pattern: string, cwd: string) {
     pattern = `${cwd}${pattern}`;
 
     // escape all special regex metacharacters
-    pattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    pattern = pattern.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
     // `**` matches anything
     const anything = ".*?";
-    pattern = pattern.replace(/\\\*\\\*/g, anything);
+    pattern = pattern.replaceAll(/\\\*\\\*/g, anything);
 
     // `*` matches anything except for `/`
     const anything_but_not_slash = "([^/])*?";
-    pattern = pattern.replace(/\\\*/g, anything_but_not_slash);
+    pattern = pattern.replaceAll(/\\\*/g, anything_but_not_slash);
 
     const re2js = RE2JS.compile(`^${pattern}`);
     return repoFiles.filter((f: any) => re2js.matches(f));

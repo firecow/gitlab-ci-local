@@ -134,7 +134,7 @@ export class GitData {
                 assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
 
                 const {stdout} = await Utils.spawn(["ssh", "-G", `${gitRemoteMatch.groups.username}@${gitRemoteMatch.groups.host}`]);
-                const port = stdout.split("\n").filter((line) => line.startsWith("port "))[0].split(" ")[1];
+                const port = stdout.split("\n").find((line) => line.startsWith("port "))!.split(" ")[1];
                 this.remote.host = gitRemoteMatch.groups.host;
                 this.remote.group = gitRemoteMatch.groups.group;
                 this.remote.project = gitRemoteMatch.groups.project;

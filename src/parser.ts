@@ -183,7 +183,7 @@ export class Parser {
                     gitData,
                     variablesFromFiles,
                     matrixVariables: parallelMatrixVariables,
-                    nodeIndex: (jobData.parallel != null) ? nodeIndex : null,
+                    nodeIndex: (jobData.parallel == null) ? null : nodeIndex,
                     nodesTotal: parallelMatrixVariablesList.length,
                     expandVariables: this.expandVariables,
                 });

@@ -143,15 +143,15 @@ For further troubleshooting, consider either of the following:
     }
 
     static async run (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
-        const warnings: string[] = [];
         this.scriptBlank(jobs);
         this.arrayOfStrings(jobs);
-        warnings.push(...this.needs(jobs, stages));
         this.dependencies(jobs, stages);
         this.dependenciesContainment(jobs);
-        warnings.push(...this.potentialIllegalJobName(jobs.map(j => j.baseName)));
-        warnings.push(...this.artifacts(jobs));
-        return warnings;
+        return [
+            ...this.needs(jobs, stages),
+            ...this.potentialIllegalJobName(jobs.map(j => j.baseName)),
+            ...this.artifacts(jobs),
+        ];
     }
 
     private static artifacts (jobs: ReadonlyArray<Job>) {

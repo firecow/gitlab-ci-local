@@ -7,7 +7,7 @@ export function isPlainParallel (jobData: any) {
 
 export function matrixVariablesList (jobData: any, jobName: string): {[key: string]: string}[] | null[] {
     if (isPlainParallel(jobData)) {
-        return Array(jobData.parallel).fill(null);
+        return new Array(jobData.parallel).fill(null);
     }
     if (jobData?.parallel?.matrix == null) {
         return [null];

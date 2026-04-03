@@ -13,7 +13,7 @@ import {GitData} from "./git-data.js";
 import {globbySync} from "globby";
 import micromatch from "micromatch";
 import {AxiosRequestConfig} from "axios";
-import path from "path";
+import path from "node:path";
 import {Argv} from "./argv.js";
 
 type RuleResultOpt = {
@@ -56,7 +56,7 @@ export class Utils {
     }
 
     static safeBashString (s: string) {
-        return `'${s.replace(/'/g, "'\"'\"'")}'`; // replaces `'` with `'"'"'`
+        return `'${s.replaceAll("'", "'\"'\"'")}'`;
     }
 
     static forEachRealJob (gitlabData: any, callback: (jobName: string, jobData: any) => void) {
@@ -242,7 +242,7 @@ export class Utils {
         // Scenario when RHS is a <regex>
         // https://regexr.com/85sjo
         const pattern1 = /\s*(?<operator>(?:=~)|(?:!~))\s*\/(?<rhs>.*?[^\\])\/(?<flags>[igmsuy]*)(\s|$|\))/g;
-        evalStr = evalStr.replace(pattern1, (_, operator, rhs, flags, remainingTokens) => {
+        evalStr = evalStr.replaceAll(pattern1, (_, operator, rhs, flags, remainingTokens) => {
             let _operator;
             switch (operator) {
                 case "=~":
@@ -270,7 +270,7 @@ export class Utils {
         // Scenario when RHS is surrounded by single/double-quotes
         // https://regexr.com/85t0g
         const pattern2 = /\s*(?<operator>=~|!~)\s*(["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
-        evalStr = evalStr.replace(pattern2, (_, operator, __, rhs) => {
+        evalStr = evalStr.replaceAll(pattern2, (_, operator, __, rhs) => {
             let _operator;
             switch (operator) {
                 case "=~":
@@ -297,16 +297,16 @@ export class Utils {
             return `.matchRE2JS(${_rhs}) ${_operator} null`;
         });
 
-        evalStr = evalStr.replace(/null.matchRE2JS\(.+?\)\s*!=\s*null/g, "false");
-        evalStr = evalStr.replace(/null.matchRE2JS\(.+?\)\s*==\s*null/g, "true");
+        evalStr = evalStr.replaceAll(/null.matchRE2JS\(.+?\)\s*!=\s*null/g, "false");
+        evalStr = evalStr.replaceAll(/null.matchRE2JS\(.+?\)\s*==\s*null/g, "true");
 
         evalStr = evalStr.trim();
 
         let res;
         try {
-            (global as any).RE2JS = RE2JS; // Assign RE2JS to the global object
+            (globalThis as any).RE2JS = RE2JS;
             res = (0, eval)(evalStr); // indirect eval
-            delete (global as any).RE2JS; // Cleanup
+            delete (globalThis as any).RE2JS;
         } catch {
             const assertMsg = [
                 "Error attempting to evaluate the following rules:",
@@ -408,7 +408,7 @@ export class Utils {
         }
     }
 
-    static gclRegistryPrefix: string = "registry.gcl.local";
+    static readonly gclRegistryPrefix: string = "registry.gcl.local";
     static async startDockerRegistry (argv: Argv): Promise<void> {
         const gclRegistryCertVol = `${this.gclRegistryPrefix}.certs`;
         const gclRegistryDataVol = `${this.gclRegistryPrefix}.data`;
@@ -484,7 +484,7 @@ export class Utils {
         } catch (err) {
             await this.stopDockerRegistry(argv.containerExecutable);
             if ((err as ExecaError).timedOut) {
-                throw "local docker registry port check timed out";
+                throw new Error("local docker registry port check timed out", {cause: err});
             }
             throw err;
         }
@@ -509,7 +509,7 @@ export class Utils {
             return {
                 proxy: {
                     host: proxyUrl.hostname,
-                    port: proxyUrl.port ? parseInt(proxyUrl.port, 10) : 8080,
+                    port: proxyUrl.port ? Number.parseInt(proxyUrl.port, 10) : 8080,
                     protocol: proxyUrl.protocol.replace(":", ""),
                 },
             };

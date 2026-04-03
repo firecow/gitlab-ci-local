@@ -138,7 +138,7 @@ export class Argv {
                 if (value === "true") this.map.set(argKey, true);
                 else if (value === "false") this.map.set(argKey, false);
                 else if (value === "null") this.map.set(argKey, null);
-                else if (!isNaN(Number(value))) this.map.set(argKey, Number(value));
+                else if (Number.isFinite(Number(value))) this.map.set(argKey, Number(value));
                 else this.map.set(argKey, value);
             }
         }

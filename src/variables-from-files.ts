@@ -35,8 +35,8 @@ export class VariablesFromFiles {
         let homeFileData: any = {};
 
         if (remoteVariables && !autoCompleting) {
-            for (let i = 0; i < remoteVariables.length; i++) {
-                const match = /(?<url>git@.*?)=(?<file>.*?)=(?<ref>.*)/.exec(remoteVariables[i]);
+            for (const remoteVariable of remoteVariables) {
+                const match = /(?<url>git@.*?)=(?<file>.*?)=(?<ref>.*)/.exec(remoteVariable);
                 assert(match != null, "--remote-variables is malformed use 'git@gitlab.com:firecow/example.git=gitlab-variables.yml=master' syntax");
                 const url = match.groups?.url;
                 const file = match.groups?.file;
