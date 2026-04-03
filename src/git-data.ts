@@ -172,12 +172,19 @@ export class GitData {
         });
         promises.push(gitEmailPromise);
 
-        const osUidPromise = Utils.spawn(["id", "-u"], cwd).then(({stdout}) => {
-            this.user.GITLAB_USER_ID = stdout.trimEnd();
-        }).catch((e) => {
-            writeStreams.stderr(chalk`{yellow Using fallback linux user id}\n`);
-            writeStreams.stderr(chalk`{yellow   ${e.message}\n}`);
-        });
+        const osUidPromise = (async () => {
+            if (process.platform === "win32") {
+                // GITLAB_USER_ID is a Unix UID concept; keep default on Windows
+                return;
+            }
+            try {
+                const {stdout} = await Utils.spawn(["id", "-u"], cwd);
+                this.user.GITLAB_USER_ID = stdout.trimEnd();
+            } catch (e: any) {
+                writeStreams.stderr(chalk`{yellow Using fallback linux user id}\n`);
+                writeStreams.stderr(chalk`{yellow   ${e.message}\n}`);
+            }
+        })();
         promises.push(osUidPromise);
 
         await Promise.all(promises);
