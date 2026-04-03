@@ -1035,7 +1035,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             for (const [key, val] of Object.entries(expanded)) {
                 // Replacing `'` with `'\''` to correctly handle single quotes(if `val` contains `'`) in shell commands
-                dockerCmd += `  -e '${key}=${val.toString().replaceAll("'", String.raw`'\''`)}' \\\n`;
+                dockerCmd += `  -e '${key}=${val.toString().replaceAll("'", "'\\''")}' \\\n`;
             }
 
             if (this.imageEntrypoint) {
@@ -1594,7 +1594,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         for (const [key, val] of Object.entries(expanded)) {
             // Replacing `'` with `'\''` to correctly handle single quotes(if `val` contains `'`) in shell commands
-            dockerCmd += `  -e '${key}=${val.toString().replaceAll("'", String.raw`'\''`)}' \\\n`;
+            dockerCmd += `  -e '${key}=${val.toString().replaceAll("'", "'\\''")}' \\\n`;
         }
 
         const serviceEntrypoint = service.entrypoint;
@@ -1656,14 +1656,15 @@ If you know what you're doing and would like to suppress this warning, use one o
         const time = process.hrtime();
         try {
             // Iterate over each port defined in the image, and try to connect to the alias
-            await Promise.any(Object.keys(imageInspect[0].Config.ExposedPorts).map((port) => {
-                if (!port.endsWith("/tcp")) return;
-                const portNum = parseInt(port.replace("/tcp", ""));
-                const containerName = `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`;
-                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${serviceAlias}:${portNum}`, "-t", `${waitForServicesTimeout}`];
-                this._containersToClean.push(containerName);
-                return Utils.spawn(spawnCmd);
-            }));
+            await Promise.any(Object.keys(imageInspect[0].Config.ExposedPorts)
+                .filter((port) => port.endsWith("/tcp"))
+                .map((port) => {
+                    const portNum = Number.parseInt(port.replace("/tcp", ""));
+                    const containerName = `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`;
+                    const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${serviceAlias}:${portNum}`, "-t", `${waitForServicesTimeout}`];
+                    this._containersToClean.push(containerName);
+                    return Utils.spawn(spawnCmd);
+                }));
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${prettyHrtime(endTime)}}}\n`);
         } catch (e: any) {

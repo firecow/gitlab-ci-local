@@ -433,11 +433,11 @@ export async function resolveIncludeLocal (pattern: string, cwd: string) {
 
     // `**` matches anything
     const anything = ".*?";
-    pattern = pattern.replaceAll(/\\\*\\\*/g, anything);
+    pattern = pattern.replaceAll("\\*\\*", anything);
 
     // `*` matches anything except for `/`
     const anything_but_not_slash = "([^/])*?";
-    pattern = pattern.replaceAll(/\\\*/g, anything_but_not_slash);
+    pattern = pattern.replaceAll("\\*", anything_but_not_slash);
 
     const re2js = RE2JS.compile(`^${pattern}`);
     return repoFiles.filter((f: any) => re2js.matches(f));
