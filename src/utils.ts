@@ -215,21 +215,21 @@ export class Utils {
                 matchedConditions.push(rule.if);
             }
             if (rule.exists) {
-                const existsStr = Array.isArray(rule.exists)
-                    ? `exists: [${rule.exists.join(', ')}]`
-                    : ``;
+                const existsStr = Array.isArray(rule.exists) ?
+                    `exists: [${rule.exists.join(", ")}]` :
+                    "";
                 matchedConditions.push(existsStr);
             }
             if (rule.changes) {
-                const changesStr = Array.isArray(rule.changes)
-                    ? `changes: [${rule.changes.join(', ')}]`
-                    : ``;
+                const changesStr = Array.isArray(rule.changes) ?
+                    `changes: [${rule.changes.join(", ")}]` :
+                    "";
                 matchedConditions.push(changesStr);
             }
 
             // if rule only has 'when', then matchedConditions will have 0 items;
             // should not display anything as a matched rule, since 'when' is displayed in its own column
-            matchedRule = matchedConditions.length > 0 ? matchedConditions.join(' && ') : '';
+            matchedRule = matchedConditions.length > 0 ? matchedConditions.join(" && ") : "";
 
             break; // Early return, will not evaluate the remaining rules
         }

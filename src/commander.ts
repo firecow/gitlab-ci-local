@@ -237,8 +237,8 @@ export class Commander {
             if (!listRule && needs) {
                 jobLine += chalk`    [{blueBright ${needs}}]`;
             }
-            else if (listRule && job.matchedRule){
-                jobLine += chalk`    {yellow ${job.matchedRule}}`;  // Ensure consistent spacing
+            else if (listRule && job.matchedRule) {
+                jobLine += chalk`    {yellow ${job.matchedRule}}`;
             }
             writeStreams.stdout(`${jobLine}\n`);
         };

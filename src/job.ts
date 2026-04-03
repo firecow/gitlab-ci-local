@@ -205,7 +205,7 @@ export class Job {
         if (this.rules) {
             const ruleResult = Utils.getRulesResult({argv, cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when, jobData.allow_failure);
             this.when = ruleResult.when;
-            this.matchedRule = ruleResult.matchedRule
+            this.matchedRule = ruleResult.matchedRule;
             this.allowFailure = ruleResult.allowFailure;
             ruleVariables = ruleResult.variables;
             if (ruleResult.needs) {
