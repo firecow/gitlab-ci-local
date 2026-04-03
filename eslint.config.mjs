@@ -9,7 +9,7 @@ export default [
         ignores: [
             "**/*.js",
             "**/*.cjs",
-            ".gitlab-ci-local",
+            "**/.gitlab-ci-local/**",
         ],
     },
     {
