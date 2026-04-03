@@ -1034,7 +1034,8 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             for (const [key, val] of Object.entries(expanded)) {
                 // Replacing `'` with `'\''` to correctly handle single quotes(if `val` contains `'`) in shell commands
-                dockerCmd += `  -e '${key}=${val.toString().replaceAll("'", "'\\''")}' \\\n`;
+                const escaped = val.toString().replaceAll("'", String.raw`'\''`);
+                dockerCmd += `  -e '${key}=${escaped}' \\\n`;
             }
 
             if (this.imageEntrypoint) {
@@ -1593,7 +1594,8 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         for (const [key, val] of Object.entries(expanded)) {
             // Replacing `'` with `'\''` to correctly handle single quotes(if `val` contains `'`) in shell commands
-            dockerCmd += `  -e '${key}=${val.toString().replaceAll("'", "'\\''")}' \\\n`;
+            const escaped = val.toString().replaceAll("'", String.raw`'\''`);
+            dockerCmd += `  -e '${key}=${escaped}' \\\n`;
         }
 
         const serviceEntrypoint = service.entrypoint;
@@ -1620,7 +1622,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += `${Utils.safeBashString(e)} `;
             });
         }
-        (service.command ?? []).forEach((e) => dockerCmd += `"${e.replaceAll("$", String.raw`\$`)}" `);
+        for (const e of service.command ?? []) {
+            const escaped = e.replaceAll("$", String.raw`\$`);
+            dockerCmd += `"${escaped}" `;
+        }
 
         const time = process.hrtime();
 
