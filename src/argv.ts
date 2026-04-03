@@ -239,7 +239,7 @@ export class Argv {
 
                 // Guard against prototype pollution
                 if (dangerousKeys.has(key) || dangerousKeys.has(component ?? "")) return;
-                
+
                 // Try to parse as JSON for arrays/objects/booleans/numbers
                 let parsedValue;
                 try {
@@ -247,7 +247,7 @@ export class Argv {
                 } catch {
                     parsedValue = value;
                 }
-                
+
                 if (component) {
                     // Component-specific input: store under component namespace
                     if (!inputs[component]) inputs[component] = {};

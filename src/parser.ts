@@ -254,7 +254,7 @@ export class Parser {
             try {
                 fileInputs = yaml.load(content) as {[key: string]: any} ?? {};
             } catch (e: any) {
-                throw new Error(`Failed to parse inputs file ${inputsFilePath}: ${e.message}`);
+                throw new Error(`Failed to parse inputs file ${inputsFilePath}: ${e.message}`, {cause: e});
             }
         }
 

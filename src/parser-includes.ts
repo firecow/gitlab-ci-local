@@ -58,12 +58,12 @@ export class ParserIncludes {
         const {argv, inputs: inputsConfig} = opts;
         const fileInputs = inputsConfig._file ?? {};
         const cliInputs = inputsConfig._cli ?? {};
-        
+
         // Extract global CLI inputs (non-component-specific)
         const cliGlobalInputs: {[key: string]: any} = {};
         const cliComponentInputs: {[key: string]: any} = {};
         for (const [key, value] of Object.entries(cliInputs)) {
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            if (typeof value === "object" && value !== null && !Array.isArray(value)) {
                 // This is a component-specific input (e.g., {deploy: {replicas: 5}})
                 cliComponentInputs[key] = value;
             } else {
@@ -71,9 +71,9 @@ export class ParserIncludes {
                 cliGlobalInputs[key] = value;
             }
         }
-        
+
         // If file has _global key, use structured format; otherwise treat entire file as global
-        const isStructured = fileInputs._global !== undefined || Object.keys(fileInputs).some(k => !k.startsWith('_') && typeof fileInputs[k] === 'object' && fileInputs[k] !== null && !Array.isArray(fileInputs[k]));
+        const isStructured = fileInputs._global !== undefined || Object.keys(fileInputs).some(k => !k.startsWith("_") && typeof fileInputs[k] === "object" && fileInputs[k] !== null && !Array.isArray(fileInputs[k]));
         const globalInputs = isStructured ? {...(fileInputs._global ?? {}), ...cliGlobalInputs} : {...fileInputs, ...cliGlobalInputs};
         this.count++;
         assert(
