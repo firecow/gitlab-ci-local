@@ -13,7 +13,7 @@ build-job:
   needs: [test-job]
   rules:
     - changes:
-      - .gitlab-ci.yml
+        - .gitlab-ci.yml
     - if: 1 == 1
   allow_failure: true
   script:

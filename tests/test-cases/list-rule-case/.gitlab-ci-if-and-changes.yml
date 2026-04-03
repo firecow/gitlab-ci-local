@@ -1,3 +1,4 @@
+---
 docker-build:
   stage: build
   rules:
@@ -8,4 +9,3 @@ docker-build:
     - if: 2 == 2
   script:
     - docker build
-

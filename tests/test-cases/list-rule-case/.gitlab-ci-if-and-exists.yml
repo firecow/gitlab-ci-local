@@ -1,3 +1,4 @@
+---
 docker-compose-up:
   stage: deploy
   environment:
