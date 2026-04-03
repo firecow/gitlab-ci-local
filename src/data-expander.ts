@@ -1,6 +1,6 @@
 import chalk from "chalk-template";
 import deepExtend from "deep-extend";
-import assert, {AssertionError} from "assert";
+import assert, {AssertionError} from "node:assert";
 import {Job, Need} from "./job.js";
 import {traverse} from "object-traversal";
 import {Utils} from "./utils.js";
@@ -150,7 +150,7 @@ export function cacheEach (jobName: string, gitlabData: any) {
 
     jobData.cache = Array.isArray(cache) ? cache : [cache];
     for (const [i, c] of Object.entries<any>(jobData.cache)) {
-        if (c.key?.files instanceof Array) {
+        if (Array.isArray(c.key?.files)) {
             assert(c.key.files.length === 1 || c.key.files.length === 2, `cache:key:files should be an array of one or two file paths. Got ${c.key.files.length}`);
         }
         jobData.cache[i] = cacheComplex(c);

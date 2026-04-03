@@ -5,7 +5,7 @@ import * as yaml from "js-yaml";
 import chalk from "chalk-template";
 import prettyHrtime from "pretty-hrtime";
 import {Argv} from "./argv.js";
-import assert from "assert";
+import assert from "node:assert";
 import {Utils} from "./utils.js";
 import dotenv from "dotenv";
 import deepExtend from "deep-extend";
@@ -72,12 +72,12 @@ export class VariablesFromFiles {
             for (const [matcher, content] of Object.entries(values)) {
                 assert(typeof content == "string", `${key}.${matcher} content must be text or multiline text`);
                 if (isDotEnv || type === "variable" || (type === null && !/^[/~]/.exec(content))) {
-                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replace(/\*/g, ".*")}$`, "g");
+                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replaceAll("*", ".*")}$`, "g");
                     variables[key] = variables[key] ?? {type: "variable", environments: []};
                     variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
                 } else if (type === null && /^[/~]/.exec(content)) {
                     const fileSource = content.replace(/^~\/(.*)/, `${homeDir}/$1`);
-                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replace(/\*/g, ".*")}$`, "g");
+                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replaceAll("*", ".*")}$`, "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};
                     if (fs.existsSync(fileSource)) {
                         variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority, fileSource});
@@ -85,7 +85,7 @@ export class VariablesFromFiles {
                         variables[key].environments.push({content: `warn: ${key} is pointing to invalid path\n`, regexp, regexpPriority: matcher.length, scopePriority});
                     }
                 } else if (type === "file") {
-                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replace(/\*/g, ".*")}$`, "g");
+                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replaceAll("*", ".*")}$`, "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};
                     variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
                 } else {

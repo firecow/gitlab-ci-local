@@ -1,6 +1,6 @@
 import Ajv from "ajv";
 import {Job} from "./job.js";
-import assert from "assert";
+import assert from "node:assert";
 import chalk from "chalk-template";
 import schema from "./schema.js";
 import {betterAjvErrors} from "./schema-error.js";

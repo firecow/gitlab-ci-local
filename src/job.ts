@@ -6,7 +6,7 @@ import split2 from "split2";
 import {Utils} from "./utils.js";
 import {WriteStreams} from "./write-streams.js";
 import {GitData} from "./git-data.js";
-import assert, {AssertionError} from "assert";
+import assert, {AssertionError} from "node:assert";
 import {Mutex} from "./mutex.js";
 import {Argv} from "./argv.js";
 import execa from "execa";
@@ -418,10 +418,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                 }
                 break;
             case "object":
-                if (! Array.isArray(allowFailure.exit_codes)) {
-                    allowedExitCodes = [allowFailure.exit_codes];
-                } else {
+                if (Array.isArray(allowFailure.exit_codes)) {
                     allowedExitCodes = allowFailure.exit_codes;
+                } else {
+                    allowedExitCodes = [allowFailure.exit_codes];
                 }
                 break;
             default:
@@ -685,12 +685,11 @@ If you know what you're doing and would like to suppress this warning, use one o
             const tmpVolumeName = this.tmpVolumeName;
             const fileVariablesDir = this.fileVariablesDir;
 
-            const volumePromises = [];
-            volumePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", `${buildVolumeName}`], argv.cwd));
-            volumePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", `${tmpVolumeName}`], argv.cwd));
-            this._containerVolumeNames.push(buildVolumeName);
-            this._containerVolumeNames.push(tmpVolumeName);
-            await Promise.all(volumePromises);
+            this._containerVolumeNames.push(buildVolumeName, tmpVolumeName);
+            await Promise.all([
+                Utils.spawn([this.argv.containerExecutable, "volume", "create", `${buildVolumeName}`], argv.cwd),
+                Utils.spawn([this.argv.containerExecutable, "volume", "create", `${tmpVolumeName}`], argv.cwd),
+            ]);
 
             const time = process.hrtime();
             this.refreshLongRunningSilentTimeout(writeStreams);
@@ -762,7 +761,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
 
         await this.execPreScripts(expanded);
-        if (this._prescriptsExitCode == null) throw Error("this._prescriptsExitCode must be defined!");
+        if (this._prescriptsExitCode == null) throw new Error("this._prescriptsExitCode must be defined!");
 
         await this.execAfterScripts(expanded);
 
@@ -844,7 +843,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         scripts.forEach((script) => {
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
-            const text = split[0]?.replace(/\\/g, "\\\\").replace(/"/g, "\\\"").replace(/[$]/g, "\\$");
+            const text = split[0]?.replaceAll("\\", String.raw`\\`).replaceAll("\"", String.raw`\"`).replaceAll("$", String.raw`\$`);
             if (this.interactive) {
                 cmd += chalk`echo "{green $ ${text}${multilineText}}"\n`;
             } else {
@@ -1621,7 +1620,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += `${Utils.safeBashString(e)} `;
             });
         }
-        (service.command ?? []).forEach((e) => dockerCmd += `"${e.replace(/\$/g, "\\$")}" `);
+        (service.command ?? []).forEach((e) => dockerCmd += `"${e.replaceAll("$", String.raw`\$`)}" `);
 
         const time = process.hrtime();
 

@@ -38,7 +38,7 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
         CI_PROJECT_NAME: gitData.remote.project,
         CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
         CI_PROJECT_PATH: `${gitData.remote.group}/${gitData.remote.project}`,
-        CI_PROJECT_PATH_SLUG: `${gitData.remote.group.replace(/\//g, "-")}-${gitData.remote.project}`.toLowerCase(),
+        CI_PROJECT_PATH_SLUG: `${gitData.remote.group.replaceAll("/", "-")}-${gitData.remote.project}`.toLowerCase(),
         CI_PROJECT_ROOT_NAMESPACE: CI_PROJECT_ROOT_NAMESPACE,
         CI_PROJECT_NAMESPACE: CI_PROJECT_NAMESPACE,
         CI_PROJECT_VISIBILITY: "internal",
@@ -46,7 +46,7 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
         CI_COMMIT_REF_PROTECTED: "false",
         CI_COMMIT_BRANCH: gitData.commit.REF_NAME, // Not available in merge request or tag pipelines
         CI_COMMIT_REF_NAME: gitData.commit.REF_NAME, // Tag or branch name
-        CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replace(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase(),
+        CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replaceAll(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase(),
         CI_COMMIT_TIMESTAMP: gitData.commit.TIMESTAMP,
         CI_PIPELINE_CREATED_AT: new Date().toISOString().split(".")[0] + "Z",
         CI_COMMIT_TITLE: "Commit Title", // First line of commit message.

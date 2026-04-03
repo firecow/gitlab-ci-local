@@ -1,7 +1,7 @@
-import assert from "assert";
+import assert from "node:assert";
 import fs from "fs-extra";
 import * as dotenv from "dotenv";
-import * as path from "path";
+import * as path from "node:path";
 import camelCase from "camelcase";
 import {Utils} from "./utils.js";
 import {WriteStreams} from "./write-streams.js";

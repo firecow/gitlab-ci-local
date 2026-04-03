@@ -1,4 +1,4 @@
-import assert from "assert";
+import assert from "node:assert";
 import deepExtend from "deep-extend";
 
 export function isPlainParallel (jobData: any) {

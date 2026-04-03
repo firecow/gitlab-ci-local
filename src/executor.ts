@@ -1,6 +1,6 @@
 import chalk from "chalk-template";
 import {Job} from "./job.js";
-import assert, {AssertionError} from "assert";
+import assert, {AssertionError} from "node:assert";
 import {Argv} from "./argv.js";
 import pMap from "p-map";
 

@@ -6,7 +6,7 @@ import {WriteStreams} from "./write-streams.js";
 import {Executor} from "./executor.js";
 import fs from "fs-extra";
 import {Argv} from "./argv.js";
-import {AssertionError} from "assert";
+import {AssertionError} from "node:assert";
 
 export class Commander {
 

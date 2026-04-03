@@ -1,6 +1,6 @@
 import * as yaml from "js-yaml";
 import chalk from "chalk-template";
-import path from "path";
+import path from "node:path";
 import fs from "fs-extra";
 import yargs from "yargs";
 import {Commander} from "./commander.js";
@@ -11,7 +11,7 @@ import {WriteStreams} from "./write-streams.js";
 import {cleanupJobResources, Job} from "./job.js";
 import {Utils} from "./utils.js";
 import {Argv} from "./argv.js";
-import assert from "assert";
+import assert from "node:assert";
 
 const generateGitIgnore = (cwd: string, stateDir: string) => {
     const gitIgnoreFilePath = `${cwd}/${stateDir}/.gitignore`;

@@ -1,5 +1,5 @@
 import {Utils} from "./utils.js";
-import assert, {AssertionError} from "assert";
+import assert, {AssertionError} from "node:assert";
 import {WriteStreams} from "./write-streams.js";
 import chalk from "chalk-template";
 
@@ -35,12 +35,12 @@ export class GitData {
 
     static async init (cwd: string, writeStreams: WriteStreams): Promise<GitData> {
         const gitData = new GitData();
-        const promises = [];
-        promises.push(gitData.initCommitData(cwd, writeStreams));
-        promises.push(gitData.initRemoteData(cwd, writeStreams));
-        promises.push(gitData.initUserData(cwd, writeStreams));
-        promises.push(gitData.initBranchData(cwd, writeStreams));
-        await Promise.all(promises);
+        await Promise.all([
+            gitData.initCommitData(cwd, writeStreams),
+            gitData.initRemoteData(cwd, writeStreams),
+            gitData.initUserData(cwd, writeStreams),
+            gitData.initBranchData(cwd, writeStreams),
+        ]);
         return gitData;
     }
 

@@ -7,7 +7,7 @@ import fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
 import execa, {ExecaError} from "execa";
-import assert from "assert";
+import assert from "node:assert";
 import {CICDVariable} from "./variables-from-files.js";
 import {GitData} from "./git-data.js";
 import {globbySync} from "globby";
@@ -92,7 +92,7 @@ export class Utils {
         const matches = Array.from(content.matchAllRE2JS(regex));
         if (matches.length === 0) return "0";
 
-        const lastMatch = matches[matches.length - 1];
+        const lastMatch = matches.at(-1)!;
         const digits = /\d+(?:\.\d+)?/.exec(lastMatch[1] ?? lastMatch[0] ?? "");
         if (!digits) return "0";
         return digits[0] ?? "0";
@@ -111,16 +111,15 @@ export class Utils {
             return text;
         }
 
-        return text.replace(
+        return text.replaceAll(
             /(\$\$)|\$\{([a-zA-Z_]\w*)}|\$([a-zA-Z_]\w*)/g, // https://regexr.com/7s4ka
             (_match, escape, var1, var2) => {
-                if (typeof escape !== "undefined") {
+                if (escape !== undefined) {
                     return expandWith.unescape;
-                } else {
-                    const name = var1 || var2;
-                    assert(name, "unexpected unset capture group");
-                    return `${expandWith.variable(name)}`;
                 }
+                const name = var1 || var2;
+                assert(name, "unexpected unset capture group");
+                return `${expandWith.variable(name)}`;
             },
         );
     }

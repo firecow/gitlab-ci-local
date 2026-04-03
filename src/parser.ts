@@ -1,5 +1,5 @@
 import chalk from "chalk-template";
-import path from "path";
+import path from "node:path";
 import deepExtend from "deep-extend";
 import fs from "fs-extra";
 import * as yaml from "js-yaml";
@@ -7,7 +7,7 @@ import prettyHrtime from "pretty-hrtime";
 import {Job} from "./job.js";
 import * as DataExpander from "./data-expander.js";
 import {Utils} from "./utils.js";
-import assert from "assert";
+import assert from "node:assert";
 import {Validator} from "./validator.js";
 import * as parallel from "./parallel.js";
 import {GitData} from "./git-data.js";
@@ -199,7 +199,7 @@ export class Parser {
         if (this.argv.maxJobNamePadding !== null && this.argv.maxJobNamePadding <= 0) {
             this._jobNamePad = 0;
         } else {
-            const jobs = this.argv.job.length !== 0 ? this.argv.job : this.jobs;
+            const jobs = this.argv.job.length === 0 ? this.jobs : this.argv.job;
             jobs.forEach((job) => {
                 let jobNeedsLength: number[] = [];
 
@@ -304,7 +304,7 @@ export class Parser {
             const uninterpolatedConfigurations: any = fileData[1];
 
             const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
-                .replace(
+                .replaceAll(
                     /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?<interpolationKey>[\w-]+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\](?<lastChar>[^$])?/g // https://regexr.com/81c16
                     , (_: string, firstChar: string, secondChar: string, interpolationKey: string, interpolationFunctions: string, lastChar: string) => {
                         const configFilePath = path.relative(process.cwd(), filePath);
