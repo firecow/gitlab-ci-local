@@ -8,7 +8,7 @@ import * as state from "./state.js";
 import {WriteStreamsProcess, WriteStreamsMock} from "./write-streams.js";
 import {handler} from "./handler.js";
 import {Executor} from "./executor.js";
-import {Argv} from "./argv.js";
+import {Argv, stripGclVariableEnvVars, injectGclVariableEnvVars} from "./argv.js";
 import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job.js";
 import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
@@ -16,15 +16,26 @@ import packageJson from "../package.json";
 
 const jobs: Job[] = [];
 
-process.on("SIGINT", async (_: string, code: number) => {
-    await cleanupJobResources(jobs);
-    process.exit(code);
-});
+let cleanupAndExitPromise: Promise<void> | null = null;
+
+async function cleanupAndExit (code: number) {
+    // First caller's exit code wins — subsequent callers join the in-flight cleanup.
+    if (cleanupAndExitPromise) return cleanupAndExitPromise;
+    cleanupAndExitPromise = cleanupJobResources(jobs).finally(() => process.exit(code));
+    return cleanupAndExitPromise;
+}
+
+process.on("SIGINT", () => cleanupAndExit(130));
+process.on("SIGTERM", () => cleanupAndExit(143));
+process.on("SIGHUP", () => cleanupAndExit(129));
 
 // Graceful shutdown for nodemon
-process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
+process.on("SIGUSR2", async () => {
+    if (!cleanupAndExitPromise) await cleanupJobResources(jobs);
+});
 
 (() => {
+    const gclVariableEnvVars = stripGclVariableEnvVars(process.env);
     const yparser = yargs(process.argv.slice(2));
     yparser.parserConfiguration({"greedy-arrays": false})
         .showHelpOnFail(false)
@@ -35,6 +46,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                 try {
                     const arrayKeys = new Set(yparser.getOptions().array.map((k: string) => camelCase(k)));
                     splitSemicolonEnvVars(argv, arrayKeys, process.env);
+                    injectGclVariableEnvVars(argv, gclVariableEnvVars);
                     await handler(argv, new WriteStreamsProcess(), jobs);
                     const failedJobs = Executor.getFailed(jobs);
                     process.exit(failedJobs.length > 0 ? 1 : 0);
@@ -46,8 +58,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                     } else {
                         process.stderr.write(chalk`{red ${e.stack ?? e}}\n`);
                     }
-                    await cleanupJobResources(jobs);
-                    process.exit(1);
+                    await cleanupAndExit(1);
                 }
             },
             builder: (y: any) => {
@@ -200,6 +211,11 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
         .option("wait-image", {
             type: "string",
             description: "Which image to be used for the wait container. Defaults to docker.io/sumina46/wait-for-it:latest if not set.",
+            requiresArg: false,
+        })
+        .option("wait-for-services-timeout", {
+            type: "number",
+            description: "Timeout in seconds for service health checks. Defaults to 30.",
             requiresArg: false,
         })
         .option("helper-image", {
@@ -355,6 +371,7 @@ process.on("SIGUSR2", async () => await cleanupJobResources(jobs));
                 if (current.startsWith("-")) {
                     completionFilter();
                 } else {
+                    injectGclVariableEnvVars(yargsArgv, gclVariableEnvVars);
                     Argv.build({...yargsArgv, autoCompleting: true})
                         .then(argv => state.getPipelineIid(argv.cwd, argv.stateDir).then(pipelineIid => ({argv, pipelineIid})))
                         .then(({argv, pipelineIid}) => Parser.create(argv, new WriteStreamsMock(), pipelineIid, []))

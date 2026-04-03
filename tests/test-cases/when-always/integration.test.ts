@@ -8,12 +8,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("when-always <test-job> --needs", async () => {
+test.concurrent("when-always <test-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/when-always",
         job: ["test-job"],
         needs: true,
+        stateDir: ".gitlab-ci-local-when-always",
     }, writeStreams);
 
     const expected = [

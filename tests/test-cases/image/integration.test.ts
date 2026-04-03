@@ -78,7 +78,7 @@ test.concurrent("image <test-from-scratch>", async () => {
 // ignored. The bug would cause this to also ignore test-file.txt in ./folder,
 // which it should not. Expected output will differ if ./folder/test-file.txt
 // is also ignored.
-test("image <test-ignore-regression>", async () => {
+test.concurrent("image <test-ignore-regression>", async () => {
     const writeStreams = new WriteStreamsMock();
 
     try {
@@ -128,12 +128,13 @@ test.concurrent("image <image-user>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("pull invalid image", async () => {
+test.concurrent("pull invalid image", async () => {
     const jobs: Job[] = [];
     const writeStreams = new WriteStreamsMock();
     const handlerPromise = handler({
         cwd: "tests/test-cases/image",
         file: ".gitlab-ci-invalid-image.yml",
+        stateDir: ".gitlab-ci-local-pull-invalid-image",
     }, writeStreams, jobs);
 
     await expect(handlerPromise).rejects.toThrow(/Command failed with exit code/);
@@ -141,12 +142,13 @@ test("pull invalid image", async () => {
     await cleanupJobResources(jobs);
 });
 
-test("no variable substitution in entrpoint", async () => {
+test.concurrent("no variable substitution in entrpoint", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
         cwd: "tests/test-cases/image",
         job: ["image-entrypoint-with-variables"],
+        stateDir: ".gitlab-ci-local-entrypoint-with-variables",
     }, writeStreams);
 
     const expected = [

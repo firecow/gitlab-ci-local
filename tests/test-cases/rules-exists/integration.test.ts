@@ -7,10 +7,11 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("rules-exists", async () => {
+test.concurrent("rules-exists", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/rules-exists",
+        stateDir: ".gitlab-ci-local-rules-exists",
     }, writeStreams);
 
     const output = writeStreams.stdoutLines.join();

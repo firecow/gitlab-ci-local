@@ -772,11 +772,19 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
     }
 
+    private _cleanupPromise: Promise<void> | null = null;
+
     async cleanupResources () {
         clearTimeout(this._longRunningSilentTimeout);
 
         if (!this.argv.cleanup) return;
 
+        if (this._cleanupPromise) return this._cleanupPromise;
+        this._cleanupPromise = this._doCleanupResources();
+        return this._cleanupPromise;
+    }
+
+    private async _doCleanupResources () {
         if (this._containersToClean.length > 0) {
             try {
                 await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", ...this._containersToClean]);
@@ -1344,7 +1352,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             for (const path of c.paths) {
                 if (!Utils.isSubpath(path, this.argv.cwd, this.argv.cwd)) continue;
 
-                paths += " " + Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
+                paths += " ./" + Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
             }
 
             time = process.hrtime();
@@ -1417,7 +1425,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
         for (const artifactPath of this.artifacts?.paths ?? []) {
             const expandedPath = Utils.expandText(artifactPath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
-            cpCmd += `${expandedPath} `;
+            cpCmd += `./${expandedPath} `;
         }
         cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
         const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, expanded);
@@ -1428,7 +1436,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             reportDotenvs.forEach((reportDotenv) => {
                 cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv\n`;
                 cpCmd += `if [ -f ${reportDotenv} ]; then\n`;
-                cpCmd += `  rsync -Ra ${reportDotenv} ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
+                cpCmd += `  rsync -Ra ./${reportDotenv} ${artifactsPath}/${safeJobName}/.gitlab-ci-reports/dotenv/.\n`;
                 cpCmd += "fi\n";
             });
         }
@@ -1470,7 +1478,10 @@ If you know what you're doing and would like to suppress this warning, use one o
         await fs.mkdirp(`${cwd}/${stateDir}/${type}`);
 
         if (this.imageName(this._variables)) {
-            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${cmd.replace(/"/g, "\\\"")}"`, cwd);
+            const cmdWithWritablePerms = `${cmd}\nchmod -R u+w /${type} 2>/dev/null || true`;
+            // eslint-disable-next-line @stylistic/quotes
+            const escapedCmd = cmdWithWritablePerms.replaceAll('"', String.raw`\"`);
+            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${escapedCmd}"`, cwd);
             this._containersToClean.push(containerId);
             await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
             await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
@@ -1534,10 +1545,6 @@ If you know what you're doing and would like to suppress this warning, use one o
         const cwd = this.argv.cwd;
         let dockerCmd = `${this.argv.containerExecutable} create --interactive `;
         this.refreshLongRunningSilentTimeout(writeStreams);
-
-        if (this.argv.umask) {
-            dockerCmd += "--user 0:0 ";
-        }
 
         if (this.argv.userns != undefined) {
             dockerCmd += `--userns=${this.argv.userns} `;
@@ -1638,6 +1645,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         const serviceAlias = service.alias;
         const serviceName = service.name;
         const waitImageName = this.argv.waitImage;
+        const waitForServicesTimeout = this.argv.waitForServicesTimeout;
 
         const {stdout} = await Utils.spawn([this.argv.containerExecutable, "image", "inspect", serviceName]);
         const imageInspect = JSON.parse(stdout);
@@ -1662,7 +1670,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 if (!port.endsWith("/tcp")) return;
                 const portNum = parseInt(port.replace("/tcp", ""));
                 const containerName = `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`;
-                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${uniqueAlias}:${portNum}`, "-t", "30"];
+                const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${uniqueAlias}:${portNum}`, "-t", `${waitForServicesTimeout}`];
                 this._containersToClean.push(containerName);
                 return Utils.spawn(spawnCmd);
             }));
@@ -1704,14 +1712,14 @@ If you know what you're doing and would like to suppress this warning, use one o
                 }
 
                 for (const file of files) {
-                    const content = await Parser.loadYaml(file, {});
+                    const content = await Parser.loadYaml(file, {}, true, this.writeStreams);
                     contents = {
                         ...contents,
                         ...content,
                     };
                 }
             } else if (include["artifact"]) {
-                const content = await Parser.loadYaml(`${cwd}/${stateDir}/artifacts/${include["job"]}/${include["artifact"]}`, {});
+                const content = await Parser.loadYaml(`${cwd}/${stateDir}/artifacts/${include["job"]}/${include["artifact"]}`, {}, true, this.writeStreams);
                 contents = {
                     ...contents,
                     ...content,

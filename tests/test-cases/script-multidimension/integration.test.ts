@@ -7,12 +7,13 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("should support 10 level deep", async () => {
+test.concurrent("should support 10 level deep", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         preview: true,
         file: ".gitlab-ci-10-level-deep.yml",
         cwd: "tests/test-cases/script-multidimension",
+        stateDir: ".gitlab-ci-local-should-support-10-level-deep",
     }, writeStreams);
 
     const expected = `
@@ -40,13 +41,14 @@ test-job:
     expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
 });
 
-test("should not support 11 level deep", async () => {
+test.concurrent("should not support 11 level deep", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             noColor: true,
             file: ".gitlab-ci-11-level-deep.yml",
             cwd: "tests/test-cases/script-multidimension",
+            stateDir: ".gitlab-ci-local-should-not-support-11-level-deep",
         }, writeStreams);
     } catch (e: any) {
         expect(e.message).toEqual("This Gitlab CI configuration is invalid: test-job.script config should be string or a nested array of strings up to 10 level deep");

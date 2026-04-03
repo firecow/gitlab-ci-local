@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("script-failures <test-job>", async () => {
+test.concurrent("script-failures <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-script-failures-test-job",
     }, writeStreams);
 
     const expected = [
@@ -24,11 +25,12 @@ test("script-failures <test-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("script-failures <test-job-after-script>", async () => {
+test.concurrent("script-failures <test-job-after-script>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["test-job-after-script"],
+        stateDir: ".gitlab-ci-local-script-failures-test-job-after-script",
     }, writeStreams);
 
     const expected = [
@@ -38,11 +40,12 @@ test("script-failures <test-job-after-script>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("script-failures <allow-failure-job>", async () => {
+test.concurrent("script-failures <allow-failure-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["allow-failure-job"],
+        stateDir: ".gitlab-ci-local-script-failures-allow-failure-job",
     }, writeStreams);
 
     const expected = [
@@ -52,11 +55,12 @@ test("script-failures <allow-failure-job>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("script-failures <allow-failure-after-script>", async () => {
+test.concurrent("script-failures <allow-failure-after-script>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["allow-failure-after-script"],
+        stateDir: ".gitlab-ci-local-script-failures-allow-failure-after-script",
     }, writeStreams);
 
     const expected = [
@@ -66,12 +70,13 @@ test("script-failures <allow-failure-after-script>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("script-failures <deploy-job> --needs", async () => {
+test.concurrent("script-failures <deploy-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["deploy-job"],
         needs: true,
+        stateDir: ".gitlab-ci-local-script-failures-deploy-job-needs",
     }, writeStreams);
 
     const expected = [
@@ -85,11 +90,12 @@ test("script-failures <deploy-job> --needs", async () => {
     expect(found).toEqual(undefined);
 });
 
-test("script-failures <exit_code[number] allowed>", async () => {
+test.concurrent("script-failures <exit_code[number] allowed>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["exit_code[number] allowed"],
+        stateDir: ".gitlab-ci-local-script-failures-exit-code-number-allowed",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
@@ -97,11 +103,12 @@ test("script-failures <exit_code[number] allowed>", async () => {
     );
 });
 
-test("script-failures <exit_code[number[]] allowed>", async () => {
+test.concurrent("script-failures <exit_code[number[]] allowed>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["exit_code[number[]] allowed"],
+        stateDir: ".gitlab-ci-local-script-failures-exit-code-number-array-allowed",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
@@ -109,11 +116,12 @@ test("script-failures <exit_code[number[]] allowed>", async () => {
     );
 });
 
-test("script-failures <exit_code[number] not allowed>", async () => {
+test.concurrent("script-failures <exit_code[number] not allowed>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["exit_code[number] not allowed"],
+        stateDir: ".gitlab-ci-local-script-failures-exit-code-number-not-allowed",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
@@ -121,11 +129,12 @@ test("script-failures <exit_code[number] not allowed>", async () => {
     );
 });
 
-test("script-failures <exit_code[number[]] not allowed>", async () => {
+test.concurrent("script-failures <exit_code[number[]] not allowed>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["exit_code[number[]] not allowed"],
+        stateDir: ".gitlab-ci-local-script-failures-exit-code-number-array-not-allowed",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
@@ -133,11 +142,12 @@ test("script-failures <exit_code[number[]] not allowed>", async () => {
     );
 });
 
-test("script-failures <rules:allow_failure precedence>", async () => {
+test.concurrent("script-failures <rules:allow_failure precedence>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["rules:allow_failure precedence"],
+        stateDir: ".gitlab-ci-local-script-failures-rules-allow-failure-precedence",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(
@@ -145,11 +155,12 @@ test("script-failures <rules:allow_failure precedence>", async () => {
     );
 });
 
-test("script-failures <rules:without allow_failure>", async () => {
+test.concurrent("script-failures <rules:without allow_failure>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/script-failures",
         job: ["rules:without allow_failure"],
+        stateDir: ".gitlab-ci-local-script-failures-rules-without-allow-failure",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(

@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("long-running-silent-build-job <build-job>", async () => {
+test.concurrent("long-running-silent-build-job <build-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/long-running-silent-build-job",
         job: ["build-job"],
+        stateDir: ".gitlab-ci-local-long-running-silent-build-job",
     }, writeStreams);
 
     let expected = "";

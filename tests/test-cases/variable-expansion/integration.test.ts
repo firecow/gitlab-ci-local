@@ -9,11 +9,12 @@ beforeAll(() => {
 });
 
 const test_job_1 = "test ${URL_${ENV}}";
-test(`variable-expansion <${test_job_1}>`, async () => {
+test.concurrent(`variable-expansion <${test_job_1}>`, async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variable-expansion",
         job: [test_job_1],
+        stateDir: ".gitlab-ci-local-test-1",
     }, writeStreams);
 
     const expected = chalk`{blueBright ${test_job_1}} {green $ echo $URL}
@@ -23,11 +24,12 @@ test(`variable-expansion <${test_job_1}>`, async () => {
 });
 
 const test_job_2 = "test ${${ENV}_URL}";
-test(`variable-expansion <${test_job_2}>`, async () => {
+test.concurrent(`variable-expansion <${test_job_2}>`, async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variable-expansion",
         job: [test_job_2],
+        stateDir: ".gitlab-ci-local-test-2",
     }, writeStreams);
 
     const expected = chalk`{blueBright ${test_job_2}} {green $ echo $URL}
@@ -37,11 +39,12 @@ test(`variable-expansion <${test_job_2}>`, async () => {
 });
 
 const test_job_3 = "docker-executor services variables with '";
-test(`variable-expansion <${test_job_3}>`, async () => {
+test.concurrent(`variable-expansion <${test_job_3}>`, async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variable-expansion",
         job: [test_job_3],
+        stateDir: ".gitlab-ci-local-test-3",
     }, writeStreams);
 
     const expected = chalk`{blueBright ${test_job_3}} {green $ echo $CI_JOB_NAME}
@@ -51,11 +54,12 @@ test(`variable-expansion <${test_job_3}>`, async () => {
 });
 
 const test_job_4 = "docker-executor variables with '";
-test(`variable-expansion <${test_job_4}>`, async () => {
+test.concurrent(`variable-expansion <${test_job_4}>`, async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variable-expansion",
         job: [test_job_4],
+        stateDir: ".gitlab-ci-local-test-4",
     }, writeStreams);
 
     const expected = chalk`{blueBright ${test_job_4}} {green $ echo $CI_JOB_NAME}
@@ -64,12 +68,13 @@ test(`variable-expansion <${test_job_4}>`, async () => {
     expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
 });
 
-test("should expand predefined variables in environment", async () => {
+test.concurrent("should expand predefined variables in environment", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variable-expansion",
         file: ".gitlab-ci-1.yml",
         noColor: true,
+        stateDir: ".gitlab-ci-local-should-expand-predefined-variables-in-environment",
     }, writeStreams);
 
     const expected = "job environment: { name: review/test/deploy }";
@@ -77,12 +82,13 @@ test("should expand predefined variables in environment", async () => {
     expect(filteredStdout).toEqual(expected);
 });
 
-test("should expand rule variables in environment", async () => {
+test.concurrent("should expand rule variables in environment", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variable-expansion",
         file: ".gitlab-ci-2.yml",
         noColor: true,
+        stateDir: ".gitlab-ci-local-should-expand-rule-variables-in-environment",
     }, writeStreams);
 
     const expected = "job environment: { name: test }";
@@ -90,12 +96,13 @@ test("should expand rule variables in environment", async () => {
     expect(filteredStdout).toEqual(expected);
 });
 
-test("should expand variables referencing dotenv artifact variables", async () => {
+test.concurrent("should expand variables referencing dotenv artifact variables", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variable-expansion",
         file: ".gitlab-ci-3.yml",
         noColor: true,
+        stateDir: ".gitlab-ci-local-should-expand-variables-referencing-dotenv-artifac",
     }, writeStreams);
 
     const expected = "job2 > latest";
@@ -104,12 +111,13 @@ test("should expand variables referencing dotenv artifact variables", async () =
     expect(filteredStdout).toEqual(expected);
 });
 
-test("should support variables:expand", async () => {
+test.concurrent("should support variables:expand", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/variable-expansion",
         file: ".gitlab-ci-4.yml",
         noColor: true,
+        stateDir: ".gitlab-ci-local-should-support-variables-expand",
     }, writeStreams);
 
     const expected = `

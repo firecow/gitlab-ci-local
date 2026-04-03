@@ -8,10 +8,11 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("when-on-failure", async () => {
+test.concurrent("when-on-failure", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/when-on-failure",
+        stateDir: ".gitlab-ci-local-when-on-failure",
     }, writeStreams);
 
     const expected = [

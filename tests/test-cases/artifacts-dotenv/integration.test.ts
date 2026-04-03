@@ -7,23 +7,25 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("artifacts-dotenv <use-image-ref> --needs", async () => {
+test.concurrent("artifacts-dotenv <use-image-ref> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-dotenv",
         job: ["use-image-ref"],
         needs: true,
+        stateDir: ".gitlab-ci-local-artifacts-dotenv-use-image-ref-needs",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);
 });
 
-test("artifacts-dotenv <use-service-ref> --needs", async () => {
+test.concurrent("artifacts-dotenv <use-service-ref> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/artifacts-dotenv",
         job: ["use-service-ref"],
         needs: true,
+        stateDir: ".gitlab-ci-local-artifacts-dotenv-use-service-ref-needs",
     }, writeStreams);
 
     expect(writeStreams.stderrLines.join("\n")).not.toMatch(/FAIL/);

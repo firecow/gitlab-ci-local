@@ -2,12 +2,13 @@ import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import chalk from "chalk-template";
 
-test("parallel <test-job>", async () => {
+test.concurrent("parallel <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel",
         job: ["test-job"],
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-parallel-test-job",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
@@ -16,12 +17,13 @@ test("parallel <test-job>", async () => {
     ]));
 });
 
-test("parallel 'test-job [1/2]'", async () => {
+test.concurrent("parallel 'test-job [1/2]'", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel",
         job: ["test-job: [1/2]"],
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-parallel-test-job-1-2",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([
@@ -33,12 +35,13 @@ test("parallel 'test-job [1/2]'", async () => {
     ]));
 });
 
-test("parallel 'single-job'", async () => {
+test.concurrent("parallel 'single-job'", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel",
         job: ["single-job"],
         shellIsolation: true,
+        stateDir: ".gitlab-ci-local-parallel-single-job",
     }, writeStreams);
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([

@@ -8,11 +8,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("before-script <test-job>", async () => {
+test.concurrent("before-script <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/before-script",
         job: ["test-job"],
+        stateDir: ".gitlab-ci-local-before-script",
     }, writeStreams);
 
     const expected = [

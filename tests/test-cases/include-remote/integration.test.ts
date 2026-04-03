@@ -11,7 +11,7 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("include-remote <test-job|build-job>", async () => {
+test.concurrent("include-remote <test-job|build-job>", async () => {
     const mock = new AxiosMockAdapter(axios);
     try {
         let body;
@@ -24,6 +24,7 @@ test("include-remote <test-job|build-job>", async () => {
         await handler({
             cwd: "tests/test-cases/include-remote",
             job: ["test-job", "build-job"],
+            stateDir: ".gitlab-ci-local-include-remote",
         }, writeStreams);
 
         const expected = [

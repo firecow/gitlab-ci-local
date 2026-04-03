@@ -9,10 +9,9 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("include-project-file-with-variable test-job", async () => {
+test.concurrent("include-project-file-with-variable test-job", async () => {
     const cwd = "tests/test-cases/include-project-file-with-variable";
-
-    await fs.rm(`${cwd}/.gitlab-ci-local/`, {recursive: true, force: true});
+    const stateDir = ".gitlab-ci-local-include-project-file-with-variable";
 
     const spyGitRemote = {
         cmdArgs: ["git", "remote", "get-url", "origin"],
@@ -20,7 +19,7 @@ test("include-project-file-with-variable test-job", async () => {
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 
-    const target = ".gitlab-ci-local/includes/gitlab.com/test-group/gitlab-ci-local-test/HEAD/";
+    const target = `${stateDir}/includes/gitlab.com/test-group/gitlab-ci-local-test/HEAD/`;
     const spyGitArchive1 = {
         cmd: `git archive --remote=ssh://git@gitlab.com:22/test-group/gitlab-ci-local-test.git HEAD test-file.yml | tar -f - -xC ${target}`,
         returnValue: {output: ""},
@@ -28,7 +27,7 @@ test("include-project-file-with-variable test-job", async () => {
     initBashSpy([spyGitArchive1]);
 
     const mock = `${cwd}/mock-test-file.yml`;
-    const mockTarget = `${cwd}/.gitlab-ci-local/includes/gitlab.com/test-group/gitlab-ci-local-test/HEAD/test-file.yml`;
+    const mockTarget = `${cwd}/${stateDir}/includes/gitlab.com/test-group/gitlab-ci-local-test/HEAD/test-file.yml`;
     await fs.ensureFile(mockTarget);
     await fs.copyFile(mock, mockTarget);
 
@@ -36,6 +35,7 @@ test("include-project-file-with-variable test-job", async () => {
     await handler({
         cwd,
         job: ["test-job"],
+        stateDir,
     }, writeStreams);
 
     const expected = [

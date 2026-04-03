@@ -1,6 +1,5 @@
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
-import chalk from "chalk-template";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import fs from "fs-extra";
@@ -17,32 +16,36 @@ afterAll(() => {
     fs.removeSync(path.join(cwd, emptyFileVariable));
 });
 
-test("project-variables-file <test-job>", async () => {
+test.concurrent("project-variables-file <test-job>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
         job: ["test-job"],
+        noColor: true,
+        stateDir: ".gitlab-ci-local-test-job",
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright test-job} {greenBright >} Y`,
-        chalk`{blueBright test-job} {greenBright >} Recursive CI/CD`,
+        "test-job > Y",
+        "test-job > Recursive CI/CD",
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-test("project-variables-file <issue-1508>", async () => {
+test.concurrent("project-variables-file <issue-1508>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: cwd,
         job: ["issue-1508"],
         variable: ["XDEBUG_MODE=debug,develop"],
+        noColor: true,
+        stateDir: ".gitlab-ci-local-issue-1508",
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright issue-1508} {greenBright >} minikube`,
-        chalk`{blueBright issue-1508} {greenBright >} /root/.kube/config`,
-        chalk`{blueBright issue-1508} {greenBright >} debug,develop`,
+        "issue-1508 > minikube",
+        "issue-1508 > /root/.kube/config",
+        "issue-1508 > debug,develop",
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -52,10 +55,12 @@ test.concurrent("project-variables-file <issue-1333>", async () => {
     await handler({
         cwd: cwd,
         file: ".gitlab-ci-issue-1333.yml",
+        noColor: true,
+        stateDir: ".gitlab-ci-local-issue-1333",
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright issue-1333} {greenBright >} firecow`,
+        "issue-1333 > firecow",
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -67,10 +72,12 @@ test.concurrent("project-variables-file custom-path", async () => {
         file: ".gitlab-ci-custom.yml",
         variablesFile: ".custom-local-var-file",
         job: ["job"],
+        noColor: true,
+        stateDir: ".gitlab-ci-local-custom-path",
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright job} {greenBright >} firecow`,
+        "job > firecow",
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -83,6 +90,7 @@ test.concurrent("project-variables-file empty-variable-file", async () => {
         variablesFile: emptyFileVariable,
         job: ["job"],
         preview: true,
+        stateDir: ".gitlab-ci-local-empty-variable-file",
     }, writeStreams);
     expect(writeStreams.stdoutLines[0]).toEqual(`---
 stages:
@@ -110,10 +118,12 @@ test.concurrent("project-variables-file custom-path (.env)", async () => {
         file: ".gitlab-ci-custom.yml",
         variablesFile: ".env",
         job: ["job"],
+        noColor: true,
+        stateDir: ".gitlab-ci-local-custom-path-env",
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright job} {greenBright >} holycow`,
+        "job > holycow",
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
@@ -126,6 +136,7 @@ test.concurrent("project-variables-file custom-path (.envs)", async () => {
         job: ["job2"],
         variablesFile: ".envs",
         noColor: true,
+        stateDir: ".gitlab-ci-local-custom-path-envs",
     }, writeStreams);
 
     const expected = `

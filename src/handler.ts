@@ -74,10 +74,12 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         }
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
+        let pipelineIid: number;
         if (argv.needs || argv.onlyNeeds) {
-            await state.incrementPipelineIid(cwd, stateDir);
+            pipelineIid = await state.incrementPipelineIid(cwd, stateDir);
+        } else {
+            pipelineIid = await state.getPipelineIid(cwd, stateDir);
         }
-        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
         await Commander.runJobs(argv, parser, writeStreams);
@@ -101,8 +103,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         }
         generateGitIgnore(cwd, stateDir);
         const time = process.hrtime();
-        await state.incrementPipelineIid(cwd, stateDir);
-        const pipelineIid = await state.getPipelineIid(cwd, stateDir);
+        const pipelineIid = await state.incrementPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
         await Commander.runPipeline(argv, parser, writeStreams);

@@ -2,7 +2,6 @@ import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
-import fs from "fs-extra";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -14,17 +13,14 @@ beforeAll(() => {
 
 });
 
-afterAll(() => {
-    fs.rmSync("tests/test-cases/include-project-file/.gitlab-ci-local", {recursive: true, force: true});
-});
-
-test("include:project be able to target branch via ref", async () => {
+test.concurrent("include:project be able to target branch via ref", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
         file: ".gitlab-ci-1.yml",
         cwd: "tests/test-cases/include-project-file",
         noColor: true,
+        stateDir: ".gitlab-ci-local-include-project-file-ref",
     }, writeStreams);
 
 
@@ -34,13 +30,14 @@ test("include:project be able to target branch via ref", async () => {
     expect(filteredStdout).toEqual(expected);
 });
 
-test("include:project should target default branch when ref is missing", async () => {
+test.concurrent("include:project should target default branch when ref is missing", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
         file: ".gitlab-ci-2.yml",
         cwd: "tests/test-cases/include-project-file",
         noColor: true,
+        stateDir: ".gitlab-ci-local-include-project-file-default-branch",
     }, writeStreams);
 
 
@@ -50,7 +47,7 @@ test("include:project should target default branch when ref is missing", async (
     expect(filteredStdout).toEqual(expected);
 });
 
-test("include:project should respect rules specified in included project", async () => {
+test.concurrent("include:project should respect rules specified in included project", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
@@ -58,6 +55,7 @@ test("include:project should respect rules specified in included project", async
         cwd: "tests/test-cases/include-project-file",
         noColor: true,
         list: true,
+        stateDir: ".gitlab-ci-local-include-project-file-rules",
     }, writeStreams);
 
 

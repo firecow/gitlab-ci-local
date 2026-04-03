@@ -20,7 +20,7 @@ beforeAll(() => {
  * When the first job expands "$CLUSTER" to "cluster-a", it mutates the shared object,
  * so subsequent jobs see "cluster-a" instead of "$CLUSTER".
  */
-test("parallel-matrix-environment - environment object cloning prevents mutation", () => {
+test.concurrent("parallel-matrix-environment - environment object cloning prevents mutation", () => {
     // Simulate what the Job constructor does with environment
     const jobData = {
         environment: {name: "$CLUSTER"},
@@ -55,7 +55,7 @@ test("parallel-matrix-environment - environment object cloning prevents mutation
  * This test verifies what happens WITHOUT the fix (buggy behavior).
  * It demonstrates the bug that the fix addresses.
  */
-test("parallel-matrix-environment - demonstrates bug without cloning", () => {
+test.concurrent("parallel-matrix-environment - demonstrates bug without cloning", () => {
     const jobData = {
         environment: {name: "$CLUSTER"},
     };
@@ -87,7 +87,7 @@ test("parallel-matrix-environment - demonstrates bug without cloning", () => {
  * object is cloned using the spread operator. This prevents accidental
  * removal of the fix.
  */
-test("parallel-matrix-environment - job.ts contains environment cloning fix", async () => {
+test.concurrent("parallel-matrix-environment - job.ts contains environment cloning fix", async () => {
     const fs = await import("fs");
     const path = await import("path");
     const {fileURLToPath} = await import("url");
@@ -114,11 +114,12 @@ test("parallel-matrix-environment - job.ts contains environment cloning fix", as
  * expanded $CLUSTER to "cluster-a", it mutated the shared object, causing all subsequent
  * jobs to see "cluster-a" instead of their own cluster name.
  */
-test("parallel-matrix-environment - each job gets correct environment name", async () => {
+test.concurrent("parallel-matrix-environment - each job gets correct environment name", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/parallel-matrix-environment",
         job: ["run-all-clusters"],
+        stateDir: ".gitlab-ci-local-each-job-gets-correct-env",
     }, writeStreams);
 
     // Each matrix job should have its environment name expanded to its own CLUSTER value
@@ -150,10 +151,11 @@ test("parallel-matrix-environment - each job gets correct environment name", asy
  * the environment object is cloned (using spread operator) instead of assigned
  * by reference.
  */
-test("parallel-matrix-environment - parser creates jobs with independent environment names", async () => {
+test.concurrent("parallel-matrix-environment - parser creates jobs with independent environment names", async () => {
     const writeStreams = new WriteStreamsMock();
     const argv = await Argv.build({
         cwd: "tests/test-cases/parallel-matrix-environment",
+        stateDir: ".gitlab-ci-local-parser-independent-env",
     }, writeStreams);
 
     const parser = await Parser.create(argv, writeStreams, 1, []);

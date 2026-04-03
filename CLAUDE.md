@@ -4,7 +4,7 @@ CLI tool to run GitLab CI pipelines locally. Written in TypeScript, built with B
 
 ## Build & Runtime
 
-- **Runtime**: Bun (not Node.js). All scripts use `bun`/`bun test`/`bun run`.
+- **Runtime**: Bun (not Node.js). All scripts use `bun`/`bun run`. Tests use vitest.
 - **npm publish**: Still uses `npm publish --provenance` because Bun doesn't support provenance.
 - **`bin` field**: Points to `dist/index.js` (Node.js-compatible bundle built by `bun run build:node`), not `src/index.ts`. This keeps `npm install -g` working without Bun.
 - **Standalone binaries**: Built with `bun build --compile` for linux-amd64, linux-arm64, macos-x64, macos-arm64, win.
@@ -12,10 +12,10 @@ CLI tool to run GitLab CI pipelines locally. Written in TypeScript, built with B
 
 ## Testing
 
-- **Never run the full test suite** (`bun test`), it takes too long. Always run targeted tests: `bun test --timeout 60000 tests/test-cases/<name>/`
-- **Timeout**: `bunfig.toml` timeout setting does not work. The `--timeout 60000` flag in package.json scripts is required.
+- **Never run the full test suite** (`bun run test`), it takes too long. Always run targeted tests: `bunx vitest run tests/test-cases/<name>/`
+- **Timeout**: Configured in `vitest.config.ts` (`testTimeout: 60_000`).
 - **Docker tests**: Tests under `dind-*` require Docker and are slow.
-- **depcheck ignores**: `depcheck,@types/bun,@types/bun-types,bun:test`
+- **depcheck ignores**: `depcheck,@types/bun,@types/bun-types,vitest,@vitest/coverage-v8`
 
 ## Schema
 

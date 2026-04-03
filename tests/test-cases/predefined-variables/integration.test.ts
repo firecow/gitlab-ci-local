@@ -1,4 +1,4 @@
-import {spyOn, type Mock, beforeAll, beforeEach, afterEach, afterAll, describe, test, expect} from "bun:test";
+import {vi, type Mock} from "vitest";
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import chalk from "chalk-template";
@@ -91,7 +91,7 @@ beforeAll(() => {
         returnValue: {stdout: "git@gitlab.com:GCL/predefined-variables.git"},
     };
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
-    jobIdSpy = spyOn(
+    jobIdSpy = vi.spyOn(
         Job.prototype as any,
         "generateJobId",
     );
@@ -103,7 +103,7 @@ beforeAll(() => {
             if (args.length === 0) {
                 super(_mockDate.getTime());
             } else {
-                super(...args);
+                super(...(args as [number]));
             }
         }
     } as any;
@@ -111,6 +111,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
+    jobIdSpy.mockRestore();
     globalThis.Date = OrigDate;
 });
 
@@ -223,17 +224,18 @@ CI_SERVER_SHELL_SSH_PORT: 8022
     });
 });
 
-test("predefined-variables <shell-isolation> --shell-isolation", async () => {
+test.concurrent("predefined-variables <shell-isolation> --shell-isolation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/predefined-variables",
         job: ["shell-isolation"],
         shellIsolation: true,
         shellExecutorNoImage: false,
+        stateDir: ".gitlab-ci-local-predefined-variables-shell-isolation",
     }, writeStreams);
 
     const expected = [
-        chalk`{blueBright shell-isolation} {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables/.gitlab-ci-local/builds/shell-isolation`,
+        chalk`{blueBright shell-isolation} {greenBright >} ${process.cwd()}/tests/test-cases/predefined-variables/.gitlab-ci-local-predefined-variables-shell-isolation/builds/shell-isolation`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });

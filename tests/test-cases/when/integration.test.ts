@@ -9,11 +9,12 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test("when", async () => {
+test.concurrent("when", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/when",
+            stateDir: ".gitlab-ci-local-when",
         }, writeStreams);
     } catch (e: any) {
         assert(e instanceof AssertionError, "e is not instanceof AssertionError");

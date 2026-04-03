@@ -26,12 +26,13 @@ afterEach(async () => {
     initBashSpy([]);
 });
 
-test("--container-emulate some_unexisting_runner", async () => {
+test.concurrent("--container-emulate some_unexisting_runner", async () => {
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
             cwd: "tests/test-cases/container-executable",
             containerEmulate: "some_unexisting_runner",
+            stateDir: ".gitlab-ci-local-emulate-unexisting-runner",
         }, writeStreams, jobs);
 
         expect(true).toBe(false);
@@ -40,7 +41,7 @@ test("--container-emulate some_unexisting_runner", async () => {
     }
 });
 
-test("should contains memory config when emulating valid runner", async () => {
+test.concurrent("should contains memory config when emulating valid runner", async () => {
     // given a spy of the bash utils
     const bashSpy = initBashSpy([{cmd: expect.any(String), returnValue: {stdout: "abcde12345", stderr: "", exitCode: 0}}]);
 
@@ -51,13 +52,14 @@ test("should contains memory config when emulating valid runner", async () => {
     await handler({
         cwd: "tests/test-cases/container-executable",
         containerEmulate: "saas-linux-small",
+        stateDir: ".gitlab-ci-local-emulate-memory-config",
     }, writeStreams);
 
     // then the bash spy should have been called with the memory option
     expect(bashSpy).toHaveBeenLastCalledWith(expect.stringMatching(/ --memory=\d{1,6}m /), expect.any(String));
 });
 
-test("should contains kernel memory config when emulating valid runner", async () => {
+test.concurrent("should contains kernel memory config when emulating valid runner", async () => {
     // given a spy of the bash utils
     const bashSpy = initBashSpy([{cmd: expect.any(String), returnValue: {stdout: "abcde12345", stderr: "", exitCode: 0}}]);
 
@@ -68,13 +70,14 @@ test("should contains kernel memory config when emulating valid runner", async (
     await handler({
         cwd: "tests/test-cases/container-executable",
         containerEmulate: "saas-linux-small",
+        stateDir: ".gitlab-ci-local-emulate-kernel-memory-config",
     }, writeStreams);
 
     // then the bash spy should have been called with the kernel option
     expect(bashSpy).toHaveBeenLastCalledWith(expect.stringMatching(/ --kernel-memory=\d{1,6}m /), expect.any(String));
 });
 
-test("should contains cpus config when emulating valid runner", async () => {
+test.concurrent("should contains cpus config when emulating valid runner", async () => {
     // given a spy of the bash utils
     const bashSpy = initBashSpy([{cmd: expect.any(String), returnValue: {stdout: "abcde12345", stderr: "", exitCode: 0}}]);
 
@@ -85,6 +88,7 @@ test("should contains cpus config when emulating valid runner", async () => {
     await handler({
         cwd: "tests/test-cases/container-executable",
         containerEmulate: "saas-linux-small",
+        stateDir: ".gitlab-ci-local-emulate-cpus-config",
     }, writeStreams);
 
     // then the bash spy should have been called with the cpus option
