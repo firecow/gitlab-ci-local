@@ -107,6 +107,7 @@ export class Job {
         exit_codes: number | number[];
     };
     readonly when: string;
+    readonly matchedRule: string | undefined;
     readonly exists: string[];
     readonly pipelineIid: number;
     readonly gitData: GitData;
@@ -210,6 +211,7 @@ export class Job {
         if (this.rules) {
             const ruleResult = Utils.getRulesResult({argv, cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when, jobData.allow_failure);
             this.when = ruleResult.when;
+            this.matchedRule = ruleResult.matchedRule;
             this.allowFailure = ruleResult.allowFailure;
             ruleVariables = ruleResult.variables;
             if (ruleResult.needs) {

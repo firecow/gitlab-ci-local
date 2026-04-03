@@ -1,0 +1,11 @@
+---
+docker-build:
+  stage: build
+  rules:
+    - if: 1 == 1
+      changes:
+        - example/*.js
+        - other-file.txt
+    - if: 2 == 2
+  script:
+    - docker build

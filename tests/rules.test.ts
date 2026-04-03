@@ -20,7 +20,7 @@ test.concurrent("GITLAB_CI on_success", () => {
     ];
     const variables = {GITLAB_CI: "false"};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined, matchedRule: "$GITLAB_CI == 'false'"});
 });
 
 test.concurrent("Regex on undef var", () => {
@@ -29,7 +29,7 @@ test.concurrent("Regex on undef var", () => {
     ];
     const variables = {};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined, matchedRule: undefined});
 });
 
 test.concurrent("Negated regex on undef var", () => {
@@ -38,7 +38,7 @@ test.concurrent("Negated regex on undef var", () => {
     ];
     const variables = {};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined, matchedRule: "$CI_COMMIT_TAG !~ /^v\\d+.\\d+.\\d+/"});
 });
 
 test.concurrent("GITLAB_CI fail and fallback", () => {
@@ -48,7 +48,7 @@ test.concurrent("GITLAB_CI fail and fallback", () => {
     ];
     const variables = {GITLAB_CI: "false"};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined, matchedRule: ""});
 });
 
 test.concurrent("Undefined if", () => {
@@ -57,7 +57,7 @@ test.concurrent("Undefined if", () => {
     ];
     const variables = {};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined, matchedRule: ""});
 });
 
 test.concurrent("Undefined when", () => {
@@ -66,7 +66,7 @@ test.concurrent("Undefined when", () => {
     ];
     const variables = {GITLAB_CI: "false"};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined, matchedRule: "$GITLAB_CI"});
 });
 
 test.concurrent("Early return", () => {
@@ -76,7 +76,7 @@ test.concurrent("Early return", () => {
     ];
     const variables = {GITLAB_CI: "false"};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined, matchedRule: "$GITLAB_CI"});
 });
 
 test.concurrent("VAR exists positive", () => {
@@ -254,14 +254,14 @@ test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/350", () => {
     ];
     variables = {CI_COMMIT_BRANCH: "master"};
     rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined, matchedRule: "$CI_COMMIT_BRANCH =~ /master$/"});
 
     rules = [
         {if: "$CI_COMMIT_BRANCH =~ /$BRANCHNAME/", when: "manual"},
     ];
     variables = {CI_COMMIT_BRANCH: "master", BRANCHNAME: "master"};
     rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined, matchedRule: undefined});
 });
 
 test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/300", () => {
@@ -271,14 +271,14 @@ test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/300", () => {
     ];
     variables = {VAR1: "val", VAR2: "ci-skip-job-", VAR3: "/ci-skip-job-/"};
     rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined, matchedRule: "$VAR1 && (($VAR2 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR2 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))"});
 
     rules = [
         {if: "$VAR1 && (($VAR2 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR2 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))", when: "manual"},
     ];
     variables = {VAR1: "val", VAR2: "ci-skip-stage-", VAR3: "/ci-skip-stage-/"};
     rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined, matchedRule: "$VAR1 && (($VAR2 =~ /ci-skip-job-/ && $VAR2 =~ $VAR3) || ($VAR2 =~ /ci-skip-stage-/ && $VAR2 =~ $VAR3))"});
 });
 
 test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/424", () => {
@@ -287,7 +287,7 @@ test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/424", () => {
     ];
     const variables = {CI_COMMIT_REF_NAME: "develop"};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined, matchedRule: "$CI_COMMIT_REF_NAME =~ /^(develop$|release\\/.*|master$)/"});
 });
 
 test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/609", () => {
@@ -296,7 +296,7 @@ test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/609", () => {
     ];
     const variables = {CI_COMMIT_REF_NAME: "main", PROD_REF: "/^(master|main)$/"};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined, matchedRule: "$CI_COMMIT_REF_NAME =~ $PROD_REF"});
 });
 
 test.concurrent("optional manual job", () => {
@@ -306,7 +306,7 @@ test.concurrent("optional manual job", () => {
     ];
     const variables = {GITLAB_CI: "false"};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData, jobWhen);
-    expect(rulesResult).toEqual({when: "manual", allowFailure: true, variables: undefined});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: true, variables: undefined, matchedRule: "$GITLAB_CI == 'false'"});
 });
 
 test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/1755", () => {
@@ -317,7 +317,7 @@ test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/1755", () => 
     ];
     const variables = {GITLAB_CI: "false"};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData, jobWhen, jobAllowFailure);
-    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined, matchedRule: "$GITLAB_CI == 'false'"});
 });
 
 test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/1252", () => {
@@ -327,5 +327,5 @@ test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/1252", () => 
     ];
     const variables = {VAR1: "val1", VAR2: "val2"};
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined, matchedRule: "$VAR1 == 'val1'"});
 });

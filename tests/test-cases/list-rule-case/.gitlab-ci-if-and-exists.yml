@@ -1,0 +1,18 @@
+---
+docker-compose-up:
+  stage: deploy
+  environment:
+    url: http://localhost:8891
+    name: local
+  script:
+    - docker compose up -d
+
+docker-compose-down:
+  stage: .post
+  rules:
+    - if: 0 == 1
+    - if: 1 == 1
+      exists:
+        - integration.test.ts
+  script:
+    - docker compose down

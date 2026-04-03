@@ -1,0 +1,21 @@
+---
+stages: [test, build]
+
+# @Description Run Tests
+test-job:
+  stage: test
+  script:
+    - echo ${GITLAB_USER_LOGIN}
+    - '>&2 echo "Hello, error!"'
+
+build-job:
+  stage: build
+  needs: [test-job]
+  rules:
+    - exists:
+        - integration.test.ts
+        - .gitlab-ci.yml
+    - if: 1 == 1
+  allow_failure: true
+  script:
+    - 'echo "Build something"'

@@ -96,6 +96,11 @@ process.on("SIGUSR2", async () => {
             description: "List job information, when:never included",
             requiresArg: false,
         })
+        .option("list-rule", {
+            type: "boolean",
+            description: "List job information, matching rule included",
+            requiresArg: false,
+        })
         .option("list-json", {
             type: "boolean",
             description: "List job information in json format, when:never included",

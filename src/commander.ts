@@ -197,7 +197,8 @@ export class Commander {
         }
     }
 
-    static runList (parser: Parser, writeStreams: WriteStreams, listAll: boolean) {
+
+    static runList (parser: Parser, writeStreams: WriteStreams, listAll: boolean, listRule: boolean) {
         const stages = parser.stages;
         let jobs = [...parser.jobs.values()];
         jobs.sort((a, b) => {
@@ -221,15 +222,23 @@ export class Commander {
 
         writeStreams.stdout(chalk`{grey ${"name".padEnd(jobNamePad)}  ${"description".padEnd(descriptionPadEnd)}}  `);
         writeStreams.stdout(chalk`{grey ${"stage".padEnd(stagePadEnd)}  ${"when".padEnd(whenPadEnd)}}  `);
-        writeStreams.stdout(chalk`{grey allow_failure  needs}\n`);
+        if (listRule) {
+            writeStreams.stdout(chalk`{grey allow_failure  rule}\n`);
+        }
+        else {
+            writeStreams.stdout(chalk`{grey allow_failure  needs}\n`);
+        }
 
         const renderLine = (job: Job) => {
             const needs = job.needs?.filter(n => !n.project && !n.pipeline).map(n => n.job);
             const allowFailure = job.allowFailure ? "true " : "false ";
             let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
             jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
-            if (needs) {
+            if (!listRule && needs) {
                 jobLine += chalk`    [{blueBright ${needs}}]`;
+            }
+            else if (listRule && job.matchedRule) {
+                jobLine += chalk`    {yellow ${job.matchedRule}}`;
             }
             writeStreams.stdout(`${jobLine}\n`);
         };

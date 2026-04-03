@@ -188,9 +188,10 @@ export class Utils {
         return envMatchedVariables;
     }
 
-    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} | undefined = undefined): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}; needs?: Need[]} {
+    static getRulesResult (opt: RuleResultOpt, gitData: GitData, jobWhen: string = "on_success", jobAllowFailure: boolean | {exit_codes: number | number[]} | undefined = undefined): {when: string; allowFailure: boolean | {exit_codes: number | number[]}; variables?: {[name: string]: string}; needs?: Need[]; matchedRule?: string} {
         let when = "never";
         const {evaluateRuleChanges} = opt.argv;
+        let matchedRule: string | undefined;
 
         // optional manual jobs allowFailure defaults to true https://docs.gitlab.com/ee/ci/jobs/job_control.html#types-of-manual-jobs
         let allowFailure: boolean | {exit_codes: number | number[]} = jobAllowFailure ?? jobWhen === "manual";
@@ -207,10 +208,32 @@ export class Utils {
             ruleVariable = rule.variables;
             ruleNeeds = rule.needs?.map((n: any) => needsComplex(n));
 
+            // Build matchedRule string to show which condition(s) matched
+            const matchedConditions: string[] = [];
+            if (rule.if) {
+                matchedConditions.push(rule.if);
+            }
+            if (rule.exists) {
+                const existsStr = Array.isArray(rule.exists) ?
+                    `exists: [${rule.exists.join(", ")}]` :
+                    "";
+                matchedConditions.push(existsStr);
+            }
+            if (rule.changes) {
+                const changesStr = Array.isArray(rule.changes) ?
+                    `changes: [${rule.changes.join(", ")}]` :
+                    "";
+                matchedConditions.push(changesStr);
+            }
+
+            // if rule only has 'when', then matchedConditions will have 0 items;
+            // should not display anything as a matched rule, since 'when' is displayed in its own column
+            matchedRule = matchedConditions.length > 0 ? matchedConditions.join(" && ") : "";
+
             break; // Early return, will not evaluate the remaining rules
         }
 
-        return {when, allowFailure, variables: ruleVariable, needs: ruleNeeds};
+        return {when, allowFailure, variables: ruleVariable, needs: ruleNeeds, matchedRule};
     }
 
     static evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]: string}): boolean {
