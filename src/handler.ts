@@ -30,7 +30,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     let parser: Parser;
 
     if (argv.completion) {
-        yargs(process.argv.slice(2)).showCompletionScript();
+        yargs(process.argv.slice(2)).scriptName("gitlab-ci-local").showCompletionScript();
         return [];
     }
 
