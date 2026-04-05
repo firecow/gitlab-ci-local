@@ -7,7 +7,10 @@ export default defineConfig({
                 extends: true,
                 test: {
                     name: "forks",
-                    include: ["tests/test-cases/argv-cwd/**/*.test.ts"],
+                    include: [
+                        "tests/test-cases/argv-cwd/**/*.test.ts",
+                        "tests/test-cases/completion/**/*.test.ts",
+                    ],
                     pool: "forks",
                 },
             },
@@ -16,7 +19,7 @@ export default defineConfig({
                 test: {
                     name: "threads",
                     include: ["tests/**/*.test.ts"],
-                    exclude: [...configDefaults.exclude, "**/.gitlab-ci-local*/**", "tests/test-cases/argv-cwd/**/*.test.ts"],
+                    exclude: [...configDefaults.exclude, "**/.gitlab-ci-local*/**", "tests/test-cases/argv-cwd/**/*.test.ts", "tests/test-cases/completion/**/*.test.ts"],
                     pool: "threads",
                 },
             },
