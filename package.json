@@ -42,7 +42,7 @@
     "object-traversal": "1.x.x",
     "p-map": "7.x.x",
     "pretty-hrtime": "1.x.x",
-    "re2js": "1.x.x",
+    "re2js": "2.x",
     "semver": "7.x.x",
     "split2": "4.x.x",
     "terminal-link": "5.x.x",
