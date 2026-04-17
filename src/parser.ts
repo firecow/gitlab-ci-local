@@ -108,17 +108,8 @@ export class Parser {
         const inputs = await this.loadInputs(cwd, argv);
 
         // Build root-level inputs from global CLI + global file inputs
-        const cliInputs = inputs._cli ?? {};
         const fileInputs = inputs._file ?? {};
-        const globalCliInputs: {[key: string]: any} = {};
-        for (const [k, v] of Object.entries(cliInputs)) {
-            if (typeof v !== "object" || v === null || Array.isArray(v)) {
-                globalCliInputs[k] = v;
-            }
-        }
-        const isStructuredFile = fileInputs._global !== undefined || Object.keys(fileInputs).some(k => !k.startsWith("_") && typeof fileInputs[k] === "object" && fileInputs[k] !== null && !Array.isArray(fileInputs[k]));
-        const fileGlobalInputs = isStructuredFile ? (fileInputs._global ?? {}) : fileInputs;
-        const rootInputs = {...fileGlobalInputs, ...globalCliInputs};
+        const rootInputs = {...Utils.getGlobalFileInputs(fileInputs), ...inputs._cliGlobal};
 
         let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`, {inputs: rootInputs}, this.expandVariables, writeStreams);
@@ -258,8 +249,8 @@ export class Parser {
             }
         }
 
-        // Return both file inputs and CLI inputs separately for component-specific merging
-        return {_file: fileInputs, _cli: argv.input};
+        const cliInput = argv.input;
+        return {_file: fileInputs, _cliGlobal: cliInput._global, _cliComponents: cliInput._components};
     }
 
     static async loadYaml (filePath: string, ctx: any = {}, expandVariables: boolean = true, writeStreams?: WriteStreams): Promise<any> {

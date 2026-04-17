@@ -223,9 +223,10 @@ export class Argv {
         return variables;
     }
 
-    get input (): {[key: string]: any} {
+    get input (): {_global: {[key: string]: any}; _components: {[key: string]: {[key: string]: any}}} {
         const val = this.map.get("input");
-        const inputs: {[key: string]: any} = {};
+        const _global: {[key: string]: any} = {};
+        const _components: {[key: string]: {[key: string]: any}} = {};
         const pairs = typeof val == "string" ? val.split(" ") : val;
         const dangerousKeys = new Set(["__proto__", "constructor", "prototype"]);
         (pairs ?? []).forEach((inputPair: string) => {
@@ -249,16 +250,14 @@ export class Argv {
                 }
 
                 if (component) {
-                    // Component-specific input: store under component namespace
-                    if (!inputs[component]) inputs[component] = {};
-                    inputs[component][key] = parsedValue;
+                    if (!_components[component]) _components[component] = {};
+                    _components[component][key] = parsedValue;
                 } else {
-                    // Global input
-                    inputs[key] = parsedValue;
+                    _global[key] = parsedValue;
                 }
             }
         });
-        return inputs;
+        return {_global, _components};
     }
 
     get unsetVariables (): string[] {

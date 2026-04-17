@@ -550,4 +550,12 @@ export class Utils {
         // Return the first alias in the set
         return aliases.values().next().value!;
     }
+
+    static isStructuredInputsFile (fileInputs: {[key: string]: any}): boolean {
+        return fileInputs._global !== undefined || Object.keys(fileInputs).some(k => !k.startsWith("_") && typeof fileInputs[k] === "object" && fileInputs[k] !== null && !Array.isArray(fileInputs[k]));
+    }
+
+    static getGlobalFileInputs (fileInputs: {[key: string]: any}): {[key: string]: any} {
+        return Utils.isStructuredInputsFile(fileInputs) ? (fileInputs._global ?? {}) : {...fileInputs};
+    }
 }
