@@ -1,0 +1,13 @@
+---
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      variables:
+        WORKFLOW_VAR: from-workflow-rules
+
+test-job:
+  stage: test
+  variables:
+    WORKFLOW_VAR: from-job
+  script:
+    - echo "WORKFLOW_VAR=${WORKFLOW_VAR}"
