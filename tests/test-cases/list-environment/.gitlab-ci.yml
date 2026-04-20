@@ -1,0 +1,29 @@
+---
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      variables:
+        DEPLOY_ENV: production
+
+stages: [test, build, deploy]
+
+test-job:
+  stage: test
+  script:
+    - echo "testing"
+
+build-job:
+  stage: build
+  needs: [test-job]
+  environment:
+    name: staging
+  script:
+    - echo "building"
+
+deploy-job:
+  stage: deploy
+  needs: [build-job]
+  environment:
+    name: $DEPLOY_ENV
+  script:
+    - echo "deploying"
