@@ -1424,16 +1424,18 @@ If you know what you're doing and would like to suppress this warning, use one o
         let time, endTime;
         let cpCmd = "shopt -s globstar nullglob dotglob\n";
         cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}\n`;
-        cpCmd += "rsync --exclude '.gitlab-ci-local/**' -Ra ";
+        cpCmd += "_gcl_files_tmp=\\$(mktemp)\n";
+        for (const artifactPath of this.artifacts?.paths ?? []) {
+            const expandedPath = Utils.expandText(artifactPath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
+            cpCmd += `for _gcl_f in ./${expandedPath}; do printf '%s\\n' "\\$_gcl_f"; done >> \\$_gcl_files_tmp\n`;
+        }
+        cpCmd += "rsync --exclude '.gitlab-ci-local/**' -rRa ";
         for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
             const expandedPath = Utils.expandText(artifactExcludePath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
             cpCmd += `--exclude '${expandedPath}' `;
         }
-        for (const artifactPath of this.artifacts?.paths ?? []) {
-            const expandedPath = Utils.expandText(artifactPath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
-            cpCmd += `./${expandedPath} `;
-        }
-        cpCmd += `${artifactsPath}/${safeJobName}/. || true\n`;
+        cpCmd += `--files-from=\\$_gcl_files_tmp . ${artifactsPath}/${safeJobName}/. || true\n`;
+        cpCmd += "rm -f \\$_gcl_files_tmp\n";
         const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, expanded);
         const reportDotenvs: string[] | null = (typeof reportDotenv === "string") ? // normalize to string[] for easier handling
             [reportDotenv] :

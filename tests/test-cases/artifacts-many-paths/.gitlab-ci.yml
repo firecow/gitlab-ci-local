@@ -1,0 +1,30 @@
+---
+# Creates 9000 files whose names are 255 characters long.
+# With the old approach (paths passed as rsync arguments), the total argument
+# size (~2.3 MB) exceeded ARG_MAX (~2 MB) and rsync failed silently.
+# With the new approach (--files-from + bash for loop), there is no limit on
+# the number of files.
+produce-artifacts:
+  stage: build
+  script:
+    - |
+      python3 -c "
+      import os
+      padding = 'x' * 240
+      for i in range(9000):
+          name = f'artifact_{i:05d}_{padding}'
+          fd = os.open(name, os.O_CREAT | os.O_WRONLY, 0o644)
+          os.close(fd)
+      "
+    - mkdir -p output_dir && echo "hello" > output_dir/result.txt
+  artifacts:
+    paths:
+      - artifact_*
+      - output_dir/
+
+consume-artifacts:
+  stage: test
+  script:
+    - count=$(find . -maxdepth 1 -name 'artifact_*' | wc -l)
+    - if [ "$count" -ne 9000 ]; then echo "FAIL expected 9000 artifacts, got $count"; exit 1; fi
+    - if [ ! -f output_dir/result.txt ]; then echo "FAIL output_dir/result.txt not found"; exit 1; fi

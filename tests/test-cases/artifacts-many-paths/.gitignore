@@ -1,0 +1,3 @@
+/artifact_*
+/output_dir/
+/.gitlab-ci-local-many-paths/
