@@ -131,6 +131,21 @@ export class Parser {
         DataExpander.inheritDefault(gitlabData);
         DataExpander.normalize(gitlabData);
 
+        // Evaluate workflow:rules and merge matched rule variables into global variables
+        const workflowRules = gitlabData.workflow?.rules;
+        if (workflowRules) {
+            const globalVars = gitlabData.variables ?? {};
+            const workflowVariables = {...predefinedVariables, ...globalVars, ...envMatchedVariables, ...argv.variable};
+            const ruleResult = Utils.getRulesResult({argv, cwd, rules: workflowRules, variables: workflowVariables}, gitData, "on_success");
+            if (ruleResult.variables) {
+                const normalizedRuleVars: {[key: string]: string} = {};
+                for (const [key, value] of Object.entries(ruleResult.variables)) {
+                    normalizedRuleVars[key] = Utils.normalizeVariables(value);
+                }
+                gitlabData.variables = {...globalVars, ...normalizedRuleVars};
+            }
+        }
+
         assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
         if (!gitlabData.stages.includes(".pre")) {
             gitlabData.stages.unshift(".pre");
