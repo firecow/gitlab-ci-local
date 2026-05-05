@@ -1,0 +1,23 @@
+---
+# Consumer is NOT parallel:matrix but uses $[[ matrix.X ]] in needs.parallel.matrix.
+# GitLab matrix expressions can only reference identifiers from the current job's
+# parallel:matrix configuration; using them in a non-parallelized consumer is invalid.
+stages: [build, test]
+
+linux:build:
+  stage: build
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+  script:
+    - echo "build $PROVIDER"
+
+linux:test:
+  stage: test
+  needs:
+    - job: linux:build
+      parallel:
+        matrix:
+          - PROVIDER: $[[ matrix.PROVIDER ]]
+  script:
+    - echo "test"

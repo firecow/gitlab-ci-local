@@ -7,7 +7,7 @@ import prettyHrtime from "pretty-hrtime";
 import {Job} from "./job.js";
 import * as DataExpander from "./data-expander.js";
 import {Utils} from "./utils.js";
-import assert from "node:assert";
+import assert, {AssertionError} from "node:assert";
 import {Validator} from "./validator.js";
 import * as parallel from "./parallel.js";
 import {GitData} from "./git-data.js";
@@ -193,10 +193,22 @@ export class Parser {
                     matrixJobName = `${jobName}: [${nodeIndex}/${parallelMatrixVariablesList.length}]`;
                 }
 
+                // Resolve `$[[ matrix.X ]]` expressions in needs.parallel.matrix per-permutation
+                // (https://docs.gitlab.com/ci/yaml/matrix_expressions/). Each consumer permutation
+                // gets its own substituted needs so producers can be matched 1:1.
+                let permutationJobData = jobData;
+                if (jobData.needs && parallel.needsContainMatrixExpressions(jobData.needs) && !parallelMatrixVariables) {
+                    throw new AssertionError({message: chalk`{blueBright ${matrixJobName}} uses $[[ matrix.X ]] expressions in needs.parallel.matrix but is not parallelized with parallel:matrix`});
+                }
+                if (parallelMatrixVariables && jobData.needs?.some((n: any) => n.parallel?.matrix)) {
+                    const resolvedNeeds = parallel.resolveNeedsMatrixExpressions(jobData.needs, parallelMatrixVariables, matrixJobName);
+                    permutationJobData = {...jobData, needs: resolvedNeeds};
+                }
+
                 const job = new Job({
                     argv,
                     writeStreams,
-                    data: jobData,
+                    data: permutationJobData,
                     name: matrixJobName,
                     baseName: jobName,
                     globalVariables: gitlabData.variables,

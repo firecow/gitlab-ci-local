@@ -3,6 +3,7 @@ import {Job} from "./job.js";
 import assert, {AssertionError} from "node:assert";
 import {Argv} from "./argv.js";
 import pMap from "p-map";
+import {matrixSelectorMatches} from "./parallel.js";
 
 export class Executor {
 
@@ -87,7 +88,16 @@ export class Executor {
         const toWaitFor = [];
         assert(job.needs != null, chalk`${job.name}.needs cannot be null in getNeededToWaitFor`);
         for (const need of job.needs) {
-            const baseJobs = jobs.filter(j => j.baseName === need.job);
+            let baseJobs = jobs.filter(j => j.baseName === need.job);
+            if (need.parallel?.matrix && baseJobs.length > 0) {
+                if (baseJobs.every(j => j.matrixVariables == null)) {
+                    throw new AssertionError({message: chalk`{blueBright ${job.name}} uses needs.parallel.matrix targeting {blueBright ${need.job}}, but {blueBright ${need.job}} has no parallel:matrix configuration`});
+                }
+                baseJobs = baseJobs.filter(j => matrixSelectorMatches(j.matrixVariables, need.parallel!.matrix));
+                if (baseJobs.length === 0 && !need.optional) {
+                    throw new AssertionError({message: chalk`{blueBright ${job.name}} needs.parallel.matrix selector for {blueBright ${need.job}} matched zero permutations`});
+                }
+            }
             for (const j of baseJobs) {
                 if (j.when === "never" && !need.optional) {
                     throw new AssertionError({message: chalk`{blueBright ${j.name}} is when:never, but its needed by {blueBright ${job.name}}`});

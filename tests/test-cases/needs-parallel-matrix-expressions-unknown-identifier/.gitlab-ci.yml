@@ -1,0 +1,26 @@
+---
+# Consumer references $[[ matrix.NOPE ]] but NOPE is not a key in its own
+# parallel:matrix; this must error per the docs (matrix expressions can only
+# reference identifiers from the current job's matrix configuration).
+stages: [build, test]
+
+linux:build:
+  stage: build
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+  script:
+    - echo "build $PROVIDER"
+
+linux:test:
+  stage: test
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+  needs:
+    - job: linux:build
+      parallel:
+        matrix:
+          - PROVIDER: $[[ matrix.NOPE ]]
+  script:
+    - echo "test $PROVIDER"

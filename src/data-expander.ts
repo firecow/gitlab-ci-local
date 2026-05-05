@@ -116,6 +116,7 @@ export function needsComplex (data: any) {
         ...(data.project ? {project: data.project} : {}),
         ...(data.ref ? {ref: data.ref} : {}),
         ...(data.optional ? {optional: data.optional} : {}),
+        ...(data.parallel ? {parallel: data.parallel} : {}),
     };
 
     // In needs:project/needs:pipeline, `optional` is not an allowed property

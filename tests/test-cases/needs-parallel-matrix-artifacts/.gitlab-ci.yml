@@ -1,0 +1,29 @@
+---
+# Each producer permutation creates a unique artifact file. Each consumer
+# permutation, via $[[ matrix.X ]], should pull ONLY its matching producer's
+# artifact — proving the artifact cascade respects the matrix selector.
+stages: [build, test]
+
+build:
+  stage: build
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+  script:
+    - echo "$PROVIDER-data" > "tag-$PROVIDER.txt"
+  artifacts:
+    paths:
+      - "tag-*.txt"
+
+test:
+  stage: test
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+  needs:
+    - job: build
+      parallel:
+        matrix:
+          - PROVIDER: $[[ matrix.PROVIDER ]]
+  script:
+    - cat tag-*.txt

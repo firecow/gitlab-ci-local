@@ -61,6 +61,7 @@ export interface Need {
     ref?: string;
     pipeline?: string;
     project?: string;
+    parallel?: {matrix: {[key: string]: string | number | (string | number)[]}[]};
 }
 
 const isGlob = (str: string) => /[*?{}(|)[\]]/.test(str);
@@ -98,6 +99,7 @@ export class Job {
     readonly argv: Argv;
     readonly name: string;
     readonly baseName: string;
+    readonly matrixVariables: {[key: string]: string} | null;
     readonly dependencies: string[] | null;
     readonly environment?: {name: string; url: string | null; deployment_tier: string | null; action: string | null};
     readonly jobId: number;
@@ -150,6 +152,7 @@ export class Job {
         this.gitData = opt.gitData;
         this.name = opt.name;
         this.baseName = opt.baseName;
+        this.matrixVariables = opt.matrixVariables;
         this.jobId = this.generateJobId();
         this.jobData = opt.data;
         this.pipelineIid = opt.pipelineIid;
