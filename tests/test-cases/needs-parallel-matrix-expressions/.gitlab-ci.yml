@@ -1,0 +1,122 @@
+---
+# Each consumer permutation depends on exactly its matching producer permutation
+# via $[[ matrix.IDENTIFIER ]] expressions resolved per-permutation.
+stages: [build, test]
+
+linux:build:
+  stage: build
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+        STACK: [monitoring, app1]
+  script:
+    - echo "build $PROVIDER/$STACK"
+
+# Bare canonical form — matches the example in gitlab-org/gitlab#423553 verbatim.
+linux:test:
+  stage: test
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+        STACK: [monitoring, app1]
+  needs:
+    - job: linux:build
+      parallel:
+        matrix:
+          - PROVIDER: $[[ matrix.PROVIDER ]]
+            STACK: $[[ matrix.STACK ]]
+  script:
+    - echo "test $PROVIDER/$STACK"
+
+# Array-wrapped expression form — covers the Array.isArray branch in substituteMatrixExpr.
+linux:test-array:
+  stage: test
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+        STACK: [monitoring, app1]
+  needs:
+    - job: linux:build
+      parallel:
+        matrix:
+          - PROVIDER: ["$[[ matrix.PROVIDER ]]"]
+            STACK: ["$[[ matrix.STACK ]]"]
+  script:
+    - echo "test-array $PROVIDER/$STACK"
+
+# Mixed: one literal key + one expression key — selects all STACKs for one PROVIDER.
+linux:test-mixed:
+  stage: test
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+        STACK: [monitoring, app1]
+  needs:
+    - job: linux:build
+      parallel:
+        matrix:
+          - PROVIDER: $[[ matrix.PROVIDER ]]
+  script:
+    - echo "test-mixed $PROVIDER/$STACK"
+
+# Hyphenated identifier — upstream allows `[a-zA-Z0-9_-]` in matrix names.
+build-hyphen:
+  stage: build
+  parallel:
+    matrix:
+      - MY-VAR: [foo, bar]
+  script:
+    - echo "build-hyphen"
+
+test-hyphen:
+  stage: test
+  parallel:
+    matrix:
+      - MY-VAR: [foo, bar]
+  needs:
+    - job: build-hyphen
+      parallel:
+        matrix:
+          - MY-VAR: $[[ matrix.MY-VAR ]]
+  script:
+    - echo "test-hyphen"
+
+# Concatenation: two expressions in the same string, plus a non-matrix `$VAR` left
+# untouched. Producer's TAG matches the resolved value `build-<PROVIDER>-<STACK>`.
+build-concat:
+  stage: build
+  parallel:
+    matrix:
+      - TAG: [build-aws-monitoring, build-aws-app1, build-gcp-monitoring, build-gcp-app1]
+  script:
+    - echo "build-concat"
+
+test-concat:
+  stage: test
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+        STACK: [monitoring, app1]
+  needs:
+    - job: build-concat
+      parallel:
+        matrix:
+          - TAG: build-$[[ matrix.PROVIDER ]]-$[[ matrix.STACK ]]
+  script:
+    - echo "test-concat"
+
+# Whitespace variation: `$[[matrix.X]]` (no spaces) must match the same as `$[[ matrix.X ]]`.
+test-whitespace:
+  stage: test
+  parallel:
+    matrix:
+      - PROVIDER: [aws, gcp]
+        STACK: [monitoring, app1]
+  needs:
+    - job: linux:build
+      parallel:
+        matrix:
+          - PROVIDER: $[[matrix.PROVIDER]]
+            STACK: $[[ matrix.STACK   ]]
+  script:
+    - echo "test-whitespace"

@@ -1,0 +1,77 @@
+---
+stages: [build, test]
+
+build-job:
+  stage: build
+  parallel:
+    matrix:
+      - NAME: [foo, bar, beb]
+  script:
+    - echo "build NAME=$NAME"
+
+# Multi-key producer — exercises cartesian expansion and partial selectors below.
+build-multi:
+  stage: build
+  parallel:
+    matrix:
+      - ARCH: [x64, arm]
+        OS: [linux, mac]
+  script:
+    - echo "build-multi $ARCH/$OS"
+
+# Selects exactly one permutation of build-job.
+test-single:
+  stage: test
+  needs:
+    - job: build-job
+      parallel:
+        matrix:
+          - NAME: foo
+  script:
+    - echo "test-single ran"
+
+# Selects two permutations via array selector.
+test-array:
+  stage: test
+  needs:
+    - job: build-job
+      parallel:
+        matrix:
+          - NAME: [foo, bar]
+  script:
+    - echo "test-array ran"
+
+# Partial selector — mentions only ARCH; should match both OS permutations of x64.
+test-partial:
+  stage: test
+  needs:
+    - job: build-multi
+      parallel:
+        matrix:
+          - ARCH: x64
+  script:
+    - echo "test-partial ran"
+
+# Full selector — picks exactly one permutation of build-multi.
+test-full:
+  stage: test
+  needs:
+    - job: build-multi
+      parallel:
+        matrix:
+          - ARCH: x64
+            OS: linux
+  script:
+    - echo "test-full ran"
+
+# Optional + zero-match selector — should run alone, no error.
+test-optional-zero:
+  stage: test
+  needs:
+    - job: build-job
+      optional: true
+      parallel:
+        matrix:
+          - NAME: nope
+  script:
+    - echo "test-optional-zero ran"

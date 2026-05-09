@@ -1,0 +1,54 @@
+---
+stages: [build, test]
+
+# Producer is NOT parallelized — using needs.parallel.matrix on it must error.
+build-job:
+  stage: build
+  script:
+    - echo "build"
+
+test-job:
+  stage: test
+  needs:
+    - job: build-job
+      parallel:
+        matrix:
+          - NAME: foo
+  script:
+    - echo "test"
+
+# Producer uses plain `parallel: <integer>` (no matrix) — selector still must error.
+build-int:
+  stage: build
+  parallel: 3
+  script:
+    - echo "build-int $CI_NODE_INDEX/$CI_NODE_TOTAL"
+
+test-plain-parallel:
+  stage: test
+  needs:
+    - job: build-int
+      parallel:
+        matrix:
+          - NAME: foo
+  script:
+    - echo "test-plain-parallel"
+
+# Producer is parallel:matrix but the selector matches zero permutations.
+build-foo:
+  stage: build
+  parallel:
+    matrix:
+      - NAME: [foo, bar]
+  script:
+    - echo "build-foo $NAME"
+
+test-zero-match:
+  stage: test
+  needs:
+    - job: build-foo
+      parallel:
+        matrix:
+          - NAME: nope
+  script:
+    - echo "test-zero-match"

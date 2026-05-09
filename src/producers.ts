@@ -1,5 +1,6 @@
 import {Utils} from "./utils.js";
 import {Job} from "./job.js";
+import {findMatchingNeed, matrixSelectorMatches} from "./parallel.js";
 
 export class Producers {
 
@@ -30,6 +31,10 @@ export class Producers {
             if (potential.artifacts == null) continue;
             if (potential.when == "never") continue;
             if (!producerSet.has(potential.name) && !producerSet.has(potential.baseName)) continue;
+
+            const matchedNeed = findMatchingNeed(job.needs, potential.name, potential.baseName);
+            if (matchedNeed?.parallel?.matrix && !matrixSelectorMatches(potential.matrixVariables, matchedNeed.parallel.matrix)) continue;
+
             producers.push(potential);
         }
         return producers.map(producer => {
