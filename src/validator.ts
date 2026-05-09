@@ -135,7 +135,7 @@ For further troubleshooting, consider either of the following:
 
     private static rulesBlank (jobs: ReadonlyArray<Job>) {
         for (const job of jobs) {
-            if (job.rules === null) continue;
+            if (!job.rules) continue;
             assert(job.rules.length > 0, chalk`{blue ${job.name}} {yellow rules:} config can't be blank`);
         }
     }
