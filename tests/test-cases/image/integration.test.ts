@@ -132,7 +132,6 @@ test.concurrent("image <image-platform>", async () => {
     const writeStreams = new WriteStreamsMock();
 
     await handler({
-        pullPolicy: "always",
         cwd: "tests/test-cases/image",
         job: ["image-platform"],
         stateDir: ".gitlab-ci-local-image-platform",
@@ -140,7 +139,10 @@ test.concurrent("image <image-platform>", async () => {
 
     // The "pulled" log line includes the requested platform, proving --platform
     // was forwarded to `docker pull` rather than silently dropped. Use `.*` to
-    // span the chalk ANSI escape codes between tokens.
+    // span the chalk ANSI escape codes between tokens. We deliberately don't
+    // pass `pullPolicy: "always"` — the platform-aware short-circuit inside
+    // pullImage forces a pull whenever a platform is set, regardless of whether
+    // a different-arch variant of the same image happens to be cached locally.
     expect(writeStreams.stdoutLines.join("\n")).toMatch(/pulled.*alpine.*linux\/amd64/);
 
     // The job runs successfully on the host (linux/amd64 matches the CI runner arch).

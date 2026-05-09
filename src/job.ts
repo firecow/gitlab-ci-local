@@ -1265,6 +1265,16 @@ If you know what you're doing and would like to suppress this warning, use one o
             await actualPull();
             return;
         }
+        // The `image inspect` cache check is platform-agnostic — a different-arch
+        // variant of the same image name will satisfy it, causing the requested
+        // platform to silently differ from what's actually on disk. Force a pull
+        // when a specific platform was requested so the matching manifest is
+        // guaranteed locally. Pulls are idempotent: if the variant is already
+        // cached, `docker pull` short-circuits with "Image is up to date".
+        if (imagePlatform) {
+            await actualPull();
+            return;
+        }
         try {
             await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
         } catch {
