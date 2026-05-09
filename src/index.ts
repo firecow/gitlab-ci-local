@@ -344,7 +344,6 @@ process.on("SIGUSR2", async () => {
             type: "string",
             coerce: (v) => v.split(","),
             requiresArg: false,
-            default: Argv.default.ignorePredefinedVars,
             describe: "Comma-seperated list of predefined pipeline variables for which warnings should be suppressed",
         })
         .option("concurrency", {

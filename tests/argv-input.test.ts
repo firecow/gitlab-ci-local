@@ -46,3 +46,16 @@ test("input namespace collision: same key as global and component name", async (
     expect(result._global["deploy"]).toEqual("prod");
     expect(result._components["deploy"]).toEqual({replicas: 5});
 });
+
+test("ignorePredefinedVars is loaded from .gitlab-ci-local-env", async () => {
+    const argv = await Argv.build({
+        cwd: "tests/test-cases/argv-dotenv-ignore-predefined-vars",
+        home: "tests/test-cases/argv-dotenv-ignore-predefined-vars",
+    }, writeStreams);
+    expect(argv.ignorePredefinedVars).toEqual(["CI_PIPELINE_SOURCE", "CI_PROJECT_NAME"]);
+});
+
+test("ignorePredefinedVars defaults to empty array", async () => {
+    const argv = await Argv.build({home: "tests/test-cases/argv-dotenv-ignore-predefined-vars"}, writeStreams);
+    expect(argv.ignorePredefinedVars).toEqual([]);
+});
