@@ -133,6 +133,13 @@ For further troubleshooting, consider either of the following:
         }
     }
 
+    private static rulesBlank (jobs: ReadonlyArray<Job>) {
+        for (const job of jobs) {
+            if (!job.rules) continue;
+            assert(job.rules.length > 0, chalk`{blue ${job.name}} {yellow rules:} config can't be blank`);
+        }
+    }
+
     private static arrayOfStrings (jobs: ReadonlyArray<Job>) {
         for (const job of jobs) {
             if (job.trigger) continue;
@@ -144,6 +151,7 @@ For further troubleshooting, consider either of the following:
 
     static async run (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
         this.scriptBlank(jobs);
+        this.rulesBlank(jobs);
         this.arrayOfStrings(jobs);
         this.dependencies(jobs, stages);
         this.dependenciesContainment(jobs);
