@@ -44,3 +44,16 @@ test("local-registry login <oci>", async () => {
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(["registry-login-oci > Login Succeeded!"]));
 });
+
+test("local-registry login <dind>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/local-registry",
+        job: ["registry-login-dind"],
+        registry: true,
+        privileged: true,
+        noColor: true,
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(["registry-login-dind > Login Succeeded"]));
+});

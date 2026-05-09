@@ -15,3 +15,10 @@ registry-login-oci:
   image: quay.io/podman/stable
   script:
     - echo "$CI_REGISTRY_PASSWORD" | podman login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+
+registry-login-dind:
+  image: docker:cli
+  services:
+    - docker:dind
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY

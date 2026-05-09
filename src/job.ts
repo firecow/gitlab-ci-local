@@ -1582,6 +1582,11 @@ If you know what you're doing and would like to suppress this warning, use one o
             dockerCmd += `--add-host=${extraHost} `;
         }
 
+        if (this.argv.registry) {
+            dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
+            dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/docker/certs.d:ro `;
+        }
+
         if (this.argv.caFile) {
             const caFilePath = path.isAbsolute(this.argv.caFile) ? this.argv.caFile : path.resolve(this.argv.cwd, this.argv.caFile);
             if (await fs.pathExists(caFilePath)) {
@@ -1636,6 +1641,10 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         for (const network of this.argv.network) {
             await Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`]);
+        }
+
+        if (this.argv.registry) {
+            await Utils.spawn([this.argv.containerExecutable, "network", "connect", `${Utils.gclRegistryPrefix}.net`, `${containerId}`]);
         }
 
         await Utils.spawn([this.argv.containerExecutable, "start", `${containerId}`]);
