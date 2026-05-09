@@ -670,6 +670,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
         const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));
         const imageName = this.imageName(expanded);
+        const imagePlatform = this.imagePlatform(expanded);
         const helperImageName = argv.helperImage;
         const safeJobName = this.safeJobName;
 
@@ -682,7 +683,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
 
         if (imageName) {
-            await this.pullImage(writeStreams, imageName);
+            await this.pullImage(writeStreams, imageName, imagePlatform);
 
             const buildVolumeName = this.buildVolumeName;
             const tmpVolumeName = this.tmpVolumeName;
@@ -971,6 +972,11 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += `--user ${imageUser} `;
             }
 
+            const imagePlatform = this.imagePlatform(expanded);
+            if (imagePlatform) {
+                dockerCmd += `--platform ${imagePlatform} `;
+            }
+
             if (this.argv.containerEmulate) {
                 const runnerName: string = this.argv.containerEmulate;
 
@@ -1207,6 +1213,13 @@ If you know what you're doing and would like to suppress this warning, use one o
         return Utils.expandText(image["docker"]["user"], vars);
     }
 
+    private imagePlatform (vars: {[key: string]: string} = {}): string | null {
+        const image = this.jobData["image"];
+        if (!image) return null;
+        if (!image["docker"]) return null;
+        return Utils.expandText(image["docker"]["platform"], vars);
+    }
+
     get imageEntrypoint (): string[] | null {
         const image = this.jobData["image"];
 
@@ -1235,14 +1248,16 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
     }
 
-    private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
+    private async pullImage (writeStreams: WriteStreams, imageToPull: string, imagePlatform: string | null = null) {
         const pullPolicy = this.argv.pullPolicy;
+        const platformArgs = imagePlatform ? ["--platform", imagePlatform] : [];
+        const platformSuffix = imagePlatform ? ` (${imagePlatform})` : "";
         const actualPull = async () => {
             await this.validateCiDependencyProxyServerAuthentication(imageToPull);
             const time = process.hrtime();
-            await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull]);
+            await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull, ...platformArgs]);
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull}${platformSuffix} in {magenta ${prettyHrtime(endTime)}}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
         };
 
