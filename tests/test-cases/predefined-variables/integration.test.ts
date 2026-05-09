@@ -141,7 +141,7 @@ describe("predefined-variables", () => {
             expected += `test-job > ${key}=${envVars[key]}\n`;
         });
 
-        const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ")).join("\n");
+        const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ") && !f.endsWith("> still running...")).join("\n");
         expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
     });
@@ -178,7 +178,7 @@ CI_SERVER_SHELL_SSH_PORT: 8022
         Object.keys(envVars).forEach(key => {
             expected += `test-job > ${key}=${envVars[key]}\n`;
         });
-        const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ")).join("\n");
+        const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ") && !f.endsWith("> still running...")).join("\n");
         expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
     });
@@ -218,7 +218,7 @@ CI_SERVER_SHELL_SSH_PORT: 8022
             expected += `test-job > ${key}=${envVars[key]}\n`;
         });
 
-        const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ")).join("\n");
+        const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("test-job > ") && !f.endsWith("> still running...")).join("\n");
         expect(filteredStdout).toEqual(expected.trim());
         expect(jobIdSpy).toHaveBeenCalledTimes(2);
     });

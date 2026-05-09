@@ -189,7 +189,7 @@ test.concurrent("services <services:entrypoint should support variable expansion
         stateDir: ".gitlab-ci-local-entrypoint",
     }, writeStreams);
 
-    const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job1 >")).join("\n");
+    const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job1 >") && !f.endsWith("> still running...")).join("\n");
     expect(filteredStdout).toEqual(`
 job1 > should support single quote       [']
 job1 > should support double quote       ["]
