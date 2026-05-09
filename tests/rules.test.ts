@@ -85,6 +85,11 @@ test.concurrent("VAR exists positive", () => {
     expect(val).toBe(true);
 });
 
+test.concurrent("rejects ${VAR} curly-bracket reference", () => {
+    expect(() => Utils.evaluateRuleIf("${VAR} == 'true'", {VAR: "true"}))
+        .toThrow(/rules:rule if invalid expression syntax/);
+});
+
 test.concurrent("VAR exists fail", () => {
     const ruleIf = "$VAR";
     const val = Utils.evaluateRuleIf(ruleIf, {});

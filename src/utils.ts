@@ -215,6 +215,7 @@ export class Utils {
 
     static evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]: string}): boolean {
         if (ruleIf === undefined) return true;
+        assert(!/\$\{\w+\}/.test(ruleIf), chalk`rules:rule if invalid expression syntax: {blueBright ${ruleIf}}\nuse {green $VAR} not {red \${VAR\}} in rules:if`);
         let evalStr = ruleIf;
 
         const flagsToBinary = (flags: string): number => {

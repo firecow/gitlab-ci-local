@@ -1,0 +1,6 @@
+---
+job:
+  rules:
+    - if: '${GITLAB_CI} == "true"'
+  script:
+    - echo "should not run"
