@@ -1165,7 +1165,9 @@ If you know what you're doing and would like to suppress this warning, use one o
                 cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
                 cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
             }
-            void cp.on("exit", (code) => {
+            // Wait for "close" rather than "exit" so all stdout/stderr data events
+            // have flushed to the output log file before we resolve.
+            void cp.on("close", (code) => {
                 clearTimeout(this._longRunningSilentTimeout);
                 return resolve(code ?? 0);},
             );
