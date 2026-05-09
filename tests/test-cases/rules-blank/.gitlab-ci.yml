@@ -1,0 +1,5 @@
+---
+job:
+  rules: []
+  script:
+    - echo "Heya"
