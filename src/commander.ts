@@ -213,6 +213,9 @@ export class Commander {
         let descriptionPadEnd = 11;
         jobs.forEach(j => descriptionPadEnd = Math.max(j.description.length, descriptionPadEnd));
 
+        let environmentPadEnd = 11;
+        jobs.forEach(j => environmentPadEnd = Math.max((j.environment?.name ?? "").length, environmentPadEnd));
+
         const jobNamePad = parser.jobNamePad;
 
         if (!listAll) {
@@ -221,15 +224,16 @@ export class Commander {
 
         writeStreams.stdout(chalk`{grey ${"name".padEnd(jobNamePad)}  ${"description".padEnd(descriptionPadEnd)}}  `);
         writeStreams.stdout(chalk`{grey ${"stage".padEnd(stagePadEnd)}  ${"when".padEnd(whenPadEnd)}}  `);
-        writeStreams.stdout(chalk`{grey allow_failure  needs}\n`);
+        writeStreams.stdout(chalk`{grey allow_failure  ${"environment".padEnd(environmentPadEnd)}  needs}\n`);
 
         const renderLine = (job: Job) => {
             const needs = Commander.formatNeeds(job);
             const allowFailure = Commander.formatAllowFailure(job.allowFailure);
+            const environment = job.environment?.name ?? "";
             let jobLine = chalk`{blueBright ${job.name.padEnd(jobNamePad)}}  ${job.description.padEnd(descriptionPadEnd)}  `;
-            jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(11)}`;
+            jobLine += chalk`{yellow ${job.stage.padEnd(stagePadEnd)}}  ${job.when.padEnd(whenPadEnd)}  ${allowFailure.padEnd(13)}  ${environment.padEnd(environmentPadEnd)}`;
             if (needs !== null) {
-                jobLine += chalk`    [{blueBright ${needs}}]`;
+                jobLine += chalk`  [{blueBright ${needs}}]`;
             }
             writeStreams.stdout(`${jobLine}\n`);
         };
@@ -267,13 +271,14 @@ export class Commander {
             jobs = jobs.filter(j => j.when !== "never");
         }
 
-        writeStreams.stdout("name;stage;when;allowFailure;needs\n");
+        writeStreams.stdout("name;stage;when;allowFailure;environment;needs\n");
 
         jobs.forEach((job) => {
             const needs = Commander.formatNeeds(job);
             const needsStr = needs === null ? "" : `[${needs.join(",")}]`;
             const allowFailure = Commander.formatAllowFailure(job.allowFailure);
-            const row = [job.name, job.stage, job.when, allowFailure, needsStr].join(";");
+            const environment = job.environment?.name ?? "";
+            const row = [job.name, job.stage, job.when, allowFailure, environment, needsStr].join(";");
             writeStreams.stdout(`${row}\n`);
         });
     }

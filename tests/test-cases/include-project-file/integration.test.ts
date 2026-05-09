@@ -60,8 +60,8 @@ test.concurrent("include:project should respect rules specified in included proj
 
 
     const expected = [
-        "name                                    description  stage   when        allow_failure  needs",
-        "should execute since rule eval to true               test    on_success  false      ",
+        "name                                    description  stage   when        allow_failure  environment  needs",
+        "should execute since rule eval to true               test    on_success  false                     ",
     ];
 
     expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.join("\n"));
