@@ -31,6 +31,18 @@ test.concurrent("workflow-rules-variables not applied when rule does not match",
     expect(output).not.toContain("WORKFLOW_VAR=from-workflow-rules");
 });
 
+test.concurrent("workflow-rules:if with null RHS regex variable does not throw", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/workflow-rules-variables",
+        file: ".gitlab-ci-null-rhs-regex.yml",
+        stateDir: ".gitlab-ci-local-workflow-rules-variables-null-rhs-regex",
+    }, writeStreams);
+
+    const output = writeStreams.stdoutLines.join("\n");
+    expect(output).toContain("job ran");
+});
+
 test.concurrent("workflow-rules-variables overridden by job variables", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({

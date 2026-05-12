@@ -299,6 +299,9 @@ export class Utils {
 
         evalStr = evalStr.replaceAll(/null.matchRE2JS\(.+?\)\s*!=\s*null/g, "false");
         evalStr = evalStr.replaceAll(/null.matchRE2JS\(.+?\)\s*==\s*null/g, "true");
+        // When RHS variable is undefined (null), GitLab CI returns null for both =~ and !~ (falsy)
+        evalStr = evalStr.replaceAll(/(?:null|"(?:[^"\\]|\\.)*")\s*=~\s*null/g, "false");
+        evalStr = evalStr.replaceAll(/(?:null|"(?:[^"\\]|\\.)*")\s*!~\s*null/g, "false");
 
         evalStr = evalStr.trim();
 

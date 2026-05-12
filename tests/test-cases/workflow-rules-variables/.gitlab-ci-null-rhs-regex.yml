@@ -1,0 +1,13 @@
+---
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ $PROD_REF || $CI_COMMIT_BRANCH =~ $UNDEFINED_INTEG_REF
+      when: never
+    - when: always
+variables:
+  PROD_REF: /^release$/
+
+test-job:
+  stage: test
+  script:
+    - echo "job ran"
