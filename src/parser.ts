@@ -437,12 +437,6 @@ function validateInput (ctx: any) {
     const {configFilePath, interpolationKey, inputsSpecification} = ctx;
     const inputValue = getInputValue(ctx);
 
-    const options = inputsSpecification.spec.inputs[interpolationKey]?.options;
-    if (options) {
-        assert(options.includes(inputValue),
-            chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: \`{blueBright ${inputValue}}\` cannot be used because it is not in the list of allowed options.`);
-    }
-
     const expectedInputType = getExpectedInputType(ctx);
     assert(INCLUDE_INPUTS_SUPPORTED_TYPES.includes(expectedInputType),
         chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: header:spec:inputs:{blueBright ${interpolationKey}} input type unknown value: {blueBright ${expectedInputType}}.`);
@@ -450,6 +444,19 @@ function validateInput (ctx: any) {
     const inputType = Array.isArray(inputValue) ? "array" : typeof inputValue;
     assert(inputType === expectedInputType,
         chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: provided value is not a {blueBright ${expectedInputType}}.`);
+
+    const options = inputsSpecification.spec.inputs[interpolationKey]?.options;
+    if (options) {
+        if (inputType == "array") {
+            for (const itemValue of inputValue) {
+                assert(options.includes(itemValue),
+                    chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: \`{blueBright ${itemValue}}\` cannot be used because it is not in the list of allowed options.`);
+            }
+        } else {
+            assert(options.includes(inputValue),
+                chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: \`{blueBright ${inputValue}}\` cannot be used because it is not in the list of allowed options.`);
+        }
+    }
 
     const regex = inputsSpecification.spec.inputs[interpolationKey]?.regex;
     if (regex) {
