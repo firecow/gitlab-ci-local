@@ -1,0 +1,9 @@
+---
+build-job:
+  script:
+    - echo "build"
+
+dev-job:
+  needs: build-job
+  script:
+    - echo "dev"
