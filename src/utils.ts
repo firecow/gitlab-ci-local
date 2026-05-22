@@ -8,6 +8,7 @@ import checksum from "checksum";
 import base64url from "base64url";
 import execa, {ExecaError} from "execa";
 import assert from "node:assert";
+import {createHash} from "node:crypto";
 import {CICDVariable} from "./variables-from-files.js";
 import {GitData} from "./git-data.js";
 import {globbySync} from "globby";
@@ -49,10 +50,18 @@ export class Utils {
         return url.replace(/^https:\/\//g, "").replace(/^http:\/\//g, "");
     }
 
+    static readonly MAX_FILENAME_LENGTH = 238; // 255 (NAME_MAX) - 17 (longest suffix: "gcl-" + "-" + jobId + "-build")
+
     static safeDockerString (jobName: string) {
-        return jobName.replace(/[^\w-]+/g, (match) => {
+        const encoded = jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
         });
+        if (encoded.length <= Utils.MAX_FILENAME_LENGTH) {
+            return encoded;
+        }
+        const hash = createHash("sha256").update(jobName).digest("hex").substring(0, 16);
+        const prefix = encoded.substring(0, Utils.MAX_FILENAME_LENGTH - 1 - hash.length);
+        return `${prefix}-${hash}`;
     }
 
     static safeBashString (s: string) {
