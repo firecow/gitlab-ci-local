@@ -443,7 +443,13 @@ function validateInput (ctx: any) {
 
     const regex = inputsSpecification.spec.inputs[interpolationKey]?.regex;
     if (regex) {
-        assert(new RegExp(regex).test(String(inputValue)),
+        let re: RegExp;
+        try {
+            re = new RegExp(regex);
+        } catch {
+            assert(false, chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: regex \`{blueBright ${regex}}\` is not a valid regular expression.`);
+        }
+        assert(re.test(String(inputValue)),
             chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: \`{blueBright ${inputValue}}\` does not match required regex: {blueBright ${regex}}.`);
     }
 }

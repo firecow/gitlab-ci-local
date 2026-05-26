@@ -396,3 +396,22 @@ deploy:
 
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
+
+test.concurrent("include-inputs regex validation (invalid pattern)", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/include-inputs/input-templates/regex-validation-invalid-pattern",
+            preview: true,
+        }, writeStreams);
+    } catch (e: any) {
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
+        expect(e.message).toContain("This GitLab CI configuration is invalid:");
+        expect(e.message).toContain(
+            chalk`\`{blueBright version}\` input: regex \`{blueBright ^[unclosed}\` is not a valid regular expression.`,
+        );
+        return;
+    }
+
+    throw new Error("Error is expected but not thrown/caught");
+});
