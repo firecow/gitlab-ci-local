@@ -354,7 +354,6 @@ export class Parser {
         if (isGitlabSpecFile(fileData[0])) {
             const inputsSpecification: any = fileData[0];
             const uninterpolatedConfigurations: any = fileData[1];
-
             const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
                 .replaceAll(
                     /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?<interpolationKey>[\w-]+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\](?<lastChar>[^$])?/g // https://regexr.com/81c16
@@ -398,6 +397,11 @@ export class Parser {
                             default:
                                 Utils.switchStatementExhaustiveCheck(inputType);
                         }
+                    })
+                .replaceAll( // https://docs.gitlab.com/ci/components/#use-component-context-in-components
+                    /\$\[\[\s*component\.(?<interpolationKey>name|reference|version|sha)\s*\]\]/g // regexr.com/8lotc
+                    , (_: string, interpolationKey: string) => {
+                        return getComponentValue(filePath, ctx, interpolationKey) || _;
                     });
             return JSON.parse(interpolatedConfigurations);
         }
@@ -407,6 +411,12 @@ export class Parser {
 
 function isGitlabSpecFile (fileData: any) {
     return "spec" in fileData;
+}
+
+function getComponentValue (filePath: string, ctx: any, interpolationKey: string) {
+    const {component} = ctx;
+    assert(component !== undefined, chalk`This GitLab CI configuration is invalid: \`{blueBright ${filePath}}\`: \`{blueBright component.${interpolationKey}}\` cannot be used outside a component.`);
+    return component[interpolationKey];
 }
 
 function validateInterpolationKey (ctx: any) {
