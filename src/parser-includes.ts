@@ -500,11 +500,12 @@ export function getComponentSha (ctx: any, effectiveRef: string) {
         return effectiveRef;
     }
     const stdout = getGitRemoteInfo(ctx);
-    const match = stdout.split("\n").find(line =>
-        line.endsWith(`refs/tags/${effectiveRef}^{} `) ||
-        line.endsWith(`refs/tags/${effectiveRef}`) ||
-        line.endsWith(`refs/heads/${effectiveRef}`),
-    );
+    const lines = stdout.split("\n");
+    // annotated tags: prefer the deref'd commit sha (refs/tags/x^{})
+    const match = lines.find(line => line.endsWith(`refs/tags/${effectiveRef}^{}`))
+        ?? lines.find(line =>
+            line.endsWith(`refs/tags/${effectiveRef}`) ||
+            line.endsWith(`refs/heads/${effectiveRef}`));
     assert(match, `Could not resolve commit SHA for ${effectiveRef} in ${ctx.projectPath}`);
     return match.split("\t")[0];
 }
