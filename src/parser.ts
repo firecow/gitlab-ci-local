@@ -443,7 +443,14 @@ function validateInput (ctx: any) {
 
     const regex = inputsSpecification.spec.inputs[interpolationKey]?.regex;
     if (regex) {
-        ctx.writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } spec:inputs:regex is currently not supported via gitlab-ci-local. This will just be a no-op.\n`);
+        let re: RegExp;
+        try {
+            re = new RegExp(regex);
+        } catch {
+            assert(false, chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: regex \`{blueBright ${regex}}\` is not a valid regular expression.`);
+        }
+        assert(re.test(String(inputValue)),
+            chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: \`{blueBright ${inputValue}}\` does not match required regex: {blueBright ${regex}}.`);
     }
 }
 
