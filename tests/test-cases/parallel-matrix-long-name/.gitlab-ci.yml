@@ -1,0 +1,10 @@
+---
+build-job:
+  stage: build
+  script:
+    - echo "APP='${APP}' $CI_NODE_INDEX/$CI_NODE_TOTAL"
+  parallel:
+    matrix:
+      - APP:
+          - "my-app-controller,My app controller to be used as reference for development teams,python311,controller,common,controller/setup.py,controller/setup_c.py,controller/setup_n.py,controller/tests/**/*,controller/coverage/*,controller/build/**/*,controller/coverage/coverage-unit.xml,75,true"
+          - short

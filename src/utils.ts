@@ -50,9 +50,13 @@ export class Utils {
         return url.replace(/^https:\/\//g, "").replace(/^http:\/\//g, "");
     }
 
-    static readonly MAX_FILENAME_LENGTH = 238; // 255 (NAME_MAX) - 17 (longest suffix: "gcl-" + "-" + jobId + "-build")
+    // gcl-${safeJobName}-${jobId}-build → wrapper is 17 chars (jobId max 6 digits)
+    static readonly MAX_FILENAME_LENGTH = 255 - 17; // NAME_MAX (bytes) - wrapper
 
     static safeDockerString (jobName: string) {
+        // INVARIANT: \w without /u is ASCII-only ([A-Za-z0-9_]), so `encoded` is pure ASCII
+        // and .length === byte length. NAME_MAX is a byte limit — adding /u would break this.
+        // We hash `jobName` (not `encoded`) because base64url encoding isn't injective.
         const encoded = jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
         });

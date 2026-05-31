@@ -275,7 +275,7 @@ describe("safeDockerString", () => {
 
     it("should encode non-alphanumeric characters", () => {
         const result = Utils.safeDockerString("job/name");
-        expect(result).toContain("Lw"); // '/' encodes to base64url
+        expect(result).toBe("jobLwname"); // '/' → 'Lw'
     });
 
     it("should truncate and hash when encoded name exceeds MAX_FILENAME_LENGTH", () => {
