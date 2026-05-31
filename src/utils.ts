@@ -8,6 +8,7 @@ import checksum from "checksum";
 import base64url from "base64url";
 import execa, {ExecaError} from "execa";
 import assert from "node:assert";
+import {createHash} from "node:crypto";
 import {CICDVariable} from "./variables-from-files.js";
 import {GitData} from "./git-data.js";
 import {globbySync} from "globby";
@@ -49,10 +50,22 @@ export class Utils {
         return url.replace(/^https:\/\//g, "").replace(/^http:\/\//g, "");
     }
 
+    // gcl-${safeJobName}-${jobId}-build → wrapper is 17 chars (jobId max 6 digits)
+    static readonly MAX_FILENAME_LENGTH = 255 - 17; // NAME_MAX (bytes) - wrapper
+
     static safeDockerString (jobName: string) {
-        return jobName.replace(/[^\w-]+/g, (match) => {
+        // INVARIANT: \w without /u is ASCII-only ([A-Za-z0-9_]), so `encoded` is pure ASCII
+        // and .length === byte length. NAME_MAX is a byte limit — adding /u would break this.
+        // We hash `jobName` (not `encoded`) because base64url encoding isn't injective.
+        const encoded = jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
         });
+        if (encoded.length <= Utils.MAX_FILENAME_LENGTH) {
+            return encoded;
+        }
+        const hash = createHash("sha256").update(jobName).digest("hex").substring(0, 16);
+        const prefix = encoded.substring(0, Utils.MAX_FILENAME_LENGTH - 1 - hash.length);
+        return `${prefix}-${hash}`;
     }
 
     static safeBashString (s: string) {
