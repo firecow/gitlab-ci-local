@@ -26,16 +26,29 @@ type ParserIncludesInitOptions = {
 };
 
 type ParsedComponent = {
+    _cache: {
+        version: string | null | undefined;
+        effectiveRef: string | undefined;
+        sha: string | undefined;
+    };
+    gitData: GitData;
     domain: string;
     port: string;
     projectPath: string;
     componentPath: string;
-    effectiveRef: string;
     name: string;
     reference: string;
-    version: string | undefined;
+    version: string | null;
+    effectiveRef: string;
     sha: string;
     isLocal: boolean;
+};
+
+type GitRemoteInfoContext = {
+    gitData: GitData;
+    domain: string;
+    port: string;
+    projectPath: string;
 };
 
 export class ParserIncludes {
@@ -100,7 +113,7 @@ export class ParserIncludes {
             } else if (value["remote"]) {
                 promises.push(this.downloadIncludeRemote(cwd, stateDir, value["remote"], fetchIncludes, writeStreams));
             } else if (value["component"]) {
-                const component = this.parseIncludeComponent(value["component"], gitData, opts);
+                const component = this.parseIncludeComponent(value["component"], gitData);
                 componentParseCache.set(index, component);
                 if (!component.isLocal)
                 {
@@ -238,40 +251,74 @@ export class ParserIncludes {
         };
     }
 
-    static parseIncludeComponent (component: string, gitData: GitData, opts: ParserIncludesInitOptions): ParsedComponent {
+    static parseIncludeComponent (component: string, gitData: GitData): ParsedComponent {
         assert(!component.includes("://"), `This GitLab CI configuration is invalid: component: \`${component}\` should not contain protocol`);
         const pattern = /(?<domain>[^/:\s]+)(:(?<port>\d+))?\/(?<projectPath>.+)\/(?<componentName>[^@]+)@(?<ref>.+)/; // https://regexr.com/7v7hm
         const gitRemoteMatch = pattern.exec(component);
-
         if (gitRemoteMatch?.groups == null) throw new Error(`This is a bug, please create a github issue if this is something you're expecting to work. input: ${component}`);
-
-        const {domain, projectPath, port} = gitRemoteMatch.groups;
-        const reference = gitRemoteMatch.groups["ref"];
-        const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && reference === gitData.commit.SHA;
-        const context = {
-            isLocal: isLocalComponent,
-            projectPath: projectPath,
-            remote: gitData.remote,
-            commit: gitData.commit,
-            domain: domain,
-            port: port,
-            component: component,
-            cwd: opts.cwd,
-        };
-        const name = gitRemoteMatch.groups["componentName"];
-        const version = getComponentVersion(context, reference);
-        const effectiveRef = version ?? reference;
-        const sha = getComponentSha(context, effectiveRef);
+        const {domain, projectPath, port, componentName, ref} = gitRemoteMatch.groups;
+        const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && ref === gitData.commit.SHA;
         return {
-            domain: domain,
-            port: port,
-            projectPath: projectPath,
-            componentPath: `templates/${name}`,
-            effectiveRef: effectiveRef,
-            name: name,
-            reference: reference,
-            sha: sha,
-            version: version,
+            _cache: {
+                version: undefined,
+                effectiveRef: undefined,
+                sha: undefined,
+            },
+            gitData,
+            domain,
+            port,
+            projectPath,
+            componentPath: `templates/${componentName}`,
+            name: componentName,
+            reference: ref,
+            get version () {
+                if (this._cache.version === undefined) {
+                    if (this.isLocal) {
+                        this._cache.version = this.gitData.commit.SHA;
+                    } else {
+                        const semanticVersionRangesPattern = /^\d+(\.\d+)?$/;
+                        if (this.reference == "~latest" || semanticVersionRangesPattern.test(this.reference)) {
+                            // https://docs.gitlab.com/ci/components/#semantic-version-ranges
+                            const stdout = getGitRemoteInfo(this, "--tags");
+                            const tags = stdout.split("\n").map(line => line.split("\t")[1].split("/")[2]);
+                            const version = resolveSemanticVersionRange(this.reference, tags);
+                            assert(version, `This GitLab CI configuration is invalid: component: \`${this.name}\` - The reference (${this.reference}) is invalid`);
+                            this._cache.version = version;
+                        } else {
+                            this._cache.version = null;
+                        }
+                    }
+                }
+                return this._cache.version;
+            },
+            get effectiveRef () {
+                if (this._cache.effectiveRef === undefined) {
+                    this._cache.effectiveRef = this.version ?? this.reference;
+                }
+                return this._cache.effectiveRef;
+            },
+            get sha () {
+                if (this._cache.sha === undefined) {
+                    if (this.isLocal) {
+                        this._cache.sha = this.gitData.commit.SHA;
+                    } else if (/^[0-9a-f]{40}$/.test(this.effectiveRef)) {
+                        // effectiveRef may already be a sha, if so return it directly
+                        this._cache.sha = this.effectiveRef;
+                    } else {
+                        const stdout = getGitRemoteInfo(this);
+                        const lines = stdout.split("\n");
+                        // annotated tags: prefer the deref'd commit sha (refs/tags/x^{})
+                        const match = lines.find(line => line.endsWith(`refs/tags/${this.effectiveRef}^{}`)) ??
+                            lines.find(line =>
+                                line.endsWith(`refs/tags/${this.effectiveRef}`) ||
+                                line.endsWith(`refs/heads/${this.effectiveRef}`),
+                            );
+                        assert(match, `Could not resolve commit SHA for ${this.effectiveRef} in ${this.projectPath}`);
+                        this._cache.sha = match.split("\t")[0];
+                    }
+                }
+                return this._cache.sha;
+            },
             isLocal: isLocalComponent,
         };
     }
@@ -459,53 +506,12 @@ export async function resolveIncludeLocal (pattern: string, cwd: string) {
     return repoFiles.filter((f: any) => re2js.matches(f));
 }
 
-export function getGitRemoteInfo (ctx: any, ...args: string[]) {
+export function getGitRemoteInfo (ctx: GitRemoteInfoContext, ...args: string[]) {
     const cmdArgs = ["git", "ls-remote", ...args];
-    if (ctx.remote.schema == "git" || ctx.remote.schema == "ssh") {
+    if (ctx.gitData.remote.schema == "git" || ctx.gitData.remote.schema == "ssh") {
         cmdArgs.push(`git@${ctx.domain}:${ctx.projectPath}`);
     } else {
-        cmdArgs.push(`${ctx.remote.schema}://${ctx.domain}:${ctx.port ?? 443}/${ctx.projectPath}.git`);
+        cmdArgs.push(`${ctx.gitData.remote.schema}://${ctx.domain}:${ctx.port ?? 443}/${ctx.projectPath}.git`);
     }
     return Utils.syncSpawn(cmdArgs).stdout;
-}
-
-export function getComponentVersion (ctx: any, reference: string) {
-    if (!ctx.isLocal) {
-        const semanticVersionRangesPattern = /^\d+(\.\d+)?$/;
-        if (reference == "~latest" || semanticVersionRangesPattern.test(reference)) {
-            // https://docs.gitlab.com/ci/components/#semantic-version-ranges
-            const stdout = getGitRemoteInfo(ctx, "--tags");
-            const tags = stdout
-                .split("\n")
-                .map((line) => {
-                    return line
-                        .split("\t")[1]
-                        .split("/")[2];
-                });
-            const version = resolveSemanticVersionRange(reference, tags);
-            assert(version, `This GitLab CI configuration is invalid: component: \`${ctx.component}\` - The reference (${reference}) is invalid`);
-            return version;
-        }
-    } else {
-        return ctx.commit.SHA;
-    }
-}
-
-export function getComponentSha (ctx: any, effectiveRef: string) {
-    if (ctx.isLocal) {
-        return ctx.commit.SHA;
-    }
-    // effectiveRef may already be a sha, if so return it directly
-    if (/^[0-9a-f]{40}$/.test(effectiveRef)) {
-        return effectiveRef;
-    }
-    const stdout = getGitRemoteInfo(ctx);
-    const lines = stdout.split("\n");
-    // annotated tags: prefer the deref'd commit sha (refs/tags/x^{})
-    const match = lines.find(line => line.endsWith(`refs/tags/${effectiveRef}^{}`))
-        ?? lines.find(line =>
-            line.endsWith(`refs/tags/${effectiveRef}`) ||
-            line.endsWith(`refs/heads/${effectiveRef}`));
-    assert(match, `Could not resolve commit SHA for ${effectiveRef} in ${ctx.projectPath}`);
-    return match.split("\t")[0];
 }
