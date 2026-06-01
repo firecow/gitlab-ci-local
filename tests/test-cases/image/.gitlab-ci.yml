@@ -64,6 +64,14 @@ image-user:
   script:
     - id -u
 
+image-platform:
+  image:
+    name: alpine
+    docker:
+      platform: linux/amd64
+  script:
+    - uname -m
+
 image-entrypoint-with-variables:
   variables:
     FOO: BAR
