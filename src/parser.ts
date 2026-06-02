@@ -355,7 +355,7 @@ export class Parser {
             const inputsSpecification: any = fileData[0];
             const uninterpolatedConfigurations: any = fileData[1];
 
-            const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
+            const configurationWithInterpolatedInputs = JSON.stringify(uninterpolatedConfigurations)
                 .replaceAll(
                     /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?<interpolationKey>[\w-]+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\](?<lastChar>[^$])?/g // https://regexr.com/81c16
                     , (_: string, firstChar: string, secondChar: string, interpolationKey: string, interpolationFunctions: string, lastChar: string) => {
@@ -399,7 +399,37 @@ export class Parser {
                                 Utils.switchStatementExhaustiveCheck(inputType);
                         }
                     });
-            return JSON.parse(interpolatedConfigurations);
+
+            // NOTE: Replacement of the component interpolation keys behaves slightly different. It currently does not check whether the interpolation key
+            //       is specified in the specs via component: [{interpolationKey}, ...]
+            const configurationWithInterpolatedInputsAndComponent = configurationWithInterpolatedInputs
+                .replaceAll(
+                    /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*component.(?<interpolationKey>[\w-]+)\s*\]\](?<lastChar>[^$])?/g,
+                    (_, firstChar, secondChar, interpolationKey, lastChar) => {
+                        firstChar ??= "";
+                        secondChar ??= "";
+                        lastChar ??= "";
+
+                        const { component } = ctx;
+                        if (!component) return _;
+
+                        let componentValue
+                        const properties = [ "name", "reference", "version", "sha" ];
+                        let foundKey = false;
+                        properties.forEach(property => {
+                            if (property === interpolationKey) {
+                                foundKey = true;
+                                componentValue = component[interpolationKey];
+                            }
+                        })
+
+                        assert(foundKey, chalk`This GitLab CI configuration is invalid: \`{blueBright ${ctx.configFilePath}}\`: unknown interpolation key: \`${interpolationKey}\`.`);
+                        return firstChar + secondChar + componentValue + lastChar; 
+                    }
+                );
+
+
+            return JSON.parse(configurationWithInterpolatedInputsAndComponent);
         }
         return fileData[0];
     }
