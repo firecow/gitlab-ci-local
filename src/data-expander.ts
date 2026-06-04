@@ -132,6 +132,7 @@ export function needsEach (jobName: string, gitlabData: any) {
     assert(Array.isArray(jobData.needs), chalk`{blueBright ${jobName}} {yellow needs:} must be an array`);
 
     for (const [i, n] of Object.entries<any>(jobData.needs)) {
+        assert(n != null, chalk`{blueBright ${jobName}} {yellow needs:} entries cannot be empty`);
         jobData.needs[i] = needsComplex(n);
     }
 }
