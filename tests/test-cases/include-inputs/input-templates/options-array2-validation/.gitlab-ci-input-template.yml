@@ -1,0 +1,14 @@
+---
+spec:
+  inputs:
+    options_input:
+      type: array
+      default: []
+      options:
+        - foo
+        - bar
+        - baz
+---
+scan-website:
+  script:
+    - echo $[[ inputs.options_input ]]
