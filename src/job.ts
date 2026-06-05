@@ -986,6 +986,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += `--cpus=${cpuConfig} `;
             }
 
+            if (this.gpus) {
+                dockerCmd += `--gpus ${this.gpus} --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 `;
+            }
+
             // host and none networks have to be specified using --network, since they cannot be used with
             // `docker network connect`.
             for (const network of this.argv.network) {
@@ -1217,6 +1221,19 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
         assert(Array.isArray(image.entrypoint), "image:entrypoint must be an array");
         return image.entrypoint;
+    }
+
+    get gpus (): string | null {
+        if (this.argv.gpus) {
+            return this.argv.gpus;
+        } else if ("tags" in this.jobData) {
+            for (const tag of this.jobData["tags"]) {
+                if (tag.match(/^(.*-)?gpu(-.*)?$/)) {
+                    return "all";
+                }
+            }
+        }
+        return null;
     }
 
     private async validateCiDependencyProxyServerAuthentication (imageName: string) {
@@ -1577,6 +1594,10 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         if (this.argv.shmSize != undefined) {
             dockerCmd += `--shm-size=${this.argv.shmSize} `;
+        }
+
+        if (this.gpus) {
+            dockerCmd += `--gpus ${this.gpus} --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 `;
         }
 
         for (const volume of this.argv.volume) {
