@@ -230,7 +230,7 @@ export class Utils {
                 const n = node as jsep.BinaryExpression;
                 return `${Utils._nodeToAtom(n.left)} ${n.operator} ${Utils._nodeToAtom(n.right)}`;
             }
-            default: return "";
+            default: throw new Error(`Unsupported expression node type: ${(node as any).type}`);
         }
     }
 
