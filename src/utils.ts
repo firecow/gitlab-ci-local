@@ -297,6 +297,12 @@ export class Utils {
                         return `RE2JS.compile(${JSON.stringify(pattern)}, ${flagsBinary})`;
                     });
 
+                    const assertMsg = [
+                        "RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!",
+                        "Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...",
+                    ];
+                    assert(_rhs !== regexStr, assertMsg.join("\n"));
+
                     const _operator = n.operator === "=~" ? "!=" : "=="; // =~ -> !=; !~ -> ==
 
                     const evalStr = `${leftStr.raw}.matchRE2JS(${_rhs}) ${_operator} null`;
@@ -328,7 +334,22 @@ export class Utils {
             return res;
         };
 
-        return walk(jsep(evalStr));
+        let ast;
+        try {
+            ast = jsep(evalStr);
+        } catch {
+            const assertMsg = [
+                "Error attempting to evaluate the following rules:",
+                "  rules:",
+                `    - if: '${ruleIf}'`,
+                "as",
+                "```javascript",
+                `${evalStr}`,
+                "```",
+            ];
+            assert(false, assertMsg.join("\n"));
+        }
+        return walk(ast!);
     }
 
     static _evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]: string}): boolean {
