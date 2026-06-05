@@ -1,6 +1,8 @@
 import "./global.js";
 import {RE2JS} from "re2js";
 import chalk from "chalk-template";
+import jsep from "jsep";
+import jsepRegex from "@jsep-plugin/regex";
 import {Job, JobRule, Need, Service} from "./job.js";
 import {needsComplex} from "./data-expander.js";
 import fs from "fs-extra";
@@ -15,6 +17,10 @@ import micromatch from "micromatch";
 import {AxiosRequestConfig} from "axios";
 import path from "node:path";
 import {Argv} from "./argv.js";
+
+jsep.plugins.register(jsepRegex);   // /pattern/flags literals
+jsep.addBinaryOp("=~", 10); // regex match operator
+jsep.addBinaryOp("!~", 10); // regex non-match operator
 
 type RuleResultOpt = {
     argv: Argv;
@@ -213,7 +219,119 @@ export class Utils {
         return {when, allowFailure, variables: ruleVariable, needs: ruleNeeds};
     }
 
+    // Reconstruct the source string for an atomic (non-logical) jsep node.
+    // Identifiers keep their name ($VAR), literals use their raw form so that
+    // strings retain quotes and regexes retain slashes and flags.
+    private static _nodeToAtom (node: jsep.Expression, envs: {[key: string]: string}): string {
+        switch (node.type) {
+            case "Identifier": {
+                const n = node as jsep.Identifier;
+                return n.name;
+                // return this.expandTextWith(n.name, {
+                //     unescape: JSON.stringify("$"),
+                //     variable: (name) => JSON.stringify(envs[name] ?? null).replaceAll("\\\\", "\\"),
+                // });
+            }
+            case "Literal": return (node as jsep.Literal).raw;
+            case "BinaryExpression": {
+                const n = node as jsep.BinaryExpression;
+                return `${Utils._nodeToAtom(n.left, envs)} ${n.operator} ${Utils._nodeToAtom(n.right, envs)}`;
+            }
+            default: return "";
+        }
+    }
+
+    static stripQuotes (str: string) {
+        if (str.length < 2) return str;
+        const first = str[0];
+        const last = str[str.length - 1];
+        if ((first === "\"" && last === "\"") || (first === "'" && last === "'")) {
+            return str.slice(1, -1);
+        }
+        return str;
+    }
+
     static evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]: string}): boolean {
+        if (ruleIf === undefined) return true;
+        assert(!/\$\{\w+\}/.test(ruleIf), chalk`rules:rule if invalid expression syntax: {blueBright ${ruleIf}}\nuse {green $VAR} not {red \${VAR\}} in rules:if`);
+        let evalStr = ruleIf;
+        evalStr = this.expandTextWith(evalStr, {
+            unescape: JSON.stringify("$"),
+            variable: (name) => JSON.stringify(envs[name] ?? null).replaceAll("\\\\", "\\"),
+        }); // replace all $VAR by their values
+
+        const flagsToBinary = (flags: string): number => {
+            let binary = 0;
+            if (flags.includes("i")) {
+                binary |= RE2JS.CASE_INSENSITIVE;
+            }
+            if (flags.includes("s")) {
+                binary |= RE2JS.DOTALL;
+            }
+            if (flags.includes("m")) {
+                binary |= RE2JS.MULTILINE;
+            }
+            return binary;
+        };
+        // jsep parses ruleIf into an AST, handling &&, ||, () and operator precedence.
+        const walk = (node: jsep.Expression): boolean => {
+            if (node.type === "BinaryExpression") {
+                const n = node as jsep.BinaryExpression;
+                if (n.operator === "&&") return walk(n.left) && walk(n.right);
+                if (n.operator === "||") return walk(n.left) || walk(n.right);
+                if (n.operator === "=~" || n.operator === "!~") {
+                    assert(n.left.type === "Literal", `Not a Literal: ${JSON.stringify(n.left)}`);
+                    assert(n.right.type === "Literal", `Not a Literal: ${JSON.stringify(n.right)}`);
+                    const leftStr = n.left as jsep.Literal;
+                    const rightStr = n.right as jsep.Literal;
+                    if (leftStr.value === null)
+                        return n.operator === "!~"; // null =~ /p/ → false; null !~ /p/ → true
+                    if (rightStr.value === null)
+                        return false;
+                    let regexStr: string = rightStr.raw;
+                    regexStr = this.stripQuotes(regexStr);
+
+                    const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
+                    const _rhs = regexStr.replace(regex, (_: string, pattern: string, flags: string) => {
+                        const flagsBinary = flagsToBinary(flags);
+                        return `RE2JS.compile(${JSON.stringify(pattern)}, ${flagsBinary})`;
+                    });
+
+                    const _operator = n.operator === "=~" ? "!=" : "=="; // =~ -> !=; !~ -> ==
+
+                    const evalStr = `${leftStr.raw}.matchRE2JS(${_rhs}) ${_operator} null`;
+
+                    let res;
+                    try {
+                        (globalThis as any).RE2JS = RE2JS;
+                        res = (0, eval)(evalStr); // indirect eval
+                        delete (globalThis as any).RE2JS;
+                    } catch (error) {
+                        console.error(error);
+                        const assertMsg = [
+                            "Error attempting to evaluate the following rules:",
+                            "  rules:",
+                            `    - if: '${Utils._nodeToAtom(node, envs)}'`,
+                            "as",
+                            "```javascript",
+                            `${evalStr}`,
+                            "```",
+                        ];
+                        assert(false, assertMsg.join("\n"));
+                    }
+                    return Boolean(res);
+                }
+            }
+            // assert (node.type === "Literal", `not a Literal: ${JSON.stringify(node)}`)
+            const res = Utils._evaluateRuleIf(Utils._nodeToAtom(node, envs), envs);
+            // console.log(`${JSON.stringify(node)} -> ${res}`)
+            return res;
+        };
+
+        return walk(jsep(evalStr));
+    }
+
+    static _evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]: string}): boolean {
         if (ruleIf === undefined) return true;
         assert(!/\$\{\w+\}/.test(ruleIf), chalk`rules:rule if invalid expression syntax: {blueBright ${ruleIf}}\nuse {green $VAR} not {red \${VAR\}} in rules:if`);
         let evalStr = ruleIf;
@@ -232,7 +350,6 @@ export class Utils {
             return binary;
         };
 
-        // Expand all variables
         evalStr = this.expandTextWith(evalStr, {
             unescape: JSON.stringify("$"),
             variable: (name) => JSON.stringify(envs[name] ?? null).replaceAll("\\\\", "\\"),
@@ -246,10 +363,10 @@ export class Utils {
             let _operator;
             switch (operator) {
                 case "=~":
-                    _operator = "!=";
+                    _operator = "!="; // Matches are found (!= null)
                     break;
                 case "!~":
-                    _operator = "==";
+                    _operator = "=="; // Matches are not found (== null)
                     break;
                 default:
                     throw operator;
@@ -274,10 +391,10 @@ export class Utils {
             let _operator;
             switch (operator) {
                 case "=~":
-                    _operator = "!=";
+                    _operator = "!="; // Matches are found (!= null)
                     break;
                 case "!~":
-                    _operator = "==";
+                    _operator = "=="; // Matches are not found (== null)
                     break;
                 default:
                     throw operator;
