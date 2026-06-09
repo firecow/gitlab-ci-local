@@ -731,7 +731,14 @@ If you know what you're doing and would like to suppress this warning, use one o
                 await Utils.spawn([this.argv.containerExecutable, "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
-            await Utils.spawn([this.argv.containerExecutable, "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:${this.ciProjectDir}`], argv.cwd);
+            const cmd = "sed -E -e 's,^[.]?/,,' -e '/^[.]git/d' /data/src/.dockerignore >/data/ignore 2>/dev/null; rsync -avh --exclude-from /data/ignore /data/src/. /data/dest";
+            await Utils.spawn([
+                this.argv.containerExecutable, "run", "--rm",
+                "-v", `${this.argv.cwd}/${this.argv.stateDir}/builds/.docker:/data/src:ro`,
+                "-v", `${this.buildVolumeName}:/data/dest:rw`,
+                this.argv.helperImage,
+                "bash", "-c", cmd,
+            ]);
             await Utils.spawn([this.argv.containerExecutable, "start", "--attach", containerId], argv.cwd);
             await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", containerId], argv.cwd);
             const endTime = process.hrtime(time);
@@ -1336,12 +1343,19 @@ If you know what you're doing and would like to suppress this warning, use one o
         writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
-    copyIn (source: string) {
+    async copyIn (source: string) {
         const safeJobName = this.safeJobName;
         if (!this.imageName(this._variables) && this.argv.shellIsolation) {
             return Utils.spawn(["rsync", "-a", `${source}/.`, `${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`]);
         }
-        return Utils.spawn([this.argv.containerExecutable, "cp", `${source}/.`, `${this._containerId}:${this.ciProjectDir}`]);
+        const cmd = "sed -E -e 's,^[.]?/,,' -e '/^[.]git/d' /data/src/.dockerignore >/data/ignore 2>/dev/null; rsync -avh --exclude-from /data/ignore /data/src/. /data/dest";
+        return Utils.spawn([
+            this.argv.containerExecutable, "run", "--rm",
+            "-v", `${source}:/data/src:ro`,
+            "-v", `${this.buildVolumeName}:/data/dest:rw`,
+            this.argv.helperImage,
+            "bash", "-c", cmd,
+        ]);
     }
 
     private async copyCacheOut (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
