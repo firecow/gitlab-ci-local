@@ -377,10 +377,19 @@ export class Utils {
         return !relative.startsWith("..");
     }
 
-    static async rsyncTrackedFiles (cwd: string, stateDir: string, target: string): Promise<{hrdeltatime: [number, number]}> {
+    static async rsyncTrackedFiles (cwd: string, stateDir: string, ignoresFile: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
         await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
-        await Utils.bash(`rsync -a --delete-excluded --delete --exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}') --exclude ${stateDir}/ ./ ${stateDir}/builds/${target}/`, cwd);
+        const cmd = [
+            "rsync -a --delete-excluded --delete",
+            `--exclude-from=<(git ls-files -o --directory | awk '{print "/"$0}')`, // eslint-disable-line @stylistic/quotes
+            `--exclude-from=<(cat ${Utils.safeBashString(ignoresFile)} 2>/dev/null || true)`,
+            "--exclude .git/lfs",
+            `--exclude ${stateDir}/`,
+            "./",
+            `${stateDir}/builds/${target}/`,
+        ].join(" ");
+        await Utils.bash(cmd, cwd);
         return {hrdeltatime: process.hrtime(time)};
     }
 

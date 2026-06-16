@@ -920,7 +920,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         // Copy git tracked files to build folder if shell isolation enabled.
         if (!imageName && this.argv.shellIsolation) {
-            await Utils.rsyncTrackedFiles(cwd, stateDir, `${safeJobName}`);
+            await Utils.rsyncTrackedFiles(cwd, stateDir, `${cwd}/${this.argv.ignoresFile}`, `${safeJobName}`);
         }
 
         if (this.interactive) {

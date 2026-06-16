@@ -81,7 +81,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
             pipelineIid = await state.getPipelineIid(cwd, stateDir);
         }
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
-        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        await Utils.rsyncTrackedFiles(cwd, stateDir, `${cwd}/${argv.ignoresFile}`, ".docker");
         await Commander.runJobs(argv, parser, writeStreams);
         if (argv.needs || argv.onlyNeeds) {
             writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
@@ -94,7 +94,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         const time = process.hrtime();
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
-        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        await Utils.rsyncTrackedFiles(cwd, stateDir, `${cwd}/${argv.ignoresFile}`, ".docker");
         await Commander.runJobsInStage(argv, parser, writeStreams);
         writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     } else {
@@ -105,7 +105,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         const time = process.hrtime();
         const pipelineIid = await state.incrementPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
-        await Utils.rsyncTrackedFiles(cwd, stateDir, ".docker");
+        await Utils.rsyncTrackedFiles(cwd, stateDir, `${cwd}/${argv.ignoresFile}`, ".docker");
         await Commander.runPipeline(argv, parser, writeStreams);
         if (childPipelineDepth == 0) writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
