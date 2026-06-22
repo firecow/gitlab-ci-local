@@ -26,12 +26,29 @@ type ParserIncludesInitOptions = {
 };
 
 type ParsedComponent = {
+    _cache: {
+        version: string | null | undefined;
+        effectiveRef: string | undefined;
+        sha: string | undefined;
+    };
+    gitData: GitData;
     domain: string;
     port: string;
     projectPath: string;
+    componentPath: string;
     name: string;
-    ref: string;
+    reference: string;
+    version: string | null;
+    effectiveRef: string;
+    sha: string;
     isLocal: boolean;
+};
+
+type GitRemoteInfoContext = {
+    gitData: GitData;
+    domain: string;
+    port: string;
+    projectPath: string;
 };
 
 export class ParserIncludes {
@@ -100,7 +117,7 @@ export class ParserIncludes {
                 componentParseCache.set(index, component);
                 if (!component.isLocal)
                 {
-                    promises.push(this.downloadIncludeComponent(opts, component.projectPath, component.ref, component.name));
+                    promises.push(this.downloadIncludeComponent(opts, component.projectPath, component.effectiveRef, component.componentPath));
                 }
             }
 
@@ -142,13 +159,13 @@ export class ParserIncludes {
                 const component = componentParseCache.get(index);
                 assert(component !== undefined, `Internal error, component parse cache missing entry [${index}]`);
                 // Gitlab allows two different file paths to include a component
-                const files = [`${component.name}.yml`, `${component.name}/template.yml`];
+                const files = [`${component.componentPath}.yml`, `${component.componentPath}/template.yml`];
 
                 let file = null;
                 for (const f of files) {
                     let searchPath = `${cwd}/${f}`;
                     if (!component.isLocal) {
-                        searchPath = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${component.projectPath}/${component.ref}/${f}`;
+                        searchPath = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${component.projectPath}/${component.effectiveRef}/${f}`;
                     }
                     if (fs.existsSync(searchPath)) {
                         file = searchPath;
@@ -158,13 +175,15 @@ export class ParserIncludes {
                                     (component.port ? `:${component.port}` : "") + `/${component.projectPath}\``);
 
                 // Extract component name for component-specific inputs
-                const componentName = component.name.replace(/^templates\//, "");
+                const componentName = component.componentPath.replace(/^templates\//, "");
                 const fileComponentInputs = isStructured ? (fileInputs[componentName] ?? {}) : {};
                 const cliComponentSpecificInputs = cliComponentInputs[componentName] ?? {};
                 const mergedInputs = {...(value.inputs ?? {}), ...globalInputs, ...fileComponentInputs, ...cliComponentSpecificInputs};
-                const fileDoc = await Parser.loadYaml(file, {inputs: mergedInputs}, expandVariables, writeStreams);
-                // Expand local includes inside to a "project"-like include
-                fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], component.projectPath, component.ref, opts);
+                const fileDoc = await Parser.loadYaml(file, {inputs: mergedInputs, component}, expandVariables, writeStreams);
+                if (!component.isLocal) {
+                    // Expand local includes inside to a "project"-like include
+                    fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], component.projectPath, component.effectiveRef, opts);
+                }
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
@@ -236,42 +255,70 @@ export class ParserIncludes {
         assert(!component.includes("://"), `This GitLab CI configuration is invalid: component: \`${component}\` should not contain protocol`);
         const pattern = /(?<domain>[^/:\s]+)(:(?<port>\d+))?\/(?<projectPath>.+)\/(?<componentName>[^@]+)@(?<ref>.+)/; // https://regexr.com/7v7hm
         const gitRemoteMatch = pattern.exec(component);
-
         if (gitRemoteMatch?.groups == null) throw new Error(`This is a bug, please create a github issue if this is something you're expecting to work. input: ${component}`);
-
-        const {domain, projectPath, port} = gitRemoteMatch.groups;
-        let ref = gitRemoteMatch.groups["ref"];
+        const {domain, projectPath, port, componentName, ref} = gitRemoteMatch.groups;
         const isLocalComponent = projectPath === `${gitData.remote.group}/${gitData.remote.project}` && ref === gitData.commit.SHA;
-
-        if (!isLocalComponent) {
-            const semanticVersionRangesPattern = /^\d+(\.\d+)?$/;
-            if (ref == "~latest" || semanticVersionRangesPattern.test(ref)) {
-                // https://docs.gitlab.com/ci/components/#semantic-version-ranges
-                let stdout;
-                if (gitData.remote.schema == "git" || gitData.remote.schema == "ssh") {
-                    stdout = Utils.syncSpawn(["git", "ls-remote", "--tags", `git@${domain}:${projectPath}`]).stdout;
-                } else {
-                    stdout = Utils.syncSpawn(["git", "ls-remote", "--tags", `${gitData.remote.schema}://${domain}:${port ?? 443}/${projectPath}.git`]).stdout;
-                }
-                assert(stdout);
-                const tags = stdout
-                    .split("\n")
-                    .map((line) => {
-                        return line
-                            .split("\t")[1]
-                            .split("/")[2];
-                    });
-                const _ref = resolveSemanticVersionRange(ref, tags);
-                assert(_ref, `This GitLab CI configuration is invalid: component: \`${component}\` - The ref (${ref}) is invalid`);
-                ref = _ref;
-            }
-        }
         return {
-            domain: domain,
-            port: port,
-            projectPath: projectPath,
-            name: `templates/${gitRemoteMatch.groups["componentName"]}`,
-            ref: ref,
+            _cache: {
+                version: undefined,
+                effectiveRef: undefined,
+                sha: undefined,
+            },
+            gitData,
+            domain,
+            port,
+            projectPath,
+            componentPath: `templates/${componentName}`,
+            name: componentName,
+            reference: ref,
+            get version () {
+                if (this._cache.version === undefined) {
+                    if (this.isLocal) {
+                        this._cache.version = this.gitData.commit.SHA;
+                    } else {
+                        const semanticVersionRangesPattern = /^\d+(\.\d+)?$/;
+                        if (this.reference == "~latest" || semanticVersionRangesPattern.test(this.reference)) {
+                            // https://docs.gitlab.com/ci/components/#semantic-version-ranges
+                            const stdout = getGitRemoteInfo(this, "--tags");
+                            const tags = stdout.split("\n").map(line => line.split("\t")[1].split("/")[2]);
+                            const version = resolveSemanticVersionRange(this.reference, tags);
+                            assert(version, `This GitLab CI configuration is invalid: component: \`${this.name}\` - The reference (${this.reference}) is invalid`);
+                            this._cache.version = version;
+                        } else {
+                            this._cache.version = null;
+                        }
+                    }
+                }
+                return this._cache.version;
+            },
+            get effectiveRef () {
+                if (this._cache.effectiveRef === undefined) {
+                    this._cache.effectiveRef = this.version ?? this.reference;
+                }
+                return this._cache.effectiveRef;
+            },
+            get sha () {
+                if (this._cache.sha === undefined) {
+                    if (this.isLocal) {
+                        this._cache.sha = this.gitData.commit.SHA;
+                    } else if (/^[0-9a-f]{40}$/.test(this.effectiveRef)) {
+                        // effectiveRef may already be a sha, if so return it directly
+                        this._cache.sha = this.effectiveRef;
+                    } else {
+                        const stdout = getGitRemoteInfo(this);
+                        const lines = stdout.split("\n");
+                        // annotated tags: prefer the deref'd commit sha (refs/tags/x^{})
+                        const match = lines.find(line => line.endsWith(`refs/tags/${this.effectiveRef}^{}`)) ??
+                            lines.find(line =>
+                                line.endsWith(`refs/tags/${this.effectiveRef}`) ||
+                                line.endsWith(`refs/heads/${this.effectiveRef}`),
+                            );
+                        assert(match, `Could not resolve commit SHA for ${this.effectiveRef} in ${this.projectPath}`);
+                        this._cache.sha = match.split("\t")[0];
+                    }
+                }
+                return this._cache.sha;
+            },
             isLocal: isLocalComponent,
         };
     }
@@ -457,4 +504,14 @@ export async function resolveIncludeLocal (pattern: string, cwd: string) {
 
     const re2js = RE2JS.compile(`^${pattern}`);
     return repoFiles.filter((f: any) => re2js.matches(f));
+}
+
+export function getGitRemoteInfo (ctx: GitRemoteInfoContext, ...args: string[]) {
+    const cmdArgs = ["git", "ls-remote", ...args];
+    if (ctx.gitData.remote.schema == "git" || ctx.gitData.remote.schema == "ssh") {
+        cmdArgs.push(`git@${ctx.domain}:${ctx.projectPath}`);
+    } else {
+        cmdArgs.push(`${ctx.gitData.remote.schema}://${ctx.domain}:${ctx.port ?? 443}/${ctx.projectPath}.git`);
+    }
+    return Utils.syncSpawn(cmdArgs).stdout;
 }

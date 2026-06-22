@@ -354,7 +354,6 @@ export class Parser {
         if (isGitlabSpecFile(fileData[0])) {
             const inputsSpecification: any = fileData[0];
             const uninterpolatedConfigurations: any = fileData[1];
-
             const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
                 .replaceAll(
                     /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?<interpolationKey>[\w-]+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\](?<lastChar>[^$])?/g // https://regexr.com/81c16
@@ -398,6 +397,11 @@ export class Parser {
                             default:
                                 Utils.switchStatementExhaustiveCheck(inputType);
                         }
+                    })
+                .replaceAll( // https://docs.gitlab.com/ci/components/#use-component-context-in-components
+                    /\$\[\[\s*component\.(?<interpolationKey>name|reference|version|sha)\s*\]\]/g // regexr.com/8lotc
+                    , (_: string, interpolationKey: string) => {
+                        return getComponentValue(filePath, ctx, interpolationKey) || _;
                     });
             return JSON.parse(interpolatedConfigurations);
         }
@@ -407,6 +411,12 @@ export class Parser {
 
 function isGitlabSpecFile (fileData: any) {
     return "spec" in fileData;
+}
+
+function getComponentValue (filePath: string, ctx: any, interpolationKey: string) {
+    const {component} = ctx;
+    assert(component !== undefined, chalk`This GitLab CI configuration is invalid: \`{blueBright ${filePath}}\`: \`{blueBright component.${interpolationKey}}\` cannot be used outside a component.`);
+    return component[interpolationKey];
 }
 
 function validateInterpolationKey (ctx: any) {
@@ -427,12 +437,6 @@ function validateInput (ctx: any) {
     const {configFilePath, interpolationKey, inputsSpecification} = ctx;
     const inputValue = getInputValue(ctx);
 
-    const options = inputsSpecification.spec.inputs[interpolationKey]?.options;
-    if (options) {
-        assert(options.includes(inputValue),
-            chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: \`{blueBright ${inputValue}}\` cannot be used because it is not in the list of allowed options.`);
-    }
-
     const expectedInputType = getExpectedInputType(ctx);
     assert(INCLUDE_INPUTS_SUPPORTED_TYPES.includes(expectedInputType),
         chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: header:spec:inputs:{blueBright ${interpolationKey}} input type unknown value: {blueBright ${expectedInputType}}.`);
@@ -440,6 +444,19 @@ function validateInput (ctx: any) {
     const inputType = Array.isArray(inputValue) ? "array" : typeof inputValue;
     assert(inputType === expectedInputType,
         chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: provided value is not a {blueBright ${expectedInputType}}.`);
+
+    const options = inputsSpecification.spec.inputs[interpolationKey]?.options;
+    if (options) {
+        if (inputType == "array") {
+            for (const itemValue of inputValue) {
+                assert(options.includes(itemValue),
+                    chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: \`{blueBright ${itemValue}}\` cannot be used because it is not in the list of allowed options.`);
+            }
+        } else {
+            assert(options.includes(inputValue),
+                chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: \`{blueBright ${inputValue}}\` cannot be used because it is not in the list of allowed options.`);
+        }
+    }
 
     const regex = inputsSpecification.spec.inputs[interpolationKey]?.regex;
     if (regex) {

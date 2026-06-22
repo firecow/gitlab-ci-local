@@ -321,6 +321,44 @@ test.concurrent("include-inputs options validation", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
+test.concurrent("include-inputs options array1 validation", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-inputs/input-templates/options-array1-validation",
+        preview: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+scan-website:
+  script:
+    - echo ["foo","baz"]`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
+test.concurrent("include-inputs options array2 validation", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/include-inputs/input-templates/options-array2-validation",
+            preview: true,
+        }, writeStreams);
+    } catch (e: any) {
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
+        expect(e.message).toContain("This GitLab CI configuration is invalid:");
+        expect(e.message).toContain(
+            chalk`\`{blueBright options_input}\` input: \`{blueBright fizz}\` cannot be used because it is not in the list of allowed options.`,
+        );
+        return;
+    }
+
+    throw new Error("Error is expected but not thrown/caught");
+});
+
 test.concurrent("include-inputs too many functions in interpolation block", async () => {
     const writeStreams = new WriteStreamsMock();
     try {
