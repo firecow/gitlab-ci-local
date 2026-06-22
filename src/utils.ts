@@ -291,7 +291,7 @@ export class Utils {
                     });
 
                     const assertMsg = [
-                        "RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!",
+                        `RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!`,
                         "Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...",
                     ];
                     assert(_rhs !== regexStr, assertMsg.join("\n"));
