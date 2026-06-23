@@ -468,6 +468,10 @@ If you know what you're doing and would like to suppress this warning, use one o
         return this.jobData["needs"] ?? null;
     }
 
+    get certVolumeName (): string {
+        return `gcl-${this.safeJobName}-${this.jobId}-cert`;
+    }
+
     get buildVolumeName (): string {
         return `gcl-${this.safeJobName}-${this.jobId}-build`;
     }
@@ -690,10 +694,15 @@ If you know what you're doing and would like to suppress this warning, use one o
             const fileVariablesDir = this.fileVariablesDir;
 
             this._containerVolumeNames.push(buildVolumeName, tmpVolumeName);
-            await Promise.all([
+            const volumeCreatePromises = [
                 Utils.spawn([this.argv.containerExecutable, "volume", "create", `${buildVolumeName}`], argv.cwd),
                 Utils.spawn([this.argv.containerExecutable, "volume", "create", `${tmpVolumeName}`], argv.cwd),
-            ]);
+            ];
+            if (this.argv.volume.some(v => v.startsWith("%gcl-cert%:"))) {
+                this._containerVolumeNames.push(this.certVolumeName);
+                volumeCreatePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", this.certVolumeName], argv.cwd));
+            }
+            await Promise.all(volumeCreatePromises);
 
             const time = process.hrtime();
             this.refreshLongRunningSilentTimeout(writeStreams);
@@ -1027,7 +1036,8 @@ If you know what you're doing and would like to suppress this warning, use one o
             dockerCmd += `--workdir ${this.ciProjectDir} `;
 
             for (const volume of this.argv.volume) {
-                dockerCmd += `--volume ${volume} `;
+                const v = volume.startsWith("%gcl-cert%:") ? `${this.certVolumeName}${volume.slice("%gcl-cert%".length)}` : volume;
+                dockerCmd += `--volume ${v} `;
             }
 
             for (const extraHost of this.argv.extraHost) {
@@ -1626,7 +1636,8 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
 
         for (const volume of this.argv.volume) {
-            dockerCmd += `--volume ${volume} `;
+            const v = volume.startsWith("%gcl-cert%:") ? `${this.certVolumeName}${volume.slice("%gcl-cert%".length)}` : volume;
+            dockerCmd += `--volume ${v} `;
         }
 
         for (const extraHost of this.argv.extraHost) {
