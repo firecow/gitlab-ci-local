@@ -1460,8 +1460,9 @@ If you know what you're doing and would like to suppress this warning, use one o
     }
 
     private async copyArtifactsOut (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
-        // TODO: update the condition to support when:on_success / when:on_failure
-        if (this.jobStatus !== "success" && this.artifacts?.when !== "always") return;
+        if (this.jobStatus !== "success" && this.artifacts?.when === "on_success") return;
+        if (this.jobStatus !== "failed" && this.artifacts?.when === "on_failure") return;
+        if (this.artifacts?.when === "never") return;
         if (!this.artifacts) return;
         if ((this.artifacts.paths?.length ?? 0) === 0 && this.artifacts.reports?.dotenv == null) return;
 
