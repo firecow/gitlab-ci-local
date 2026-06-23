@@ -707,12 +707,12 @@ If you know what you're doing and would like to suppress this warning, use one o
             const time = process.hrtime();
             this.refreshLongRunningSilentTimeout(writeStreams);
 
-            let chownOpt = "0:0";
+            let this.chownOpt = "0:0";
             let chmodOpt = "a+rw";
             if (!this.argv.umask) {
                 const {stdout} = await Utils.spawn([this.argv.containerExecutable, "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
-                chownOpt = stdout;
-                if (chownOpt == "0:0") {
+                this.chownOpt = stdout;
+                if (this.chownOpt == "0:0") {
                     chmodOpt = "g-w";
                 }
             }
@@ -733,7 +733,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 }
             }
 
-            helperContainerArgs.push(`${helperImageName}`, "sh", "-c", `chown ${chownOpt} -R ${this.ciProjectDir} && chmod ${chmodOpt} -R ${this.ciProjectDir} && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`);
+            helperContainerArgs.push(`${helperImageName}`, "sh", "-c", `chown ${this.chownOpt} -R ${this.ciProjectDir} && chmod ${chmodOpt} -R ${this.ciProjectDir} && chown ${this.chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`);
 
             const {stdout: containerId} = await Utils.spawn(helperContainerArgs, argv.cwd);
             this._containersToClean.push(containerId);
@@ -1393,7 +1393,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         if (!this.imageName(this._variables) && this.argv.shellIsolation) {
             return Utils.spawn(["rsync", "-a", `${source}/.`, `${this.argv.cwd}/${this.argv.stateDir}/builds/${safeJobName}`]);
         }
-        return Utils.spawn([this.argv.containerExecutable, "cp", `${source}/.`, `${this._containerId}:${this.ciProjectDir}`]);
+        return Utils.spawn(["sh","-c" , `cd ${source}; tar -cf - . --owner ${this.chownOpt.split(":")[0]} --group ${this.chownOpt.split(":")[1]} | ${this.argv.containerExecutable} cp - ${this._containerId}:${this.ciProjectDir}`]);
     }
 
     private async copyCacheOut (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
