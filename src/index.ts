@@ -138,6 +138,12 @@ process.on("SIGUSR2", async () => {
             requiresArg: true,
             default: Argv.default.inputsFile,
         })
+        .option("ignores-file", {
+            type: "string",
+            description: "Path to a ignores file",
+            requiresArg: true,
+            default: Argv.default.ignoresFile,
+        })
         .option("completion", {
             type: "boolean",
             description: "Generate tab completion script",

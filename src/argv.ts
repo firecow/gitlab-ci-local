@@ -60,6 +60,7 @@ export function injectGclVariableEnvVars (argv: {variable?: string[]; [key: stri
 export class Argv {
     static readonly default = {
         "variablesFile": ".gitlab-ci-local-variables.yml",
+        "ignoresFile": ".gitlab-ci-local-ignores",
         "inputsFile": ".gitlab-ci-local-inputs.yml",
         "evaluateRuleChanges": true,
         "ignoreSchemaPaths": [] as string[],
@@ -168,6 +169,10 @@ export class Argv {
 
     get inputsFile (): string {
         return this.map.get("inputsFile") ?? Argv.default.inputsFile;
+    }
+
+    get ignoresFile (): string {
+        return this.map.get("ignoresFile") ?? Argv.default.ignoresFile;
     }
 
     get evaluateRuleChanges (): boolean {
