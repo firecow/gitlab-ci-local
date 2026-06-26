@@ -39,6 +39,7 @@ const tests = [
     {rule: '($CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^perf_.*$/)', evalResult: false},
     {rule: '("qwerty" =~ /^perf_.*$/)', evalResult: false},
     {rule: `"product-name/v0.0.0+build.0" =~ /^(?:product-name\\/)?v\\d+\\.\\d+\\.\\d+.*/`, evalResult: true},
+    {rule: '$CI_COMMIT_MESSAGE =~ "/\\[(ci skip|skip ci) on ([^],]*,)*tag(,[^],]*)*\\]/" && $CI_COMMIT_TAG', evalResult: false},
 ];
 /* eslint-enable @stylistic/quotes */
 
