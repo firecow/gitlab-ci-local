@@ -206,6 +206,17 @@ describe("gitlab rules regex with variable interpolation [escaping]", () => {
         expect(Utils.evaluateRuleIf("$X !~ /^$VAL$/", {X: "feat/y", VAL: "feat/x"})).toBe(true);
         expect(Utils.evaluateRuleIf("$X !~ /^$VAL$/", {X: "feat/x", VAL: "feat/x"})).toBe(false);
     });
+
+    test("$$ escape leaves the following name unexpanded (regression check)", () => {
+        // `$$FOO` is an escaped `$`; the name `FOO` must NOT be expanded as a
+        // variable. The pre-pass leaves `$$` for the global unescape pass
+        // exactly as before this change, so `FOO` stays literal.
+        const evalSpy = vi.spyOn(global, "eval");
+        Utils.evaluateRuleIf("$X =~ /^$$FOO$/", {X: "whatever", FOO: "bar"});
+        const compiled = evalSpy.mock.calls.at(-1)?.[0] as string;
+        expect(compiled).toContain("FOO"); // name preserved literally
+        expect(compiled).not.toContain("bar"); // FOO must NOT be expanded
+    });
 });
 
 describe("gitlab rules regex [invalid]", () => {

@@ -267,7 +267,11 @@ export class Utils {
             const expandedPattern = pattern.replaceAll(
                 /(\$\$)|\\?\$\{([a-zA-Z_]\w*)}|\\?\$([a-zA-Z_]\w*)/g,
                 (_m: string, escape: string, var1: string, var2: string) => {
-                    if (escape !== undefined) return "$";
+                    // Leave a `$$` escape intact for the global unescape pass
+                    // (`$$` -> literal `$`). Returning a single `$` here would
+                    // re-expose the following name as a `$VAR` to that pass and
+                    // expand it, defeating the escape.
+                    if (escape !== undefined) return "$$";
                     return escapeRegExp(envs[var1 || var2] ?? "");
                 },
             );
