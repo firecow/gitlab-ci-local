@@ -246,10 +246,10 @@ export class Utils {
         };
 
         // A `$VAR` that sits *inside* a regex literal on the RHS of `=~`/`!~`
-        // must be substituted with its raw value, not a quoted JS string
-        // literal. The general expansion below wraps every value in quotes
-        // (needed for `==` operands), which would otherwise leak `"`
-        // characters into the regex pattern, e.g. turning
+        // must be substituted with its value, not a quoted JS string literal.
+        // The general expansion below wraps every value in quotes (needed for
+        // `==` operands), which would otherwise leak `"` characters into the
+        // regex pattern, e.g. turning
         //   $PHP_VERSION =~ /^\$_TARGET_PHP$/   (with _TARGET_PHP=8.3)
         // into the malformed pattern `^\"8.3"$` instead of `^8.3$`.
         // In a regex context GitLab still expands an escaped `\$VAR`, dropping
@@ -257,13 +257,18 @@ export class Utils {
         // expansion, so that no `$VAR` remains inside literal regexes; this
         // leaves the "RHS is a variable that holds a regex" case (e.g.
         // `$TAG =~ $TAG_REGEX`) to the general quoted expansion as before.
+        // The substituted value is regex-escaped so it matches literally and a
+        // value containing regex metacharacters (a branch like `feat/x`, or a
+        // value carrying `/`, `|`, `(`, ...) cannot break out of the literal,
+        // close it early, or inject expression syntax into the eval.
+        const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
         const regexLiteralRhs = /(?<op>=~|!~)(?<pre>\s*["']?)\/(?<pattern>(?:\\.|[^/\\])*)\//g;
         evalStr = evalStr.replaceAll(regexLiteralRhs, (_match, op, pre, pattern) => {
             const expandedPattern = pattern.replaceAll(
                 /(\$\$)|\\?\$\{([a-zA-Z_]\w*)}|\\?\$([a-zA-Z_]\w*)/g,
                 (_m: string, escape: string, var1: string, var2: string) => {
                     if (escape !== undefined) return "$";
-                    return envs[var1 || var2] ?? "";
+                    return escapeRegExp(envs[var1 || var2] ?? "");
                 },
             );
             return `${op}${pre}/${expandedPattern}/`;
