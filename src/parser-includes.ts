@@ -377,15 +377,15 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
                 tmpDir = `${cwd}/${target}.${ext}`;
 
-                const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
+                const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${Utils.safeBashString(ref)}`;
                 await Utils.bashMulti([
-                    `cd ${cwd}/${stateDir}`,
-                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${tmpDir}`,
-                    `cd ${tmpDir}`,
-                    `git sparse-checkout set --no-cone ${normalizedFile}`,
+                    `cd ${Utils.safeBashString(`${cwd}/${stateDir}`)}`,
+                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${Utils.safeBashString(tmpDir)}`,
+                    `cd ${Utils.safeBashString(tmpDir)}`,
+                    `git sparse-checkout set --no-cone ${Utils.safeBashString(normalizedFile)}`,
                     "git checkout",
-                    `cd ${cwd}/${stateDir}`,
-                    `cp ${tmpDir}/${normalizedFile} ${cwd}/${target}/${normalizedFile}`,
+                    `cd ${Utils.safeBashString(`${cwd}/${stateDir}`)}`,
+                    `cp ${Utils.safeBashString(`${tmpDir}/${normalizedFile}`)} ${Utils.safeBashString(`${cwd}/${target}/${normalizedFile}`)}`,
                 ], cwd);
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
@@ -418,16 +418,16 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`));
                 tmpDir = `${cwd}/${target}.${ext}`;
 
-                const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
+                const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${Utils.safeBashString(ref)}`;
                 await Utils.bashMulti([
-                    `cd ${cwd}/${stateDir}`,
-                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${tmpDir}`,
-                    `cd ${tmpDir}`,
-                    `git sparse-checkout set --no-cone ${files[0]} ${files[1]}`,
+                    `cd ${Utils.safeBashString(`${cwd}/${stateDir}`)}`,
+                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${Utils.safeBashString(tmpDir)}`,
+                    `cd ${Utils.safeBashString(tmpDir)}`,
+                    `git sparse-checkout set --no-cone ${Utils.safeBashString(files[0])} ${Utils.safeBashString(files[1])}`,
                     "git checkout",
-                    `cd ${cwd}/${stateDir}`,
-                    `mkdir -p ${tmpDir}/templates`, // create templates subdir (if it doesn't exist), as the check out may not create it
-                    `cp -r ${tmpDir}/templates ${cwd}/${target}`,
+                    `cd ${Utils.safeBashString(`${cwd}/${stateDir}`)}`,
+                    `mkdir -p ${Utils.safeBashString(`${tmpDir}/templates`)}`, // create templates subdir (if it doesn't exist), as the check out may not create it
+                    `cp -r ${Utils.safeBashString(`${tmpDir}/templates`)} ${Utils.safeBashString(`${cwd}/${target}`)}`,
                 ], cwd);
             } else {
                 // git archive fails if the paths do not exist, to work around this we use a wildcard "templates/component*.yml"
