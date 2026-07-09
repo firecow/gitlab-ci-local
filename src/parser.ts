@@ -297,12 +297,16 @@ export class Parser {
         let index = 0;
         if (expandVariables) {
             for (const line of fileSplit) {
-                interactiveMatch = interactiveMatch ?? /#\s?@\s?[Ii]nteractive/.exec(line);
-                injectSSHAgent = injectSSHAgent ?? /#\s?@\s?[Ii]njectSSHAgent/.exec(line);
-                noArtifactsToSourceMatch = noArtifactsToSourceMatch ?? /#\s?@\s?NoArtifactsToSource/i.exec(line);
-                descriptionMatch = descriptionMatch ?? /#\s?@\s?[Dd]escription (?<description>.*)/.exec(line);
+                if (/^\s*#/.test(line)) {
+                    interactiveMatch = interactiveMatch ?? /#\s?@\s?[Ii]nteractive/.exec(line);
+                    injectSSHAgent = injectSSHAgent ?? /#\s?@\s?[Ii]njectSSHAgent/.exec(line);
+                    noArtifactsToSourceMatch = noArtifactsToSourceMatch ?? /#\s?@\s?NoArtifactsToSource/i.exec(line);
+                    descriptionMatch = descriptionMatch ?? /#\s?@\s?[Dd]escription (?<description>.*)/.exec(line);
+                    index++;
+                    continue;
+                }
 
-                const jobMatch = /\w:/.exec(line);
+                const jobMatch = /^[\w.$-]+:/.exec(line);
                 if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
                     if (interactiveMatch) {
                         fileSplitClone.splice(index + 1, 0, "  gclInteractive: true");
