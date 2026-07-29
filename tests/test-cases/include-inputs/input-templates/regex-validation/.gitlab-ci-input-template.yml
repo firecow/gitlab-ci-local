@@ -1,0 +1,9 @@
+---
+spec:
+  inputs:
+    version:
+      regex: ^v\d+\.\d+\.\d+$
+---
+deploy:
+  script:
+    - echo $[[ inputs.version ]]

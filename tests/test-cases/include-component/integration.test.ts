@@ -3,6 +3,7 @@ import {handler} from "../../../src/handler.js";
 import assert, {AssertionError} from "assert";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
+import {Utils} from "../../../src/utils.js";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -175,6 +176,7 @@ test.concurrent("include-component component (protocol: https) (~latest semver)"
 });
 
 test.concurrent("include-component local component", async () => {
+    const sha = Utils.syncSpawn(["git", "rev-parse", "HEAD"]).stdout.trimEnd();;
     const writeStreams = new WriteStreamsMock();
 
     await handler({
@@ -182,7 +184,6 @@ test.concurrent("include-component local component", async () => {
         preview: true,
         stateDir: ".gitlab-ci-local-include-component-local-component",
     }, writeStreams);
-
     const expected = `---
 stages:
   - .pre
@@ -190,7 +191,8 @@ stages:
   - .post
 component-job:
   script:
-    - echo job 1
+    - echo job 1 from my-component (${sha}/${sha}).
+    - Sha is ${sha}
   stage: my-stage`;
 
     expect(writeStreams.stdoutLines[0]).toEqual(expected);

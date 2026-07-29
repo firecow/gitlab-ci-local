@@ -388,6 +388,10 @@ export class Argv {
         return this.map.get("containerEmulate") ?? null;
     }
 
+    get gpus (): string | null {
+        return this.map.get("gpus") ?? null;
+    }
+
     get concurrency (): number | null {
         const concurrency = this.map.get("concurrency");
         if (!concurrency) return null;

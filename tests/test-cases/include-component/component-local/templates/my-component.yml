@@ -5,5 +5,7 @@ spec:
       default: test
 ---
 component-job:
-  script: echo job 1
+  script:
+    - echo job 1 from $[[ component.name ]] ($[[ component.version ]]/$[[ component.reference ]]).
+    - Sha is $[[ component.sha ]]
   stage: $[[ inputs.stage ]]

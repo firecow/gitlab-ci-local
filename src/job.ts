@@ -468,6 +468,10 @@ If you know what you're doing and would like to suppress this warning, use one o
         return this.jobData["needs"] ?? null;
     }
 
+    get certVolumeName (): string {
+        return `gcl-${this.safeJobName}-${this.jobId}-cert`;
+    }
+
     get buildVolumeName (): string {
         return `gcl-${this.safeJobName}-${this.jobId}-build`;
     }
@@ -670,6 +674,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
         const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));
         const imageName = this.imageName(expanded);
+        const imagePlatform = this.imagePlatform(expanded);
         const helperImageName = argv.helperImage;
         const safeJobName = this.safeJobName;
 
@@ -682,17 +687,22 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
 
         if (imageName) {
-            await this.pullImage(writeStreams, imageName);
+            await this.pullImage(writeStreams, imageName, imagePlatform);
 
             const buildVolumeName = this.buildVolumeName;
             const tmpVolumeName = this.tmpVolumeName;
             const fileVariablesDir = this.fileVariablesDir;
 
             this._containerVolumeNames.push(buildVolumeName, tmpVolumeName);
-            await Promise.all([
+            const volumeCreatePromises = [
                 Utils.spawn([this.argv.containerExecutable, "volume", "create", `${buildVolumeName}`], argv.cwd),
                 Utils.spawn([this.argv.containerExecutable, "volume", "create", `${tmpVolumeName}`], argv.cwd),
-            ]);
+            ];
+            if (this.argv.volume.some(v => v.startsWith("%gcl-cert%:"))) {
+                this._containerVolumeNames.push(this.certVolumeName);
+                volumeCreatePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", this.certVolumeName], argv.cwd));
+            }
+            await Promise.all(volumeCreatePromises);
 
             const time = process.hrtime();
             this.refreshLongRunningSilentTimeout(writeStreams);
@@ -971,6 +981,11 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += `--user ${imageUser} `;
             }
 
+            const imagePlatform = this.imagePlatform(expanded);
+            if (imagePlatform) {
+                dockerCmd += `--platform ${imagePlatform} `;
+            }
+
             if (this.argv.containerEmulate) {
                 const runnerName: string = this.argv.containerEmulate;
 
@@ -984,6 +999,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += `--memory=${memoryConfig}m `;
                 dockerCmd += `--kernel-memory=${memoryConfig}m `;
                 dockerCmd += `--cpus=${cpuConfig} `;
+            }
+
+            if (this.gpus) {
+                dockerCmd += `--gpus ${this.gpus} --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 `;
             }
 
             // host and none networks have to be specified using --network, since they cannot be used with
@@ -1017,7 +1036,8 @@ If you know what you're doing and would like to suppress this warning, use one o
             dockerCmd += `--workdir ${this.ciProjectDir} `;
 
             for (const volume of this.argv.volume) {
-                dockerCmd += `--volume ${volume} `;
+                const v = volume.startsWith("%gcl-cert%:") ? `${this.certVolumeName}${volume.slice("%gcl-cert%".length)}` : volume;
+                dockerCmd += `--volume ${v} `;
             }
 
             for (const extraHost of this.argv.extraHost) {
@@ -1209,6 +1229,13 @@ If you know what you're doing and would like to suppress this warning, use one o
         return Utils.expandText(image["docker"]["user"], vars);
     }
 
+    private imagePlatform (vars: {[key: string]: string} = {}): string | null {
+        const image = this.jobData["image"];
+        if (!image) return null;
+        if (!image["docker"]) return null;
+        return Utils.expandText(image["docker"]["platform"], vars);
+    }
+
     get imageEntrypoint (): string[] | null {
         const image = this.jobData["image"];
 
@@ -1217,6 +1244,19 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
         assert(Array.isArray(image.entrypoint), "image:entrypoint must be an array");
         return image.entrypoint;
+    }
+
+    get gpus (): string | null {
+        if (this.argv.gpus) {
+            return this.argv.gpus;
+        } else if ("tags" in this.jobData) {
+            for (const tag of this.jobData["tags"]) {
+                if (tag.match(/^(.*-)?gpu(-.*)?$/)) {
+                    return "all";
+                }
+            }
+        }
+        return null;
     }
 
     private async validateCiDependencyProxyServerAuthentication (imageName: string) {
@@ -1237,18 +1277,30 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
     }
 
-    private async pullImage (writeStreams: WriteStreams, imageToPull: string) {
+    private async pullImage (writeStreams: WriteStreams, imageToPull: string, imagePlatform: string | null = null) {
         const pullPolicy = this.argv.pullPolicy;
+        const platformArgs = imagePlatform ? ["--platform", imagePlatform] : [];
+        const platformSuffix = imagePlatform ? ` (${imagePlatform})` : "";
         const actualPull = async () => {
             await this.validateCiDependencyProxyServerAuthentication(imageToPull);
             const time = process.hrtime();
-            await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull]);
+            await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull, ...platformArgs]);
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull}${platformSuffix} in {magenta ${prettyHrtime(endTime)}}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
         };
 
         if (pullPolicy === "always") {
+            await actualPull();
+            return;
+        }
+        // The `image inspect` cache check is platform-agnostic — a different-arch
+        // variant of the same image name will satisfy it, causing the requested
+        // platform to silently differ from what's actually on disk. Force a pull
+        // when a specific platform was requested so the matching manifest is
+        // guaranteed locally. Pulls are idempotent: if the variant is already
+        // cached, `docker pull` short-circuits with "Image is up to date".
+        if (imagePlatform) {
             await actualPull();
             return;
         }
@@ -1579,8 +1631,13 @@ If you know what you're doing and would like to suppress this warning, use one o
             dockerCmd += `--shm-size=${this.argv.shmSize} `;
         }
 
+        if (this.gpus) {
+            dockerCmd += `--gpus ${this.gpus} --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 `;
+        }
+
         for (const volume of this.argv.volume) {
-            dockerCmd += `--volume ${volume} `;
+            const v = volume.startsWith("%gcl-cert%:") ? `${this.certVolumeName}${volume.slice("%gcl-cert%".length)}` : volume;
+            dockerCmd += `--volume ${v} `;
         }
 
         for (const extraHost of this.argv.extraHost) {

@@ -266,3 +266,66 @@ describe("getServiceAlias", () => {
         expect(Utils.getServiceAlias({...base, name: "library/nginx", alias: "my-nginx"})).toBe("my-nginx");
     });
 });
+
+describe("safeDockerString", () => {
+    it("should return encoded name unchanged when within limit", () => {
+        const result = Utils.safeDockerString("short-job-name");
+        expect(result).toBe("short-job-name");
+    });
+
+    it("should encode non-alphanumeric characters", () => {
+        const result = Utils.safeDockerString("job/name");
+        expect(result).toBe("jobLwname"); // '/' → 'Lw'
+    });
+
+    it("should truncate and hash when encoded name exceeds MAX_FILENAME_LENGTH", () => {
+        const longName = "my-group/common/python-unit-test: [my-app-controller,My app controller to be used as reference for development teams,python311,controller,common,controller/setup.py,controller/setup_c.py,controller/setup_n.py,controller/tests/**/*,controller/coverage/*,controller/build/**/*,controller/coverage/coverage-unit.xml,75,true]";
+        const result = Utils.safeDockerString(longName);
+        expect(result.length).toBeLessThanOrEqual(Utils.MAX_FILENAME_LENGTH);
+    });
+
+    it("should produce deterministic output for the same input", () => {
+        const longName = "a".repeat(50) + "/" + "b".repeat(200);
+        const result1 = Utils.safeDockerString(longName);
+        const result2 = Utils.safeDockerString(longName);
+        expect(result1).toBe(result2);
+    });
+
+    it("should produce different output for different long inputs", () => {
+        const name1 = "job: [" + "a".repeat(300) + "]";
+        const name2 = "job: [" + "b".repeat(300) + "]";
+        const result1 = Utils.safeDockerString(name1);
+        const result2 = Utils.safeDockerString(name2);
+        expect(result1).not.toBe(result2);
+    });
+
+    it("should handle extremely long job names (1000+ chars)", () => {
+        const extremeName = "group/subgroup/job: [" + "x".repeat(2000) + "]";
+        const result = Utils.safeDockerString(extremeName);
+        expect(result.length).toBeLessThanOrEqual(Utils.MAX_FILENAME_LENGTH);
+        expect(result.length).toBeGreaterThan(16); // has prefix + hash
+    });
+
+    it("should keep volume name within NAME_MAX=255 (worst-case suffix)", () => {
+        const longName = "my-group/common/python-unit-test: [" + "a/b/c,".repeat(100) + "]";
+        const safeJobName = Utils.safeDockerString(longName);
+        const worstCaseVolume = `gcl-${safeJobName}-999999-build`;
+        expect(worstCaseVolume.length).toBeLessThanOrEqual(255);
+    });
+
+    it("should not hash names that are exactly at the limit", () => {
+        // Create a name whose encoded form is exactly MAX_FILENAME_LENGTH
+        const name = "a".repeat(Utils.MAX_FILENAME_LENGTH);
+        const result = Utils.safeDockerString(name);
+        expect(result).toBe(name); // all alphanumeric, no encoding, no hash
+    });
+
+    it("should hash names whose encoded form is one char over the limit", () => {
+        // 'a' stays as 'a', '/' encodes to 'Lw' (2 chars)
+        // Build a string that encodes to exactly MAX_FILENAME_LENGTH + 1
+        const name = "a".repeat(Utils.MAX_FILENAME_LENGTH - 1) + "/"; // '/' -> 'Lw' = +2, total = MAX+1
+        const result = Utils.safeDockerString(name);
+        expect(result.length).toBeLessThanOrEqual(Utils.MAX_FILENAME_LENGTH);
+        expect(result).toContain("-"); // has hash separator
+    });
+});

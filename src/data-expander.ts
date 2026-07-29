@@ -129,8 +129,10 @@ export function needsComplex (data: any) {
 export function needsEach (jobName: string, gitlabData: any) {
     const jobData = gitlabData[jobName];
     if (!jobData.needs) return;
+    assert(Array.isArray(jobData.needs), chalk`{blueBright ${jobName}} {yellow needs:} must be an array`);
 
     for (const [i, n] of Object.entries<any>(jobData.needs)) {
+        assert(n != null, chalk`{blueBright ${jobName}} {yellow needs:} entries cannot be empty`);
         jobData.needs[i] = needsComplex(n);
     }
 }
@@ -188,7 +190,7 @@ export function imageComplex (data: any) {
     return {
         name: typeof data === "string" ? data : data.name,
         entrypoint: data.entrypoint,
-        ...(data.docker?.user ? {docker: {user: data.docker?.user}} : {}),
+        ...(data.docker?.user || data.docker?.platform ? {docker: {user: data.docker.user, platform: data.docker.platform}} : {}),
     };
 }
 
