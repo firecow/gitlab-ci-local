@@ -21,6 +21,16 @@ build/image:
   script:
     - echo "build"
 
+# @Description Quoted with a colon: and "quotes"
+"quoted job":
+  script:
+    - echo "quoted"
+
+# @Description Single quoted job
+'single quoted':
+  script:
+    - echo "single"
+
 # @Description Runs the tests
 plainjob:
   script:

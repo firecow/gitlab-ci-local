@@ -26,5 +26,7 @@ test.concurrent("comment-directive-anchor --list", async () => {
     expect(descriptionOf("sourcemaps")).toBe("Upload source maps. Opt in per brand:");
     expect(descriptionOf("deploy to prod")).toBe("Deploys everything");
     expect(descriptionOf("build/image")).toBe("Builds the image");
+    expect(descriptionOf("quoted job")).toBe("Quoted with a colon: and \"quotes\"");
+    expect(descriptionOf("single quoted")).toBe("Single quoted job");
     expect(descriptionOf("plainjob")).toBe("Runs the tests");
 });
