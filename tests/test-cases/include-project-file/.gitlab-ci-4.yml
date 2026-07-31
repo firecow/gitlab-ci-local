@@ -1,0 +1,7 @@
+---
+include:
+  # https://gitlab.com/ANGkeith/gitlab-ci-local-test/-/tree/dev?ref_type=heads
+  - project: angkeith/gitlab-ci-local-test
+    ref: 126db0b30c40344e135a0335fdfd3d5f26af3b6d
+    file:
+      - .gitlab-ci.yml

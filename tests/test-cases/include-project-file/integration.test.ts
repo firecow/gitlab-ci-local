@@ -66,3 +66,19 @@ test.concurrent("include:project should respect rules specified in included proj
 
     expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.join("\n"));
 });
+
+test.concurrent("include:project be able to target a commit sha via ref", async () => {
+    const writeStreams = new WriteStreamsMock();
+
+    await handler({
+        file: ".gitlab-ci-4.yml",
+        cwd: "tests/test-cases/include-project-file",
+        noColor: true,
+        stateDir: ".gitlab-ci-local-include-project-file-sha",
+    }, writeStreams);
+
+    const expected = "job > hello world from dev branch";
+
+    const filteredStdout = writeStreams.stdoutLines.filter(f => f.startsWith("job >")).join("\n");
+    expect(filteredStdout).toEqual(expected);
+});
