@@ -422,6 +422,12 @@ export class Utils {
     }
 
     static readonly gclRegistryPrefix: string = "registry.gcl.local";
+    // renovate: datasource=docker depName=registry
+    static readonly gclRegistryImage: string = "registry:3.1.1";
+    // renovate: datasource=docker depName=alpine/openssl
+    static readonly gclOpensslImage: string = "alpine/openssl:3.5.7";
+    // renovate: datasource=docker depName=curlimages/curl
+    static readonly gclCurlImage: string = "curlimages/curl:8.21.0";
     static async startDockerRegistry (argv: Argv): Promise<void> {
         const gclRegistryCertVol = `${this.gclRegistryPrefix}.certs`;
         const gclRegistryDataVol = `${this.gclRegistryPrefix}.data`;
@@ -446,7 +452,7 @@ export class Utils {
                 "-addext", `subjectAltName=DNS:${this.gclRegistryPrefix}`,
             ];
             const generateCertsInPlace = [
-                argv.containerExecutable, "run", "--rm", "-v", `${gclRegistryCertVol}:/certs`, "--entrypoint", "sh", "alpine/openssl", "-c",
+                argv.containerExecutable, "run", "--rm", "-v", `${gclRegistryCertVol}:/certs`, "--entrypoint", "sh", this.gclOpensslImage, "-c",
                 [
                     "openssl", ...opensslArgs,
                     "&&", "mkdir", "-p", `/certs/${this.gclRegistryPrefix}`,
@@ -481,18 +487,19 @@ export class Utils {
             "-e", "REGISTRY_HTTP_ADDR=0.0.0.0:443",
             "-e", `REGISTRY_HTTP_TLS_CERTIFICATE=/certs/${this.gclRegistryPrefix}.crt`,
             "-e", `REGISTRY_HTTP_TLS_KEY=/certs/${this.gclRegistryPrefix}.key`,
-            "registry",
+            this.gclRegistryImage,
         ]);
 
         try {
+            await Utils.spawn([argv.containerExecutable, "pull", this.gclCurlImage]);
             await execa(argv.containerExecutable, [
                 "run", "--rm",
                 "--network", gclRegistryNet,
                 "--entrypoint", "sh",
-                "curlimages/curl",
+                this.gclCurlImage,
                 "-c", `until [ "$(curl -s -o /dev/null -k -w "%{http_code}" https://${this.gclRegistryPrefix}:443)" = "200" ]; do sleep 1; done;`,
             ], {
-                timeout: 4000,
+                timeout: 10000,
             });
         } catch (err) {
             await this.stopDockerRegistry(argv.containerExecutable);
