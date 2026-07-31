@@ -24,6 +24,7 @@
     "fetch-schema": "curl https://gitlab.com/gitlab-org/gitlab/-/raw/master/app/assets/javascripts/editor/schema/ci.json -sf > src/schema.json"
   },
   "dependencies": {
+    "@jsep-plugin/regex": "^1.0.4",
     "ajv": "8.x.x",
     "axios": "1.x.x",
     "base64url": "3.x.x",
@@ -37,6 +38,7 @@
     "fs-extra": "11.x.x",
     "globby": "16.x.x",
     "js-yaml": "4.x.x",
+    "jsep": "^1.4.0",
     "jsonpointer": "5.x.x",
     "micromatch": "4.x.x",
     "object-traversal": "1.x.x",
