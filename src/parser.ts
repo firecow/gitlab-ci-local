@@ -321,7 +321,7 @@ export class Parser {
                         index++;
                     }
                     if (descriptionMatch) {
-                        fileSplitClone.splice(index + 1, 0, `  gclDescription: ${descriptionMatch?.groups?.description ?? ""}`);
+                        fileSplitClone.splice(index + 1, 0, `  gclDescription: ${JSON.stringify(descriptionMatch?.groups?.description ?? "")}`);
                         index++;
                     }
                     interactiveMatch = null;
