@@ -9,7 +9,7 @@ import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "node:assert";
 import {Mutex} from "./mutex.js";
 import {Argv} from "./argv.js";
-import execa from "execa";
+import {execa} from "execa";
 import {CICDVariable} from "./variables-from-files.js";
 import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues} from "./gitlab-preset.js";
 import {handler} from "./handler.js";
@@ -932,10 +932,12 @@ If you know what you're doing and would like to suppress this warning, use one o
                 shell: "bash",
                 stdio: ["inherit", "inherit", "inherit"],
                 env: {...expanded, ...process.env},
+                reject: false,
             });
+            const interactiveChildProcess = await interactiveCp.nodeChildProcess;
             return new Promise<number>((resolve, reject) => {
-                void interactiveCp.on("exit", (code) => resolve(code ?? 0));
-                void interactiveCp.on("error", (err) => reject(err));
+                void interactiveChildProcess.on("exit", (code) => resolve(code ?? 0));
+                void interactiveChildProcess.on("error", (err) => reject(err));
             });
         }
 
@@ -1143,7 +1145,9 @@ If you know what you're doing and would like to suppress this warning, use one o
             cwd,
             shell: "bash",
             env: imageName ? process.env : expanded,
+            reject: false,
         });
+        const childProcess = await cp.nodeChildProcess;
 
         // eslint-disable-next-line no-control-regex
         const sectionRegex = /\x1b\[0Ksection_(start|end):(\d+):([^\s[]+)(?:\[[^\]]*\])?\r\x1b\[0K/;
@@ -1187,11 +1191,11 @@ If you know what you're doing and would like to suppress this warning, use one o
             }
             // Wait for "close" rather than "exit" so all stdout/stderr data events
             // have flushed to the output log file before we resolve.
-            void cp.on("close", (code) => {
+            void childProcess.on("close", (code) => {
                 clearTimeout(this._longRunningSilentTimeout);
                 return resolve(code ?? 0);},
             );
-            void cp.on("error", (err) => {
+            void childProcess.on("error", (err) => {
                 clearTimeout(this._longRunningSilentTimeout);
                 return reject(err);
             });

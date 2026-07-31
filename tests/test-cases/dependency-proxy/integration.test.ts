@@ -75,7 +75,7 @@ describe("dependency-proxy", () => {
             }, writeStreams);
         } catch (e: any) {
             // In ci environment, gitlab.com:443 is not authenticated, but at least this shows that we're pulling from the correct path
-            expect(e.shortMessage).toEqual("Command failed with exit code 1: docker pull gitlab.com:443/gcl/dependency_proxy/containers/busybox:latest");
+            expect(e.command).toEqual("docker pull gitlab.com:443/gcl/dependency_proxy/containers/busybox:latest");
             return;
         }
         throw new Error("Error is expected but not thrown/caught");
