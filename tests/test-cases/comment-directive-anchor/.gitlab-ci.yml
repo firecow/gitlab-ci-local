@@ -1,0 +1,27 @@
+---
+# @Description Runs first
+firstjob:
+  script:
+    - echo "first"
+
+# @Description Upload source maps. Opt in per brand:
+#   sourcemaps:
+#     extends: [.foo]
+sourcemaps:
+  script:
+    - echo "sourcemaps"
+
+# @Description Deploys everything
+deploy to prod:
+  script:
+    - echo "deploy"
+
+# @Description Builds the image
+build/image:
+  script:
+    - echo "build"
+
+# @Description Runs the tests
+plainjob:
+  script:
+    - echo "test"
