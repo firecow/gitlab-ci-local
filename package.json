@@ -28,7 +28,7 @@
     "axios": "1.x.x",
     "base64url": "3.x.x",
     "camelcase": "9.x.x",
-    "chalk": "5.x.x",
+    "chalk": "6.x",
     "chalk-template": "1.x.x",
     "checksum": "1.x.x",
     "deep-extend": "0.6.x",
@@ -95,5 +95,8 @@
   "files": [
     "dist/index.js",
     "dist/index.js.map"
-  ]
+  ],
+  "overrides": {
+    "chalk": "$chalk"
+  }
 }
