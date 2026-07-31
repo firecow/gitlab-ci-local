@@ -1,11 +1,18 @@
+import fs from "fs-extra";
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import chalk from "chalk-template";
 
+const cwd = "tests/test-cases/needs-parallel-matrix-artifacts";
+
+afterAll(async () => {
+    await Promise.all(["aws", "gcp"].map(provider => fs.rm(`${cwd}/tag-${provider}.txt`, {force: true})));
+});
+
 test.concurrent("needs-parallel-matrix-artifacts cascades only the matching producer's artifacts to each consumer permutation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
-        cwd: "tests/test-cases/needs-parallel-matrix-artifacts",
+        cwd,
         shellIsolation: true,
         stateDir: ".gitlab-ci-local-needs-parallel-matrix-artifacts",
     }, writeStreams);
