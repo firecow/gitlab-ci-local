@@ -934,10 +934,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                 env: {...expanded, ...process.env},
                 reject: false,
             });
-            const interactiveChildProcess = await interactiveCp.nodeChildProcess;
+            const interactiveChildProcess = interactiveCp.nodeChildProcess;
             return new Promise<number>((resolve, reject) => {
-                void interactiveChildProcess.on("exit", (code) => resolve(code ?? 0));
-                void interactiveChildProcess.on("error", (err) => reject(err));
+                interactiveChildProcess.on("exit", (code) => resolve(code ?? 0));
+                interactiveChildProcess.on("error", (err) => reject(err));
             });
         }
 
@@ -1147,7 +1147,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             env: imageName ? process.env : expanded,
             reject: false,
         });
-        const childProcess = await cp.nodeChildProcess;
+        const childProcess = cp.nodeChildProcess;
 
         // eslint-disable-next-line no-control-regex
         const sectionRegex = /\x1b\[0Ksection_(start|end):(\d+):([^\s[]+)(?:\[[^\]]*\])?\r\x1b\[0K/;
@@ -1191,11 +1191,11 @@ If you know what you're doing and would like to suppress this warning, use one o
             }
             // Wait for "close" rather than "exit" so all stdout/stderr data events
             // have flushed to the output log file before we resolve.
-            void childProcess.on("close", (code) => {
+            childProcess.on("close", (code) => {
                 clearTimeout(this._longRunningSilentTimeout);
                 return resolve(code ?? 0);},
             );
-            void childProcess.on("error", (err) => {
+            childProcess.on("error", (err) => {
                 clearTimeout(this._longRunningSilentTimeout);
                 return reject(err);
             });
