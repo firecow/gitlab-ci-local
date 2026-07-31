@@ -95,5 +95,8 @@
   "files": [
     "dist/index.js",
     "dist/index.js.map"
-  ]
+  ],
+  "overrides": {
+    "chalk": "$chalk"
+  }
 }
