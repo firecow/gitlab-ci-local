@@ -9,5 +9,12 @@
       "matchUpdateTypes": ["minor", "patch", "lockFileMaintenance"],
       "groupName": "All non-major"
     }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^src/utils\\.ts$/"],
+      "matchStrings": ["// renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+static readonly \\w+: string = \"[^:\"]+:(?<currentValue>[^\"]+)\";"]
+    }
   ]
 }
