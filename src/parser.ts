@@ -306,7 +306,7 @@ export class Parser {
                     continue;
                 }
 
-                const jobMatch = /^[\w.$-]+:/.exec(line);
+                const jobMatch = /^[^\s#].*:/.exec(line);
                 if (jobMatch && (interactiveMatch || descriptionMatch || injectSSHAgent || noArtifactsToSourceMatch)) {
                     if (interactiveMatch) {
                         fileSplitClone.splice(index + 1, 0, "  gclInteractive: true");
