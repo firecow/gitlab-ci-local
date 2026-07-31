@@ -1,10 +1,10 @@
 import "../src/global.js";
-import chalkBase from "chalk";
+import chalkBase, {type ColorSupportLevel} from "chalk";
 import {Argv} from "../src/argv.js";
 import {WriteStreamsMock} from "../src/write-streams.js";
 
 let writeStreams: WriteStreamsMock;
-let originalLevel: number;
+let originalLevel: ColorSupportLevel;
 let originalNoColor: string | undefined;
 
 beforeEach(() => {
