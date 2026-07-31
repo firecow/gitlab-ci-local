@@ -36,7 +36,7 @@
     "execa": "5.x.x",
     "fs-extra": "11.x.x",
     "globby": "16.x.x",
-    "js-yaml": "4.x.x",
+    "js-yaml": "5.x",
     "jsonpointer": "5.x.x",
     "micromatch": "4.x.x",
     "object-traversal": "1.x.x",
