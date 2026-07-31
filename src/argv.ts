@@ -105,7 +105,7 @@ export class Argv {
     }
 
     private constructor (argv: any, writeStreams?: WriteStreams) {
-        if (argv.noColor) {
+        if (argv.noColor || argv.color === false || (process.env.NO_COLOR ?? "") !== "") {
             chalkBase.level = 0;
         }
         this.writeStreams = writeStreams;
