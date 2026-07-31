@@ -14,8 +14,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^src/utils\\.ts$/"],
-      "matchStrings": ["Image: string = \"(?<depName>[^:\"]+):(?<currentValue>[^\"]+)\""],
-      "datasourceTemplate": "docker"
+      "matchStrings": ["// renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+static readonly \\w+: string = \"[^:\"]+:(?<currentValue>[^\"]+)\";"]
     }
   ]
 }

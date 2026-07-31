@@ -422,8 +422,11 @@ export class Utils {
     }
 
     static readonly gclRegistryPrefix: string = "registry.gcl.local";
+    // renovate: datasource=docker depName=registry
     static readonly gclRegistryImage: string = "registry:3.1.1";
+    // renovate: datasource=docker depName=alpine/openssl
     static readonly gclOpensslImage: string = "alpine/openssl:3.5.7";
+    // renovate: datasource=docker depName=curlimages/curl
     static readonly gclCurlImage: string = "curlimages/curl:8.21.0";
     static async startDockerRegistry (argv: Argv): Promise<void> {
         const gclRegistryCertVol = `${this.gclRegistryPrefix}.certs`;
@@ -487,9 +490,8 @@ export class Utils {
             this.gclRegistryImage,
         ]);
 
-        await Utils.spawn([argv.containerExecutable, "pull", this.gclCurlImage]);
-
         try {
+            await Utils.spawn([argv.containerExecutable, "pull", this.gclCurlImage]);
             await execa(argv.containerExecutable, [
                 "run", "--rm",
                 "--network", gclRegistryNet,
