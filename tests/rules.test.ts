@@ -334,3 +334,11 @@ test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/1252", () => 
     const rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
     expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
 });
+
+test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/1841", () => {
+    for (const ruleIf of [null, 1, true, ["a"]]) {
+        const rules = [ {if: ruleIf} as any ];
+        expect(() => Utils.getRulesResult({argv, cwd: "", rules, variables: {}}, gitData))
+            .toThrow(/must be a string, but got/);
+    }
+});

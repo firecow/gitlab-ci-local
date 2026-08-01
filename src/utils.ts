@@ -228,6 +228,7 @@ export class Utils {
 
     static evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]: string}): boolean {
         if (ruleIf === undefined) return true;
+        assert(typeof ruleIf === "string", chalk`This GitLab CI configuration is invalid: {blueBright rules:if} must be a string, but got {red ${JSON.stringify(ruleIf)}}`);
         assert(!/\$\{\w+\}/.test(ruleIf), chalk`rules:rule if invalid expression syntax: {blueBright ${ruleIf}}\nuse {green $VAR} not {red \${VAR\}} in rules:if`);
         let evalStr = ruleIf;
 
