@@ -1,5 +1,6 @@
 /.idea/
 /node_modules/
+/.bun/
 /bin/
 /ppa/
 /dist/

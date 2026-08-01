@@ -6,7 +6,7 @@ import {needsComplex} from "./data-expander.js";
 import fs from "fs-extra";
 import checksum from "checksum";
 import base64url from "base64url";
-import execa, {ExecaError} from "execa";
+import {execa, execaSync, ExecaError} from "execa";
 import assert from "node:assert";
 import {createHash} from "node:crypto";
 import {CICDVariable} from "./variables-from-files.js";
@@ -30,11 +30,11 @@ type ExpandWith = {
 };
 
 export class Utils {
-    static bashMulti (scripts: string[], cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode: number}> {
+    static bashMulti (scripts: string[], cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode?: number}> {
         return execa(scripts.join(" && \\"), {shell: "bash", cwd});
     }
 
-    static bash (shellScript: string, cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode: number}> {
+    static bash (shellScript: string, cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode?: number}> {
         return execa(shellScript, {shell: "bash", cwd});
     }
 
@@ -43,7 +43,7 @@ export class Utils {
     }
 
     static syncSpawn (cmdArgs: string[], cwd = process.cwd()): {stdout: string; stderr: string} {
-        return execa.sync(cmdArgs[0], cmdArgs.slice(1), {cwd});
+        return execaSync(cmdArgs[0], cmdArgs.slice(1), {cwd});
     }
 
     static fsUrl (url: string): string {
