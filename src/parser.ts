@@ -333,13 +333,14 @@ export class Parser {
             }
         }
 
-        const referenceType = new yaml.Type("!reference", {
-            kind: "sequence",
-            construct: function (data) {
-                return {referenceData: data};
+        const referenceType = yaml.defineSequenceTag<unknown[], {referenceData: unknown[]}>("!reference", {
+            create: () => [],
+            addItem: (carrier, item) => {
+                carrier.push(item);
             },
+            finalize: (carrier) => ({referenceData: carrier}),
         });
-        const schema = yaml.DEFAULT_SCHEMA.extend([referenceType]);
+        const schema = yaml.CORE_SCHEMA.withTags(yaml.mergeTag, yaml.timestampTag, yaml.binaryTag, yaml.omapTag, yaml.pairsTag, yaml.setTag, referenceType);
         let fileData;
 
         try {
