@@ -301,7 +301,7 @@ export class ParserIncludes {
                 if (this._cache.sha === undefined) {
                     if (this.isLocal) {
                         this._cache.sha = this.gitData.commit.SHA;
-                    } else if (/^[0-9a-f]{40}$/.test(this.effectiveRef)) {
+                    } else if (/^[0-9a-f]{40}$/i.test(this.effectiveRef)) {
                         // effectiveRef may already be a sha, if so return it directly
                         this._cache.sha = this.effectiveRef;
                     } else {
@@ -377,7 +377,7 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
                 tmpDir = `${cwd}/${target}.${ext}`;
 
-                const isCommitSha = /^[0-9a-f]{40}$/.test(ref);
+                const isCommitSha = /^[0-9a-f]{40}$/i.test(ref);
                 const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${ref}`;
                 await Utils.bashMulti([
                     `cd ${cwd}/${stateDir}`,
@@ -420,7 +420,7 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`));
                 tmpDir = `${cwd}/${target}.${ext}`;
 
-                const isCommitSha = /^[0-9a-f]{40}$/.test(ref);
+                const isCommitSha = /^[0-9a-f]{40}$/i.test(ref);
                 const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${ref}`;
                 await Utils.bashMulti([
                     `cd ${cwd}/${stateDir}`,
