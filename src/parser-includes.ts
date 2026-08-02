@@ -301,7 +301,7 @@ export class ParserIncludes {
                 if (this._cache.sha === undefined) {
                     if (this.isLocal) {
                         this._cache.sha = this.gitData.commit.SHA;
-                    } else if (/^[0-9a-f]{40}$/.test(this.effectiveRef)) {
+                    } else if (/^[0-9a-f]{40}$/i.test(this.effectiveRef)) {
                         // effectiveRef may already be a sha, if so return it directly
                         this._cache.sha = this.effectiveRef;
                     } else {
@@ -377,13 +377,15 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
                 tmpDir = `${cwd}/${target}.${ext}`;
 
-                const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
+                const isCommitSha = /^[0-9a-f]{40}$/i.test(ref);
+                const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${ref}`;
                 await Utils.bashMulti([
                     `cd ${cwd}/${stateDir}`,
                     `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${tmpDir}`,
                     `cd ${tmpDir}`,
+                    ...isCommitSha ? [`git fetch --depth=1 --filter=tree:0 origin ${ref}`] : [],
                     `git sparse-checkout set --no-cone ${normalizedFile}`,
-                    "git checkout",
+                    isCommitSha ? "git checkout FETCH_HEAD" : "git checkout",
                     `cd ${cwd}/${stateDir}`,
                     `cp ${tmpDir}/${normalizedFile} ${cwd}/${target}/${normalizedFile}`,
                 ], cwd);
@@ -418,13 +420,15 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`));
                 tmpDir = `${cwd}/${target}.${ext}`;
 
-                const gitCloneBranch = (ref === "HEAD") ? "" : `--branch ${ref}`;
+                const isCommitSha = /^[0-9a-f]{40}$/i.test(ref);
+                const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${ref}`;
                 await Utils.bashMulti([
                     `cd ${cwd}/${stateDir}`,
                     `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${tmpDir}`,
                     `cd ${tmpDir}`,
+                    ...isCommitSha ? [`git fetch --depth=1 --filter=tree:0 origin ${ref}`] : [],
                     `git sparse-checkout set --no-cone ${files[0]} ${files[1]}`,
-                    "git checkout",
+                    isCommitSha ? "git checkout FETCH_HEAD" : "git checkout",
                     `cd ${cwd}/${stateDir}`,
                     `mkdir -p ${tmpDir}/templates`, // create templates subdir (if it doesn't exist), as the check out may not create it
                     `cp -r ${tmpDir}/templates ${cwd}/${target}`,
