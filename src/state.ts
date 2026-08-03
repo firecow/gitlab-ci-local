@@ -7,7 +7,7 @@ const loadStateYML = async (stateFile: string): Promise<any> => {
         return {};
     }
     const stateFileContent = await fs.readFile(stateFile, "utf8");
-    return yaml.load(stateFileContent, {schema: yaml.DEFAULT_SAFE_SCHEMA}) || {};
+    return yaml.load(stateFileContent) || {};
 };
 
 const getPipelineIid = async (cwd: string, stateDir: string) => {
