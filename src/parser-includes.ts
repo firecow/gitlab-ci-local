@@ -282,8 +282,8 @@ export class ParserIncludes {
                             const stdout = getGitRemoteInfo(this, "--tags");
                             const tags = stdout.split("\n").map(line => line.split("\t")[1].split("/")[2]);
                             const version = resolveSemanticVersionRange(this.reference, tags);
-                            assert(version, `This GitLab CI configuration is invalid: component: \`${this.name}\` - The reference (${this.reference}) is invalid`);
-                            this._cache.version = version;
+                            assert(version ?? tags.includes(this.reference), `This GitLab CI configuration is invalid: component: \`${this.name}\` - The reference (${this.reference}) is invalid`);
+                            this._cache.version = version ?? null;
                         } else {
                             this._cache.version = null;
                         }

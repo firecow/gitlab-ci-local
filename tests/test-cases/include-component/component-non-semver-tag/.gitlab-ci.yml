@@ -1,0 +1,5 @@
+---
+# https://gitlab.com/ANGkeith/gitlab-ci-local-test tags a commit as `1`, which
+# matches the semver range pattern but is not a valid semver version.
+include:
+  - component: gitlab.com/angkeith/gitlab-ci-local-test/my-components@1

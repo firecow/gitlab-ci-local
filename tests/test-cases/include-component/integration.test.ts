@@ -197,3 +197,28 @@ component-job:
 
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
+
+test.concurrent("include-component component (non semver tag)", async () => {
+    initSpawnSpy([WhenStatics.mockGitRemoteHttp]);
+
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-component/component-non-semver-tag",
+        preview: true,
+        stateDir: ".gitlab-ci-local-include-component-non-semver-tag",
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+component-job:
+  script:
+    - echo job 1
+  stage: test`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
