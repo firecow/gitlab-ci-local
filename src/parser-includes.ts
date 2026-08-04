@@ -150,7 +150,7 @@ export class ParserIncludes {
                     const mergedInputs = {...(value.inputs ?? {}), ...globalInputs};
                     const includeDir = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}`;
                     const normalizedFile = fileValue.replace(/^\/+/, "");
-                    const matches = globbySync(normalizedFile, {cwd: includeDir, absolute: true}).sort();
+                    const matches = globbySync(normalizedFile, {cwd: includeDir, absolute: true}).sort((a, b) => a.localeCompare(b));
                     const filePaths = matches.length > 0 ? matches : [`${includeDir}/${normalizedFile}`];
                     for (const filePath of filePaths) {
                         const fileDoc = await Parser.loadYaml(filePath, {inputs: mergedInputs}, expandVariables, writeStreams);
@@ -378,7 +378,8 @@ export class ParserIncludes {
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
-                await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
+                const destDir = path.dirname(`${cwd}/${target}/${normalizedFile}`);
+                await fs.mkdirp(destDir);
                 tmpDir = `${cwd}/${target}.${ext}`;
 
                 const isCommitSha = /^[0-9a-f]{40}$/i.test(ref);
@@ -391,7 +392,7 @@ export class ParserIncludes {
                     `git sparse-checkout set --no-cone ${normalizedFile}`,
                     isCommitSha ? "git checkout FETCH_HEAD" : "git checkout",
                     `cd ${cwd}/${stateDir}`,
-                    `cp ${tmpDir}/${normalizedFile} ${path.dirname(`${cwd}/${target}/${normalizedFile}`)}/`,
+                    `cp ${tmpDir}/${normalizedFile} ${destDir}/`,
                 ], cwd);
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
