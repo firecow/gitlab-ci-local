@@ -1,0 +1,7 @@
+---
+# templates/[bt]*.yml matches both templates/build.yml and templates/test.yml,
+# so the glob expands to more than one file.
+include:
+  - project: components/go
+    ref: main
+    file: templates/[bt]*.yml
