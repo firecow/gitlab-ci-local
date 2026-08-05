@@ -1,0 +1,5 @@
+---
+test-job:
+  script:
+    - find . -type f
+    - find $STATE_DIR -type f -name '*.txt' -print | wc -l
