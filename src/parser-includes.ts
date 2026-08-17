@@ -11,6 +11,7 @@ import path from "node:path";
 import prettyHrtime from "pretty-hrtime";
 import semver from "semver";
 import {RE2JS} from "re2js";
+import {globbySync} from "globby";
 
 type ParserIncludesInitOptions = {
     argv: Argv;
@@ -149,13 +150,16 @@ export class ParserIncludes {
             } else if (value["project"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
                     const mergedInputs = {...(value.inputs ?? {}), ...globalInputs};
-                    const fileDoc = await Parser.loadYaml(
-                        `${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}/${fileValue}`
-                        , {inputs: mergedInputs}
-                        , expandVariables, writeStreams);
-                    // Expand local includes inside a "project"-like include
-                    fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], value["project"], value["ref"], opts);
-                    includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
+                    const includeDir = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}`;
+                    const normalizedFile = fileValue.replace(/^\/+/, "");
+                    const matches = globbySync(normalizedFile, {cwd: includeDir, absolute: true}).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+                    const filePaths = matches.length > 0 ? matches : [`${includeDir}/${normalizedFile}`];
+                    for (const filePath of filePaths) {
+                        const fileDoc = await Parser.loadYaml(filePath, {inputs: mergedInputs}, expandVariables, writeStreams);
+                        // Expand local includes inside a "project"-like include
+                        fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], value["project"], value["ref"], opts);
+                        includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
+                    }
                 }
             } else if (value["component"]) {
                 const component = componentParseCache.get(index);
@@ -390,7 +394,8 @@ export class ParserIncludes {
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
-                await fs.mkdirp(path.dirname(`${cwd}/${target}/${normalizedFile}`));
+                const destDir = path.dirname(`${cwd}/${target}/${normalizedFile}`);
+                await fs.mkdirp(destDir);
                 tmpDir = `${cwd}/${target}.${ext}`;
 
                 const isCommitSha = /^[0-9a-f]{40}$/i.test(ref);
@@ -403,7 +408,7 @@ export class ParserIncludes {
                     `git sparse-checkout set --no-cone ${normalizedFile}`,
                     isCommitSha ? "git checkout FETCH_HEAD" : "git checkout",
                     `cd ${cwd}/${stateDir}`,
-                    `cp ${tmpDir}/${normalizedFile} ${cwd}/${target}/${normalizedFile}`,
+                    `cp ${tmpDir}/${normalizedFile} ${destDir}/`,
                 ], cwd);
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
