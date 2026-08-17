@@ -345,11 +345,11 @@ export class Parser {
         let fileData;
 
         try {
-            fileData = yaml.loadAll(fileSplitClone.join("\n"), null, {schema}) as any[];
+            fileData = yaml.loadAll(fileSplitClone.join("\n"), {schema}) as any[];
         } catch (e: any) {
             if (e instanceof yaml.YAMLException && e.reason === "duplicated mapping key") {
                 writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } duplicated mapping key detected! Values will be overwritten!\n`);
-                fileData = yaml.loadAll(fileSplitClone.join("\n"), null, {schema, json: true}) as any[];
+                fileData = yaml.loadAll(fileSplitClone.join("\n"), {schema, json: true}) as any[];
             } else {
                 throw e;
             }
