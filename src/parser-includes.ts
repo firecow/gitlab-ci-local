@@ -54,9 +54,11 @@ type GitRemoteInfoContext = {
 
 export class ParserIncludes {
     private static count: number = 0;
+    private static gitRemoteInfoCache: Record<string, string> = {};
 
     static resetCount (): void {
         this.count = 0;
+        this.gitRemoteInfoCache = {};
     }
 
     private static normalizeTriggerInclude (gitlabData: any, opts: ParserIncludesInitOptions) {
@@ -115,13 +117,13 @@ export class ParserIncludes {
                 promises.push(this.downloadIncludeRemote(cwd, stateDir, value["remote"], fetchIncludes, writeStreams));
             } else if (value["component"]) {
                 const component = this.parseIncludeComponent(value["component"], gitData);
-                componentParseCache.set(index, component);
-                if (!component.isLocal)
-                {
-                    promises.push(this.downloadIncludeComponent(opts, component.projectPath, component.effectiveRef, component.componentPath));
-                }
+                promises.push((async () => {
+                    if (!component.isLocal) {
+                        await this.downloadIncludeComponent(opts, component.projectPath, component.effectiveRef, component.componentPath);
+                    }
+                    componentParseCache.set(index, component);
+                })());
             }
-
         }
 
         await Promise.all(promises);
@@ -255,6 +257,20 @@ export class ParserIncludes {
         };
     }
 
+    static getGitRemoteInfo (ctx: GitRemoteInfoContext, ...args: string[]): string {
+        const cmdArgs = ["git", "ls-remote", ...args];
+        if (ctx.gitData.remote.schema == "git" || ctx.gitData.remote.schema == "ssh") {
+            cmdArgs.push(`git@${ctx.domain}:${ctx.projectPath}`);
+        } else {
+            cmdArgs.push(`${ctx.gitData.remote.schema}://${ctx.domain}:${ctx.port ?? 443}/${ctx.projectPath}.git`);
+        }
+        const cmdStr = cmdArgs.join(" ");
+        if (!(cmdStr in this.gitRemoteInfoCache)) {
+            this.gitRemoteInfoCache[cmdStr] = Utils.syncSpawn(cmdArgs).stdout;
+        }
+        return this.gitRemoteInfoCache[cmdStr];
+    };
+
     static parseIncludeComponent (component: string, gitData: GitData): ParsedComponent {
         assert(!component.includes("://"), `This GitLab CI configuration is invalid: component: \`${component}\` should not contain protocol`);
         const pattern = /(?<domain>[^/:\s]+)(:(?<port>\d+))?\/(?<projectPath>.+)\/(?<componentName>[^@]+)@(?<ref>.+)/; // https://regexr.com/7v7hm
@@ -283,7 +299,7 @@ export class ParserIncludes {
                         const semanticVersionRangesPattern = /^\d+(\.\d+)?$/;
                         if (this.reference == "~latest" || semanticVersionRangesPattern.test(this.reference)) {
                             // https://docs.gitlab.com/ci/components/#semantic-version-ranges
-                            const stdout = getGitRemoteInfo(this, "--tags");
+                            const stdout = ParserIncludes.getGitRemoteInfo(this, "--tags");
                             const tags = stdout.split("\n").map(line => line.split("\t")[1].split("/")[2]);
                             const version = resolveSemanticVersionRange(this.reference, tags);
                             assert(version ?? tags.includes(this.reference), `This GitLab CI configuration is invalid: component: \`${this.name}\` - The reference (${this.reference}) is invalid`);
@@ -309,7 +325,7 @@ export class ParserIncludes {
                         // effectiveRef may already be a sha, if so return it directly
                         this._cache.sha = this.effectiveRef;
                     } else {
-                        const stdout = getGitRemoteInfo(this);
+                        const stdout = ParserIncludes.getGitRemoteInfo(this);
                         const lines = stdout.split("\n");
                         // annotated tags: prefer the deref'd commit sha (refs/tags/x^{})
                         const match = lines.find(line => line.endsWith(`refs/tags/${this.effectiveRef}^{}`)) ??
@@ -513,14 +529,4 @@ export async function resolveIncludeLocal (pattern: string, cwd: string) {
 
     const re2js = RE2JS.compile(`^${pattern}`);
     return repoFiles.filter((f: any) => re2js.matches(f));
-}
-
-export function getGitRemoteInfo (ctx: GitRemoteInfoContext, ...args: string[]) {
-    const cmdArgs = ["git", "ls-remote", ...args];
-    if (ctx.gitData.remote.schema == "git" || ctx.gitData.remote.schema == "ssh") {
-        cmdArgs.push(`git@${ctx.domain}:${ctx.projectPath}`);
-    } else {
-        cmdArgs.push(`${ctx.gitData.remote.schema}://${ctx.domain}:${ctx.port ?? 443}/${ctx.projectPath}.git`);
-    }
-    return Utils.syncSpawn(cmdArgs).stdout;
 }
