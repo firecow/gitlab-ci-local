@@ -1,4 +1,4 @@
-import {resolveSemanticVersionRange} from "../src/parser-includes.js";
+import {remoteProjectUrl, resolveSemanticVersionRange} from "../src/parser-includes.js";
 
 const tests = [
     {
@@ -43,5 +43,27 @@ describe("resolveSemanticVersionRange", () => {
             const result = resolveSemanticVersionRange(t.range, gitTags);
             expect(result).toEqual(t.expect);
         });
+    });
+});
+
+describe("remoteProjectUrl", () => {
+    test("omits the default https port", () => {
+        expect(remoteProjectUrl({schema: "https", host: "git.example.com", port: "443"}, "grp/proj"))
+            .toEqual("https://git.example.com/grp/proj.git");
+    });
+
+    test("omits the default http port", () => {
+        expect(remoteProjectUrl({schema: "http", host: "git.example.com", port: "80"}, "grp/proj"))
+            .toEqual("http://git.example.com/grp/proj.git");
+    });
+
+    test("keeps a non-default port", () => {
+        expect(remoteProjectUrl({schema: "https", host: "git.example.com", port: "8443"}, "grp/proj"))
+            .toEqual("https://git.example.com:8443/grp/proj.git");
+    });
+
+    test("keeps port 80 when the schema is https", () => {
+        expect(remoteProjectUrl({schema: "https", host: "git.example.com", port: "80"}, "grp/proj"))
+            .toEqual("https://git.example.com:80/grp/proj.git");
     });
 });
