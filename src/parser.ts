@@ -339,6 +339,7 @@ export class Parser {
                 carrier.push(item);
             },
             finalize: (carrier) => ({referenceData: carrier}),
+            identify: () => false,
         });
         const schema = yaml.CORE_SCHEMA.withTags(yaml.mergeTag, yaml.timestampTag, yaml.binaryTag, yaml.omapTag, yaml.pairsTag, yaml.setTag, referenceType);
         let fileData;
