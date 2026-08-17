@@ -402,7 +402,7 @@ export class ParserIncludes {
                 const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${ref}`;
                 await Utils.bashMulti([
                     `cd ${cwd}/${stateDir}`,
-                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${tmpDir}`,
+                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remoteProjectUrl(remote, project)} ${tmpDir}`,
                     `cd ${tmpDir}`,
                     ...isCommitSha ? [`git fetch --depth=1 --filter=tree:0 origin ${ref}`] : [],
                     `git sparse-checkout set --no-cone ${normalizedFile}`,
@@ -445,7 +445,7 @@ export class ParserIncludes {
                 const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${ref}`;
                 await Utils.bashMulti([
                     `cd ${cwd}/${stateDir}`,
-                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remote.schema}://${remote.host}:${remote.port}/${project}.git ${tmpDir}`,
+                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remoteProjectUrl(remote, project)} ${tmpDir}`,
                     `cd ${tmpDir}`,
                     ...isCommitSha ? [`git fetch --depth=1 --filter=tree:0 origin ${ref}`] : [],
                     `git sparse-checkout set --no-cone ${files[0]} ${files[1]}`,
@@ -529,4 +529,10 @@ export async function resolveIncludeLocal (pattern: string, cwd: string) {
 
     const re2js = RE2JS.compile(`^${pattern}`);
     return repoFiles.filter((f: any) => re2js.matches(f));
+}
+
+export function remoteProjectUrl (remote: {schema: string; host: string; port: string}, project: string) {
+    const defaultPort = remote.schema === "http" ? "80" : "443";
+    const port = remote.port === defaultPort ? "" : `:${remote.port}`;
+    return `${remote.schema}://${remote.host}${port}/${project}.git`;
 }
