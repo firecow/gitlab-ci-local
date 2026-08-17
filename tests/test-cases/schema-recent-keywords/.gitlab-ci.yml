@@ -1,0 +1,11 @@
+---
+# Keywords added by newer GitLab releases, guarding against a stale bundled schema.
+job:
+  script:
+    - echo hello
+  artifacts:
+    access: maintainer
+    reports:
+      sarif: test.json
+    paths:
+      - build/
