@@ -150,7 +150,7 @@ export class ParserIncludes {
                     const mergedInputs = {...(value.inputs ?? {}), ...globalInputs};
                     const includeDir = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}`;
                     const normalizedFile = fileValue.replace(/^\/+/, "");
-                    const matches = globbySync(normalizedFile, {cwd: includeDir, absolute: true}).sort((a, b) => a.localeCompare(b));
+                    const matches = globbySync(normalizedFile, {cwd: includeDir, absolute: true}).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
                     const filePaths = matches.length > 0 ? matches : [`${includeDir}/${normalizedFile}`];
                     for (const filePath of filePaths) {
                         const fileDoc = await Parser.loadYaml(filePath, {inputs: mergedInputs}, expandVariables, writeStreams);
