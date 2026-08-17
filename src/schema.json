@@ -259,6 +259,7 @@
           "enum": [
             "none",
             "developer",
+            "maintainer",
             "all"
           ]
         },
@@ -378,6 +379,10 @@
               "$ref": "#/definitions/string_file_list",
               "markdownDescription": "Path to file or list of files with cyclonedx report(s). [Learn More](https://docs.gitlab.com/ci/yaml/artifacts_reports/#artifactsreportscyclonedx)."
             },
+            "sarif": {
+              "$ref": "#/definitions/string_file_list",
+              "markdownDescription": "Path to file or list of files with SARIF 2.1.0 security report(s). [Learn More](https://docs.gitlab.com/ci/yaml/artifacts_reports/#artifactsreportssarif)."
+            },
             "load_performance": {
               "$ref": "#/definitions/string_file_list",
               "markdownDescription": "Path to file or list of files with load performance testing report(s). [Learn More](https://docs.gitlab.com/ci/yaml/artifacts_reports/#artifactsreportsload_performance)."
@@ -480,7 +485,10 @@
                               "string"
                             ]
                           }
-                        }
+                        },
+                        "required": [
+                          "type"
+                        ]
                       },
                       "then": {
                         "properties": {
@@ -501,7 +509,10 @@
                               "number"
                             ]
                           }
-                        }
+                        },
+                        "required": [
+                          "type"
+                        ]
                       },
                       "then": {
                         "properties": {
@@ -522,7 +533,10 @@
                               "boolean"
                             ]
                           }
-                        }
+                        },
+                        "required": [
+                          "type"
+                        ]
                       },
                       "then": {
                         "properties": {
@@ -543,7 +557,10 @@
                               "array"
                             ]
                           }
-                        }
+                        },
+                        "required": [
+                          "type"
+                        ]
                       },
                       "then": {
                         "properties": {
@@ -555,6 +572,25 @@
                               {
                                 "type": "null"
                               }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "if": {
+                        "not": {
+                          "required": [
+                            "type"
+                          ]
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "default": {
+                            "type": [
+                              "string",
+                              "null"
                             ]
                           }
                         }
@@ -596,7 +632,10 @@
                           "string"
                         ]
                       }
-                    }
+                    },
+                    "required": [
+                      "type"
+                    ]
                   },
                   "then": {
                     "properties": {
@@ -614,7 +653,10 @@
                           "number"
                         ]
                       }
-                    }
+                    },
+                    "required": [
+                      "type"
+                    ]
                   },
                   "then": {
                     "properties": {
@@ -632,7 +674,10 @@
                           "boolean"
                         ]
                       }
-                    }
+                    },
+                    "required": [
+                      "type"
+                    ]
                   },
                   "then": {
                     "properties": {
@@ -650,12 +695,31 @@
                           "array"
                         ]
                       }
-                    }
+                    },
+                    "required": [
+                      "type"
+                    ]
                   },
                   "then": {
                     "properties": {
                       "default": {
                         "type": "array"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "not": {
+                      "required": [
+                        "type"
+                      ]
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "default": {
+                        "type": "string"
                       }
                     }
                   }
@@ -1197,7 +1261,9 @@
               "type": "object",
               "properties": {
                 "name": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Name of the secret. Only letters, digits, and underscores are allowed.",
+                  "pattern": "^[a-zA-Z0-9_]+$"
                 },
                 "source": {
                   "type": "string",
@@ -1552,8 +1618,17 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "paths"
+          "oneOf": [
+            {
+              "required": [
+                "paths"
+              ]
+            },
+            {
+              "required": [
+                "regexp"
+              ]
+            }
           ],
           "properties": {
             "paths": {
@@ -1566,6 +1641,11 @@
             "compare_to": {
               "type": "string",
               "description": "Ref for comparing changes."
+            },
+            "regexp": {
+              "type": "string",
+              "description": "Regular expression to match against changed file paths.",
+              "maxLength": 255
             }
           }
         },
@@ -1589,8 +1669,17 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "paths"
+          "oneOf": [
+            {
+              "required": [
+                "paths"
+              ]
+            },
+            {
+              "required": [
+                "regexp"
+              ]
+            }
           ],
           "properties": {
             "paths": {
@@ -1603,6 +1692,11 @@
             "project": {
               "type": "string",
               "description": "Path of the project to search in."
+            },
+            "regexp": {
+              "type": "string",
+              "description": "Regular expression to match against file paths in the repository.",
+              "maxLength": 255
             }
           }
         },
@@ -1610,8 +1704,19 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "paths",
             "project"
+          ],
+          "oneOf": [
+            {
+              "required": [
+                "paths"
+              ]
+            },
+            {
+              "required": [
+                "regexp"
+              ]
+            }
           ],
           "properties": {
             "paths": {
@@ -1628,6 +1733,11 @@
             "ref": {
               "type": "string",
               "description": "Ref of the project to search in."
+            },
+            "regexp": {
+              "type": "string",
+              "description": "Regular expression to match against file paths in the repository.",
+              "maxLength": 255
             }
           }
         }
@@ -2081,8 +2191,36 @@
           "description": "Retry when the job got stuck or timed out."
         },
         {
+          "const": "stuck_pending_with_matching_runners",
+          "description": "Retry when the job is stuck pending with matching runners."
+        },
+        {
+          "const": "stuck_pending_no_matching_runners",
+          "description": "Retry when the job is stuck pending with no matching runners."
+        },
+        {
+          "const": "no_updates_running",
+          "description": "Retry when the running job stopped sending status updates to the server."
+        },
+        {
+          "const": "no_updates_canceling",
+          "description": "Retry when the canceling job stopped sending status updates to the server."
+        },
+        {
           "const": "runner_system_failure",
           "description": "Retry if there is a runner system failure (for example, job setup failed)."
+        },
+        {
+          "const": "runner_configuration_error",
+          "description": "Retry if the job failed because of a CI or runner configuration error, such as an invalid image or tag, an incompatible pull policy, or a misconfigured runner."
+        },
+        {
+          "const": "runner_external_dependency_failure",
+          "description": "Retry if the runner could not reach an external dependency, such as an image registry, because of a network or DNS problem."
+        },
+        {
+          "const": "runner_interrupted",
+          "description": "Retry if the runner was interrupted while the job was running, for example by a restart, shutdown, or host reclamation."
         },
         {
           "const": "runner_unsupported",
@@ -2095,6 +2233,14 @@
         {
           "const": "job_execution_timeout",
           "description": "Retry if the script exceeded the maximum execution time set for the job."
+        },
+        {
+          "const": "server_timeout_running",
+          "description": "Retry if the running job timed out on the server."
+        },
+        {
+          "const": "server_timeout_canceling",
+          "description": "Retry if the canceling job timed out on the server."
         },
         {
           "const": "archived_failure",
@@ -2963,15 +3109,36 @@
       "additionalProperties": false
     },
     "step": {
-      "description": "Any of these step use cases are valid.",
+      "description": "Any of these function use cases are valid.",
       "oneOf": [
         {
-          "description": "Run a referenced step.",
+          "description": "Run a referenced function.",
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "name",
-            "step"
+            "name"
+          ],
+          "oneOf": [
+            {
+              "required": [
+                "step"
+              ],
+              "not": {
+                "required": [
+                  "func"
+                ]
+              }
+            },
+            {
+              "required": [
+                "func"
+              ],
+              "not": {
+                "required": [
+                  "step"
+                ]
+              }
+            }
           ],
           "properties": {
             "name": {
@@ -2984,70 +3151,10 @@
               "$ref": "#/definitions/stepNamedValues"
             },
             "step": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "$ref": "#/definitions/stepGitReference"
-                },
-                {
-                  "$ref": "#/definitions/stepOciReference"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "description": "Run a sequence of steps.",
-          "oneOf": [
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "run"
-              ],
-              "properties": {
-                "env": {
-                  "$ref": "#/definitions/stepNamedStrings"
-                },
-                "run": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/step"
-                  }
-                },
-                "outputs": {
-                  "$ref": "#/definitions/stepNamedValues"
-                },
-                "delegate": {
-                  "type": "string"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "description": "Run an action.",
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "name",
-            "action"
-          ],
-          "properties": {
-            "name": {
-              "$ref": "#/definitions/stepName"
+              "$ref": "#/definitions/stepFuncReference"
             },
-            "env": {
-              "$ref": "#/definitions/stepNamedStrings"
-            },
-            "inputs": {
-              "$ref": "#/definitions/stepNamedValues"
-            },
-            "action": {
-              "type": "string",
-              "minLength": 1
+            "func": {
+              "$ref": "#/definitions/stepFuncReference"
             }
           }
         },
@@ -3069,23 +3176,6 @@
             "script": {
               "type": "string",
               "minLength": 1
-            }
-          }
-        },
-        {
-          "description": "Exec a binary.",
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "exec"
-          ],
-          "properties": {
-            "env": {
-              "$ref": "#/definitions/stepNamedStrings"
-            },
-            "exec": {
-              "description": "Exec is a command to run.",
-              "$ref": "#/definitions/stepExec"
             }
           }
         }
@@ -3122,7 +3212,7 @@
     },
     "stepGitReference": {
       "type": "object",
-      "description": "GitReference is a reference to a step in a Git repository.",
+      "description": "GitReference is a reference to a function in a Git repository.",
       "additionalProperties": false,
       "required": [
         "git"
@@ -3154,7 +3244,7 @@
     },
     "stepOciReference": {
       "type": "object",
-      "description": "OCIReference is a reference to a step hosted in an OCI repository.",
+      "description": "OCIReference is a reference to a function hosted in an OCI repository.",
       "additionalProperties": false,
       "required": [
         "oci"
@@ -3195,42 +3285,34 @@
             },
             "dir": {
               "type": "string",
-              "description": "A directory inside the OCI image where the step can be found.",
+              "description": "A directory inside the OCI image where the function can be found.",
               "examples": [
                 "/my_steps/hello_world"
               ]
             },
             "file": {
               "type": "string",
-              "description": "The name of the file that defines the step, defaults to step.yml.",
+              "description": "The name of the file that defines the function, defaults to func.yml.",
               "examples": [
-                "step.yml"
+                "func.yml"
               ]
             }
           }
         }
       }
     },
-    "stepExec": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "command"
-      ],
-      "properties": {
-        "command": {
-          "type": "array",
-          "description": "Command are the parameters to the system exec API. It does not invoke a shell.",
-          "items": {
-            "type": "string"
-          },
-          "minItems": 1
+    "stepFuncReference": {
+      "oneOf": [
+        {
+          "type": "string"
         },
-        "work_dir": {
-          "type": "string",
-          "description": "WorkDir is the working directly in which `command` will be exec'ed."
+        {
+          "$ref": "#/definitions/stepGitReference"
+        },
+        {
+          "$ref": "#/definitions/stepOciReference"
         }
-      }
+      ]
     }
   }
 }
