@@ -138,6 +138,87 @@ describe("gitlab rules regex", () => {
         });
 });
 
+/* eslint-disable @stylistic/quotes */
+// A `$VAR` referenced *inside* a regex literal on the RHS of `=~`/`!~` must be
+// substituted with its raw value, not a quoted JS string literal.
+const variableInRegexTests: {rule: string; envs: {[key: string]: string}; jsExpression: string; evalResult: boolean}[] = [
+    {
+        // Drupal gitlab_templates: include.drupalci.main.yml
+        rule: "$CORE_PHP_MIN == $CORE_PHP_MAX && ($PHP_VERSION =~ '/^\\$_TARGET_PHP$/' || $PHP_VERSION =~ '/^\\$CORE_PHP_MAX$/')",
+        envs: {CORE_PHP_MIN: "8.3", CORE_PHP_MAX: "8.3", _TARGET_PHP: "8.3", PHP_VERSION: "8.3"},
+        jsExpression: '"8.3" == "8.3" && ("8.3".matchRE2JS(RE2JS.compile("^8\\.3$", 0)) != null || "8.3".matchRE2JS(RE2JS.compile("^8\\.3$", 0)) != null)',
+        evalResult: true,
+    },
+    {
+        // bare $VAR inside a bare regex literal
+        rule: "$CI_COMMIT_BRANCH =~ /$BRANCHNAME/",
+        envs: {CI_COMMIT_BRANCH: "master", BRANCHNAME: "master"},
+        jsExpression: '"master".matchRE2JS(RE2JS.compile("master", 0)) != null',
+        evalResult: true,
+    },
+    {
+        // RHS is a variable that *holds* a regex literal — must still work
+        rule: "$TAG =~ $TAG_REGEX",
+        envs: {TAG: "prefix/1.0.0", TAG_REGEX: "/^prefix\\/.+/"},
+        jsExpression: '"prefix/1.0.0".matchRE2JS(RE2JS.compile("^prefix\\/.+", 0)) != null',
+        evalResult: true,
+    },
+];
+/* eslint-enable @stylistic/quotes */
+
+describe("gitlab rules regex with variable interpolation", () => {
+    variableInRegexTests.forEach((t) => {
+        test(`- if: '${t.rule}'\n\t => ${t.evalResult}`, () => {
+            const evalSpy = vi.spyOn(global, "eval");
+            const res = Utils.evaluateRuleIf(t.rule, t.envs);
+            expect(res).toBe(t.evalResult);
+            expect(evalSpy).toHaveBeenCalledWith(t.jsExpression);
+        });
+    });
+});
+
+// A variable value is escaped before it is spliced into a regex literal, so a
+// value carrying regex metacharacters matches literally and cannot break out of
+// the literal, close it early, or inject expression syntax into the eval.
+describe("gitlab rules regex with variable interpolation [escaping]", () => {
+    test("a value containing '/' matches literally and does not throw", () => {
+        // Realistic: a branch name with a slash. Previously closed the regex
+        // literal early and aborted the whole rules evaluation.
+        expect(() => Utils.evaluateRuleIf("$CI =~ /^$BRANCH$/", {CI: "feat/x", BRANCH: "feat/x"})).not.toThrow();
+        expect(Utils.evaluateRuleIf("$CI =~ /^$BRANCH$/", {CI: "feat/x", BRANCH: "feat/x"})).toBe(true);
+        expect(Utils.evaluateRuleIf("$CI =~ /^$BRANCH$/", {CI: "feat/y", BRANCH: "feat/x"})).toBe(false);
+    });
+
+    test("'/' plus operators in a value cannot inject expression syntax", () => {
+        // The LHS does not contain the literal value, so the only way this is
+        // true is injection. Must be false.
+        expect(Utils.evaluateRuleIf("$X =~ /$VAL/", {X: "no-match-here", VAL: "zzz/ || true || /x"})).toBe(false);
+    });
+
+    test("regex metacharacters in a value are matched literally", () => {
+        // `.` must not act as "any character" once it comes from a value.
+        expect(Utils.evaluateRuleIf("$X =~ /^$VAL$/", {X: "8.3", VAL: "8.3"})).toBe(true);
+        expect(Utils.evaluateRuleIf("$X =~ /^$VAL$/", {X: "8x3", VAL: "8.3"})).toBe(false);
+    });
+
+    test("!~ with a value containing '/' negates without throwing", () => {
+        expect(() => Utils.evaluateRuleIf("$X !~ /^$VAL$/", {X: "feat/y", VAL: "feat/x"})).not.toThrow();
+        expect(Utils.evaluateRuleIf("$X !~ /^$VAL$/", {X: "feat/y", VAL: "feat/x"})).toBe(true);
+        expect(Utils.evaluateRuleIf("$X !~ /^$VAL$/", {X: "feat/x", VAL: "feat/x"})).toBe(false);
+    });
+
+    test("$$ escape leaves the following name unexpanded (regression check)", () => {
+        // `$$FOO` is an escaped `$`; the name `FOO` must NOT be expanded as a
+        // variable. The pre-pass leaves `$$` for the global unescape pass
+        // exactly as before this change, so `FOO` stays literal.
+        const evalSpy = vi.spyOn(global, "eval");
+        Utils.evaluateRuleIf("$X =~ /^$$FOO$/", {X: "whatever", FOO: "bar"});
+        const compiled = evalSpy.mock.calls.at(-1)?.[0] as string;
+        expect(compiled).toContain("FOO"); // name preserved literally
+        expect(compiled).not.toContain("bar"); // FOO must NOT be expanded
+    });
+});
+
 describe("gitlab rules regex [invalid]", () => {
     tests.filter(t => t.expectedErrSubStr)
         .forEach((t) => {
