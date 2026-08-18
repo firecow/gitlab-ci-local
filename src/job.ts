@@ -79,7 +79,7 @@ export type JobRule = {
     if?: string;
     when?: string;
     changes?: string[] | {paths: string[]};
-    exists?: string[];
+    exists?: string[] | {paths: string[]};
     allow_failure?: boolean;
     variables?: {[name: string]: string};
     needs?: any[];
@@ -197,7 +197,7 @@ export class Job {
 
             // Expand variables in rules:exists
             this.rules.forEach((rule, ruleIdx, rules) => {
-                const exists = Array.isArray(rule.exists) ? rule.exists : null;
+                const exists = Array.isArray(rule.exists) ? rule.exists : rule.exists?.paths;
                 if (!exists) {
                     return;
                 }
