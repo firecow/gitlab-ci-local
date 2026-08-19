@@ -17,10 +17,10 @@ test("completion reports a failed parse instead of crashing", () => {
     const {stdout, stderr, status} = spawnSync(
         "bun",
         ["src/index.ts", "--get-yargs-completions", "gitlab-ci-local", "--cwd", "tests/test-cases/completion", ""],
-        {encoding: "utf8", shell: true},
+        {encoding: "utf8", shell: false},
     );
 
-    expect(stderr).not.toContain("AssertionError");
+    expect(stderr).toBe("");
     expect(stdout).toContain("Parser-Failed!");
     expect(status).toBe(0);
 });
