@@ -1,0 +1,7 @@
+---
+include:
+  - { local: .gitlab-ci-invalid.yml }
+
+job:
+  script:
+    - echo "hello"

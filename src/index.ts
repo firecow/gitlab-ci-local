@@ -399,7 +399,8 @@ process.on("SIGUSR2", async () => {
                         .then((parser) => {
                             const jobNames = [...parser.jobs.values()].filter((j) => j.when != "never").map((j) => j.name);
                             done(jobNames);
-                        });
+                        })
+                        .catch(() => done(["Parser-Failed!"]));
                 }
             } catch {
                 return ["Parser-Failed!"];
