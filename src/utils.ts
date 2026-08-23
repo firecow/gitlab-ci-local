@@ -60,9 +60,7 @@ export class Utils {
         const encoded = jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
         });
-        const unambiguous = encoded === jobName ?
-            encoded :
-            `${encoded}.${createHash("sha256").update(jobName).digest("hex").substring(0, 8)}`;
+        const unambiguous = encoded === jobName ? encoded : ${encoded}.${createHash("sha256").update(jobName).digest("hex").substring(0, 8)}`;
         if (unambiguous.length <= Utils.MAX_FILENAME_LENGTH) {
             return unambiguous;
         }
