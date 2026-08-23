@@ -6,6 +6,7 @@ import chalk from "chalk-template";
 import prettyHrtime from "pretty-hrtime";
 import {Argv} from "./argv.js";
 import assert from "node:assert";
+import path from "node:path";
 import {Utils} from "./utils.js";
 import dotenv from "dotenv";
 import deepExtend from "deep-extend";
@@ -123,7 +124,7 @@ export class VariablesFromFiles {
         await addVariableFileToVariables(remoteFileData, 0);
         await addVariableFileToVariables(homeFileData, 10);
 
-        const projectVariablesFile = `${argv.cwd}/${argv.variablesFile}`;
+        const projectVariablesFile = path.resolve(argv.cwd, argv.variablesFile);
         if (fs.existsSync(projectVariablesFile)) {
             let isDotEnvFormat = false;
             const projectVariablesFileRawContent = await fs.readFile(projectVariablesFile, "utf8");
