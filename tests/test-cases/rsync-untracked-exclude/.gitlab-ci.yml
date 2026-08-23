@@ -1,0 +1,4 @@
+---
+test-job:
+  script:
+    - find . -name '*.marker' -not -path './.gitlab-ci-local*/*' | sort

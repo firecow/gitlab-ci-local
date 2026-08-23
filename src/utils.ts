@@ -384,9 +384,12 @@ export class Utils {
     static async rsyncTrackedFiles (cwd: string, stateDir: string, ignoresFile: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
         await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
+        const {stdout: untracked} = await Utils.bash("git ls-files -o --directory", cwd);
+        const untrackedFile = `${cwd}/${stateDir}/rsync-exclude-${target}`;
+        await fs.writeFile(untrackedFile, untracked.split("\n").filter(line => line !== "").map(line => `/${line}`).join("\n"));
         const cmd = [
             "rsync -a --delete-excluded --delete",
-            "--exclude-from=<(git ls-files -o --directory | awk '{print \"/\"$0}')",
+            `--exclude-from=${Utils.safeBashString(untrackedFile)}`,
             ...await fs.pathExists(ignoresFile) ? [`--exclude-from=${Utils.safeBashString(ignoresFile)}`] : [],
             "--exclude .git/lfs",
             `--exclude ${stateDir}/`,
