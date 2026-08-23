@@ -275,15 +275,15 @@ describe("safeDockerString", () => {
 
     it("should encode non-alphanumeric characters", () => {
         const result = Utils.safeDockerString("job/name");
-        expect(result).toMatch(/^jobLwname\.[0-9a-f]{8}$/); // '/' → 'Lw'
+        expect(result).toBe("jobLwname.90354188"); // '/' → 'Lw'
     });
 
     it("should not collide an encoded name with a literal one", () => {
-        expect(Utils.safeDockerString("a.b")).not.toBe(Utils.safeDockerString("aLgb"));
-        expect(Utils.safeDockerString("job/name")).not.toBe(Utils.safeDockerString("jobLwname"));
+        expect(Utils.safeDockerString("a.b")).toBe("aLgb.2e7336dc");
+        expect(Utils.safeDockerString("aLgb")).toBe("aLgb");
         // A dot cannot survive encoding, so it separates the two namespaces for good.
-        expect(Utils.safeDockerString("a.b")).not.toBe(Utils.safeDockerString("aLgb.2e7336dc"));
-        expect(Utils.safeDockerString("a.b")).not.toBe(Utils.safeDockerString("aLgb-2e7336dc"));
+        expect(Utils.safeDockerString("aLgb.2e7336dc")).toBe("aLgbLg2e7336dc.bd36d3d5");
+        expect(Utils.safeDockerString("aLgb-2e7336dc")).toBe("aLgb-2e7336dc");
     });
 
     it("should leave already safe names untouched", () => {
