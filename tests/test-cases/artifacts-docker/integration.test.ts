@@ -3,6 +3,7 @@ import {handler} from "../../../src/handler.js";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
 import fs from "fs-extra";
+import {Utils} from "../../../src/utils.js";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -23,6 +24,7 @@ test.concurrent("artifacts-docker <consume artifacts> --needs", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 
-    expect(fs.pathExistsSync("tests/test-cases/artifacts-docker/.gitlab-ci-local/artifacts/produceIAartifactsIPCfk50/file2")).toBe(true);
-    expect(fs.pathExistsSync("tests/test-cases/artifacts-docker/.gitlab-ci-local/artifacts/produceIAartifactsIPCfk50/path/to/deep/folder/file3")).toBe(true);
+    const artifactsDir = `tests/test-cases/artifacts-docker/.gitlab-ci-local/artifacts/${Utils.safeDockerString("produce artifacts 📝")}`;
+    expect(fs.pathExistsSync(`${artifactsDir}/file2`)).toBe(true);
+    expect(fs.pathExistsSync(`${artifactsDir}/path/to/deep/folder/file3`)).toBe(true);
 });
