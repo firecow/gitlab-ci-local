@@ -382,7 +382,7 @@ export class Utils {
         const time = process.hrtime();
         await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
         const {stdout: untracked} = await Utils.bash("git ls-files -o --directory", cwd);
-        const untrackedFile = `${cwd}/${stateDir}/rsync-exclude-${target.replaceAll(/[^\w.-]/g, "_")}`;
+        const untrackedFile = `${cwd}/${stateDir}/rsync-exclude-${target}`;
         await fs.writeFile(untrackedFile, untracked.split("\n").filter(line => line !== "").map(line => `/${line}`).join("\n"));
         const cmd = [
             "rsync -a --delete-excluded --delete",
