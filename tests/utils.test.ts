@@ -275,12 +275,15 @@ describe("safeDockerString", () => {
 
     it("should encode non-alphanumeric characters", () => {
         const result = Utils.safeDockerString("job/name");
-        expect(result).toMatch(/^jobLwname-[0-9a-f]{8}$/); // '/' → 'Lw'
+        expect(result).toMatch(/^jobLwname\.[0-9a-f]{8}$/); // '/' → 'Lw'
     });
 
     it("should not collide an encoded name with a literal one", () => {
         expect(Utils.safeDockerString("a.b")).not.toBe(Utils.safeDockerString("aLgb"));
         expect(Utils.safeDockerString("job/name")).not.toBe(Utils.safeDockerString("jobLwname"));
+        // A dot cannot survive encoding, so it separates the two namespaces for good.
+        expect(Utils.safeDockerString("a.b")).not.toBe(Utils.safeDockerString("aLgb.2e7336dc"));
+        expect(Utils.safeDockerString("a.b")).not.toBe(Utils.safeDockerString("aLgb-2e7336dc"));
     });
 
     it("should leave already safe names untouched", () => {
@@ -337,6 +340,6 @@ describe("safeDockerString", () => {
         const name = "a".repeat(Utils.MAX_FILENAME_LENGTH - 1) + "/"; // '/' -> 'Lw' = +2, total = MAX+1
         const result = Utils.safeDockerString(name);
         expect(result.length).toBeLessThanOrEqual(Utils.MAX_FILENAME_LENGTH);
-        expect(result).toContain("-"); // has hash separator
+        expect(result).toContain("."); // has hash separator
     });
 });
