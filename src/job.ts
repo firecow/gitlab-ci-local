@@ -196,7 +196,9 @@ export class Job {
             });
 
             // Expand variables in rules:exists
-            this.rules.forEach((rule, ruleIdx, rules) => {
+            this.rules.forEach((rule) => {
+                // The object form shares this array with rule.exists.paths, so
+                // expanding in place is enough and leaves project/ref alone.
                 const exists = Array.isArray(rule.exists) ? rule.exists : rule.exists?.paths;
                 if (!exists) {
                     return;
@@ -204,7 +206,6 @@ export class Job {
                 exists.forEach((exist, existId, exists) => {
                     exists[existId] = Utils.expandText(exist, expanded);
                 });
-                rules[ruleIdx].exists = exists;
             });
         }
 
