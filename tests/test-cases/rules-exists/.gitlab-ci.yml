@@ -72,3 +72,11 @@ rule-exist-empty-string:
   rules:
     - exists:
         - ""
+
+var-expand-paths-test:
+  script:
+    - echo "${DIR}/recursive.file successfully found through the paths form"
+  rules:
+    - exists:
+        paths:
+          - ${DIR}/recursive.file
