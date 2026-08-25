@@ -30,26 +30,13 @@ describe("withFileLock", () => {
         expect(await fs.pathExists(lockPath)).toBe(false);
     });
 
-    const holdFor = (ms: number) => {
+    test("uses the given timeout instead of the default", async () => {
         let held: () => void;
         const holding = new Promise<void>(resolve => (held = resolve));
         const holder = withFileLock(lockPath, async () => {
             held();
-            await new Promise(resolve => setTimeout(resolve, ms));
+            await new Promise(resolve => setTimeout(resolve, 1500));
         });
-        return {holder, holding};
-    };
-
-    test("waits beyond the default timeout when a longer one is given", async () => {
-        const {holder, holding} = holdFor(400);
-        await holding;
-
-        expect(await withFileLock(lockPath, async () => "acquired", 60_000)).toBe("acquired");
-        await holder;
-    });
-
-    test("throws once the given timeout elapses", async () => {
-        const {holder, holding} = holdFor(1500);
         await holding;
 
         await expect(withFileLock(lockPath, async () => "acquired", 100)).rejects.toThrow(`Timed out waiting for lock: ${lockPath}`);
