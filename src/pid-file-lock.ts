@@ -53,12 +53,12 @@ const tryRemoveStaleLock = (lockPath: string): boolean => {
     return true;
 };
 
-export const withFileLock = async <T>(lockPath: string, fn: () => Promise<T>): Promise<T> => {
+export const withFileLock = async <T>(lockPath: string, fn: () => Promise<T>, timeoutMs = LOCK_TIMEOUT_MS): Promise<T> => {
     await fs.ensureDir(path.dirname(lockPath));
     const startTime = Date.now();
 
     while (!acquireLock(lockPath)) {
-        if (Date.now() - startTime > LOCK_TIMEOUT_MS) {
+        if (Date.now() - startTime > timeoutMs) {
             throw new Error(`Timed out waiting for lock: ${lockPath}`);
         }
 

@@ -18,6 +18,8 @@ import path from "node:path";
 import {Argv} from "./argv.js";
 import {withFileLock} from "./pid-file-lock.js";
 
+const RSYNC_LOCK_TIMEOUT_MS = 3_600_000;
+
 type RuleResultOpt = {
     argv: Argv;
     cwd: string;
@@ -397,7 +399,7 @@ export class Utils {
                 `${stateDir}/builds/${target}/`,
             ].join(" ");
             await Utils.bash(cmd, cwd);
-        });
+        }, RSYNC_LOCK_TIMEOUT_MS);
         return {hrdeltatime: process.hrtime(time)};
     }
 
