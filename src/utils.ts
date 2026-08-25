@@ -16,6 +16,9 @@ import micromatch from "micromatch";
 import {AxiosRequestConfig} from "axios";
 import path from "node:path";
 import {Argv} from "./argv.js";
+import {withFileLock} from "./pid-file-lock.js";
+
+const RSYNC_LOCK_TIMEOUT_MS = 3_600_000;
 
 type RuleResultOpt = {
     argv: Argv;
@@ -380,20 +383,23 @@ export class Utils {
 
     static async rsyncTrackedFiles (cwd: string, stateDir: string, ignoresFile: string, target: string): Promise<{hrdeltatime: [number, number]}> {
         const time = process.hrtime();
-        await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
-        const {stdout: untracked} = await Utils.bash("git ls-files -o --directory", cwd);
-        const untrackedFile = `${cwd}/${stateDir}/rsync-exclude-${target}`;
-        await fs.writeFile(untrackedFile, untracked.split("\n").filter(line => line !== "").map(line => `/${line}`).join("\n"));
-        const cmd = [
-            "rsync -a --delete-excluded --delete",
-            `--exclude-from=${Utils.safeBashString(untrackedFile)}`,
-            ...await fs.pathExists(ignoresFile) ? [`--exclude-from=${Utils.safeBashString(ignoresFile)}`] : [],
-            "--exclude .git/lfs",
-            `--exclude ${stateDir}/`,
-            "./",
-            `${stateDir}/builds/${target}/`,
-        ].join(" ");
-        await Utils.bash(cmd, cwd);
+        const lockPath = `${cwd}/${stateDir}/rsync-${target}.lock`;
+        await withFileLock(lockPath, async () => {
+            await fs.mkdirp(`${cwd}/${stateDir}/builds/${target}`);
+            const {stdout: untracked} = await Utils.bash("git ls-files -o --directory", cwd);
+            const untrackedFile = `${cwd}/${stateDir}/rsync-exclude-${target}`;
+            await fs.writeFile(untrackedFile, untracked.split("\n").filter(line => line !== "").map(line => `/${line}`).join("\n"));
+            const cmd = [
+                "rsync -a --delete-excluded --delete",
+                `--exclude-from=${Utils.safeBashString(untrackedFile)}`,
+                ...await fs.pathExists(ignoresFile) ? [`--exclude-from=${Utils.safeBashString(ignoresFile)}`] : [],
+                "--exclude .git/lfs",
+                `--exclude ${stateDir}/`,
+                "./",
+                `${stateDir}/builds/${target}/`,
+            ].join(" ");
+            await Utils.bash(cmd, cwd);
+        }, RSYNC_LOCK_TIMEOUT_MS);
         return {hrdeltatime: process.hrtime(time)};
     }
 
