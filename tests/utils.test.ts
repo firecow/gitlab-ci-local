@@ -275,7 +275,21 @@ describe("safeDockerString", () => {
 
     it("should encode non-alphanumeric characters", () => {
         const result = Utils.safeDockerString("job/name");
-        expect(result).toBe("jobLwname"); // '/' → 'Lw'
+        expect(result).toBe("jobLwname.90354188"); // '/' → 'Lw'
+    });
+
+    it("should not collide an encoded name with a literal one", () => {
+        expect(Utils.safeDockerString("a.b")).toBe("aLgb.2e7336dc");
+        expect(Utils.safeDockerString("aLgb")).toBe("aLgb");
+        // A dot cannot survive encoding, so it separates the two namespaces for good.
+        expect(Utils.safeDockerString("aLgb.2e7336dc")).toBe("aLgbLg2e7336dc.bd36d3d5");
+        expect(Utils.safeDockerString("aLgb-2e7336dc")).toBe("aLgb-2e7336dc");
+    });
+
+    it("should leave already safe names untouched", () => {
+        for (const name of ["short-job-name", "my_job", "aLgb", "job-1"]) {
+            expect(Utils.safeDockerString(name)).toBe(name);
+        }
     });
 
     it("should truncate and hash when encoded name exceeds MAX_FILENAME_LENGTH", () => {
@@ -326,6 +340,6 @@ describe("safeDockerString", () => {
         const name = "a".repeat(Utils.MAX_FILENAME_LENGTH - 1) + "/"; // '/' -> 'Lw' = +2, total = MAX+1
         const result = Utils.safeDockerString(name);
         expect(result.length).toBeLessThanOrEqual(Utils.MAX_FILENAME_LENGTH);
-        expect(result).toContain("-"); // has hash separator
+        expect(result).toContain("."); // has hash separator
     });
 });
