@@ -6,5 +6,7 @@ spec:
       default: "1"
 ---
 scan-website:
+  variables:
+    NUMBER_INPUT: $[[ inputs.number_input ]]
   script:
     - echo $[[ inputs.number_input]]
