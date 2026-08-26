@@ -201,6 +201,26 @@ test.concurrent("include-inputs inputs validation for number", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
+test.concurrent("include-inputs can skip validation for a mismatched default type", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-inputs/input-templates/type-validation/number",
+        preview: true,
+        skipInputValidation: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+scan-website:
+  script:
+    - echo 1`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
 test.concurrent("include-inputs for type array", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
