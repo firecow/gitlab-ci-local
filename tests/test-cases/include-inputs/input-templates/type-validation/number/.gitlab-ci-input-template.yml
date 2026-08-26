@@ -3,6 +3,7 @@ spec:
   inputs:
     number_input:
       type: number
+      default: "1"
 ---
 scan-website:
   script:
