@@ -483,12 +483,16 @@ function parseIncludeInputs (ctx: any): {inputValue: any; inputType: InputType} 
     if (!ctx.skipInputValidation) validateInput(ctx);
 
     const inputValue = getInputValue(ctx);
-    const inputType = ctx.skipInputValidation ? getActualInputType(inputValue) : getExpectedInputType(ctx);
+    const inputType = ctx.skipInputValidation ? getActualInputType(inputValue, ctx) : getExpectedInputType(ctx);
     return {inputValue, inputType};
 }
 
-function getActualInputType (inputValue: any): InputType {
-    return (Array.isArray(inputValue) ? "array" : typeof inputValue) as InputType;
+function getActualInputType (inputValue: any, ctx: any): InputType {
+    const {configFilePath, interpolationKey} = ctx;
+    const inputType = inputValue === null ? "null" : Array.isArray(inputValue) ? "array" : typeof inputValue;
+    assert(INCLUDE_INPUTS_SUPPORTED_TYPES.includes(inputType as InputType),
+        chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: provided value has unsupported type {blueBright ${inputType}}.`);
+    return inputType as InputType;
 }
 
 function getInputValue (ctx: any) {

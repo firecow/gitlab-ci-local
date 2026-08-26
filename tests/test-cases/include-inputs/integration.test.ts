@@ -221,6 +221,42 @@ scan-website:
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
+test.concurrent("include-inputs reports unsupported value types when validation is skipped", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/include-inputs/input-templates/type-validation/object",
+            preview: true,
+            skipInputValidation: true,
+        }, writeStreams);
+    } catch (e: any) {
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
+        expect(e.message).toContain("This GitLab CI configuration is invalid:");
+        expect(e.message).toContain(chalk`\`{blueBright object_input}\` input: provided value has unsupported type {blueBright object}.`);
+        return;
+    }
+
+    throw new Error("Error is expected but not thrown/caught");
+});
+
+test.concurrent("include-inputs reports null values when validation is skipped", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/include-inputs/input-templates/type-validation/null",
+            preview: true,
+            skipInputValidation: true,
+        }, writeStreams);
+    } catch (e: any) {
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
+        expect(e.message).toContain("This GitLab CI configuration is invalid:");
+        expect(e.message).toContain(chalk`\`{blueBright null_input}\` input: provided value has unsupported type {blueBright null}.`);
+        return;
+    }
+
+    throw new Error("Error is expected but not thrown/caught");
+});
+
 test.concurrent("include-inputs for type array", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
