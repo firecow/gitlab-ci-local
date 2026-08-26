@@ -1,5 +1,6 @@
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
+import {Parser} from "../../../src/parser.js";
 import assert, {AssertionError} from "assert";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
@@ -201,6 +202,85 @@ test.concurrent("include-inputs inputs validation for number", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
+test.concurrent("include-inputs can skip type validation for a mismatched default type", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-inputs/input-templates/type-validation/number",
+        preview: true,
+        skipInputValidation: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+scan-website:
+  variables:
+    NUMBER_INPUT: '1'
+  script:
+    - echo 1`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
+test.concurrent("include-inputs can skip validation and preserve a provided value's actual type", async () => {
+    const writeStreams = new WriteStreamsMock();
+    const templatePath =
+        "tests/test-cases/include-inputs/input-templates/type-validation/number/.gitlab-ci-input-template.yml";
+
+    const parsed = await Parser.loadYaml(
+        templatePath,
+        {
+            inputs: {
+                number_input: "1",
+            },
+            skipInputValidation: true,
+        },
+        true,
+        writeStreams,
+    );
+
+    expect(parsed["scan-website"].variables.NUMBER_INPUT).toBe("1");
+    expect(typeof parsed["scan-website"].variables.NUMBER_INPUT).toBe("string");
+});
+
+test.concurrent("include-inputs reports unsupported value types when validation is skipped", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/include-inputs/input-templates/type-validation/object",
+            preview: true,
+            skipInputValidation: true,
+        }, writeStreams);
+    } catch (e: any) {
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
+        expect(e.message).toContain("This GitLab CI configuration is invalid:");
+        expect(e.message).toContain(chalk`\`{blueBright object_input}\` input: provided value has unsupported type {blueBright object}.`);
+        return;
+    }
+
+    throw new Error("Error is expected but not thrown/caught");
+});
+
+test.concurrent("include-inputs reports null values when validation is skipped", async () => {
+    try {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/include-inputs/input-templates/type-validation/null",
+            preview: true,
+            skipInputValidation: true,
+        }, writeStreams);
+    } catch (e: any) {
+        assert(e instanceof AssertionError, "e is not instanceof AssertionError");
+        expect(e.message).toContain("This GitLab CI configuration is invalid:");
+        expect(e.message).toContain(chalk`\`{blueBright null_input}\` input: provided value has unsupported type {blueBright null}.`);
+        return;
+    }
+
+    throw new Error("Error is expected but not thrown/caught");
+});
+
 test.concurrent("include-inputs for type array", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
@@ -321,6 +401,26 @@ test.concurrent("include-inputs options validation", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
+test.concurrent("include-inputs can skip options validation", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-inputs/input-templates/options-validation",
+        preview: true,
+        skipInputValidation: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+scan-website:
+  script:
+    - echo fizz`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
+
 test.concurrent("include-inputs options array1 validation", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
@@ -414,6 +514,26 @@ test.concurrent("include-inputs regex validation (invalid)", async () => {
     }
 
     throw new Error("Error is expected but not thrown/caught");
+});
+
+test.concurrent("include-inputs can skip regex validation", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/include-inputs/input-templates/regex-validation",
+        preview: true,
+        skipInputValidation: true,
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+deploy:
+  script:
+    - echo invalid-version`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
 
 test.concurrent("include-inputs regex validation (valid)", async () => {

@@ -112,12 +112,12 @@ export class Parser {
         const rootInputs = {...Utils.getGlobalFileInputs(fileInputs), ...inputs._cliGlobal};
 
         let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
-        const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`, {inputs: rootInputs}, this.expandVariables, writeStreams);
+        const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`, {inputs: rootInputs, skipInputValidation: argv.skipInputValidation}, this.expandVariables, writeStreams);
 
         yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiData, {argv, cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables, maximumIncludes: argv.maximumIncludes, inputs}));
         ParserIncludes.resetCount();
 
-        const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`, {}, this.expandVariables, writeStreams);
+        const gitlabCiLocalData = await Parser.loadYaml(`${cwd}/.gitlab-ci-local.yml`, {skipInputValidation: argv.skipInputValidation}, this.expandVariables, writeStreams);
         yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, {argv, cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables, maximumIncludes: argv.maximumIncludes, inputs}));
         ParserIncludes.resetCount();
 
@@ -480,8 +480,19 @@ function validateInput (ctx: any) {
 function parseIncludeInputs (ctx: any): {inputValue: any; inputType: InputType} {
     validateInterpolationKey(ctx);
     validateInterpolationFunctions(ctx);
-    validateInput(ctx);
-    return {inputValue: getInputValue(ctx), inputType: getExpectedInputType(ctx)};
+    if (!ctx.skipInputValidation) validateInput(ctx);
+
+    const inputValue = getInputValue(ctx);
+    const inputType = ctx.skipInputValidation ? getActualInputType(inputValue, ctx) : getExpectedInputType(ctx);
+    return {inputValue, inputType};
+}
+
+function getActualInputType (inputValue: any, ctx: any): InputType {
+    const {configFilePath, interpolationKey} = ctx;
+    const inputType = inputValue === null ? "null" : Array.isArray(inputValue) ? "array" : typeof inputValue;
+    assert(INCLUDE_INPUTS_SUPPORTED_TYPES.includes(inputType as InputType),
+        chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: provided value has unsupported type {blueBright ${inputType}}.`);
+    return inputType as InputType;
 }
 
 function getInputValue (ctx: any) {
