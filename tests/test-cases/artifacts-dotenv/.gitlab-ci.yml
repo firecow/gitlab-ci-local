@@ -25,3 +25,32 @@ use-service-ref:
   image: docker.io/massenz/dnsutils:2.4.0
   script:
     - host $SERVICE_IMAGE_ALIAS
+
+# reports.dotenv is exported regardless of the producer's status, so a consumer
+# that still runs after a failed/warned producer gets its variables.
+build-failure-ref:
+  stage: build
+  needs: []
+  script:
+    - echo "FAILURE_REF=failure-value" > failure.env
+    - exit 1
+  artifacts:
+    reports: {dotenv: failure.env}
+
+build-warning-ref:
+  stage: build
+  needs: []
+  allow_failure: true
+  script:
+    - echo "WARNING_REF=warning-value" > warning.env
+    - exit 1
+  artifacts:
+    reports: {dotenv: warning.env}
+
+use-non-success-ref:
+  stage: deploy
+  when: always
+  needs: [build-failure-ref, build-warning-ref]
+  script:
+    - echo "FAILURE_REF is [$FAILURE_REF]"
+    - echo "WARNING_REF is [$WARNING_REF]"
