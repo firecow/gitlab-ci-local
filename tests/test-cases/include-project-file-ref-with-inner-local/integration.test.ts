@@ -15,14 +15,14 @@ test("include-project-file-ref-with-inner-local", async () => {
     };
     const target = ".gitlab-ci-local/includes/gitlab.com/firecow/gitlab-ci-local-includes/include-string-list/";
     const spyGitArchive1 = {
-        cmd: `git archive --remote=ssh://git@gitlab.com:22/firecow/gitlab-ci-local-includes.git include-string-list .gitlab-module-with-local.yml | tar -f - -xC ${target}`,
+        cmd: `set -eou pipefail; git archive --remote='ssh://git@gitlab.com:22/firecow/gitlab-ci-local-includes.git' -- 'include-string-list' '.gitlab-module-with-local.yml' | tar -f - -xC '${target}'`,
         returnValue: {output: ""},
     };
     const spyGitArchive2 = {
-        cmd: `git archive --remote=ssh://git@gitlab.com:22/firecow/gitlab-ci-local-includes.git include-string-list .gitlab-local.yml | tar -f - -xC ${target}`,
+        cmd: `set -eou pipefail; git archive --remote='ssh://git@gitlab.com:22/firecow/gitlab-ci-local-includes.git' -- 'include-string-list' '.gitlab-local.yml' | tar -f - -xC '${target}'`,
         returnValue: {output: ""},
     };
-    initBashSpy([spyGitArchive1, spyGitArchive2]);
+    const bashSpy = initBashSpy([spyGitArchive1, spyGitArchive2]);
     initSpawnSpy([...WhenStatics.all, spyGitRemote]);
 
     let mock = `${cwd}/mock-gitlab-module-with-local.yml`;
@@ -35,11 +35,15 @@ test("include-project-file-ref-with-inner-local", async () => {
     await fs.ensureFile(mockTarget);
     await fs.copyFile(mock, mockTarget);
 
-    await handler({cwd}, writeStreams);
+    await handler({cwd, fetchIncludes: true}, writeStreams);
 
     const expected = [
         chalk`{blueBright test-job  } {greenBright >} Test something`,
         chalk`{blueBright deploy-job} {greenBright >} Deploy something`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+
+    const invokedCommands = bashSpy.mock.calls.map((call) => call[0]);
+    expect(invokedCommands).toContainEqual(spyGitArchive1.cmd);
+    expect(invokedCommands).toContainEqual(spyGitArchive2.cmd);
 });
