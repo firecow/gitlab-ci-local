@@ -382,6 +382,24 @@ export class ParserIncludes {
         }
     }
 
+    private static async gitCloneSparseCheckout (cwd: string, stateDir: string, tmpDir: string, remote: GitData["remote"], project: string, ref: string, sparsePaths: string[]): Promise<void> {
+        await fs.mkdirp(`${cwd}/${stateDir}`);
+        const isCommitSha = /^[0-9a-f]{40}$/i.test(ref);
+        const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${Utils.safeBashString(ref)}`;
+        await Utils.bashMulti([
+            `cd ${Utils.safeBashString(cwd)}/${Utils.safeBashString(stateDir)}`,
+            `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${Utils.safeBashString(remoteProjectUrl(remote, project))} ${Utils.safeBashString(tmpDir)}`,
+            `cd ${Utils.safeBashString(tmpDir)}`,
+            ...isCommitSha ? [`git fetch --depth=1 --filter=tree:0 origin ${Utils.safeBashString(ref)}`] : [],
+            `git sparse-checkout set --no-cone ${sparsePaths.map((p) => Utils.safeBashString(p)).join(" ")}`,
+            isCommitSha ? "git checkout FETCH_HEAD" : "git checkout",
+        ], cwd);
+    }
+
+    private static safeArchiveUrl (remote: GitData["remote"], project: string): string {
+        return Utils.safeBashString(`ssh://git@${remote.host}:${remote.port}/${project}.git`);
+    }
+
     static async downloadIncludeProjectFile (opts: ParserIncludesInitOptions, project: string, ref: string, file: string): Promise<void> {
         const {cwd, stateDir, gitData, fetchIncludes, writeStreams} = opts;
         const remote = gitData.remote;
@@ -394,25 +412,20 @@ export class ParserIncludes {
 
             if (remote.schema.startsWith("http")) {
                 const ext = "tmp-" + Math.random();
-                const destDir = path.dirname(`${cwd}/${target}/${normalizedFile}`);
-                await fs.mkdirp(destDir);
                 tmpDir = `${cwd}/${target}.${ext}`;
 
-                const isCommitSha = /^[0-9a-f]{40}$/i.test(ref);
-                const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${ref}`;
-                await Utils.bashMulti([
-                    `cd ${cwd}/${stateDir}`,
-                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remoteProjectUrl(remote, project)} ${tmpDir}`,
-                    `cd ${tmpDir}`,
-                    ...isCommitSha ? [`git fetch --depth=1 --filter=tree:0 origin ${ref}`] : [],
-                    `git sparse-checkout set --no-cone ${normalizedFile}`,
-                    isCommitSha ? "git checkout FETCH_HEAD" : "git checkout",
-                    `cd ${cwd}/${stateDir}`,
-                    `cp ${tmpDir}/${normalizedFile} ${destDir}/`,
-                ], cwd);
+                await this.gitCloneSparseCheckout(cwd, stateDir, tmpDir, remote, project, ref, [normalizedFile]);
+
+                const matches = globbySync(normalizedFile, {cwd: tmpDir, absolute: true});
+                const filesToCopy = matches.length > 0 ? matches : [`${tmpDir}/${normalizedFile}`];
+                for (const matchedFile of filesToCopy) {
+                    const relativePath = path.relative(tmpDir, matchedFile);
+                    assert(!relativePath.startsWith("..") && !path.isAbsolute(relativePath), `Include file path escapes the fetched project: ${normalizedFile}`);
+                    await fs.copy(matchedFile, `${cwd}/${target}/${relativePath}`);
+                }
             } else {
                 await fs.mkdirp(`${cwd}/${target}`);
-                await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${normalizedFile} | tar -f - -xC ${target}/`, cwd);
+                await Utils.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${Utils.safeBashString(ref)} ${Utils.safeBashString(normalizedFile)} | tar -f - -xC ${Utils.safeBashString(`${target}/`)}`, cwd);
             }
             writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
@@ -441,19 +454,11 @@ export class ParserIncludes {
                 await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`));
                 tmpDir = `${cwd}/${target}.${ext}`;
 
-                const isCommitSha = /^[0-9a-f]{40}$/i.test(ref);
-                const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${ref}`;
-                await Utils.bashMulti([
-                    `cd ${cwd}/${stateDir}`,
-                    `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${remoteProjectUrl(remote, project)} ${tmpDir}`,
-                    `cd ${tmpDir}`,
-                    ...isCommitSha ? [`git fetch --depth=1 --filter=tree:0 origin ${ref}`] : [],
-                    `git sparse-checkout set --no-cone ${files[0]} ${files[1]}`,
-                    isCommitSha ? "git checkout FETCH_HEAD" : "git checkout",
-                    `cd ${cwd}/${stateDir}`,
-                    `mkdir -p ${tmpDir}/templates`, // create templates subdir (if it doesn't exist), as the check out may not create it
-                    `cp -r ${tmpDir}/templates ${cwd}/${target}`,
-                ], cwd);
+                await this.gitCloneSparseCheckout(cwd, stateDir, tmpDir, remote, project, ref, files);
+
+                // create templates subdir (if it doesn't exist), as the check out may not create it
+                await fs.mkdirp(`${tmpDir}/templates`);
+                await fs.copy(`${tmpDir}/templates`, `${cwd}/${target}/templates`);
             } else {
                 // git archive fails if the paths do not exist, to work around this we use a wildcard "templates/component*.yml"
                 // this resolves to either "templates/component.yml" or "templates/component/template.yml"
@@ -461,7 +466,7 @@ export class ParserIncludes {
                 // Drawback: also pulls all other .yml files from templates/component/ directory
                 const componentWildcard = `${componentName}*.yml`;
                 await fs.mkdirp(`${cwd}/${target}`);
-                await Utils.bash(`set -eou pipefail; git archive --remote=ssh://git@${remote.host}:${remote.port}/${project}.git ${ref} ${componentWildcard} | tar -f - -xC ${target}/`, cwd);
+                await Utils.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${Utils.safeBashString(ref)} ${Utils.safeBashString(componentWildcard)} | tar -f - -xC ${Utils.safeBashString(`${target}/`)}`, cwd);
             }
             writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
