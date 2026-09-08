@@ -309,7 +309,8 @@ export class Utils {
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
                 const flagsBinary = flagsToBinary(flags);
-                return `RE2JS.compile("${pattern}", ${flagsBinary})`;
+                const escapedPattern = JSON.stringify(pattern);
+                return `RE2JS.compile(${escapedPattern}, ${flagsBinary})`;
             });
             return `.matchRE2JS(${_rhs}) ${_operator} null`;
         });

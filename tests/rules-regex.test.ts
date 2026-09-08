@@ -64,6 +64,16 @@ const tests = [
         evalResult: true,
     },
     {
+        rule: '"[foo" =~ /\\[foo/',
+        jsExpression: '"[foo".matchRE2JS(RE2JS.compile("\\\\[foo", 0)) != null',
+        evalResult: true,
+    },
+    {
+        rule: '"[foo" =~ /\\[bar/',
+        jsExpression: '"[foo".matchRE2JS(RE2JS.compile("\\\\[bar", 0)) != null',
+        evalResult: false,
+    },
+    {
         rule: '"foo" =~ "/foo/"',
         jsExpression: '"foo".matchRE2JS(RE2JS.compile("foo", 0)) != null',
         evalResult: true,
@@ -75,12 +85,27 @@ const tests = [
     },
     {
         rule: '"test/url" =~ "/test\\/ur/"',
-        jsExpression: '"test/url".matchRE2JS(RE2JS.compile("test\\/ur", 0)) != null',
+        jsExpression: '"test/url".matchRE2JS(RE2JS.compile("test\\\\/ur", 0)) != null',
         evalResult: true,
     },
     {
         rule: '"test/url" =~ /test/ur/',
         expectedErrSubStr: "Error attempting to evaluate the following rules:",
+    },
+    {
+        rule: '"[foo" =~ "/\\[foo/"',
+        jsExpression: '"[foo".matchRE2JS(RE2JS.compile("\\\\[foo", 0)) != null',
+        evalResult: true,
+    },
+    {
+        rule: '"foo" =~ "/\\[foo/"',
+        jsExpression: '"foo".matchRE2JS(RE2JS.compile("\\\\[foo", 0)) != null',
+        evalResult: false,
+    },
+    {
+        rule: '"[foo" =~ "/\\[bar/"',
+        jsExpression: '"[foo".matchRE2JS(RE2JS.compile("\\\\[bar", 0)) != null',
+        evalResult: false,
     },
     {
         rule: '"master" =~ /master$/',
