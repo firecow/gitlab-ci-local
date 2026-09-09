@@ -89,11 +89,58 @@ const tests = [
     },
     {
         rule: '"23" =~ "1234"',
-        expectedErrSubStr: "must be a regex pattern. Do not rely on this behavior!",
+        jsExpression: '"23"?.split().some((lhs) => "1234".includes(lhs)) !== false',
+        evalResult: true,
     },
     {
         rule: '"23" =~ \'1234\'',
-        expectedErrSubStr: "must be a regex pattern. Do not rely on this behavior!",
+        jsExpression: '"23"?.split().some((lhs) => "1234".includes(lhs)) !== false',
+        evalResult: true,
+    },
+    {
+        rule: '"1234" =~ "23"',
+        jsExpression: '"1234"?.split().some((lhs) => "23".includes(lhs)) !== false',
+        evalResult: false,
+    },
+    {
+        rule: '"1234" =~ \'23\'',
+        jsExpression: '"1234"?.split().some((lhs) => "23".includes(lhs)) !== false',
+        evalResult: false,
+    },
+    {
+        rule: '"23" !~ "1234"',
+        jsExpression: '"23"?.split().some((lhs) => "1234".includes(lhs)) === false',
+        evalResult: false,
+    },
+    {
+        rule: '"1234" !~ "23"',
+        jsExpression: '"1234"?.split().some((lhs) => "23".includes(lhs)) === false',
+        evalResult: true,
+    },
+    {
+        rule: '"23" =~ "\\"1234"',
+        jsExpression: '"23"?.split().some((lhs) => "\\"1234".includes(lhs)) !== false',
+        evalResult: true,
+    },
+    {
+        rule: '"23" =~ \'"1234\'',
+        jsExpression: '"23"?.split().some((lhs) => "\\"1234".includes(lhs)) !== false',
+        evalResult: true,
+    },
+    {
+        rule: '"23" =~ "\'1234"',
+        jsExpression: '"23"?.split().some((lhs) => "\'1234".includes(lhs)) !== false',
+        evalResult: true,
+    },
+    {
+        rule: '$MISSING =~ "foo"',
+        jsExpression: 'null?.split().some((lhs) => "foo".includes(lhs)) !== false',
+        evalResult: true,
+    },
+    {
+        rule: '$MISSING !~ "foo"',
+        jsExpression: 'null?.split().some((lhs) => "foo".includes(lhs)) === false',
+        evalResult: false,
     },
     {
         rule: '"23" =~ /1234/',
