@@ -444,9 +444,9 @@ export class Utils {
     // renovate: datasource=docker depName=registry
     static readonly gclRegistryImage: string = "registry:3.1.1";
     // renovate: datasource=docker depName=alpine/openssl
-    static readonly gclOpensslImage: string = "alpine/openssl:3.5.7";
+    static readonly gclOpensslImage: string = "alpine/openssl:3.5.8";
     // renovate: datasource=docker depName=curlimages/curl
-    static readonly gclCurlImage: string = "curlimages/curl:8.21.0";
+    static readonly gclCurlImage: string = "curlimages/curl:8.22.0";
     static async startDockerRegistry (argv: Argv): Promise<void> {
         const gclRegistryCertVol = `${this.gclRegistryPrefix}.certs`;
         const gclRegistryDataVol = `${this.gclRegistryPrefix}.data`;
