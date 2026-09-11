@@ -1,0 +1,19 @@
+---
+test-seccomp-present:
+  image: docker.io/alpine:3.21
+  script:
+    - "grep Seccomp: /proc/1/status | grep 2 && echo seccomp present"
+
+test-seccomp-not-present:
+  image: docker.io/alpine:3.21
+  script:
+    - "grep Seccomp: /proc/1/status | grep 0 && echo seccomp not present"
+
+test-ca-cert-and-seccomp:
+  image: alpine:3.21
+  script:
+    - "grep Seccomp: /proc/1/status | grep 0 && echo seccomp not present"
+    - test -f /etc/ssl/certs/ca-certificates.crt && echo "CA cert file exists" || echo "CA cert file NOT found"
+    - echo "SSL_CERT_FILE=$SSL_CERT_FILE"
+    - echo "SSL_CERT_DIR=$SSL_CERT_DIR"
+    - cat /etc/ssl/certs/ca-certificates.crt | head -3
