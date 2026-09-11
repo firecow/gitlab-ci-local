@@ -24,4 +24,5 @@ test.concurrent("rules-exists", async () => {
     expect(output).not.toContain("Directory Recursive Skipped!");
     expect(output).not.toContain("rule-exist-empty-string Executed!");
     expect(output).toContain("rules:exists:paths works!");
+    expect(output).toContain("existsDir/existDirNested/recursive.file successfully found through the paths form");
 });
