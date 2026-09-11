@@ -21,10 +21,10 @@ test.concurrent("include-project-file-with-variable test-job", async () => {
 
     const target = `${stateDir}/includes/gitlab.com/test-group/gitlab-ci-local-test/HEAD/`;
     const spyGitArchive1 = {
-        cmd: `git archive --remote=ssh://git@gitlab.com:22/test-group/gitlab-ci-local-test.git HEAD test-file.yml | tar -f - -xC ${target}`,
+        cmd: `set -eou pipefail; git archive --remote='ssh://git@gitlab.com:22/test-group/gitlab-ci-local-test.git' -- 'HEAD' 'test-file.yml' | tar -f - -xC '${target}'`,
         returnValue: {output: ""},
     };
-    initBashSpy([spyGitArchive1]);
+    const bashSpy = initBashSpy([spyGitArchive1]);
 
     const mock = `${cwd}/mock-test-file.yml`;
     const mockTarget = `${cwd}/${stateDir}/includes/gitlab.com/test-group/gitlab-ci-local-test/HEAD/test-file.yml`;
@@ -36,10 +36,13 @@ test.concurrent("include-project-file-with-variable test-job", async () => {
         cwd,
         job: ["test-job"],
         stateDir,
+        fetchIncludes: true,
     }, writeStreams);
 
     const expected = [
         chalk`{blueBright test-job} {greenBright >} Hello from test file`,
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+
+    expect(bashSpy.mock.calls.map((call) => call[0])).toContainEqual(spyGitArchive1.cmd);
 });

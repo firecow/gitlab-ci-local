@@ -1,0 +1,3 @@
+---
+include:
+  - { project: some/project, file: "../victim file.yml", ref: main }

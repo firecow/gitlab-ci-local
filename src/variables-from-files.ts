@@ -43,7 +43,8 @@ export class VariablesFromFiles {
                 const file = match.groups?.file;
                 const ref = match.groups?.ref;
                 const time = process.hrtime();
-                const res = await Utils.bash(`set -eou pipefail; git archive --remote=${url} ${ref} ${file} | tar -xO ${file}`, cwd);
+                const safeFile = Utils.safeBashString(file ?? "");
+                const res = await Utils.bash(`set -eou pipefail; git archive --remote=${Utils.safeBashString(url ?? "")} -- ${Utils.safeBashString(ref ?? "")} ${safeFile} | tar -xO -- ${safeFile}`, cwd);
                 writeStreams.stderr(chalk`{grey downloaded ${url} ${ref} ${file} in ${prettyHrtime(process.hrtime(time))}}\n`);
                 const loadedYaml = yaml.load(`${res.stdout}`);
                 // Check if loadedYaml is an object
