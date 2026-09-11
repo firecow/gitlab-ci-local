@@ -138,6 +138,11 @@ process.on("SIGUSR2", async () => {
             requiresArg: true,
             default: Argv.default.inputsFile,
         })
+        .option("skip-input-validation", {
+            type: "boolean",
+            description: "Skip CI/CD input type, options, and regex validation",
+            requiresArg: false,
+        })
         .option("ignores-file", {
             type: "string",
             description: "Path to an ignores file",

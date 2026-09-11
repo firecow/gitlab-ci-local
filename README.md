@@ -42,6 +42,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [Remote File Variables](#remote-file-variables)
     * [Project File Variables](#project-file-variables)
     * [Decorators](#decorators)
+    * [CI/CD Inputs](#cicd-inputs)
     * [Includes](#includes)
     * [Artifacts](#artifacts)
     * [Self Hosted Custom Ports](#self-hosted-custom-ports)
@@ -390,6 +391,16 @@ A global configuration is possible when setting the following flag
 ```shell
 gitlab-ci-local --no-artifacts-to-source
 ```
+
+### CI/CD Inputs
+
+Input types, options, and regular expressions are validated by default. If an outdated component declares an input type that does not match its default or provided value, use `--skip-input-validation` to render the pipeline without these checks.
+
+```shell
+gitlab-ci-local --skip-input-validation --list
+```
+
+Required inputs and interpolation keys are still validated.
 
 ### Includes
 

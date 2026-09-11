@@ -144,7 +144,7 @@ export class ParserIncludes {
                 }
                 for (const localFile of files) {
                     const mergedInputs = {...(value.inputs ?? {}), ...globalInputs};
-                    const content = await Parser.loadYaml(localFile, {inputs: mergedInputs}, expandVariables, writeStreams);
+                    const content = await Parser.loadYaml(localFile, {inputs: mergedInputs, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams);
                     includeDatas = includeDatas.concat(await this.init(content, opts));
                 }
             } else if (value["project"]) {
@@ -155,7 +155,7 @@ export class ParserIncludes {
                     const matches = globbySync(normalizedFile, {cwd: includeDir, absolute: true}).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
                     const filePaths = matches.length > 0 ? matches : [`${includeDir}/${normalizedFile}`];
                     for (const filePath of filePaths) {
-                        const fileDoc = await Parser.loadYaml(filePath, {inputs: mergedInputs}, expandVariables, writeStreams);
+                        const fileDoc = await Parser.loadYaml(filePath, {inputs: mergedInputs, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams);
                         // Expand local includes inside a "project"-like include
                         fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], value["project"], value["ref"], opts);
                         includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
@@ -185,7 +185,7 @@ export class ParserIncludes {
                 const fileComponentInputs = isStructured ? (fileInputs[componentName] ?? {}) : {};
                 const cliComponentSpecificInputs = cliComponentInputs[componentName] ?? {};
                 const mergedInputs = {...(value.inputs ?? {}), ...globalInputs, ...fileComponentInputs, ...cliComponentSpecificInputs};
-                const fileDoc = await Parser.loadYaml(file, {inputs: mergedInputs, component}, expandVariables, writeStreams);
+                const fileDoc = await Parser.loadYaml(file, {inputs: mergedInputs, component, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams);
                 if (!component.isLocal) {
                     // Expand local includes inside to a "project"-like include
                     fileDoc["include"] = this.expandInnerLocalIncludes(fileDoc["include"], component.projectPath, component.effectiveRef, opts);
@@ -196,14 +196,14 @@ export class ParserIncludes {
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
                 const mergedInputs = {...(value.inputs ?? {}), ...globalInputs};
                 const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: mergedInputs}, expandVariables, writeStreams,
+                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: mergedInputs, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams,
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
                 const mergedInputs = {...(value.inputs ?? {}), ...globalInputs};
                 const fileDoc = await Parser.loadYaml(
-                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: mergedInputs}, expandVariables, writeStreams,
+                    `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: mergedInputs, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams,
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else {
