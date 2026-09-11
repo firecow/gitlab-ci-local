@@ -300,11 +300,16 @@ export class Utils {
                     throw operator;
             }
 
-            const assertMsg = [
-                "RHS (${rhs}) must be a regex pattern. Do not rely on this behavior!",
-                "Refer to https://docs.gitlab.com/ee/ci/jobs/job_rules.html#unexpected-behavior-from-regular-expression-matching-with- for more info...",
-            ];
-            assert((/\/(.*)\/(\w*)/.test(rhs)), assertMsg.join("\n"));
+            if (!(/\/(.*)\/(\w*)/.test(rhs))) {
+                // Pattern is not a regex
+                // This is discouraged by gitlab, but it is supported
+                // We match gitlab's behavior which is to check if lhs is a substring of rhs
+                // See https://docs.gitlab.com/ci/jobs/job_rules/#unexpected-behavior-from-regular-expression-matching-with-
+
+                // This is a weird construction, as the lhs string will be prepended, and we have to be able to use it as a parameter of includes
+                rhs = rhs.replaceAll(/(?<!\\)"/g, '\\"');
+                return `?.split().some((lhs) => "${rhs}".includes(lhs)) ${operator === "=~" ? "!==" : "==="} false`;
+            }
 
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
