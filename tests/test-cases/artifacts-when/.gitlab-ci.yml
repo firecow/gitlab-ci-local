@@ -1,0 +1,112 @@
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Matrix:  when  ×  outcome
+#   when   = { on_success, on_failure, always }
+#   outcome= { success, failure, warning }
+# ─────────────────────────────────────────────────────────────────────────────
+
+on_success_success:
+  stage: build
+  script:
+    - touch on_success_success
+  artifacts:
+    paths:
+      - on_success_success
+    when: on_success
+
+on_success_failure:
+  stage: build
+  script:
+    - touch on_success_failure
+    - exit 1
+  artifacts:
+    paths:
+      - on_success_failure
+    when: on_success
+
+on_success_warning:
+  stage: build
+  allow_failure: true
+  script:
+    - touch on_success_warning
+    - exit 1
+  artifacts:
+    paths:
+      - on_success_warning
+    when: on_success
+
+on_failure_success:
+  stage: build
+  script:
+    - touch on_failure_success
+  artifacts:
+    paths:
+      - on_failure_success
+    when: on_failure
+
+on_failure_failure:
+  stage: build
+  script:
+    - touch on_failure_failure
+    - exit 1
+  artifacts:
+    paths:
+      - on_failure_failure
+    when: on_failure
+
+on_failure_warning:
+  stage: build
+  allow_failure: true
+  script:
+    - touch on_failure_warning
+    - exit 1
+  artifacts:
+    paths:
+      - on_failure_warning
+    when: on_failure
+
+always_success:
+  stage: build
+  script:
+    - touch always_success
+  artifacts:
+    paths:
+      - always_success
+    when: always
+
+always_failure:
+  stage: build
+  script:
+    - touch always_failure
+    - exit 1
+  artifacts:
+    paths:
+      - always_failure
+    when: always
+
+always_warning:
+  stage: build
+  allow_failure: true
+  script:
+    - touch always_warning
+    - exit 1
+  artifacts:
+    paths:
+      - always_warning
+    when: always
+
+consumer:
+  stage: test
+  needs:
+    - on_success_success
+    - on_success_failure
+    - on_success_warning
+    - on_failure_success
+    - on_failure_failure
+    - on_failure_warning
+    - always_success
+    - always_failure
+    - always_warning
+  when: always
+  script:
+    - echo consumer
