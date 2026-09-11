@@ -197,6 +197,8 @@ export class Argv {
 
     get extraHost (): string[] { return this.getStringArray("extraHost"); }
 
+    get seccomp (): string | null { return this.map.get("seccomp") ?? null; }
+
     get caFile (): string | null {
         return this.map.get("caFile") ?? null;
     }

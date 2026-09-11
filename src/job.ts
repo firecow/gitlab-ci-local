@@ -1046,6 +1046,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                 dockerCmd += `--add-host=${extraHost} `;
             }
 
+            if (this.argv.seccomp) {
+                dockerCmd += `--security-opt seccomp=${Utils.safeBashString(this.argv.seccomp)} `;
+            }
+
             if (this.argv.caFile) {
                 const caFilePath = path.isAbsolute(this.argv.caFile) ? this.argv.caFile : path.resolve(this.argv.cwd, this.argv.caFile);
                 if (await fs.pathExists(caFilePath)) {
@@ -1647,6 +1651,11 @@ If you know what you're doing and would like to suppress this warning, use one o
         for (const extraHost of this.argv.extraHost) {
             dockerCmd += `--add-host=${extraHost} `;
         }
+
+        if (this.argv.seccomp) {
+            dockerCmd += `--security-opt seccomp=${Utils.safeBashString(this.argv.seccomp)} `;
+        }
+
 
         if (this.argv.registry) {
             dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
