@@ -261,12 +261,16 @@ test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/350", () => {
     rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
     expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
 
+    // A $VAR referenced inside a regex literal expands to its raw value, so
+    // /$BRANCHNAME/ becomes /master/ which matches "master". (Previously the
+    // value was wrongly quoted inside the pattern, producing /"master"/ which
+    // never matched.)
     rules = [
         {if: "$CI_COMMIT_BRANCH =~ /$BRANCHNAME/", when: "manual"},
     ];
     variables = {CI_COMMIT_BRANCH: "master", BRANCHNAME: "master"};
     rulesResult = Utils.getRulesResult({argv, cwd: "", rules, variables}, gitData);
-    expect(rulesResult).toEqual({when: "never", allowFailure: false, variables: undefined});
+    expect(rulesResult).toEqual({when: "manual", allowFailure: false, variables: undefined});
 });
 
 test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/300", () => {
