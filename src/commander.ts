@@ -287,7 +287,7 @@ export class Commander {
         const allJobs = parser.jobs;
         // This is only the jobs that will actually run
         const activeJobs = allJobs.filter(j => j.when !== "never");
-        // Validated considering all manual jobs as active. 
+        // Validated considering all manual jobs as active.
         const activeManualJobNames = allJobs.filter(j => j.when === "manual").map(j => j.name);
         const stages = parser.stages;
         // This will throw an assertion errror if the dependency chain is broken due to needs keyword on specific events without having to run the full pipeline
