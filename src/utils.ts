@@ -442,7 +442,7 @@ export class Utils {
 
     static readonly gclRegistryPrefix: string = "registry.gcl.local";
     // renovate: datasource=docker depName=registry
-    static readonly gclRegistryImage: string = "registry:3.1.1";
+    static readonly gclRegistryImage: string = "registry:3.1.2";
     // renovate: datasource=docker depName=alpine/openssl
     static readonly gclOpensslImage: string = "alpine/openssl:3.5.8";
     // renovate: datasource=docker depName=curlimages/curl
