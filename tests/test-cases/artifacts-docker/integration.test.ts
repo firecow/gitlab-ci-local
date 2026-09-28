@@ -23,6 +23,6 @@ test.concurrent("artifacts-docker <consume artifacts> --needs", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 
-    expect(fs.pathExistsSync("tests/test-cases/artifacts-docker/.gitlab-ci-local/artifacts/produceIAartifactsIPCfk50/file2")).toBe(true);
-    expect(fs.pathExistsSync("tests/test-cases/artifacts-docker/.gitlab-ci-local/artifacts/produceIAartifactsIPCfk50/path/to/deep/folder/file3")).toBe(true);
+    expect(fs.pathExistsSync("tests/test-cases/artifacts-docker/.gitlab-ci-local/artifacts/produceIAartifactsIPCfk50.c2393d2b/file2")).toBe(true);
+    expect(fs.pathExistsSync("tests/test-cases/artifacts-docker/.gitlab-ci-local/artifacts/produceIAartifactsIPCfk50.c2393d2b/path/to/deep/folder/file3")).toBe(true);
 });

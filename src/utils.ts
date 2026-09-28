@@ -63,12 +63,13 @@ export class Utils {
         const encoded = jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
         });
-        if (encoded.length <= Utils.MAX_FILENAME_LENGTH) {
-            return encoded;
+        const unambiguous = encoded === jobName ? encoded : `${encoded}.${createHash("sha256").update(jobName).digest("hex").substring(0, 8)}`;
+        if (unambiguous.length <= Utils.MAX_FILENAME_LENGTH) {
+            return unambiguous;
         }
         const hash = createHash("sha256").update(jobName).digest("hex").substring(0, 16);
         const prefix = encoded.substring(0, Utils.MAX_FILENAME_LENGTH - 1 - hash.length);
-        return `${prefix}-${hash}`;
+        return `${prefix}.${hash}`;
     }
 
     static safeBashString (s: string) {
@@ -442,7 +443,7 @@ export class Utils {
 
     static readonly gclRegistryPrefix: string = "registry.gcl.local";
     // renovate: datasource=docker depName=registry
-    static readonly gclRegistryImage: string = "registry:3.1.1";
+    static readonly gclRegistryImage: string = "registry:3.1.2";
     // renovate: datasource=docker depName=alpine/openssl
     static readonly gclOpensslImage: string = "alpine/openssl:3.5.8";
     // renovate: datasource=docker depName=curlimages/curl
