@@ -47,7 +47,7 @@
     "checksum": "1.x.x",
     "deep-extend": "0.6.x",
     "depcheck": "1.x.x",
-    "dotenv": "17.x",
+    "dotenv": "18.x",
     "eslint": "10.x",
     "execa": "10.x",
     "fs-extra": "11.x.x",
