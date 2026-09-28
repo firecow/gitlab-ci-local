@@ -1,0 +1,9 @@
+---
+job:
+  script:
+    - echo "Heya"
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    fallback_keys:
+      - main
+    paths: [a]
