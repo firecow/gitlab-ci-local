@@ -1465,10 +1465,15 @@ If you know what you're doing and would like to suppress this warning, use one o
     }
 
     private async copyArtifactsOut (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
-        // TODO: update the condition to support when:on_success / when:on_failure
-        if (this.jobStatus !== "success" && this.artifacts?.when !== "always") return;
         if (!this.artifacts) return;
-        if ((this.artifacts.paths?.length ?? 0) === 0 && this.artifacts.reports?.dotenv == null) return;
+
+        const when = this.artifacts.when ?? "on_success";
+        const copyArtifactsPaths = !(when === "on_success" && this.jobStatus !== "success") && !(when === "on_failure" && this.jobStatus === "success");
+        const artifactsPaths = copyArtifactsPaths ? this.artifacts.paths ?? [] : [];
+
+        const copyDotEnv = this.artifacts.reports?.dotenv != null;
+
+        if (artifactsPaths.length === 0 && !copyDotEnv) return;
 
         const safeJobName = this.safeJobName;
         const cwd = this.argv.cwd;
@@ -1487,7 +1492,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         let cpCmd = "shopt -s globstar nullglob dotglob\n";
         cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}\n`;
         cpCmd += "_gcl_files_tmp=\\$(mktemp)\n";
-        for (const artifactPath of this.artifacts?.paths ?? []) {
+        for (const artifactPath of artifactsPaths) {
             const expandedPath = Utils.expandText(artifactPath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
             cpCmd += `for _gcl_f in ./${expandedPath}; do printf '%s\\n' "\\$_gcl_f"; done >> \\$_gcl_files_tmp\n`;
         }
