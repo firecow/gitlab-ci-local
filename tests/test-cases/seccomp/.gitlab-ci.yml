@@ -9,11 +9,10 @@ test-seccomp-not-present:
   script:
     - "grep Seccomp: /proc/1/status | grep 0 && echo seccomp not present"
 
-test-ca-cert-and-seccomp:
-  image: alpine:3.21
+test-service-seccomp:
+  image: docker.io/alpine:3.21
+  services:
+    - name: docker.io/alpine:3.21
+      command: ["sh", "-c", "grep Seccomp: /proc/1/status"]
   script:
-    - "grep Seccomp: /proc/1/status | grep 0 && echo seccomp not present"
-    - test -f /etc/ssl/certs/ca-certificates.crt && echo "CA cert file exists" || echo "CA cert file NOT found"
-    - echo "SSL_CERT_FILE=$SSL_CERT_FILE"
-    - echo "SSL_CERT_DIR=$SSL_CERT_DIR"
-    - cat /etc/ssl/certs/ca-certificates.crt | head -3
+    - echo done
