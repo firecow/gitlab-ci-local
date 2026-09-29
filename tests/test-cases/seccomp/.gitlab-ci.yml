@@ -1,0 +1,18 @@
+---
+test-seccomp-present:
+  image: docker.io/alpine:3.21
+  script:
+    - "grep Seccomp: /proc/1/status | grep 2 && echo seccomp present"
+
+test-seccomp-not-present:
+  image: docker.io/alpine:3.21
+  script:
+    - "grep Seccomp: /proc/1/status | grep 0 && echo seccomp not present"
+
+test-service-seccomp:
+  image: docker.io/alpine:3.21
+  services:
+    - name: docker.io/alpine:3.21
+      command: ["sh", "-c", "grep Seccomp: /proc/1/status"]
+  script:
+    - echo done
