@@ -308,7 +308,7 @@ export class Utils {
                 // See https://docs.gitlab.com/ci/jobs/job_rules/#unexpected-behavior-from-regular-expression-matching-with-
 
                 // This is a weird construction, as the lhs string will be prepended, and we have to be able to use it as a parameter of includes
-                rhs = rhs.replaceAll(/(?<!\\)"/g, '\\"');
+                rhs = rhs.replaceAll(/(?<!\\)"/g, "\\\"");
                 return `?.split().some((lhs) => "${rhs}".includes(lhs)) ${operator === "=~" ? "!==" : "==="} false`;
             }
 
