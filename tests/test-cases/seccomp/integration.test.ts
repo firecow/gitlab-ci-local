@@ -38,23 +38,18 @@ test.concurrent("seccomp <test-seccomp-not-present>", async () => {
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
 
-
-test.concurrent("custom-ca-cert-and-seccomp <test-ca-cert-and-seccomp>", async () => {
+test.concurrent("seccomp <test-service-seccomp>", async () => {
+    const stateDir = ".gitlab-ci-local-service-seccomp";
+    await fs.promises.rm(`tests/test-cases/seccomp/${stateDir}`, {recursive: true, force: true});
     const writeStreams = new WriteStreamsMock();
     await handler({
         cwd: "tests/test-cases/seccomp",
-        job: ["test-ca-cert-and-seccomp"],
+        job: ["test-service-seccomp"],
         caFile: "ca-cert.crt",
         seccomp: "unconfined",
-        stateDir: ".gitlab-ci-local-custom-ca-cert-seccomp",
+        stateDir,
     }, writeStreams);
 
-    const expected = [
-        chalk`{blueBright test-ca-cert-and-seccomp} {greenBright >} seccomp not present`,
-        chalk`{blueBright test-ca-cert-and-seccomp} {greenBright >} CA cert file exists`,
-        chalk`{blueBright test-ca-cert-and-seccomp} {greenBright >} SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt`,
-        chalk`{blueBright test-ca-cert-and-seccomp} {greenBright >} SSL_CERT_DIR=/etc/ssl/certs`,
-        chalk`{blueBright test-ca-cert-and-seccomp} {greenBright >} -----BEGIN CERTIFICATE-----`,
-    ];
-    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
+    const serviceLog = await fs.readFile(`tests/test-cases/seccomp/${stateDir}/services-output/test-service-seccomp/docker.io/alpine:3.21-0.log`, "utf8");
+    expect(serviceLog).toContain("Seccomp:\t0");
 });
