@@ -121,6 +121,7 @@ export class Job {
     private _afterScriptsExitCode = 0;
     private _coveragePercent: string | null = null;
     private _running = false;
+    private _cacheRestored = false;
     private _containerId: string | null = null;
     private _serviceNetworkId: string | null = null;
     private _longRunningSilentTimeout: NodeJS.Timeout = -1 as any;
@@ -453,6 +454,11 @@ If you know what you're doing and would like to suppress this warning, use one o
     /** Elapsed `[seconds, nanoseconds]` pair between job start and end, `null` for jobs that never ended. */
     get durationHrtime (): [number, number] | null {
         return this._endTime ?? null;
+    }
+
+    /** True if at least one cache entry was restored from disk via `copyCacheIn`. */
+    get cacheRestored (): boolean {
+        return this._cacheRestored;
     }
 
     get formattedJobName () {
@@ -1367,6 +1373,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             await Mutex.exclusive(cacheName, async () => {
                 await this.copyIn(cacheFolder);
             });
+            this._cacheRestored = true;
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
         }

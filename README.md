@@ -249,7 +249,7 @@ jobs fail — which is precisely when it matters most.
 {
   "schemaVersion": 1,
   "pipelineIid": 42,
-  "status": "failed",
+  "status": "success",
   "jobs": [
     {
       "name": "test-job",

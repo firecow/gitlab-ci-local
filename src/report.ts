@@ -1,4 +1,5 @@
 import fs from "fs-extra";
+import crypto from "node:crypto";
 import path from "node:path";
 import {Job} from "./job.js";
 
@@ -69,16 +70,18 @@ export function buildReport ({pipelineIid, jobs, cwd, stateDir}: {
     };
 }
 
-/** Writes the report atomically (<path>.tmp + move), so a consumer polling the path never reads a torn file. */
+/** Writes the report atomically (<path>.<unique>.tmp + move), so a consumer polling the path never reads a torn
+ *  file, and concurrent runs targeting the same path never race on a shared tmp file. */
 export async function writeReport (reportJsonPath: string, report: Report) {
-    const tmpPath = `${reportJsonPath}.tmp`;
+    const tmpPath = `${reportJsonPath}.${process.pid}.${crypto.randomUUID()}.tmp`;
     await fs.outputJson(tmpPath, report, {spaces: 2});
     await fs.move(tmpPath, reportJsonPath, {overwrite: true});
 }
 
 function buildJobReport (job: Job, cwd: string, stateDir: string): ReportJob {
     const durationHrtime = job.durationHrtime;
-    const logPath = job.started ? path.join(stateDir, "output", `${job.safeJobName}.log`) : null;
+    // Trigger jobs never write to output/<safeJobName>.log — they delegate to a child pipeline instead.
+    const logPath = job.started && !job.trigger ? path.join(stateDir, "output", `${job.safeJobName}.log`) : null;
 
     const servicesLogPaths: string[] = [];
     if (job.started) {
@@ -105,6 +108,6 @@ function buildJobReport (job: Job, cwd: string, stateDir: string): ReportJob {
         services: job.services.map((service) => service.name),
         servicesLogPaths,
         artifacts: job.artifacts?.paths ?? [],
-        cached: false,
+        cached: job.cacheRestored,
     };
 }

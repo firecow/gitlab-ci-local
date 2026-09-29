@@ -28,7 +28,7 @@ test("report-json <full pipeline>", async () => {
     expect(report.schemaVersion).toBe(1);
     expect(report.status).toBe("failed");
     expect(typeof report.pipelineIid).toBe("number");
-    expect(report.jobs).toHaveLength(8);
+    expect(report.jobs).toHaveLength(9);
 
     const statuses: Record<string, string> = {};
     for (const job of report.jobs) {
@@ -41,13 +41,15 @@ test("report-json <full pipeline>", async () => {
         "after-fail-job": "success_with_warnings",
         "fail-job": "failed",
         "dotenv-job": "skipped",
+        "cached-job": "skipped",
         "manual-job": "manual",
         "never-job": "disabled",
     });
 
     for (const job of report.jobs) {
         expect(job.cached).toBe(false);
-        expect(fs.existsSync(`${reportPath}.tmp`)).toBe(false);
+        const leftoverTmpFiles = fs.readdirSync(path.dirname(reportPath)).filter((f) => f.includes(".tmp"));
+        expect(leftoverTmpFiles).toEqual([]);
         if (job.started) {
             expect(job.durationMs).toBeGreaterThanOrEqual(0);
             expect(fs.existsSync(path.resolve(cwd, job.logPath))).toBe(true);
@@ -117,6 +119,7 @@ test("report-json <named job, exit codes unchanged>", async () => {
         "after-fail-job": "skipped",
         "fail-job": "skipped",
         "dotenv-job": "skipped",
+        "cached-job": "skipped",
         "manual-job": "manual",
         "never-job": "disabled",
     });
@@ -143,4 +146,62 @@ test("report-json <named failing job marks run failed>", async () => {
     expect(failJob.status).toBe("failed");
     expect(failJob.prescriptsExitCode).toBe(1);
     expect(fs.existsSync(path.resolve(cwd, failJob.logPath))).toBe(true);
+});
+
+test("report-json <named job with dotenv artifacts>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    const stateDir = ".gitlab-ci-local-report-json-dotenv-job";
+    const reportPath = `${cwd}/${stateDir}/report.json`; // relative to invocation cwd (repo root)
+    const jobs: Job[] = [];
+    await handler({
+        cwd,
+        job: ["dotenv-job"],
+        stateDir,
+        reportJson: reportPath,
+        shellIsolation: true,
+    }, writeStreams, jobs);
+
+    expect(Executor.getFailed(jobs)).toHaveLength(0);
+
+    const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+    expect(report.status).toBe("success");
+    const dotenvJob = report.jobs.find((j: any) => j.name === "dotenv-job");
+    expect(dotenvJob.status).toBe("success");
+    expect(dotenvJob.started).toBe(true);
+    expect(dotenvJob.artifacts).toEqual(["build.env"]);
+    expect(fs.existsSync(path.resolve(cwd, dotenvJob.logPath))).toBe(true);
+});
+
+test("report-json <named job reflects a real cache hit on the second run>", async () => {
+    const stateDir = ".gitlab-ci-local-report-json-cached-job";
+    const reportPath = `${cwd}/${stateDir}/report.json`; // relative to invocation cwd (repo root)
+    await fs.rm(path.resolve(cwd, stateDir), {recursive: true, force: true});
+
+    let writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd,
+        job: ["cached-job"],
+        stateDir,
+        reportJson: reportPath,
+        shellIsolation: true,
+    }, writeStreams);
+    let report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+    let cachedJob = report.jobs.find((j: any) => j.name === "cached-job");
+    expect(cachedJob.status).toBe("success");
+    // No cache exists yet on the first run, so copyCacheIn has nothing to restore.
+    expect(cachedJob.cached).toBe(false);
+
+    writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd,
+        job: ["cached-job"],
+        stateDir,
+        reportJson: reportPath,
+        shellIsolation: true,
+    }, writeStreams);
+    report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+    cachedJob = report.jobs.find((j: any) => j.name === "cached-job");
+    expect(cachedJob.status).toBe("success");
+    // The second run restores the cache pushed by the first, exercising the real copyCacheIn path.
+    expect(cachedJob.cached).toBe(true);
 });

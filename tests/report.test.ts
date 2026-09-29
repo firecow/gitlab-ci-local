@@ -46,6 +46,8 @@ const reportJob = (overrides: any = {}): Job => ({
     safeJobName: "my-job",
     services: [],
     artifacts: null,
+    cacheRestored: false,
+    trigger: undefined,
     ...overrides,
 } as unknown as Job);
 
@@ -62,6 +64,8 @@ test.concurrent("buildReport job entry shape", () => {
             reportJob({name: "allowed-job", safeJobName: "allowed-job", preScriptsExitCode: 3, jobStatus: "warning", allowFailure: true}),
             reportJob({name: "dotenv-job", safeJobName: "dotenv-job", artifacts: {reports: {dotenv: "build.env"}}}),
             reportJob({name: "matrix-job", safeJobName: "matrix-job", baseName: "matrix-job", matrixVariables: {OS: "linux"}}),
+            reportJob({name: "cached-job", safeJobName: "cached-job", cacheRestored: true}),
+            reportJob({name: "trigger-job", safeJobName: "trigger-job", trigger: {include: "child.yml"}}),
         ],
     });
 
@@ -100,6 +104,8 @@ test.concurrent("buildReport job entry shape", () => {
             reportJobEntry({name: "allowed-job", status: "failed_allowed", prescriptsExitCode: 3, allowFailure: true}),
             reportJobEntry({name: "dotenv-job"}),
             reportJobEntry({name: "matrix-job", baseName: "matrix-job", matrixVariables: {OS: "linux"}}),
+            reportJobEntry({name: "cached-job", cached: true}),
+            reportJobEntry({name: "trigger-job", logPath: null}),
         ],
     });
 });
@@ -115,11 +121,15 @@ test.concurrent("buildReport pipeline status", () => {
 
 test.concurrent("writeReport writes valid json and leaves no tmp file", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gcl-report-test-"));
-    const reportPath = path.join(dir, "nested", "report.json");
-    await writeReport(reportPath, buildReport({pipelineIid: 7, cwd: ".", stateDir: ".gitlab-ci-local", jobs: [reportJob()]}));
-    const parsed = JSON.parse(fs.readFileSync(reportPath, "utf8"));
-    expect(parsed.schemaVersion).toBe(1);
-    expect(parsed.jobs).toHaveLength(1);
-    expect(fs.existsSync(`${reportPath}.tmp`)).toBe(false);
-    fs.removeSync(dir);
+    try {
+        const reportPath = path.join(dir, "nested", "report.json");
+        await writeReport(reportPath, buildReport({pipelineIid: 7, cwd: ".", stateDir: ".gitlab-ci-local", jobs: [reportJob()]}));
+        const parsed = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+        expect(parsed.schemaVersion).toBe(1);
+        expect(parsed.jobs).toHaveLength(1);
+        const leftoverTmpFiles = fs.readdirSync(path.dirname(reportPath)).filter((f) => f.includes(".tmp"));
+        expect(leftoverTmpFiles).toEqual([]);
+    } finally {
+        fs.removeSync(dir);
+    }
 });

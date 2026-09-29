@@ -34,8 +34,19 @@ dotenv-job:
   script:
     - echo "TEST_DOTENV=hello" > build.env
   artifacts:
+    paths:
+      - build.env
     reports:
       dotenv: build.env
+
+cached-job:
+  stage: deploy
+  cache:
+    key: report-json-cache
+    paths: [cache/**.txt]
+    policy: pull-push
+  script:
+    - mkdir -p cache && touch cache/file1.txt
 
 manual-job:
   stage: deploy
