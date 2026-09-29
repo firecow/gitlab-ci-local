@@ -1467,15 +1467,10 @@ If you know what you're doing and would like to suppress this warning, use one o
         if (!this.artifacts) return;
 
         const when = this.artifacts.when ?? "on_success";
-        const jobStatus = this.jobStatus == "success" ? "success" : "failed";
-
-        const copyArtifactsPaths: boolean = !(
-            (jobStatus !== "success" && when === "on_success") ||
-            (jobStatus !== "failed" && when === "on_failure")
-        );
+        const copyArtifactsPaths = !(when === "on_success" && this.jobStatus !== "success") && !(when === "on_failure" && this.jobStatus === "success");
         const artifactsPaths = copyArtifactsPaths ? this.artifacts.paths ?? [] : [];
 
-        const copyDotEnv: boolean = this.artifacts.reports?.dotenv != null;
+        const copyDotEnv = this.artifacts.reports?.dotenv != null;
 
         if (artifactsPaths.length === 0 && !copyDotEnv) return;
 
