@@ -3,6 +3,7 @@ import {handler} from "../../../src/handler.js";
 import chalk from "chalk-template";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
+import fs from "fs-extra";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
