@@ -167,3 +167,25 @@ test.concurrent("script-failures <rules:without allow_failure>", async () => {
         chalk`{black.bgYellowBright  WARN } {blueBright rules:without allow_failure}`,
     );
 });
+
+test.concurrent("script-failures <and-chain-last-line>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/script-failures",
+        job: ["and-chain-last-line"],
+        stateDir: ".gitlab-ci-local-script-failures-and-chain-last-line",
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([chalk`{black.bgRed  FAIL } {blueBright and-chain-last-line}`]));
+});
+
+test.concurrent("script-failures <and-chain-middle-line>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/script-failures",
+        job: ["and-chain-middle-line"],
+        stateDir: ".gitlab-ci-local-script-failures-and-chain-middle-line",
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining([chalk`{black.bgGreenBright  PASS } {blueBright and-chain-middle-line}`]));
+});

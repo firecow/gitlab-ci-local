@@ -77,3 +77,12 @@ rules:without allow_failure:
     - when: always
   script:
     - exit 137
+
+and-chain-last-line:
+  script:
+    - false && echo "Not printed"
+
+and-chain-middle-line:
+  script:
+    - false && echo "Not printed"
+    - echo "Printed after the chain"
