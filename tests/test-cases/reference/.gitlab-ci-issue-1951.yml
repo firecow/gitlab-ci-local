@@ -1,0 +1,20 @@
+---
+.setup:
+  image: alpine
+  cache:
+    key: k
+    paths: [a, b]
+
+.jib_setup:
+  extends: .setup
+  cache:
+    paths: [a, b, jib]
+
+.test:
+  extends: .setup
+  script:
+    - echo "Heya"
+
+job:
+  extends: .test
+  cache: !reference [.jib_setup, cache]

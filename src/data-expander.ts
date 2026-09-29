@@ -2,7 +2,7 @@ import chalk from "chalk-template";
 import deepExtend from "deep-extend";
 import assert, {AssertionError} from "node:assert";
 import {Job, Need} from "./job.js";
-import {traverse} from "object-traversal";
+import {getNodeByPath, traverse} from "object-traversal";
 import {Utils} from "./utils.js";
 
 const extendsMaxDepth = 11;
@@ -27,7 +27,12 @@ export function jobExtends (gitlabData: any) {
         if (Job.illegalJobNames.has(jobName)) continue;
         if (!Utils.isObject(jobData)) continue;
         const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
-        gitlabData[jobName] = deepExtend({}, ...parentDatas, jobData);
+        const mergedData = deepExtend({}, ...parentDatas, jobData);
+        traverse(jobData, ({key, value, meta}) => {
+            if (key == null || value?.referenceData == null) return;
+            getNodeByPath(mergedData, meta.nodePath!.slice(0, -key.length - 1))[key] = value;
+        });
+        gitlabData[jobName] = mergedData;
     }
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
