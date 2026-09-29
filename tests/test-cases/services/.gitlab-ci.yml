@@ -62,14 +62,14 @@ alias-job:
 
 alias-job-multiple-slashes:
   services:
-    - name: gcr.io/google-containers/redis
-      alias: redis-alias
+    - name: gcr.io/google-containers/pause:3.2
+      alias: pause-alias
   stage: deploy
   image: docker.io/massenz/dnsutils:2.4.0
   script:
-    - host gcr.io-google-containers-redis
-    - host gcr.io__google-containers__redis
-    - host redis-alias
+    - host gcr.io-google-containers-pause
+    - host gcr.io__google-containers__pause
+    - host pause-alias
 
 multie-job:
   services:
