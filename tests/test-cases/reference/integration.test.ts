@@ -240,3 +240,37 @@ test-job:
 
     expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
 });
+
+it("should replace an inherited value with the job's own reference", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        preview: true,
+        file: ".gitlab-ci-issue-1951.yml",
+        cwd: "tests/test-cases/reference",
+    }, writeStreams);
+
+    const expected = `
+---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+job:
+  image:
+    name: alpine
+  cache:
+    - key: k
+      paths:
+        - a
+        - b
+        - jib
+      policy: pull-push
+      when: on_success
+  script:
+    - echo "Heya"
+`;
+
+    expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
+});
