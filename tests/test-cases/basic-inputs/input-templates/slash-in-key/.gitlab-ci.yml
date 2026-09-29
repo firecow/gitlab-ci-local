@@ -1,0 +1,12 @@
+---
+spec:
+  inputs:
+    black/enabled:
+      type: boolean
+      default: true
+---
+stages:
+  - test
+job:
+  script:
+    - echo "black/enabled=$[[ inputs.black/enabled ]]"
