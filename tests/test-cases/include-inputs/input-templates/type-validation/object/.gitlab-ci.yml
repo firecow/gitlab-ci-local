@@ -1,0 +1,10 @@
+---
+spec:
+  inputs:
+    object_input:
+      default:
+        key: value
+---
+scan-website:
+  script:
+    - echo $[[ inputs.object_input ]]

@@ -63,12 +63,13 @@ export class Utils {
         const encoded = jobName.replace(/[^\w-]+/g, (match) => {
             return base64url.encode(match);
         });
-        if (encoded.length <= Utils.MAX_FILENAME_LENGTH) {
-            return encoded;
+        const unambiguous = encoded === jobName ? encoded : `${encoded}.${createHash("sha256").update(jobName).digest("hex").substring(0, 8)}`;
+        if (unambiguous.length <= Utils.MAX_FILENAME_LENGTH) {
+            return unambiguous;
         }
         const hash = createHash("sha256").update(jobName).digest("hex").substring(0, 16);
         const prefix = encoded.substring(0, Utils.MAX_FILENAME_LENGTH - 1 - hash.length);
-        return `${prefix}-${hash}`;
+        return `${prefix}.${hash}`;
     }
 
     static safeBashString (s: string) {
@@ -314,7 +315,8 @@ export class Utils {
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
             const _rhs = rhs.replace(regex, (_: string, pattern: string, flags: string) => {
                 const flagsBinary = flagsToBinary(flags);
-                return `RE2JS.compile("${pattern}", ${flagsBinary})`;
+                const escapedPattern = JSON.stringify(pattern);
+                return `RE2JS.compile(${escapedPattern}, ${flagsBinary})`;
             });
             return `.matchRE2JS(${_rhs}) ${_operator} null`;
         });
@@ -447,11 +449,11 @@ export class Utils {
 
     static readonly gclRegistryPrefix: string = "registry.gcl.local";
     // renovate: datasource=docker depName=registry
-    static readonly gclRegistryImage: string = "registry:3.1.1";
+    static readonly gclRegistryImage: string = "registry:3.1.2";
     // renovate: datasource=docker depName=alpine/openssl
-    static readonly gclOpensslImage: string = "alpine/openssl:3.5.7";
+    static readonly gclOpensslImage: string = "alpine/openssl:3.5.8";
     // renovate: datasource=docker depName=curlimages/curl
-    static readonly gclCurlImage: string = "curlimages/curl:8.21.0";
+    static readonly gclCurlImage: string = "curlimages/curl:8.22.0";
     static async startDockerRegistry (argv: Argv): Promise<void> {
         const gclRegistryCertVol = `${this.gclRegistryPrefix}.certs`;
         const gclRegistryDataVol = `${this.gclRegistryPrefix}.data`;

@@ -171,6 +171,10 @@ export class Argv {
         return this.map.get("inputsFile") ?? Argv.default.inputsFile;
     }
 
+    get skipInputValidation (): boolean {
+        return this.map.get("skipInputValidation") ?? false;
+    }
+
     get ignoresFile (): string {
         return this.map.get("ignoresFile") ?? Argv.default.ignoresFile;
     }

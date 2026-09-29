@@ -4,6 +4,9 @@
     ":disableDependencyDashboard",
     ":maintainLockFilesWeekly"
   ],
+  "constraints": {
+    "bun": "1.4.2"
+  },
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch", "lockFileMaintenance"],

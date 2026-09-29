@@ -139,8 +139,7 @@ export function needsEach (jobName: string, gitlabData: any) {
 
 export function cacheComplex (data: any) {
     return {
-        key: data.key,
-        paths: data.paths,
+        ...data,
         policy: data.policy ?? "pull-push",
         when: data.when ?? "on_success",
     };

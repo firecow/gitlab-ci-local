@@ -113,7 +113,7 @@ process.on("SIGUSR2", async () => {
         })
         .option("validate-dependency-chain", {
             type: "boolean",
-            description: "Validate that jobs needed or dependent by active jobs under specified conditions are also active without actually running the jobs. Uses fail-fast approach - stops at first validation error for both 'needs' and 'dependencies' keywords. If validation fails, use --list flag to see which jobs will run under specified conditions",
+            description: "Validate that jobs needed or dependent by active jobs under specified conditions are also active without actually running the jobs. Validates the dependency graph for the given conditions rather than one specific run, so when:manual jobs count as active and --manual is ignored. Uses fail-fast approach - stops at first validation error for both 'needs' and 'dependencies' keywords. If validation fails, use --list flag to see which jobs will run under specified conditions",
             requiresArg: false,
         })
         .option("preview", {
@@ -137,6 +137,11 @@ process.on("SIGUSR2", async () => {
             description: "Path to the component inputs file",
             requiresArg: true,
             default: Argv.default.inputsFile,
+        })
+        .option("skip-input-validation", {
+            type: "boolean",
+            description: "Skip CI/CD input type, options, and regex validation",
+            requiresArg: false,
         })
         .option("ignores-file", {
             type: "string",

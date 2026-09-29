@@ -1,0 +1,9 @@
+---
+spec:
+  inputs:
+    null_input:
+      default: null
+---
+scan-website:
+  script:
+    - echo $[[ inputs.null_input ]]
