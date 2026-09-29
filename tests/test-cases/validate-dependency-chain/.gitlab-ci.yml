@@ -79,3 +79,26 @@ broken-dependencies-job:
     rules:
         - if: '$TEST_DEPENDENCIES == "true"'
     script: echo "This has broken dependencies"
+
+manual-needed-job:
+    stage: build
+    script: echo "manual, only reachable on the valid event"
+    rules:
+        - if: '$TEST_MANUAL_NEEDS == "valid"'
+          when: manual
+
+manual-needs-unreachable-job:
+    stage: test
+    needs: [manual-needed-job]
+    script: echo "manual, but its need cannot run on this event"
+    rules:
+        - if: '$TEST_MANUAL_NEEDS == "broken"'
+          when: manual
+
+manual-needs-reachable-job:
+    stage: test
+    needs: [manual-needed-job]
+    script: echo "manual, and its need can be triggered too"
+    rules:
+        - if: '$TEST_MANUAL_NEEDS == "valid"'
+          when: manual

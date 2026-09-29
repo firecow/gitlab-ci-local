@@ -47,6 +47,28 @@ describe("validate-dependency-chain", () => {
         }, writeStreams)).rejects.toThrow(chalk`{blueBright alpine-root} is when:never, but its needed by {blueBright alpine-guest}`);
     });
 
+    test("should fail when a manual job needs a manual job that never runs on the event", async () => {
+        const writeStreams = new WriteStreamsMock();
+
+        await expect(handler({
+            cwd: "tests/test-cases/validate-dependency-chain",
+            validateDependencyChain: true,
+            variable: ["TEST_MANUAL_NEEDS=broken"],
+        }, writeStreams)).rejects.toThrow(chalk`{blueBright manual-needed-job} is when:never, but its needed by {blueBright manual-needs-unreachable-job}`);
+    });
+
+    test("should pass when a manual job needs a manual job that runs on the event", async () => {
+        const writeStreams = new WriteStreamsMock();
+        await handler({
+            cwd: "tests/test-cases/validate-dependency-chain",
+            validateDependencyChain: true,
+            variable: ["TEST_MANUAL_NEEDS=valid"],
+        }, writeStreams);
+
+        const output = writeStreams.stdoutLines.join("\n");
+        expect(output).toContain(chalk`{green ✓ All job dependencies are valid}`);
+    });
+
     test("should fail when dependencies keyword references missing artifact jobs", async () => {
         const writeStreams = new WriteStreamsMock();
 
