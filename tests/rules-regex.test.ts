@@ -108,6 +108,11 @@ const tests = [
         evalResult: false,
     },
     {
+        rule: '"v12" =~ "/^v\\d+$/"',
+        jsExpression: '"v12".matchRE2JS(RE2JS.compile("^v\\\\d+$", 0)) != null',
+        evalResult: true,
+    },
+    {
         rule: '"master" =~ /master$/',
         jsExpression: '"master".matchRE2JS(RE2JS.compile("master$", 0)) != null',
         evalResult: true,
