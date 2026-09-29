@@ -1655,8 +1655,6 @@ If you know what you're doing and would like to suppress this warning, use one o
         if (this.argv.seccomp) {
             dockerCmd += `--security-opt seccomp=${Utils.safeBashString(this.argv.seccomp)} `;
         }
-
-
         if (this.argv.registry) {
             dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
             dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/docker/certs.d:ro `;
