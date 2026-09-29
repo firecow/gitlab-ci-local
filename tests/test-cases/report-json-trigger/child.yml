@@ -1,0 +1,4 @@
+---
+child-job:
+  script:
+    - echo "child pipeline ran"
