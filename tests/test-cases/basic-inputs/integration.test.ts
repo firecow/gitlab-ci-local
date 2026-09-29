@@ -30,3 +30,23 @@ scan-website:
 
     expect(writeStreams.stdoutLines[0]).toEqual(expected);
 });
+
+test.concurrent("basic-inputs slash in key", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/basic-inputs/input-templates/slash-in-key",
+        preview: true,
+        stateDir: ".gitlab-ci-local-basic-inputs-slash-in-key",
+    }, writeStreams);
+
+    const expected = `---
+stages:
+  - .pre
+  - test
+  - .post
+job:
+  script:
+    - echo "black/enabled=true"`;
+
+    expect(writeStreams.stdoutLines[0]).toEqual(expected);
+});
