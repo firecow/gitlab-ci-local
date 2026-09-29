@@ -1135,7 +1135,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
         cmd += this.generateScriptCommands(scripts);
 
-        cmd += "exit 0\n";
+        cmd += "exit\n";
 
         const jobScriptFile = `${cwd}/${stateDir}/scripts/${safeJobName}_${this.jobId}`;
         await fs.outputFile(jobScriptFile, cmd, "utf-8");
