@@ -149,7 +149,17 @@ const tests = [
     },
     {
         rule: '"23" =~ "\\"1234"',
-        jsExpression: '"23"?.split().some((lhs) => "\\"1234".includes(lhs)) !== false',
+        jsExpression: '"23"?.split().some((lhs) => "\\\\\\"1234".includes(lhs)) !== false',
+        evalResult: true,
+    },
+    {
+        rule: '"a" =~ "a/xyz/c"',
+        jsExpression: '"a"?.split().some((lhs) => "a/xyz/c".includes(lhs)) !== false',
+        evalResult: true,
+    },
+    {
+        rule: '"b" =~ "a\\b"',
+        jsExpression: '"b"?.split().some((lhs) => "a\\\\b".includes(lhs)) !== false',
         evalResult: true,
     },
     {

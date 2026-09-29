@@ -301,15 +301,14 @@ export class Utils {
                     throw operator;
             }
 
-            if (!(/\/(.*)\/(\w*)/.test(rhs))) {
+            if (!(/^\/(.*)\/(\w*)$/.test(rhs))) {
                 // Pattern is not a regex
                 // This is discouraged by gitlab, but it is supported
                 // We match gitlab's behavior which is to check if lhs is a substring of rhs
                 // See https://docs.gitlab.com/ci/jobs/job_rules/#unexpected-behavior-from-regular-expression-matching-with-
 
                 // This is a weird construction, as the lhs string will be prepended, and we have to be able to use it as a parameter of includes
-                rhs = rhs.replaceAll(/(?<!\\)"/g, "\\\"");
-                return `?.split().some((lhs) => "${rhs}".includes(lhs)) ${operator === "=~" ? "!==" : "==="} false`;
+                return `?.split().some((lhs) => ${JSON.stringify(rhs)}.includes(lhs)) ${operator === "=~" ? "!==" : "==="} false`;
             }
 
             const regex = /\/(?<pattern>.*)\/(?<flags>[igmsuy]*)/;
