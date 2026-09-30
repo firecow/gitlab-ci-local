@@ -9,12 +9,10 @@ export class Producers {
 
         if (job.needs && job.needs.length === 0) return [];
         if (!job.needs && !job.dependencies) {
-            for (const jobName of Utils.getJobNamesFromPreviousStages(jobs, stages, job)) {
-                producerSet.add(jobName);
-            }
+            Utils.getJobNamesFromPreviousStages(jobs, stages, job).forEach(jobName => producerSet.add(jobName));
         }
         (job.dependencies ?? []).forEach(dependency => {
-            const foundInNeeds = (job.needs ?? []).find(n => n.job === dependency);
+            const foundInNeeds = (job.needs ?? []).some(n => n.job === dependency);
             if (foundInNeeds) return;
             producerSet.add(dependency);
         });

@@ -259,7 +259,7 @@ export class Utils {
 
         // Scenario when RHS is a <regex>
         // https://regexr.com/85sjo
-        const pattern1 = /\s*(?<operator>(?:=~)|(?:!~))\s*\/(?<rhs>.*?[^\\])\/(?<flags>[igmsuy]*)(\s|$|\))/g;
+        const pattern1 = /(?:(?<!\s)|(?<=\/[igmsuy]*\s))\s*(?<operator>(?:=~)|(?:!~))\s*\/(?<rhs>.*?[^\\])\/(?<flags>[igmsuy]*)(\s|$|\))/g;
         evalStr = evalStr.replaceAll(pattern1, (_, operator, rhs, flags, remainingTokens) => {
             let _operator;
             switch (operator) {
@@ -287,7 +287,7 @@ export class Utils {
 
         // Scenario when RHS is surrounded by single/double-quotes
         // https://regexr.com/85t0g
-        const pattern2 = /\s*(?<operator>=~|!~)\s*(["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
+        const pattern2 = /(?<!\s)\s*(?<operator>=~|!~)\s*(["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
         evalStr = evalStr.replaceAll(pattern2, (_, operator, __, rhs) => {
             let _operator;
             switch (operator) {

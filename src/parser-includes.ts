@@ -143,16 +143,16 @@ export class ParserIncludes {
                     throw new AssertionError({message: `Local include file cannot be found ${value["local"]}`});
                 }
                 for (const localFile of files) {
-                    const mergedInputs = {...(value.inputs ?? {}), ...globalInputs};
+                    const mergedInputs = {...value.inputs, ...globalInputs};
                     const content = await Parser.loadYaml(localFile, {inputs: mergedInputs, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams);
                     includeDatas = includeDatas.concat(await this.init(content, opts));
                 }
             } else if (value["project"]) {
                 for (const fileValue of Array.isArray(value["file"]) ? value["file"] : [value["file"]]) {
-                    const mergedInputs = {...(value.inputs ?? {}), ...globalInputs};
+                    const mergedInputs = {...value.inputs, ...globalInputs};
                     const includeDir = `${cwd}/${stateDir}/includes/${gitData.remote.host}/${value["project"]}/${value["ref"] || "HEAD"}`;
                     const normalizedFile = fileValue.replace(/^\/+/, "");
-                    const matches = globbySync(normalizedFile, {cwd: includeDir, absolute: true}).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+                    const matches = globbySync(normalizedFile, {cwd: includeDir, absolute: true}).sort((a, b) => Number(a > b) - Number(a < b));
                     const filePaths = matches.length > 0 ? matches : [`${includeDir}/${normalizedFile}`];
                     for (const filePath of filePaths) {
                         const fileDoc = await Parser.loadYaml(filePath, {inputs: mergedInputs, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams);
@@ -184,7 +184,7 @@ export class ParserIncludes {
                 const componentName = component.componentPath.replace(/^templates\//, "");
                 const fileComponentInputs = isStructured ? (fileInputs[componentName] ?? {}) : {};
                 const cliComponentSpecificInputs = cliComponentInputs[componentName] ?? {};
-                const mergedInputs = {...(value.inputs ?? {}), ...globalInputs, ...fileComponentInputs, ...cliComponentSpecificInputs};
+                const mergedInputs = {...value.inputs, ...globalInputs, ...fileComponentInputs, ...cliComponentSpecificInputs};
                 const fileDoc = await Parser.loadYaml(file, {inputs: mergedInputs, component, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams);
                 if (!component.isLocal) {
                     // Expand local includes inside to a "project"-like include
@@ -194,14 +194,14 @@ export class ParserIncludes {
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
                 const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
-                const mergedInputs = {...(value.inputs ?? {}), ...globalInputs};
+                const mergedInputs = {...value.inputs, ...globalInputs};
                 const fileDoc = await Parser.loadYaml(
                     `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: mergedInputs, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams,
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["remote"]) {
                 const fsUrl = Utils.fsUrl(value["remote"]);
-                const mergedInputs = {...(value.inputs ?? {}), ...globalInputs};
+                const mergedInputs = {...value.inputs, ...globalInputs};
                 const fileDoc = await Parser.loadYaml(
                     `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: mergedInputs, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams,
                 );
@@ -312,9 +312,7 @@ export class ParserIncludes {
                 return this._cache.version;
             },
             get effectiveRef () {
-                if (this._cache.effectiveRef === undefined) {
-                    this._cache.effectiveRef = this.version ?? this.reference;
-                }
+                this._cache.effectiveRef ??= this.version ?? this.reference;
                 return this._cache.effectiveRef;
             },
             get sha () {
@@ -424,8 +422,9 @@ export class ParserIncludes {
                     await fs.copy(matchedFile, `${cwd}/${target}/${relativePath}`);
                 }
             } else {
+                const targetDirectory = `${target}/`;
                 await fs.mkdirp(`${cwd}/${target}`);
-                await Utils.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${Utils.safeBashString(ref)} ${Utils.safeBashString(normalizedFile)} | tar -f - -xC ${Utils.safeBashString(`${target}/`)}`, cwd);
+                await Utils.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${Utils.safeBashString(ref)} ${Utils.safeBashString(normalizedFile)} | tar -f - -xC ${Utils.safeBashString(targetDirectory)}`, cwd);
             }
             writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
@@ -465,8 +464,9 @@ export class ParserIncludes {
                 // if both exist "templates/component.yml" will be pulled
                 // Drawback: also pulls all other .yml files from templates/component/ directory
                 const componentWildcard = `${componentName}*.yml`;
+                const targetDirectory = `${target}/`;
                 await fs.mkdirp(`${cwd}/${target}`);
-                await Utils.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${Utils.safeBashString(ref)} ${Utils.safeBashString(componentWildcard)} | tar -f - -xC ${Utils.safeBashString(`${target}/`)}`, cwd);
+                await Utils.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${Utils.safeBashString(ref)} ${Utils.safeBashString(componentWildcard)} | tar -f - -xC ${Utils.safeBashString(targetDirectory)}`, cwd);
             }
             writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
