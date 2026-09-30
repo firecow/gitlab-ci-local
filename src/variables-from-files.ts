@@ -76,26 +76,26 @@ export class VariablesFromFiles {
             const {type, values} = unpack(val);
             for (const [matcher, content] of Object.entries(values)) {
                 assert(typeof content == "string", `${key}.${matcher} content must be text or multiline text`);
-                if (isDotEnv || type === "variable" || (type === null && !/^[/~]/.exec(content))) {
-                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replaceAll("*", ".*")}$`, "g");
-                    variables[key] = variables[key] ?? {type: "variable", environments: []};
+                const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replaceAll("*", ".*")}$`, "g");
+                const isFilePath = type === null && /^[/~]/.test(content);
+                if (!isDotEnv && type === "file") {
+                    variables[key] = variables[key] ?? {type: "file", environments: []};
                     variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
-                } else if (type === null && /^[/~]/.exec(content)) {
+                    continue;
+                }
+                if (!isDotEnv && isFilePath) {
                     const fileSource = content.replace(/^~\/(.*)/, `${homeDir}/$1`);
-                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replaceAll("*", ".*")}$`, "g");
                     variables[key] = variables[key] ?? {type: "file", environments: []};
                     if (fs.existsSync(fileSource)) {
                         variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority, fileSource});
                     } else {
                         variables[key].environments.push({content: `warn: ${key} is pointing to invalid path\n`, regexp, regexpPriority: matcher.length, scopePriority});
                     }
-                } else if (type === "file") {
-                    const regexp = matcher === "*" ? /.*/g : new RegExp(`^${matcher.replaceAll("*", ".*")}$`, "g");
-                    variables[key] = variables[key] ?? {type: "file", environments: []};
-                    variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
-                } else {
-                    assert(false, `${key} was not handled properly`);
+                    continue;
                 }
+                assert(isDotEnv || type === "variable" || type === null, `${key} was not handled properly`);
+                variables[key] = variables[key] ?? {type: "variable", environments: []};
+                variables[key].environments.push({content, regexp, regexpPriority: matcher.length, scopePriority});
             }
         };
 

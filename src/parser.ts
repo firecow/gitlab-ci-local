@@ -362,12 +362,13 @@ export class Parser {
             const uninterpolatedConfigurations: any = fileData[1];
             const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
                 .replaceAll(
-                    /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?=(?<interpolationKey>[^\s.|[\]]+))\k<interpolationKey>\s*(?:\|\s*)?(?!\s)(?<interpolationFunctions>(?:[^\s\]]|\](?!\])|[^\S\n\r\u2028\u2029]+(?!\s|\]\]))*)\s*\]\](?<lastChar>[^$])?/g
-                    , (_: string, firstChar: string, secondChar: string, interpolationKey: string, interpolationFunctions: string, lastChar: string) => {
+                    /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?<interpolationAccess>[^\s.|[\]](?:[^\]]|\](?!\]))*)\]\](?<lastChar>[^$])?/g
+                    , (_: string, firstChar: string, secondChar: string, interpolationAccess: string, lastChar: string) => {
                         const configFilePath = path.relative(process.cwd(), filePath);
+                        const interpolationKey = /^[^\s.|[\]]+/.exec(interpolationAccess)![0];
                         const context = {
                             interpolationKey,
-                            interpolationFunctions,
+                            interpolationFunctions: interpolationAccess.slice(interpolationKey.length).trim().replace(/^\|/, "").trim(),
                             inputsSpecification,
                             configFilePath,
                             writeStreams,

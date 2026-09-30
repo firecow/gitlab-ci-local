@@ -1404,10 +1404,8 @@ If you know what you're doing and would like to suppress this warning, use one o
         const stateDir = this.argv.stateDir;
         const cachePath = this.imageName(expanded) ? "/cache" : "../../cache";
 
-        await Promise.all(this.cache.map(async (c, index) => {
-            if (!["push", "pull-push"].includes(c.policy)) return;
-            if ("on_success" === c.when && this.jobStatus !== "success") return;
-            if ("on_failure" === c.when && this.jobStatus === "success") return;
+        const exportedCaches = [...this.cache.entries()].filter(([, c]) => ["push", "pull-push"].includes(c.policy) && (c.when !== "on_success" || this.jobStatus === "success") && (c.when !== "on_failure" || this.jobStatus !== "success"));
+        await Promise.all(exportedCaches.map(async ([index, c]) => {
             const cacheName = await this.getUniqueCacheName(cwd, expanded, index);
 
             let paths = "";
