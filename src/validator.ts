@@ -149,7 +149,7 @@ For further troubleshooting, consider either of the following:
         }
     }
 
-    static async run (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
+    static run (jobs: ReadonlyArray<Job>, stages: readonly string[]) {
         this.scriptBlank(jobs);
         this.rulesBlank(jobs);
         this.arrayOfStrings(jobs);

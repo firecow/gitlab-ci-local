@@ -44,3 +44,28 @@ test.concurrent("cache:when = always", async () => {
     await expect(fs.pathExists("tests/test-cases/cache-when/.gitlab-ci-local/cache/always_without_error/cache/file1.txt")).resolves.toBe(true);
     await expect(fs.pathExists("tests/test-cases/cache-when/.gitlab-ci-local/cache/always_with_error/cache/file1.txt")).resolves.toBe(true);
 });
+
+test.concurrent("cache policy push listed before pull-push still imports the pull-push cache", async () => {
+    await fs.rm("tests/test-cases/cache-when/.gitlab-ci-local/cache/push_before_pull_push_pull_push/", {recursive: true, force: true});
+    await fs.outputFile("tests/test-cases/cache-when/.gitlab-ci-local/cache/push_before_pull_push_pull_push/cache/imported.txt", "");
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/cache-when",
+        job: ["push_before_pull_push"],
+        shellIsolation: true,
+    }, writeStreams);
+
+    expect(writeStreams.stdoutLines.join("\n")).toMatch(/PASS .*push_before_pull_push/);
+});
+
+test.concurrent("cache policy pull listed before pull-push still exports the pull-push cache", async () => {
+    await fs.rm("tests/test-cases/cache-when/.gitlab-ci-local/cache/pull_before_pull_push_pull_push/", {recursive: true, force: true});
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/cache-when",
+        job: ["pull_before_pull_push"],
+        shellIsolation: true,
+    }, writeStreams);
+
+    await expect(fs.pathExists("tests/test-cases/cache-when/.gitlab-ci-local/cache/pull_before_pull_push_pull_push/cache/file1.txt")).resolves.toBe(true);
+});

@@ -1,6 +1,6 @@
 import chalk from "chalk-template";
 import {Job} from "./job.js";
-import assert, {AssertionError} from "node:assert";
+import assert from "node:assert";
 import {Argv} from "./argv.js";
 import pMap from "p-map";
 import {matrixSelectorMatches} from "./parallel.js";
@@ -90,24 +90,16 @@ export class Executor {
         for (const need of job.needs) {
             let baseJobs = jobs.filter(j => j.baseName === need.job);
             if (need.parallel?.matrix && baseJobs.length > 0) {
-                if (baseJobs.every(j => j.matrixVariables == null)) {
-                    throw new AssertionError({message: chalk`{blueBright ${job.name}} uses needs.parallel.matrix targeting {blueBright ${need.job}}, but {blueBright ${need.job}} has no parallel:matrix configuration`});
-                }
+                assert(!baseJobs.every(j => j.matrixVariables == null), chalk`{blueBright ${job.name}} uses needs.parallel.matrix targeting {blueBright ${need.job}}, but {blueBright ${need.job}} has no parallel:matrix configuration`);
                 baseJobs = baseJobs.filter(j => matrixSelectorMatches(j.matrixVariables, need.parallel!.matrix));
-                if (baseJobs.length === 0 && !need.optional) {
-                    throw new AssertionError({message: chalk`{blueBright ${job.name}} needs.parallel.matrix selector for {blueBright ${need.job}} matched zero permutations`});
-                }
+                assert(baseJobs.length > 0 || need.optional, chalk`{blueBright ${job.name}} needs.parallel.matrix selector for {blueBright ${need.job}} matched zero permutations`);
             }
             for (const j of baseJobs) {
-                if (j.when === "never" && !need.optional) {
-                    throw new AssertionError({message: chalk`{blueBright ${j.name}} is when:never, but its needed by {blueBright ${job.name}}`});
-                }
                 if (j.when === "never" && need.optional) {
                     continue;
                 }
-                if (j.when === "manual" && !manuals.includes(j.name)) {
-                    throw new AssertionError({message: chalk`{blueBright ${j.name}} is when:manual, its needed by {blueBright ${job.name}}, and not specified in --manual`});
-                }
+                assert(j.when !== "never", chalk`{blueBright ${j.name}} is when:never, but its needed by {blueBright ${job.name}}`);
+                assert(j.when !== "manual" || manuals.includes(j.name), chalk`{blueBright ${j.name}} is when:manual, its needed by {blueBright ${job.name}}, and not specified in --manual`);
                 assert(job.name !== j.name, chalk`This GitLab CI configuration is invalid: The pipeline has circular dependencies: self-dependency: {blueBright ${need.job}}.`);
                 toWaitFor.push(j);
             }

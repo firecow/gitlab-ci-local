@@ -58,7 +58,7 @@ export class Parser {
         const parser = new Parser(argv, writeStreams, pipelineIid, jobs, expandVariables);
         const time = process.hrtime();
         await parser.init();
-        const warnings = await Validator.run(parser.jobs, parser.stages);
+        const warnings = Validator.run(parser.jobs, parser.stages);
 
         for (const job of parser.jobs) {
             if (job.artifacts === null) {
@@ -146,7 +146,7 @@ export class Parser {
             }
         }
 
-        assert(gitlabData.stages && Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
+        assert(Array.isArray(gitlabData.stages), chalk`{yellow stages:} must be an array`);
         if (!gitlabData.stages.includes(".pre")) {
             gitlabData.stages.unshift(".pre");
         }
@@ -362,12 +362,13 @@ export class Parser {
             const uninterpolatedConfigurations: any = fileData[1];
             const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
                 .replaceAll(
-                    /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?<interpolationKey>[^\s.|[\]]+)\s*\|?\s*(?<interpolationFunctions>.*?)\s*\]\](?<lastChar>[^$])?/g // https://regexr.com/81c16
-                    , (_: string, firstChar: string, secondChar: string, interpolationKey: string, interpolationFunctions: string, lastChar: string) => {
+                    /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?<interpolationAccess>[^\s.|[\]](?:[^\]]|\](?!\]))*)\]\](?<lastChar>[^$])?/g
+                    , (_: string, firstChar: string, secondChar: string, interpolationAccess: string, lastChar: string) => {
                         const configFilePath = path.relative(process.cwd(), filePath);
+                        const interpolationKey = /^[^\s.|[\]]+/.exec(interpolationAccess)![0];
                         const context = {
                             interpolationKey,
-                            interpolationFunctions,
+                            interpolationFunctions: interpolationAccess.slice(interpolationKey.length).trim().replace(/^\|/, "").trim(),
                             inputsSpecification,
                             configFilePath,
                             writeStreams,
@@ -489,7 +490,10 @@ function parseIncludeInputs (ctx: any): {inputValue: any; inputType: InputType} 
 
 function getActualInputType (inputValue: any, ctx: any): InputType {
     const {configFilePath, interpolationKey} = ctx;
-    const inputType = inputValue === null ? "null" : Array.isArray(inputValue) ? "array" : typeof inputValue;
+    let inputType: string = Array.isArray(inputValue) ? "array" : typeof inputValue;
+    if (inputValue === null) {
+        inputType = "null";
+    }
     assert(INCLUDE_INPUTS_SUPPORTED_TYPES.includes(inputType as InputType),
         chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: provided value has unsupported type {blueBright ${inputType}}.`);
     return inputType as InputType;
