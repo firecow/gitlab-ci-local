@@ -1,0 +1,4 @@
+---
+print-derived-value:
+  script:
+    - echo "DERIVED_VALUE=$DERIVED_VALUE"

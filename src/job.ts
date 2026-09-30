@@ -608,7 +608,8 @@ If you know what you're doing and would like to suppress this warning, use one o
     async startTriggerPipeline () {
         this.writeStreams.memoStdout(chalk`{bgYellowBright  WARN } downstream pipeline is experimental in gitlab-ci-local\n`);
         await this.fetchTriggerInclude();
-        const variablesForDownstreamPipeline = Object.entries({...this.globalVariables, ...this.jobData.variables}).map(([key, value]) => `${key}=${value}`);
+        const expandedVariables = Utils.expandVariables(this._variables);
+        const variablesForDownstreamPipeline = Object.keys({...this.globalVariables, ...this.jobData.variables}).map((key) => `${key}=${expandedVariables[key] ?? ""}`);
 
         const gclTriggerer = this.argv.variable["GCL_TRIGGERER"] ?
             `${this.argv.variable["GCL_TRIGGERER"]} -> ${this.name}` :
