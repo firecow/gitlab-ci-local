@@ -246,7 +246,7 @@ export class Argv {
         (pairs ?? []).forEach((inputPair: string) => {
             // Support component-specific syntax: component:key=value or key=value
             // Component names may contain word chars, hyphens, and slashes (e.g. templates/deploy)
-            const exec = /(?:(?<component>[\w\-/]+):)?(?<key>[\w-]+)(=)(?<value>(.|\n|\r)*)/.exec(inputPair);
+            const exec = /(?<![\w-])(?:(?<!\/)(?<component>[\w\-/]+):)?(?<key>[\w-]+)(=)(?<value>(.|\n|\r)*)/.exec(inputPair);
             if (exec?.groups?.key) {
                 const value = exec?.groups?.value;
                 const key = exec.groups.key;

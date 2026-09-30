@@ -148,13 +148,12 @@ export class Commander {
 
         if (preScripts.warned.length !== 0) {
             preScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            for (const {name, prettyDuration} of preScripts.warned) {
+            const outputLogs = await Promise.all(preScripts.warned.map(({name}) => fs.readFile(`${cwd}/${stateDir}/output/${Utils.safeDockerString(name)}.log`, "utf8")));
+            for (const [index, {name, prettyDuration}] of preScripts.warned.entries()) {
                 const namePad = name.padEnd(jobNamePad);
-                const safeName = Utils.safeDockerString(name);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN }${renderDuration(prettyDuration)} {blueBright ${namePad}}  pre_script\n`);
-                const outputLog = await fs.readFile(`${cwd}/${stateDir}/output/${safeName}.log`, "utf8");
                 // eslint-disable-next-line no-control-regex
-                for (const line of outputLog.split(/\r?\n/).filter(j => !j.replaceAll(/\x1b\[[\d;]*m/g, "").startsWith("$ ")).filter(j => j !== "").slice(-3)) {
+                for (const line of outputLogs[index].split(/\r?\n/).filter(j => !j.replaceAll(/\x1b\[[\d;]*m/g, "").startsWith("$ ")).filter(j => j !== "").slice(-3)) {
                     writeStreams.stdout(chalk`  {yellow >} ${line}\n`);
                 }
             }
@@ -170,13 +169,12 @@ export class Commander {
 
         if (preScripts.failed.length !== 0) {
             preScripts.failed.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            for (const {name, prettyDuration} of preScripts.failed) {
+            const outputLogs = await Promise.all(preScripts.failed.map(({name}) => fs.readFile(`${cwd}/${stateDir}/output/${Utils.safeDockerString(name)}.log`, "utf8")));
+            for (const [index, {name, prettyDuration}] of preScripts.failed.entries()) {
                 const namePad = name.padEnd(jobNamePad);
-                const safeName = Utils.safeDockerString(name);
                 writeStreams.stdout(chalk`{black.bgRed  FAIL }${renderDuration(prettyDuration)} {blueBright ${namePad}}\n`);
-                const outputLog = await fs.readFile(`${cwd}/${stateDir}/output/${safeName}.log`, "utf8");
                 // eslint-disable-next-line no-control-regex
-                for (const line of outputLog.split(/\r?\n/).filter(j => !j.replaceAll(/\x1b\[[\d;]*m/g, "").startsWith("$ ")).filter(j => j !== "").slice(-3)) {
+                for (const line of outputLogs[index].split(/\r?\n/).filter(j => !j.replaceAll(/\x1b\[[\d;]*m/g, "").startsWith("$ ")).filter(j => j !== "").slice(-3)) {
                     writeStreams.stdout(chalk`  {red >} ${line}\n`);
                 }
             }

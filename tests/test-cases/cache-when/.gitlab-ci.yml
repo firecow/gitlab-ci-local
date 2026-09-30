@@ -56,3 +56,25 @@ always_with_error:
   script: |
     mkdir -p cache && touch cache/file1.txt
     exit 1
+push_before_pull_push:
+  cache:
+    - key: push_before_pull_push_push
+      policy: push
+      paths:
+        - cache
+    - key: push_before_pull_push_pull_push
+      policy: pull-push
+      paths:
+        - cache
+  script: test -f cache/imported.txt
+pull_before_pull_push:
+  cache:
+    - key: pull_before_pull_push_pull
+      policy: pull
+      paths:
+        - cache
+    - key: pull_before_pull_push_pull_push
+      policy: pull-push
+      paths:
+        - cache
+  script: mkdir -p cache && touch cache/file1.txt
