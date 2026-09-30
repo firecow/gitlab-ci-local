@@ -362,7 +362,7 @@ export class Parser {
             const uninterpolatedConfigurations: any = fileData[1];
             const interpolatedConfigurations = JSON.stringify(uninterpolatedConfigurations)
                 .replaceAll(
-                    /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?=(?<interpolationKey>[^\s.|[\]]+))\k<interpolationKey>\s*(?:\|\s*)?(?!\s)(?<interpolationFunctions>(?:[^\s\]]|\](?!\])|[^\S\n\r\u2028\u2029]+(?!\s|\]\]))*)\s*\]\](?<lastChar>[^$])?/g // https://regexr.com/81c16
+                    /(?<firstChar>.)?(?<secondChar>.)?\$\[\[\s*inputs.(?=(?<interpolationKey>[^\s.|[\]]+))\k<interpolationKey>\s*(?:\|\s*)?(?!\s)(?<interpolationFunctions>(?:[^\s\]]|\](?!\])|[^\S\n\r\u2028\u2029]+(?!\s|\]\]))*)\s*\]\](?<lastChar>[^$])?/g
                     , (_: string, firstChar: string, secondChar: string, interpolationKey: string, interpolationFunctions: string, lastChar: string) => {
                         const configFilePath = path.relative(process.cwd(), filePath);
                         const context = {

@@ -106,7 +106,7 @@ export class GitData {
                 .replace(/\.git$/, "");
 
             if (normalizedGitRemote.startsWith("http")) {
-                gitRemoteMatch = /(?<schema>https?):\/\/(?:([^:]+):([^@]+)@)?(?<host>[^/:]+)(?::(?<port>\d+)?)?\/(?<group>\S+)\/(?<project>\S+)/.exec(normalizedGitRemote); // regexr.com/7ve8l
+                gitRemoteMatch = /(?<schema>https?):\/\/(?:([^:]+):([^@]+)@)?(?<host>[^/:]+)(?::(?<port>\d+)?)?\/(?<group>\S+)\/(?<project>\S+)/.exec(normalizedGitRemote);
                 assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
 
                 let port = "443";
@@ -121,7 +121,7 @@ export class GitData {
                 this.remote.schema = gitRemoteMatch.groups.schema as GitSchema;
                 this.remote.port = port;
             } else if (normalizedGitRemote.startsWith("ssh://")) {
-                gitRemoteMatch = /(?<schema>ssh):\/\/(\w+)@(?<host>[^/:]+)(?::(?<port>\d+)?)?\/(?<group>\S+)\/(?<project>\S+)/.exec(normalizedGitRemote); // regexr.com/7vjq4
+                gitRemoteMatch = /(?<schema>ssh):\/\/(\w+)@(?<host>[^/:]+)(?::(?<port>\d+)?)?\/(?<group>\S+)\/(?<project>\S+)/.exec(normalizedGitRemote);
                 assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
 
                 this.remote.host = gitRemoteMatch.groups.host;

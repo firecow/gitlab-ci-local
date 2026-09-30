@@ -1106,7 +1106,8 @@ If you know what you're doing and would like to suppress this warning, use one o
             const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
 
             // Special network names that do not work with `docker network connect`
-            await Promise.all(this.argv.network.filter((network) => !["host", "none"].includes(network)).map((network) => Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`])));
+            const connectableNetworks = this.argv.network.filter((network) => !["host", "none"].includes(network));
+            await Promise.all(connectableNetworks.map((network) => Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`])));
 
             this._containerId = containerId;
             this._containersToClean.push(this._containerId);
@@ -1327,15 +1328,14 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             const safeProducerName = Utils.safeDockerString(producer.name);
             const dotenvFolder = `${cwd}/${stateDir}/artifacts/${safeProducerName}/.gitlab-ci-reports/dotenv/`;
-            if (!await fs.pathExists(dotenvFolder)) return null;
+            if (!await fs.pathExists(dotenvFolder)) {
+                writeStreams.stderr(chalk`${this.formattedJobName} {yellow reports.dotenv produced by '${producer.name}' could not be found}\n`);
+                return [];
+            }
 
             const dotenvFiles = (await Utils.spawn(["find", ".", "-type", "f"], dotenvFolder)).stdout.split("\n").filter((dotenvFile) => dotenvFile != "");
             return Promise.all(dotenvFiles.map(async (dotenvFile) => dotenv.parse(await fs.readFile(`${dotenvFolder}/${dotenvFile}`))));
         }));
-        for (const [index, producer] of (producers ?? []).entries()) {
-            if (producerReportsEnvs[index] !== null) continue;
-            writeStreams.stderr(chalk`${this.formattedJobName} {yellow reports.dotenv produced by '${producer.name}' could not be found}\n`);
-        }
         return Object.assign({}, ...producerReportsEnvs.flat());
     }
 
@@ -1370,23 +1370,20 @@ If you know what you're doing and would like to suppress this warning, use one o
         const cwd = this.argv.cwd;
         const stateDir = this.argv.stateDir;
         const time = process.hrtime();
-        const producerSafeNames = (this.producers ?? []).map((producer) => Utils.safeDockerString(producer.name));
-        const readdirs = await Promise.all(producerSafeNames.map(async (producerSafeName) => {
+        await Promise.all((this.producers ?? []).map(async (producer) => {
+            const producerSafeName = Utils.safeDockerString(producer.name);
             const artifactFolder = `${cwd}/${stateDir}/artifacts/${producerSafeName}`;
             if (!await fs.pathExists(artifactFolder)) {
                 await fs.mkdirp(artifactFolder);
             }
-            return fs.readdir(artifactFolder);
-        }));
-        const promises = [];
-        for (const [index, producerSafeName] of producerSafeNames.entries()) {
-            if (readdirs[index].length === 0) {
+
+            const readdir = await fs.readdir(artifactFolder);
+            if (readdir.length === 0) {
                 writeStreams.stderr(chalk`${this.formattedJobName} {yellow artifacts from {blueBright ${producerSafeName}} was empty}\n`);
             }
 
-            promises.push(this.copyIn(`${cwd}/${stateDir}/artifacts/${producerSafeName}`));
-        }
-        await Promise.all(promises);
+            await this.copyIn(artifactFolder);
+        }));
         const endTime = process.hrtime(time);
         writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
@@ -1407,10 +1404,10 @@ If you know what you're doing and would like to suppress this warning, use one o
         const stateDir = this.argv.stateDir;
         const cachePath = this.imageName(expanded) ? "/cache" : "../../cache";
 
-        const createdCaches = await Promise.all(this.cache.map(async (c, index) => {
-            if (!["push", "pull-push"].includes(c.policy)) return null;
-            if ("on_success" === c.when && this.jobStatus !== "success") return null;
-            if ("on_failure" === c.when && this.jobStatus === "success") return null;
+        await Promise.all(this.cache.map(async (c, index) => {
+            if (!["push", "pull-push"].includes(c.policy)) return;
+            if ("on_success" === c.when && this.jobStatus !== "success") return;
+            if ("on_failure" === c.when && this.jobStatus === "success") return;
             const cacheName = await this.getUniqueCacheName(cwd, expanded, index);
 
             let paths = "";
@@ -1428,10 +1425,8 @@ If you know what you're doing and would like to suppress this warning, use one o
             await Mutex.exclusive(cacheName, async () => {
                 await this.copyOut(cmd, stateDir, "cache", []);
             });
-            return {c, cacheName, endTime: process.hrtime(time)};
-        }));
+            const endTime = process.hrtime(time);
 
-        for (const {c, cacheName, endTime} of createdCaches.filter((createdCache) => createdCache !== null)) {
             for (const __path of c.paths) {
                 const _path = Utils.expandText(__path, expanded);
                 if (!Utils.isSubpath(_path, this.argv.cwd, this.argv.cwd)) {
@@ -1460,7 +1455,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 writeStreams.stdout(`${_path}: found ${numOfFiles} artifact files and directories\n`);
             }
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright cache created in '${stateDir}/cache/${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
-        }
+        }));
     }
 
     private async copyArtifactsOut (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
@@ -1520,11 +1515,10 @@ If you know what you're doing and would like to suppress this warning, use one o
         await this.copyOut(cpCmd, stateDir, "artifacts", dockerCmdExtras);
         endTime = process.hrtime(time);
 
-        const reportDotenvsExist = await Promise.all((reportDotenvs ?? []).map((reportDotenv) => fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)));
-        for (const [index, reportDotenv] of (reportDotenvs ?? []).entries()) {
-            if (reportDotenvsExist[index]) continue;
+        await Promise.all((reportDotenvs ?? []).map(async (reportDotenv) => {
+            if (await fs.pathExists(`${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/${reportDotenv}`)) return;
             writeStreams.stderr(chalk`${this.formattedJobName} {yellow artifact reports dotenv '${reportDotenv}' could not be found}\n`);
-        }
+        }));
 
         const readdir = await fs.readdir(`${cwd}/${stateDir}/artifacts/${safeJobName}`);
         if (readdir.length === 0) {
