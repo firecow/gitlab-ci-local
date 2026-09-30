@@ -21,3 +21,11 @@ remote-trigger:
   trigger:
     project: mytarget/project
     branch: master
+
+variable-expand-trigger:
+  stage: test
+  variables:
+    DERIVED_VALUE: "${BASE_VALUE}-world"
+  trigger:
+    include:
+      - local: .gitlab-ci-variable-expand-child.yml
