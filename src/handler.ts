@@ -27,6 +27,8 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     const cwd = argv.cwd;
     const stateDir = argv.stateDir;
     const file = argv.file;
+    // Only the top-level invocation writes the --report-json file, child pipelines must not overwrite it.
+    const reportJsonPath = childPipelineDepth === 0 ? argv.reportJson : null;
     let parser: Parser;
 
     if (argv.completion) {
@@ -82,7 +84,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         }
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         await Utils.rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
-        await Commander.runJobs(argv, parser, writeStreams);
+        await Commander.runJobs(argv, parser, writeStreams, reportJsonPath);
         if (argv.needs || argv.onlyNeeds) {
             writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
         }
@@ -95,7 +97,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         await Utils.rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
-        await Commander.runJobsInStage(argv, parser, writeStreams);
+        await Commander.runJobsInStage(argv, parser, writeStreams, reportJsonPath);
         writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     } else {
         if (argv.registry) {
@@ -106,7 +108,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         const pipelineIid = await state.incrementPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         await Utils.rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
-        await Commander.runPipeline(argv, parser, writeStreams);
+        await Commander.runPipeline(argv, parser, writeStreams, reportJsonPath);
         if (childPipelineDepth == 0) writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();
