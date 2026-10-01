@@ -2,8 +2,40 @@ import chalk from "chalk-template";
 import deepExtend from "deep-extend";
 import assert, {AssertionError} from "node:assert";
 import {Job, Need} from "./job.js";
-import {getNodeByPath, traverse} from "object-traversal";
+import {traverse} from "object-traversal";
 import {Utils} from "./utils.js";
+
+const isPlainObject = (value: any) => value != null && Utils.isObject(value);
+const isReferenceNode = (value: any) => isPlainObject(value) && value.referenceData != null;
+
+// deep-extend exposes no clone of its own; merging into a fresh wrapper gives one.
+const cloneValue = (value: any) => deepExtend({}, {value}).value;
+
+/**
+ * GitLab resolves `extends` before `!reference`, so while extends merges, the node is still a tag
+ * and not a hash to deep merge into: it discards whatever was merged into it, and a later source
+ * discards it in turn. deepExtend merges the two together instead, which silently loses one of
+ * them, so rebuild every key a `!reference` takes part in, following that precedence.
+ */
+const overrideReferences = (mergedData: any, sources: any[]) => {
+    const pending = [{data: mergedData, sources}];
+    while (pending.length > 0) {
+        const node = pending.pop()!;
+        for (const key of Object.keys(node.data)) {
+            const values = node.sources.filter((source) => isPlainObject(source) && key in source).map((source) => source[key]);
+            const fromIndex = values.findLastIndex(isReferenceNode);
+            if (fromIndex === -1) {
+                // No reference at this key, but one may sit deeper in it.
+                if (isPlainObject(node.data[key])) pending.push({data: node.data[key], sources: values});
+            } else {
+                node.data[key] = values.slice(fromIndex).reduce((merged, value) => {
+                    const mergeable = isPlainObject(merged) && !isReferenceNode(merged) && isPlainObject(value);
+                    return mergeable ? deepExtend(merged, value) : cloneValue(value);
+                });
+            }
+        }
+    }
+};
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
@@ -26,12 +58,9 @@ export function jobExtends (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName)) continue;
         if (!Utils.isObject(jobData)) continue;
-        const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
-        const mergedData = deepExtend({}, ...parentDatas, jobData);
-        traverse(jobData, ({key, value, meta}) => {
-            if (key == null || value?.referenceData == null) return;
-            getNodeByPath(mergedData, meta.nodePath!.slice(0, -key.length - 1))[key] = value;
-        });
+        const sources = [...extendsRecurse(gitlabData, jobName, jobData, [], 0), jobData];
+        const mergedData = deepExtend({}, ...sources);
+        overrideReferences(mergedData, sources);
         gitlabData[jobName] = mergedData;
     }
 

@@ -1,0 +1,25 @@
+---
+.src:
+  cache:
+    key: src
+    paths: [a, b, jib]
+
+.setup:
+  cache:
+    key: setup
+    paths: [a, b]
+
+holder:
+  extends: .setup
+  script:
+    - echo "Heya"
+  cache: !reference [.src, cache]
+
+inherits:
+  extends: holder
+
+overrides:
+  extends: holder
+  cache:
+    key: own
+    paths: [own]

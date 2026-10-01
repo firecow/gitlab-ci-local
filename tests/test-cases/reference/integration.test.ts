@@ -159,7 +159,10 @@ test.concurrent("should not support 11 level deep", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-it("should merge values", async () => {
+// Issue #1562 asked for `echo ${NICENESS}` to print "byrdalos", which it does. `HESTHEST` is
+// gone because GitLab drops it too: while `extends` merges, the inherited `!reference` is still
+// a tag and not a hash, so test-job's own `variables` replaces it rather than merging.
+it("should let a job's own value replace an inherited reference", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         preview: true,
@@ -177,7 +180,6 @@ stages:
   - .post
 test-job:
   variables:
-    HESTHEST: ponypony
     NICENESS: byrdalos
   script:
     - echo \${NICENESS}
@@ -266,6 +268,58 @@ job:
         - a
         - b
         - jib
+      policy: pull-push
+      when: on_success
+  script:
+    - echo "Heya"
+`;
+
+    expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
+});
+
+// A `!reference` is not resolved where it is written but where the job that holds it is used, so
+// extending that job must carry the reference along (`inherits`), and overriding the key must
+// drop it whole rather than merge with what it points at (`overrides`).
+it("should carry a reference through a job that extends the one holding it", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        preview: true,
+        file: ".gitlab-ci-inherited-reference.yml",
+        cwd: "tests/test-cases/reference",
+    }, writeStreams);
+
+    const expected = `
+---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+holder:
+  cache:
+    - key: src
+      paths: &ref_0
+        - a
+        - b
+        - jib
+      policy: pull-push
+      when: on_success
+  script:
+    - echo "Heya"
+inherits:
+  cache:
+    - key: src
+      paths: *ref_0
+      policy: pull-push
+      when: on_success
+  script:
+    - echo "Heya"
+overrides:
+  cache:
+    - key: own
+      paths:
+        - own
       policy: pull-push
       when: on_success
   script:
