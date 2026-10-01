@@ -11,7 +11,7 @@ on:
 jobs:
 
   yamllint:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c # v3.1.1
@@ -19,7 +19,7 @@ jobs:
           strict: true
 
   smoke-test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       matrix:
         node-version: [24, 25]
@@ -42,7 +42,7 @@ jobs:
       - run: head -1 dist/index.js | grep -q '#!/usr/bin/env node'
 
   typecheck:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -52,7 +52,7 @@ jobs:
       - run: bun run typecheck
 
   eslint:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -62,7 +62,7 @@ jobs:
       - run: bun run lint
 
   unused-deps:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -72,7 +72,7 @@ jobs:
       - run: bunx depcheck --ignores depcheck,@types/bun,@types/bun-types,vitest,@vitest/coverage-v8
 
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -91,7 +91,7 @@ jobs:
 
   code-ql:
     name: CodeQL
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       actions: read
       contents: read
