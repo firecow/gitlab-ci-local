@@ -116,5 +116,5 @@ test("custom-home <test-unknown-key>", async () => {
         cwd: "tests/test-cases/custom-home",
         job: ["test-staging"],
         home: "tests/test-cases/custom-home/.home-unknown-key",
-    }, writeStreams)).rejects.toThrow("tests/test-cases/custom-home/.home-unknown-key/.gitlab-ci-local/variables.yml has unknown top-level keys CEGO_NPM_TOKEN, move them under global:, group: or project:");
+    }, writeStreams)).rejects.toThrow("tests/test-cases/custom-home/.home-unknown-key/.gitlab-ci-local/variables.yml has unknown top-level keys NPM_TOKEN, move them under global:, group: or project:");
 });
