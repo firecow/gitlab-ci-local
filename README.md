@@ -127,6 +127,16 @@ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/gitl
 
 Executing `gitlab-ci-local` with `--variable MSYS_NO_PATHCONV=1` can be useful in certain situations
 
+To run shell-executor jobs with Windows PowerShell or PowerShell Core instead of Git Bash:
+
+```bash
+gitlab-ci-local --shell powershell   # Windows PowerShell 5.x
+gitlab-ci-local --shell pwsh         # PowerShell Core
+# or in .gitlab-ci-local-env / GCL_SHELL=powershell
+```
+
+Docker-executor jobs always use bash inside the container regardless of `--shell`.
+
 ## Convenience
 
 ### CLI options

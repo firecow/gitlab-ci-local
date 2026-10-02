@@ -215,6 +215,12 @@ process.on("SIGUSR2", async () => {
             description: "Enable artifact isolation for shell-executor jobs",
             requiresArg: false,
         })
+        .option("shell", {
+            type: "string",
+            description: "Shell used for shell-executor jobs (bash, powershell, or pwsh). Docker-executor jobs always use bash inside the container.",
+            choices: ["bash", "powershell", "pwsh"],
+            requiresArg: true,
+        })
         .option("force-shell-executor", {
             type: "boolean",
             description: "Forces all jobs to be executed using the shell executor. (Only use this option for trusted job)",
