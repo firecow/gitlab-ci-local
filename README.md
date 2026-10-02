@@ -125,7 +125,7 @@ Download and put binary in `C:\Program Files\Git\mingw64\bin`
 curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/gitlab-ci-local-windows-amd64.zip -o gcl.zip && unzip -o gcl.zip -d /c/Program\ Files/Git/mingw64/bin && rm gcl.zip
 ```
 
-Executing `gitlab-ci-local` with `--variable MSYS_NO_PATHCONV=1` can be useful in certain situations
+On Windows, gitlab-ci-local disables Git Bash path conversion (`MSYS_NO_PATHCONV`) for host `docker`/`podman` commands so Linux mount paths like `/builds/...` are not rewritten to `C:/Program Files/Git/builds/...`.
 
 ## Convenience
 

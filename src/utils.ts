@@ -34,11 +34,27 @@ type ExpandWith = {
 
 export class Utils {
     static bashMulti (scripts: string[], cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode?: number}> {
-        return execa(scripts.join(" && \\"), {shell: "bash", cwd});
+        return execa(scripts.join(" && \\"), {shell: "bash", cwd, env: Utils.bashEnv()});
     }
 
     static bash (shellScript: string, cwd = process.cwd()): Promise<{stdout: string; stderr: string; exitCode?: number}> {
-        return execa(shellScript, {shell: "bash", cwd});
+        return execa(shellScript, {shell: "bash", cwd, env: Utils.bashEnv()});
+    }
+
+    /**
+     * On Windows, Git Bash (MSYS) rewrites absolute POSIX paths like `/builds/...` into
+     * `C:/Program Files/Git/builds/...` when invoking docker/podman. Disable that so
+     * container volume mounts and workdirs stay as Linux paths.
+     */
+    private static bashEnv (): NodeJS.ProcessEnv {
+        if (process.platform !== "win32") {
+            return process.env;
+        }
+        return {
+            ...process.env,
+            MSYS_NO_PATHCONV: "1",
+            MSYS2_ARG_CONV_EXCL: "*",
+        };
     }
 
     static spawn (cmdArgs: string[], cwd = process.cwd()): Promise<{stdout: string; stderr: string}> {
