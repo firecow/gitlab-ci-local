@@ -1,4 +1,10 @@
-import {remoteProjectUrl, resolveSemanticVersionRange} from "../src/parser-includes.js";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import {vi} from "vitest";
+import {GitData} from "../src/git-data.js";
+import {ParserIncludes, remoteProjectUrl, resolveSemanticVersionRange} from "../src/parser-includes.js";
+import {WriteStreamsMock} from "../src/write-streams.js";
 
 const tests = [
     {
@@ -65,5 +71,69 @@ describe("remoteProjectUrl", () => {
     test("keeps port 80 when the schema is https", () => {
         expect(remoteProjectUrl({schema: "https", host: "git.example.com", port: "80"}, "grp/proj"))
             .toEqual("https://git.example.com:80/grp/proj.git");
+    });
+});
+
+describe("ParserIncludes.downloadIncludeComponent", () => {
+    const stateDir = ".gitlab-ci-local";
+    let cwd: string;
+    let gitCloneSpy: ReturnType<typeof vi.spyOn>;
+    let invocations: {start: number; end: number}[];
+
+    const makeOpts = () => ({
+        cwd,
+        stateDir,
+        gitData: {remote: {schema: "https", host: "git.example.com", port: "443"}} as GitData,
+        fetchIncludes: true,
+        writeStreams: new WriteStreamsMock(),
+    });
+
+    beforeEach(async () => {
+        cwd = await fs.mkdtemp(path.join(os.tmpdir(), "gcl-includes-test-"));
+        invocations = [];
+        gitCloneSpy = vi.spyOn(ParserIncludes as any, "gitCloneSparseCheckout").mockImplementation(async () => {
+            const start = Date.now();
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            invocations.push({start, end: Date.now()});
+        });
+    });
+
+    afterEach(async () => {
+        gitCloneSpy.mockRestore();
+        await fs.rm(cwd, {recursive: true, force: true});
+    });
+
+    const target = (project: string, ref: string) =>
+        `${stateDir}/includes/git.example.com/${project}/${ref}`;
+
+    test("serializes concurrent downloads of the same project/ref", async () => {
+        await Promise.all([
+            ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj", "v1.0.0", "component-a"),
+            ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj", "v1.0.0", "component-b"),
+        ]);
+
+        expect(invocations).toHaveLength(2);
+        const [first, second] = [...invocations].sort((a, b) => a.start - b.start);
+        expect(first.end).toBeLessThanOrEqual(second.start);
+    });
+
+    test("downloads different projects concurrently", async () => {
+        await Promise.all([
+            ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj-a", "v1.0.0", "component"),
+            ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj-b", "v1.0.0", "component"),
+        ]);
+
+        expect(invocations).toHaveLength(2);
+        const [first, second] = [...invocations].sort((a, b) => a.start - b.start);
+        expect(first.start).toBeLessThan(second.end);
+        expect(second.start).toBeLessThan(first.end);
+    });
+
+    test("creates the templates directory and cleans up the temporary directory", async () => {
+        await ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj", "v1.0.0", "component");
+
+        const templatesDir = path.join(cwd, target("grp/proj", "v1.0.0"), "templates");
+        expect((await fs.stat(templatesDir)).isDirectory()).toBe(true);
+        expect((await fs.readdir(cwd)).filter((entry) => entry.startsWith(`${target("grp/proj", "v1.0.0")}.tmp-`))).toEqual([]);
     });
 });

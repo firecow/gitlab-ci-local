@@ -13,6 +13,7 @@ import path from "node:path";
 import semver from "semver";
 import {RE2JS} from "re2js";
 import {globbySync} from "globby";
+import {Mutex} from "./mutex.js";
 
 type ParserIncludesInitOptions = {
     argv: Argv;
@@ -445,29 +446,35 @@ export class ParserIncludes {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
 
             if (!fetchIncludes && (await fs.pathExists(`${cwd}/${target}/${files[0]}`) || await fs.pathExists(`${cwd}/${target}/${files[1]}`))) return;
-            const time = process.hrtime();
 
-            if (remote.schema.startsWith("http")) {
-                const ext = "tmp-" + Math.random();
-                await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`));
-                tmpDir = `${cwd}/${target}.${ext}`;
+            // Use mutex keyed on target path to prevent EEXIST races when multiple
+            // components from the same project/ref are downloaded concurrently
+            const mutexKey = `${remote.host}/${project}/${ref}`;
+            await Mutex.exclusive(mutexKey, async () => {
+                const time = process.hrtime();
 
-                await this.gitCloneSparseCheckout(cwd, stateDir, tmpDir, remote, project, ref, files);
+                if (remote.schema.startsWith("http")) {
+                    const ext = "tmp-" + Math.random();
+                    await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`));
+                    tmpDir = `${cwd}/${target}.${ext}`;
 
-                // create templates subdir (if it doesn't exist), as the check out may not create it
-                await fs.mkdirp(`${tmpDir}/templates`);
-                await fs.copy(`${tmpDir}/templates`, `${cwd}/${target}/templates`);
-            } else {
-                // git archive fails if the paths do not exist, to work around this we use a wildcard "templates/component*.yml"
-                // this resolves to either "templates/component.yml" or "templates/component/template.yml"
-                // if both exist "templates/component.yml" will be pulled
-                // Drawback: also pulls all other .yml files from templates/component/ directory
-                const componentWildcard = `${componentName}*.yml`;
-                const targetDirectory = `${target}/`;
-                await fs.mkdirp(`${cwd}/${target}`);
-                await Shell.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${safeBashString(ref)} ${safeBashString(componentWildcard)} | tar -f - -xC ${safeBashString(targetDirectory)}`, cwd);
-            }
-            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${prettyHrtime(process.hrtime(time))}}\n`);
+                    await this.gitCloneSparseCheckout(cwd, stateDir, tmpDir, remote, project, ref, files);
+
+                    // create templates subdir (if it doesn't exist), as the check out may not create it
+                    await fs.mkdirp(`${tmpDir}/templates`);
+                    await fs.copy(`${tmpDir}/templates`, `${cwd}/${target}/templates`);
+                } else {
+                    // git archive fails if the paths do not exist, to work around this we use a wildcard "templates/component*.yml"
+                    // this resolves to either "templates/component.yml" or "templates/component/template.yml"
+                    // if both exist "templates/component.yml" will be pulled
+                    // Drawback: also pulls all other .yml files from templates/component/ directory
+                    const componentWildcard = `${componentName}*.yml`;
+                    const targetDirectory = `${target}/`;
+                    await fs.mkdirp(`${cwd}/${target}`);
+                    await Shell.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${safeBashString(ref)} ${safeBashString(componentWildcard)} | tar -f - -xC ${safeBashString(targetDirectory)}`, cwd);
+                }
+                writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${prettyHrtime(process.hrtime(time))}}\n`);
+            });
         } catch (e) {
             throw new AssertionError({message: `Component include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
         } finally {
