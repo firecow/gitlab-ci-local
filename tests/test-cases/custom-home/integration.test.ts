@@ -109,3 +109,12 @@ test("custom-home <build-job>", async () => {
     ];
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
+
+test("custom-home <test-unknown-key>", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await expect(handler({
+        cwd: "tests/test-cases/custom-home",
+        job: ["test-staging"],
+        home: "tests/test-cases/custom-home/.home-unknown-key",
+    }, writeStreams)).rejects.toThrow("tests/test-cases/custom-home/.home-unknown-key/.gitlab-ci-local/variables.yml has unknown top-level keys NPM_TOKEN, move them under global:, group: or project:");
+});

@@ -59,6 +59,8 @@ export class VariablesFromFiles {
 
         if (await fs.pathExists(homeVariablesFile)) {
             homeFileData = yaml.load(await fs.readFile(homeVariablesFile, "utf8"), {schema: yaml.FAILSAFE_SCHEMA});
+            const unknownKeys = Object.keys(homeFileData ?? {}).filter((key) => !["global", "group", "project"].includes(key));
+            assert(unknownKeys.length === 0, `${homeVariablesFile} has unknown top-level keys ${unknownKeys.join(", ")}, move them under global:, group: or project:`);
         }
 
         const unpack = (v: any): {values: any; type: "file" | "variable" | null} => {
