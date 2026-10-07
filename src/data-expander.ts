@@ -1,9 +1,17 @@
 import chalk from "chalk-template";
-import deepExtend from "deep-extend";
 import assert, {AssertionError} from "node:assert";
 import {Job, Need} from "./job.js";
-import {getNodeByPath, traverse} from "object-traversal";
+import {traverse} from "object-traversal";
 import {Utils} from "./utils.js";
+
+const isMergeable = (value: any) => value != null && Utils.isObject(value) && value.referenceData == null;
+const extendsMerge = (target: any, source: any): any => {
+    if (!isMergeable(target) || !isMergeable(source)) return structuredClone(source);
+    for (const [key, value] of Object.entries(source)) {
+        target[key] = extendsMerge(target[key], value);
+    }
+    return target;
+};
 
 const extendsMaxDepth = 11;
 const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents: any[], depth: number) => {
@@ -27,12 +35,7 @@ export function jobExtends (gitlabData: any) {
         if (Job.illegalJobNames.has(jobName)) continue;
         if (!Utils.isObject(jobData)) continue;
         const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
-        const mergedData = deepExtend({}, ...parentDatas, jobData);
-        traverse(jobData, ({key, value, meta}) => {
-            if (key == null || value?.referenceData == null) return;
-            getNodeByPath(mergedData, meta.nodePath!.slice(0, -key.length - 1))[key] = value;
-        });
-        gitlabData[jobName] = mergedData;
+        gitlabData[jobName] = [...parentDatas, jobData].reduce((mergedData, data) => extendsMerge(mergedData, data), {});
     }
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {

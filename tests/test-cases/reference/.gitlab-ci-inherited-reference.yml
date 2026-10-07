@@ -1,0 +1,41 @@
+---
+.src:
+  cache:
+    key: src
+    paths: [a, b, jib]
+
+.setup:
+  cache:
+    key: setup
+    paths: [a, b]
+
+holder:
+  extends: .setup
+  script:
+    - echo "Heya"
+  cache: !reference [.src, cache]
+
+inherits:
+  extends: holder
+
+overrides:
+  extends: holder
+  cache:
+    key: own
+    paths: [own]
+
+.key-src:
+  key:
+    files: [k.lock]
+
+.key-setup:
+  cache:
+    key:
+      files: [setup.lock]
+      prefix: setup
+    paths: [a, b]
+
+nested:
+  extends: [holder, .key-setup]
+  cache:
+    key: !reference [.key-src, key]

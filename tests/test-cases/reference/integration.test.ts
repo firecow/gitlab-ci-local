@@ -159,7 +159,7 @@ test.concurrent("should not support 11 level deep", async () => {
     throw new Error("Error is expected but not thrown/caught");
 });
 
-it("should merge values", async () => {
+it("should let a job's own value replace an inherited reference", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
         preview: true,
@@ -177,7 +177,6 @@ stages:
   - .post
 test-job:
   variables:
-    HESTHEST: ponypony
     NICENESS: byrdalos
   script:
     - echo \${NICENESS}
@@ -266,6 +265,67 @@ job:
         - a
         - b
         - jib
+      policy: pull-push
+      when: on_success
+  script:
+    - echo "Heya"
+`;
+
+    expect(writeStreams.stdoutLines.join("\n")).toEqual(expected.trim());
+});
+
+it("should carry a reference through a job that extends the one holding it", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        preview: true,
+        file: ".gitlab-ci-inherited-reference.yml",
+        cwd: "tests/test-cases/reference",
+    }, writeStreams);
+
+    const expected = `
+---
+stages:
+  - .pre
+  - build
+  - test
+  - deploy
+  - .post
+holder:
+  cache:
+    - key: src
+      paths: &ref_0
+        - a
+        - b
+        - jib
+      policy: pull-push
+      when: on_success
+  script:
+    - echo "Heya"
+inherits:
+  cache:
+    - key: src
+      paths: *ref_0
+      policy: pull-push
+      when: on_success
+  script:
+    - echo "Heya"
+overrides:
+  cache:
+    - key: own
+      paths:
+        - own
+      policy: pull-push
+      when: on_success
+  script:
+    - echo "Heya"
+nested:
+  cache:
+    - key:
+        files:
+          - k.lock
+      paths:
+        - a
+        - b
       policy: pull-push
       when: on_success
   script:
