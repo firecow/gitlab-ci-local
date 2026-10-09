@@ -353,7 +353,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
         }
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
-        predefinedVariables["CI_REGISTRY"] = predefinedVariables["CI_REGISTRY"] = this.argv.registry ? Utils.gclRegistryPrefix : `local-registry.${this.gitData.remote.host}`;
+        predefinedVariables["CI_REGISTRY"] = this.argv.registry ? Utils.gclRegistryPrefix : `registry.${this.gitData.remote.host}`;
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${predefinedVariables["CI_PROJECT_PATH"].toLowerCase()}`;
         return predefinedVariables;
     }
