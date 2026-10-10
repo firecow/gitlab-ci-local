@@ -8,6 +8,7 @@
 /coverage
 !/docker-npm
 /.gitlab-ci-local/
+/.gitlab/plan/
 .DS_Store
 .vscode
 .history

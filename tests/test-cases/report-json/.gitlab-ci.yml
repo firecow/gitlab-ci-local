@@ -1,0 +1,62 @@
+success-job:
+  stage: test
+  script:
+    - echo "all good"
+
+allowed-fail-job:
+  stage: test
+  allow_failure: true
+  script:
+    - echo "allowed to fail"
+    - exit 1
+
+exit-codes-allowed-job:
+  stage: test
+  allow_failure:
+    exit_codes: 2
+  script:
+    - exit 2
+
+after-fail-job:
+  stage: test
+  script:
+    - echo "script is fine"
+  after_script:
+    - exit 3
+
+fail-job:
+  stage: test
+  script:
+    - exit 1
+
+dotenv-job:
+  stage: deploy
+  script:
+    - echo "TEST_DOTENV=hello" > build.env
+  artifacts:
+    paths:
+      - build.env
+    reports:
+      dotenv: build.env
+
+cached-job:
+  stage: deploy
+  cache:
+    key: report-json-cache
+    paths: [cache/**.txt]
+    policy: pull-push
+  script:
+    - mkdir -p cache && touch cache/file1.txt
+
+manual-job:
+  stage: deploy
+  when: manual
+  script:
+    - echo "manual work"
+
+never-job:
+  stage: deploy
+  rules:
+    - if: '$GCL_REPORT_NEVER == "yes"'
+  script:
+    - echo "never runs"
