@@ -41,7 +41,7 @@
     "axios": "1.x.x",
     "axios-mock-adapter": "2.x",
     "base64url": "3.x.x",
-    "camelcase": "9.x.x",
+    "camelcase": "10.x",
     "chalk": "6.x",
     "chalk-template": "1.x.x",
     "checksum": "1.x.x",
