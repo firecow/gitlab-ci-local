@@ -876,11 +876,17 @@ If you know what you're doing and would like to suppress this warning, use one o
                 // Print command echo'ed with $GCL_SHELL_PROMPT_PLACEHOLDER
                 cmd += `echo "${GCL_SHELL_PROMPT_PLACEHOLDER} ${text}${multilineText}"\n`;
             }
-            // Execute actual script
-            cmd += `${script}\n`;
-            if (powerShell) {
-                // $ErrorActionPreference does not stop on failing native commands, so check each one like gitlab-runner does
-                cmd += "if(!$?) { Exit &{if($LASTEXITCODE) {$LASTEXITCODE} else {1}} }\n";
+            // Execute actual script. For PowerShell, check after each line so a later
+            // successful command cannot mask an earlier failing native command.
+            if (!powerShell) {
+                cmd += `${script}\n`;
+            } else {
+                for (const line of script.split(/\r?\n/)) {
+                    cmd += `${line}\n`;
+                    const trimmed = line.trim();
+                    if (trimmed === "" || trimmed.endsWith("`")) continue;
+                    cmd += "if(!$?) { Exit &{if($LASTEXITCODE) {$LASTEXITCODE} else {1}} }\n";
+                }
             }
         });
         return cmd;
@@ -954,12 +960,12 @@ If you know what you're doing and would like to suppress this warning, use one o
                 this._filesToRm.push(interactiveScriptFile);
 
                 const interactiveCp = execa(this.argv.shell, [
-                    "-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                    "-NoProfile", "-NoLogo", "-ExecutionPolicy", "Bypass",
                     "-File", interactiveScriptFile,
                 ], {
                     cwd,
                     stdio: ["inherit", "inherit", "inherit"],
-                    env: {...expanded, ...process.env},
+                    env: {...process.env, ...expanded},
                     reject: false,
                 });
                 const interactiveChildProcess = interactiveCp.nodeChildProcess;
@@ -973,7 +979,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 cwd,
                 shell: "bash",
                 stdio: ["inherit", "inherit", "inherit"],
-                env: {...expanded, ...process.env},
+                env: {...process.env, ...expanded},
                 reject: false,
             });
             const interactiveChildProcess = interactiveCp.nodeChildProcess;

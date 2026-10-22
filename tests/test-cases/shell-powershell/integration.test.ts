@@ -114,3 +114,22 @@ test.each(["powershell", "pwsh"])("shell %s stops on failing native command with
     expect(stdout).toMatch(/WARN\s+native-fail-job\s+pre_script/);
     expect(stdout).not.toMatch(/> not printed/);
 });
+
+test.each(["powershell", "pwsh"])("shell %s stops on a failing native command inside a multiline script", async (shell) => {
+    if (process.platform !== "win32") {
+        return;
+    }
+
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/shell-powershell",
+        job: ["native-fail-multiline"],
+        shell,
+        noColor: true,
+        stateDir: `.gitlab-ci-local-shell-${shell}-native-fail-multiline`,
+    }, writeStreams);
+
+    const stdout = writeStreams.stdoutLines.join("\n");
+    expect(stdout).toMatch(/WARN\s+native-fail-multiline\s+pre_script/);
+    expect(stdout).not.toMatch(/> not printed/);
+});

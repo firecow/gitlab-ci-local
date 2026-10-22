@@ -16,3 +16,11 @@ native-fail-job:
     - Write-Output "not printed"
   allow_failure:
     exit_codes: 3
+
+native-fail-multiline:
+  script:
+    - |
+      cmd /c exit 3
+      Write-Output "not printed"
+  allow_failure:
+    exit_codes: 3

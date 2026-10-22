@@ -132,8 +132,9 @@ To run shell-executor jobs with Windows PowerShell or PowerShell Core instead of
 ```bash
 gitlab-ci-local --shell powershell   # Windows PowerShell 5.x
 gitlab-ci-local --shell pwsh         # PowerShell Core
-# or in .gitlab-ci-local-env / GCL_SHELL=powershell
 ```
+
+Set the same option in `.gitlab-ci-local-env` with `SHELL=powershell`, or in the environment with `GCL_SHELL=powershell`.
 
 Docker-executor jobs always use bash inside the container regardless of `--shell`.
 
