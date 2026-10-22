@@ -24,3 +24,99 @@ native-fail-multiline:
       Write-Output "not printed"
   allow_failure:
     exit_codes: 3
+
+native-fail-semicolon:
+  script:
+    - cmd /c exit 3; Write-Output "not printed"
+  allow_failure:
+    exit_codes: 3
+
+native-fail-assign:
+  script:
+    - |
+      $x = cmd /c exit 3
+      Write-Output "not printed"
+  allow_failure:
+    exit_codes: 3
+
+native-fail-if:
+  script:
+    - |
+      if ($true) {
+        cmd /c exit 3
+        Write-Output "not printed"
+      } else {
+        Write-Output "from-else"
+      }
+      Write-Output "after-if"
+  allow_failure:
+    exit_codes: 3
+
+native-fail-scriptblock:
+  script:
+    - |
+      1..1 | ForEach-Object {
+        cmd /c exit 3
+        Write-Output "not printed"
+      }
+      Write-Output "after-loop"
+  allow_failure:
+    exit_codes: 3
+
+syntax-job:
+  script:
+    - |
+      if ($true) {
+        Write-Output "from-if"
+      } else {
+        throw "from-else"
+      }
+      Write-Output "after-if"
+    - |
+      if ($true)
+      {
+        Write-Output "split-if"
+      }
+      else
+      {
+        throw "split-else"
+      }
+    - |
+      try {
+        Get-Item "C:\no\such\gcl-path" -ErrorAction Stop
+        Write-Output "try-continued"
+      } catch {
+        Write-Output "caught"
+      }
+      Write-Output "after-try"
+    - |
+      "a","b" |
+        Where-Object { $_ -eq "a" } |
+        ForEach-Object { Write-Output "pipe-$_" }
+    - |
+      $msg = @"
+      line-one
+      line-two
+      "@
+      if ($msg -notmatch "line-one" -or $msg -notmatch "line-two") { throw "here-string broken" }
+      Write-Output "here-ok"
+    - |
+      switch (2) {
+        1 { throw "switch-one" }
+        2 { Write-Output "switch-two" }
+        default { throw "switch-default" }
+      }
+    - |
+      function Write-Ok {
+        Write-Output "from-function"
+      }
+      Write-Ok
+    - |
+      cmd /c exit 0
+      Write-Output "after-success"
+    - |
+      $n = 0
+      do {
+        $n++
+        Write-Output "do-$n"
+      } until ($n -ge 1)

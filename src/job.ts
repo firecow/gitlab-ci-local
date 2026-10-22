@@ -15,6 +15,7 @@ import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunner
 import {handler} from "./handler.js";
 import * as yaml from "js-yaml";
 import {Parser} from "./parser.js";
+import {insertPowerShellStatusChecks} from "./powershell-script.js";
 import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
 import {globbySync} from "globby";
 import terminalLink from "terminal-link";
@@ -853,9 +854,12 @@ If you know what you're doing and would like to suppress this warning, use one o
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
     }
 
-    private generateScriptCommands (scripts: string[], powerShell = false) {
+    private async generateScriptCommands (scripts: string[], powerShell = false) {
+        // Checks go after complete statements, not physical lines, so if/else, try/catch,
+        // pipelines, and here-strings stay intact while an earlier native failure still stops the script.
+        const bodies = powerShell ? await insertPowerShellStatusChecks(this.argv.shell, scripts) : scripts;
         let cmd = "";
-        scripts.forEach((script) => {
+        scripts.forEach((script, index) => {
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
             let text: string;
@@ -876,18 +880,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 // Print command echo'ed with $GCL_SHELL_PROMPT_PLACEHOLDER
                 cmd += `echo "${GCL_SHELL_PROMPT_PLACEHOLDER} ${text}${multilineText}"\n`;
             }
-            // Execute actual script. For PowerShell, check after each line so a later
-            // successful command cannot mask an earlier failing native command.
-            if (!powerShell) {
-                cmd += `${script}\n`;
-            } else {
-                for (const line of script.split(/\r?\n/)) {
-                    cmd += `${line}\n`;
-                    const trimmed = line.trim();
-                    if (trimmed === "" || trimmed.endsWith("`")) continue;
-                    cmd += "if(!$?) { Exit &{if($LASTEXITCODE) {$LASTEXITCODE} else {1}} }\n";
-                }
-            }
+            cmd += `${bodies[index]}\n`;
         });
         return cmd;
     }
@@ -950,7 +943,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         if (this.interactive) {
             const usePowerShell = this.argv.isPowerShell;
             let iCmd = usePowerShell ? "$ErrorActionPreference = \"Stop\"\n" : "set -eo pipefail\n";
-            iCmd += this.generateScriptCommands(scripts, usePowerShell);
+            iCmd += await this.generateScriptCommands(scripts, usePowerShell);
 
             if (usePowerShell) {
                 const interactiveScriptFile = `${cwd}/${stateDir}/scripts/${safeJobName}_${this.jobId}_interactive.ps1`;
@@ -1186,7 +1179,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 cmd += `export CI_JOB_STATUS=${expanded["CI_JOB_STATUS"]}\n`;
             }
         }
-        cmd += this.generateScriptCommands(scripts, usePowerShell);
+        cmd += await this.generateScriptCommands(scripts, usePowerShell);
 
         cmd += usePowerShell ? "exit 0\n" : "exit\n";
 
