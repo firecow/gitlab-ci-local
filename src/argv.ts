@@ -357,6 +357,10 @@ export class Argv {
         return this.map.get("listCsvAll") ?? false;
     }
 
+    get reportJson (): string | null {
+        return this.map.get("reportJson") ?? null;
+    }
+
     get preview (): boolean {
         return this.map.get("preview") ?? false;
     }

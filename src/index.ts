@@ -111,6 +111,11 @@ process.on("SIGUSR2", async () => {
             description: "List job information in csv format, when:never included",
             requiresArg: false,
         })
+        .option("report-json", {
+            type: "string",
+            description: "Write per-job run results as JSON to <path> (only in run modes, no effect on --preview, --list*, --validate-dependency-chain)",
+            requiresArg: true,
+        })
         .option("validate-dependency-chain", {
             type: "boolean",
             description: "Validate that jobs needed or dependent by active jobs under specified conditions are also active without actually running the jobs. Validates the dependency graph for the given conditions rather than one specific run, so when:manual jobs count as active and --manual is ignored. Uses fail-fast approach - stops at first validation error for both 'needs' and 'dependencies' keywords. If validation fails, use --list flag to see which jobs will run under specified conditions",

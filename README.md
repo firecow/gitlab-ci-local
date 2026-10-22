@@ -35,6 +35,7 @@ Get rid of all those dev specific shell scripts and make files.
     * [Bash alias](#bash-alias)
     * [Tab completion](#tab-completion)
     * [Listing jobs](#list-pipeline-jobs)
+    * [Run report](#run-report)
 * [Quirks](#quirks)
     * [Tracked Files](#tracked-files)
     * [Local Only](#local-only)
@@ -234,6 +235,61 @@ exit-codes-job;build;on_success;[42,137];[]
 deploy-job;deploy;on_success;[1];
 never-job;test;never;false;
 ```
+
+### Run Report
+
+#### --report-json
+
+The command `gitlab-ci-local --report-json <path>` writes a JSON report describing every job's outcome to `<path>`,
+so scripts and agents can consume results without parsing the human-readable summary. It works in all run modes
+(full pipeline, `--stage`, and named jobs, including `--needs`/`--only-needs`), and the report is written even when
+jobs fail — which is precisely when it matters most.
+
+```json
+{
+  "schemaVersion": 1,
+  "pipelineIid": 42,
+  "status": "success",
+  "jobs": [
+    {
+      "name": "test-job",
+      "baseName": "test-job",
+      "matrixVariables": null,
+      "stage": "test",
+      "status": "success",
+      "allowFailure": false,
+      "when": "on_success",
+      "started": true,
+      "prescriptsExitCode": 0,
+      "afterScriptsExitCode": 0,
+      "coverage": null,
+      "durationMs": 8123,
+      "logPath": ".gitlab-ci-local/output/test_job.log",
+      "services": ["postgres:16"],
+      "servicesLogPaths": [".gitlab-ci-local/services-output/test_job/postgres:16-0.log"],
+      "artifacts": ["build/reports/"],
+      "cached": false
+    }
+  ]
+}
+```
+
+Field notes:
+
+- `<path>` is relative to the directory the command is invoked from, not to `--cwd`. The file is written atomically
+  (temporary file + move), so a consumer polling the path never reads a torn file.
+- `schemaVersion` is `1`; it will be bumped on any breaking change to the report shape.
+- Pipeline-level `status` is `failed` if any job failed, `success_with_warnings` if only allowed-to-fail jobs failed
+  or after-scripts warned, and `success` otherwise. It mirrors the PASS/WARN/FAIL summary exactly.
+- Per-job `status` is one of `success`, `success_with_warnings` (after-script failed), `failed_allowed` (failed but
+  allowed to fail), `failed`, `manual`, `skipped` (never started), or `disabled` (`when: never`).
+- `logPath` is relative to `--cwd` and points at the job's full output log on disk; jobs that never started have
+  `logPath: null`.
+- `matrixVariables` carries the `parallel:matrix` permutation for matrix jobs, `null` otherwise. `coverage` carries
+  the regex-extracted coverage percentage, `null` when the job has no `coverage` keyword.
+- Non-run modes (`--preview`, `--list`, `--list-all`, `--list-json`, `--list-csv`, `--list-csv-all`,
+  `--validate-dependency-chain`) never run jobs and therefore never write a report. In parent/child pipeline runs
+  only the top-level invocation writes the report.
 
 ## Quirks
 

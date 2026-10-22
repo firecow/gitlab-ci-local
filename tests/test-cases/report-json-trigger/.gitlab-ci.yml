@@ -1,0 +1,6 @@
+---
+trigger-job:
+  stage: deploy
+  trigger:
+    include:
+      - local: child.yml
