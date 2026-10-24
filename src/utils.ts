@@ -41,11 +41,6 @@ export class Utils {
         return execa(shellScript, {shell: "bash", cwd, env: Utils.bashEnv()});
     }
 
-    /**
-     * On Windows, Git Bash (MSYS) rewrites absolute POSIX paths like `/builds/...` into
-     * `C:/Program Files/Git/builds/...`. Disable that for every host bash command this
-     * tool runs itself, including container setup, rsync, and git helpers.
-     */
     private static bashEnv (): NodeJS.ProcessEnv {
         if (process.platform !== "win32") {
             return process.env;
