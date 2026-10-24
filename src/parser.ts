@@ -5,6 +5,7 @@ import * as yaml from "js-yaml";
 import {RE2JS} from "re2js";
 import {Job, forEachRealJob} from "./job.js";
 import * as DataExpander from "./data-expander.js";
+import {deepMerge} from "./object.js";
 import {expandVariables} from "./expand.js";
 import {getRulesResult} from "./rules.js";
 import {prettyHrtime} from "./pretty-hrtime.js";
@@ -122,7 +123,7 @@ export class Parser {
         yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, {argv, cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables, maximumIncludes: argv.maximumIncludes, inputs}));
         ParserIncludes.resetCount();
 
-        const gitlabData: any = DataExpander.deepMerge({}, ...yamlDataList);
+        const gitlabData: any = deepMerge({}, ...yamlDataList);
 
         // Expand various fields in gitlabData
         DataExpander.jobExtends(gitlabData);

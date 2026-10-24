@@ -7,7 +7,7 @@ import {Argv} from "./argv.js";
 import assert from "node:assert";
 import path from "node:path";
 import {Shell, safeBashString} from "./shell.js";
-import {deepMerge, isObject} from "./data-expander.js";
+import {deepMerge, isObject} from "./object.js";
 import {prettyHrtime} from "./pretty-hrtime.js";
 import dotenv from "dotenv";
 

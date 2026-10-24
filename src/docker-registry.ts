@@ -17,33 +17,31 @@ export async function startDockerRegistry (argv: Argv): Promise<void> {
 
     // create cert volume
     try {
-        await Shell.spawn(`${argv.containerExecutable} volume create ${gclRegistryCertVol}`.split(" "));
+        await Shell.spawn([argv.containerExecutable, "volume", "create", gclRegistryCertVol]);
     } catch (err) {
         if (err instanceof Error && !err.message.endsWith("already exists"))
             throw err;
     }
 
     // create self-signed cert/key files for https support
-    const certExists = await Shell.spawn([argv.containerExecutable, "run", "--rm", "-v", `${gclRegistryCertVol}:/mnt/vol`, "alpine", "ls", `/mnt/vol/${gclRegistryPrefix}.crt`]).then(() => true, () => false);
-    if (!certExists) {
-        const opensslArgs = [
-            "req", "-newkey", "rsa:4096", "-nodes", "-sha256",
-            "-keyout", `/certs/${gclRegistryPrefix}.key`,
-            "-x509", "-days", "365",
-            "-out", `/certs/${gclRegistryPrefix}.crt`,
-            "-subj", `/CN=${gclRegistryPrefix}`,
-            "-addext", `subjectAltName=DNS:${gclRegistryPrefix}`,
-        ];
-        const generateCertsInPlace = [
-            argv.containerExecutable, "run", "--rm", "-v", `${gclRegistryCertVol}:/certs`, "--entrypoint", "sh", gclOpensslImage, "-c",
-            [
-                "openssl", ...opensslArgs,
-                "&&", "mkdir", "-p", `/certs/${gclRegistryPrefix}`,
-                "&&", "cp", `/certs/${gclRegistryPrefix}.crt`, `/certs/${gclRegistryPrefix}/ca.crt`,
-            ].join(" "),
-        ];
-        await Shell.spawn(generateCertsInPlace);
-    }
+    const opensslArgs = [
+        "req", "-newkey", "rsa:4096", "-nodes", "-sha256",
+        "-keyout", `/certs/${gclRegistryPrefix}.key`,
+        "-x509", "-days", "365",
+        "-out", `/certs/${gclRegistryPrefix}.crt`,
+        "-subj", `/CN=${gclRegistryPrefix}`,
+        "-addext", `subjectAltName=DNS:${gclRegistryPrefix}`,
+    ];
+    const generateCertsInPlace = [
+        argv.containerExecutable, "run", "--rm", "-v", `${gclRegistryCertVol}:/certs`, "--entrypoint", "sh", gclOpensslImage, "-c",
+        [
+            "test", "-f", `/certs/${gclRegistryPrefix}.crt`, "||", "{",
+            "openssl", ...opensslArgs,
+            "&&", "mkdir", "-p", `/certs/${gclRegistryPrefix}`,
+            "&&", "cp", `/certs/${gclRegistryPrefix}.crt`, `/certs/${gclRegistryPrefix}/ca.crt`, ";", "}",
+        ].join(" "),
+    ];
+    await Shell.spawn(generateCertsInPlace);
 
     // create data volume
     try {
