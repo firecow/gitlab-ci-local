@@ -15,6 +15,7 @@ import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunner
 import {handler} from "./handler.js";
 import * as yaml from "js-yaml";
 import {Parser} from "./parser.js";
+import {insertPowerShellStatusChecks} from "./powershell-script.js";
 import {resolveIncludeLocal, validateIncludeLocal} from "./parser-includes.js";
 import {globbySync} from "globby";
 import terminalLink from "terminal-link";
@@ -853,20 +854,33 @@ If you know what you're doing and would like to suppress this warning, use one o
         return `--env SSH_AUTH_SOCK=${process.env.SSH_AUTH_SOCK} -v ${process.env.SSH_AUTH_SOCK}:${process.env.SSH_AUTH_SOCK}`;
     }
 
-    private generateScriptCommands (scripts: string[]) {
+    private async generateScriptCommands (scripts: string[], powerShell = false) {
+        // Checks go after complete statements, not physical lines, so if/else, try/catch,
+        // pipelines, and here-strings stay intact while an earlier native failure still stops the script.
+        const bodies = powerShell ? await insertPowerShellStatusChecks(this.argv.shell, scripts) : scripts;
         let cmd = "";
-        scripts.forEach((script) => {
+        scripts.forEach((script, index) => {
             const split = script.split(/\r?\n/);
             const multilineText = split.length > 1 ? " # collapsed multi-line command" : "";
-            const text = split[0]?.replaceAll("\\", String.raw`\\`).replaceAll("\"", String.raw`\"`).replaceAll("$", String.raw`\$`);
+            let text: string;
+            if (powerShell) {
+                text = split[0]
+                    ?.replaceAll("`", "``")
+                    .replaceAll("\"", "`\"")
+                    .replaceAll("$", "`$") ?? "";
+            } else {
+                text = split[0]
+                    ?.replaceAll("\\", String.raw`\\`)
+                    .replaceAll("\"", String.raw`\"`)
+                    .replaceAll("$", String.raw`\$`) ?? "";
+            }
             if (this.interactive) {
                 cmd += chalk`echo "{green $ ${text}${multilineText}}"\n`;
             } else {
                 // Print command echo'ed with $GCL_SHELL_PROMPT_PLACEHOLDER
                 cmd += `echo "${GCL_SHELL_PROMPT_PLACEHOLDER} ${text}${multilineText}"\n`;
             }
-            // Execute actual script
-            cmd += `${script}\n`;
+            cmd += `${bodies[index]}\n`;
         });
         return cmd;
     }
@@ -927,14 +941,38 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
 
         if (this.interactive) {
-            let iCmd = "set -eo pipefail\n";
-            iCmd += this.generateScriptCommands(scripts);
+            const usePowerShell = this.argv.isPowerShell;
+            let iCmd = usePowerShell ? "$ErrorActionPreference = \"Stop\"\n" : "set -eo pipefail\n";
+            iCmd += await this.generateScriptCommands(scripts, usePowerShell);
+
+            if (usePowerShell) {
+                const interactiveScriptFile = `${cwd}/${stateDir}/scripts/${safeJobName}_${this.jobId}_interactive.ps1`;
+                // Windows PowerShell 5.x needs a UTF-8 BOM to parse UTF-8 scripts reliably
+                const content = this.argv.shell === "powershell" ? `\ufeff${iCmd}` : iCmd;
+                await fs.outputFile(interactiveScriptFile, content, "utf-8");
+                this._filesToRm.push(interactiveScriptFile);
+
+                const interactiveCp = execa(this.argv.shell, [
+                    "-NoProfile", "-NoLogo", "-ExecutionPolicy", "Bypass",
+                    "-File", interactiveScriptFile,
+                ], {
+                    cwd,
+                    stdio: ["inherit", "inherit", "inherit"],
+                    env: {...process.env, ...expanded},
+                    reject: false,
+                });
+                const interactiveChildProcess = interactiveCp.nodeChildProcess;
+                return new Promise<number>((resolve, reject) => {
+                    interactiveChildProcess.on("exit", (code) => resolve(code ?? 0));
+                    interactiveChildProcess.on("error", (err) => reject(err));
+                });
+            }
 
             const interactiveCp = execa(iCmd, {
                 cwd,
                 shell: "bash",
                 stdio: ["inherit", "inherit", "inherit"],
-                env: {...expanded, ...process.env},
+                env: {...process.env, ...expanded},
                 reject: false,
             });
             const interactiveChildProcess = interactiveCp.nodeChildProcess;
@@ -1116,11 +1154,21 @@ If you know what you're doing and would like to suppress this warning, use one o
         await this.copyCacheIn(writeStreams, expanded);
         await this.copyArtifactsIn(writeStreams);
 
-        let cmd = "set -eo pipefail\n";
-        cmd += "exec 0< /dev/null\n";
+        const usePowerShell = !imageName && this.argv.isPowerShell;
+        let cmd = "";
+        if (usePowerShell) {
+            cmd += "$ErrorActionPreference = \"Stop\"\n";
+        } else {
+            cmd += "set -eo pipefail\n";
+            cmd += "exec 0< /dev/null\n";
+        }
 
         if (!imageName && this.argv.shellIsolation) {
-            cmd += `cd ${stateDir}/builds/${safeJobName}/\n`;
+            if (usePowerShell) {
+                cmd += `Set-Location -LiteralPath "${stateDir}/builds/${safeJobName}/"\n`;
+            } else {
+                cmd += `cd ${stateDir}/builds/${safeJobName}/\n`;
+            }
         }
 
         if (imageName) {
@@ -1131,12 +1179,15 @@ If you know what you're doing and would like to suppress this warning, use one o
                 cmd += `export CI_JOB_STATUS=${expanded["CI_JOB_STATUS"]}\n`;
             }
         }
-        cmd += this.generateScriptCommands(scripts);
+        cmd += await this.generateScriptCommands(scripts, usePowerShell);
 
-        cmd += "exit\n";
+        cmd += usePowerShell ? "exit 0\n" : "exit\n";
 
-        const jobScriptFile = `${cwd}/${stateDir}/scripts/${safeJobName}_${this.jobId}`;
-        await fs.outputFile(jobScriptFile, cmd, "utf-8");
+        const scriptExt = usePowerShell ? ".ps1" : "";
+        const jobScriptFile = `${cwd}/${stateDir}/scripts/${safeJobName}_${this.jobId}${scriptExt}`;
+        // Windows PowerShell 5.x needs a UTF-8 BOM to parse UTF-8 scripts reliably
+        const scriptContent = usePowerShell && this.argv.shell === "powershell" ? `\ufeff${cmd}` : cmd;
+        await fs.outputFile(jobScriptFile, scriptContent, "utf-8");
         await fs.chmod(jobScriptFile, "0755");
         this._filesToRm.push(jobScriptFile);
 
@@ -1144,12 +1195,29 @@ If you know what you're doing and would like to suppress this warning, use one o
             await Utils.spawn([this.argv.containerExecutable, "cp", `${stateDir}/scripts/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-cmd`], cwd);
         }
 
-        const cp = execa(this._containerId ? `${this.argv.containerExecutable} start --attach -i ${this._containerId}` : "bash", {
-            cwd,
-            shell: "bash",
-            env: imageName ? process.env : expanded,
-            reject: false,
-        });
+        const cp = imageName ?
+            execa(`${this.argv.containerExecutable} start --attach -i ${this._containerId}`, {
+                cwd,
+                shell: "bash",
+                env: process.env,
+                reject: false,
+            }) :
+            usePowerShell ?
+                execa(this.argv.shell, [
+                    "-NoProfile", "-NoLogo", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                    "-File", jobScriptFile,
+                ], {
+                    cwd,
+                    env: expanded,
+                    stdin: "ignore",
+                    reject: false,
+                }) :
+                execa("bash", {
+                    cwd,
+                    shell: "bash",
+                    env: expanded,
+                    reject: false,
+                });
         const childProcess = cp.nodeChildProcess;
 
         // eslint-disable-next-line no-control-regex
@@ -1219,7 +1287,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             if (imageName) {
                 cp.stdin?.end(". /gcl-cmd");
-            } else {
+            } else if (!usePowerShell) {
                 cp.stdin?.end(`./${stateDir}/scripts/${safeJobName}_${this.jobId}`);
             }
         });
