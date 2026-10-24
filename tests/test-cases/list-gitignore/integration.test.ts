@@ -18,16 +18,12 @@ beforeEach(() => {
 });
 
 test("list-gitignore --list writes the state dir .gitignore", async () => {
-    // Arrange
     const writeStreams = new WriteStreamsMock();
-
-    // Act
     await handler({
         cwd: "tests/test-cases/list-gitignore",
         list: true,
         stateDir,
     }, writeStreams);
 
-    // Assert
     expect(fs.readFileSync(`${stateDirPath}/.gitignore`, "utf8")).toEqual("*\n!.gitignore\n");
 });
