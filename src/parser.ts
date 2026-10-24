@@ -466,7 +466,6 @@ function validateInput (ctx: any) {
 
     const regex = inputsSpecification.spec.inputs[interpolationKey]?.regex;
     if (regex) {
-        // GitLab evaluates spec:inputs:regex with RE2, which supports e.g. POSIX classes like [[:space:]]
         let re: RE2JS;
         try {
             re = RE2JS.compile(regex);
