@@ -207,6 +207,31 @@ const tests = [
         jsExpression: "\"product-name/v0.0.0+build.0\".matchRE2JS(RE2JS.compile(\"^(?:product-name\\\\/)?v\\\\d+\\\\.\\\\d+\\\\.\\\\d+.*\", 0)) != null",
         evalResult: true,
     },
+    {
+        rule: '"main" =~ $MISSING',
+        jsExpression: "false",
+        evalResult: false,
+    },
+    {
+        rule: '"main" !~ $MISSING',
+        jsExpression: "true",
+        evalResult: true,
+    },
+    {
+        rule: "$MISSING =~ $MISSING",
+        jsExpression: "false",
+        evalResult: false,
+    },
+    {
+        rule: '"main" =~ /^(master|main)$/ || "main" =~ $MISSING',
+        jsExpression: '"main".matchRE2JS(RE2JS.compile("^(master|main)$", 0)) != null || false',
+        evalResult: true,
+    },
+    {
+        rule: '"null =~ null" == "false"',
+        jsExpression: '"null =~ null" == "false"',
+        evalResult: false,
+    },
 ];
 /* eslint-enable @stylistic/quotes */
 
