@@ -430,7 +430,7 @@ CI_SERVER_SHELL_SSH_PORT: 8022
 
 ## Development
 
-You need [bun](https://bun.sh/) installed.
+You need [bun](https://bun.sh/) 1.4 or newer installed.
 
 ### Scripts
 
