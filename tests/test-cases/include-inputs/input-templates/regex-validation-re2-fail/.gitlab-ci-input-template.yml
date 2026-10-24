@@ -1,0 +1,9 @@
+---
+spec:
+  inputs:
+    word:
+      regex: '^[^[:space:]]+$'
+---
+deploy:
+  script:
+    - echo $[[ inputs.word ]]
