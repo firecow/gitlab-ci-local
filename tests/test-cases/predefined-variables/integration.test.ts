@@ -67,6 +67,7 @@ const envVars: {[key: string]: string} = {
     CI_SERVER_HOST: "gitlab.com",
     CI_SERVER_PORT: "443",
     CI_SERVER_PROTOCOL: "https",
+    CI_SERVER_SHELL_SSH_HOST: "gitlab.com",
     CI_SERVER_SHELL_SSH_PORT: "22",
     CI_SERVER_URL: "https://gitlab.com",
     CI_TEMPLATE_REGISTRY_HOST: "registry.gitlab.com",

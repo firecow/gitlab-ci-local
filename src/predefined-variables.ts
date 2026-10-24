@@ -21,6 +21,7 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
     const CI_SERVER_PORT = _variables["CI_SERVER_PORT"] ?? ((gitData.remote.schema === "http" || gitData.remote.schema === "https") ? gitData.remote.port : "443");
     const CI_SERVER_SHELL_SSH_PORT = _variables["CI_SERVER_SHELL_SSH_PORT"] ?? ((gitData.remote.schema === "ssh") ? gitData.remote.port : "22");
     const CI_SERVER_HOST = _variables["CI_SERVER_HOST"] ?? `${gitData.remote.host}`;
+    const CI_SERVER_SHELL_SSH_HOST = _variables["CI_SERVER_SHELL_SSH_HOST"] ?? CI_SERVER_HOST;
     const CI_SERVER_FQDN = _variables["CI_SERVER_FQDN"] ?? (CI_SERVER_PORT == "443" ? gitData.remote.host : `${gitData.remote.host}:${CI_SERVER_PORT}`);
     const CI_SERVER_URL = _variables["CI_SERVER_URL"] ?? `${CI_SERVER_PROTOCOL}://${CI_SERVER_FQDN}`;
     const CI_PROJECT_ROOT_NAMESPACE = gitData.remote.group.split("/")[0];
@@ -57,6 +58,7 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
         CI_SERVER_FQDN: CI_SERVER_FQDN,
         CI_SERVER_HOST: CI_SERVER_HOST,
         CI_SERVER_PORT: CI_SERVER_PORT,
+        CI_SERVER_SHELL_SSH_HOST: CI_SERVER_SHELL_SSH_HOST,
         CI_SERVER_SHELL_SSH_PORT: CI_SERVER_SHELL_SSH_PORT,
         CI_SERVER_URL: CI_SERVER_URL,
         CI_SERVER_PROTOCOL: CI_SERVER_PROTOCOL,
