@@ -4,8 +4,6 @@ import chalk from "chalk-template";
 import {Job, JobRule, Need, Service} from "./job.js";
 import {needsComplex} from "./data-expander.js";
 import fs from "fs-extra";
-import checksum from "checksum";
-import base64url from "base64url";
 import {execa, execaSync, ExecaError} from "execa";
 import assert from "node:assert";
 import {createHash} from "node:crypto";
@@ -61,7 +59,7 @@ export class Utils {
         // and .length === byte length. NAME_MAX is a byte limit — adding /u would break this.
         // We hash `jobName` (not `encoded`) because base64url encoding isn't injective.
         const encoded = jobName.replace(/[^\w-]+/g, (match) => {
-            return base64url.encode(match);
+            return Buffer.from(match).toString("base64url");
         });
         const unambiguous = encoded === jobName ? encoded : `${encoded}.${createHash("sha256").update(jobName).digest("hex").substring(0, 8)}`;
         if (unambiguous.length <= Utils.MAX_FILENAME_LENGTH) {
@@ -410,22 +408,11 @@ export class Utils {
     }
 
     static async checksumFiles (cwd: string, files: string[]): Promise<string> {
-        const promises: Promise<string>[] = [];
-
-        files.forEach((file) => {
-            promises.push(new Promise((resolve, reject) => {
-                if (! fs.pathExistsSync(file)) resolve(path.relative(cwd, file)); // must use relative path here, so that checksum can be deterministic when running the unit tests
-                checksum.file(file, (err, hash) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(hash);
-                });
-            }));
-        });
-
-        const result = await Promise.all(promises);
-        return checksum(result.join(""));
+        const result = await Promise.all(files.map(async (file) => {
+            if (! fs.pathExistsSync(file)) return path.relative(cwd, file); // must use relative path here, so that checksum can be deterministic when running the unit tests
+            return createHash("sha1").update(await fs.readFile(file)).digest("hex");
+        }));
+        return createHash("sha1").update(result.join("")).digest("hex");
     }
 
     static isObject (v: any) {
