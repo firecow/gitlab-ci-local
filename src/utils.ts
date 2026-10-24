@@ -4,8 +4,6 @@ import chalk from "chalk-template";
 import {Job, JobRule, Need, Service} from "./job.js";
 import {needsComplex} from "./data-expander.js";
 import fs from "fs-extra";
-import checksum from "checksum";
-import base64url from "base64url";
 import {execa, execaSync, ExecaError} from "execa";
 import assert from "node:assert";
 import {createHash} from "node:crypto";
@@ -13,12 +11,12 @@ import {CICDVariable} from "./variables-from-files.js";
 import {GitData} from "./git-data.js";
 import {globbySync} from "globby";
 import micromatch from "micromatch";
-import {AxiosRequestConfig} from "axios";
 import path from "node:path";
 import {Argv} from "./argv.js";
 import {withFileLock} from "./pid-file-lock.js";
 
 const RSYNC_LOCK_TIMEOUT_MS = 3_600_000;
+const HRTIME_UNITS: [number, string][] = [[3600, "h"], [60, "min"], [1, "s"], [1e-3, "ms"], [1e-6, "μs"], [1e-9, "ns"]];
 
 type RuleResultOpt = {
     argv: Argv;
@@ -61,7 +59,7 @@ export class Utils {
         // and .length === byte length. NAME_MAX is a byte limit — adding /u would break this.
         // We hash `jobName` (not `encoded`) because base64url encoding isn't injective.
         const encoded = jobName.replace(/[^\w-]+/g, (match) => {
-            return base64url.encode(match);
+            return Buffer.from(match).toString("base64url");
         });
         const unambiguous = encoded === jobName ? encoded : `${encoded}.${createHash("sha256").update(jobName).digest("hex").substring(0, 8)}`;
         if (unambiguous.length <= Utils.MAX_FILENAME_LENGTH) {
@@ -410,26 +408,32 @@ export class Utils {
     }
 
     static async checksumFiles (cwd: string, files: string[]): Promise<string> {
-        const promises: Promise<string>[] = [];
-
-        files.forEach((file) => {
-            promises.push(new Promise((resolve, reject) => {
-                if (! fs.pathExistsSync(file)) resolve(path.relative(cwd, file)); // must use relative path here, so that checksum can be deterministic when running the unit tests
-                checksum.file(file, (err, hash) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(hash);
-                });
-            }));
-        });
-
-        const result = await Promise.all(promises);
-        return checksum(result.join(""));
+        const result = await Promise.all(files.map(async (file) => {
+            if (! fs.pathExistsSync(file)) return path.relative(cwd, file); // must use relative path here, so that checksum can be deterministic when running the unit tests
+            return createHash("sha256").update(await fs.readFile(file)).digest("hex");
+        }));
+        return createHash("sha256").update(result.join("")).digest("hex");
     }
 
     static isObject (v: any) {
-        return Object.getPrototypeOf(v) === Object.prototype;
+        return v != null && Object.getPrototypeOf(v) === Object.prototype;
+    }
+
+    static deepMerge (target: any, ...sources: any[]) {
+        for (const source of sources.filter(Utils.isObject)) {
+            for (const [key, value] of Object.entries(source)) {
+                if (key === "__proto__") continue;
+                target[key] = Utils.isObject(value) && Utils.isObject(target[key]) ? Utils.deepMerge(target[key], value) : structuredClone(value);
+            }
+        }
+        return target;
+    }
+
+    static prettyHrtime ([seconds, nanoseconds]: [number, number]) {
+        const total = seconds + nanoseconds / 1e9;
+        const [size, unit] = HRTIME_UNITS.find(([size]) => total >= size) ?? [1e-9, "ns"];
+        const value = total / size;
+        return `${value >= 10 ? Math.round(value) : Number(value.toFixed(2))} ${unit}`;
     }
 
     static switchStatementExhaustiveCheck (param: never): never {
@@ -452,7 +456,7 @@ export class Utils {
     // renovate: datasource=docker depName=alpine/openssl
     static readonly gclOpensslImage: string = "alpine/openssl:3.5.9";
     // renovate: datasource=docker depName=curlimages/curl
-    static readonly gclCurlImage: string = "curlimages/curl:8.22.0";
+    static readonly gclCurlImage: string = "curlimages/curl:8.23.0";
     static async startDockerRegistry (argv: Argv): Promise<void> {
         const gclRegistryCertVol = `${this.gclRegistryPrefix}.certs`;
         const gclRegistryDataVol = `${this.gclRegistryPrefix}.data`;
@@ -545,21 +549,6 @@ export class Utils {
             throw new Error(`Failed to list tracked files in ${cwd}: ${lsFilesRes.stderr}`);
         }
         return lsFilesRes.stdout.split("\n");
-    }
-
-    static getAxiosProxyConfig (): AxiosRequestConfig {
-        const proxyEnv = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
-        if (proxyEnv) {
-            const proxyUrl = new URL(proxyEnv);
-            return {
-                proxy: {
-                    host: proxyUrl.hostname,
-                    port: proxyUrl.port ? Number.parseInt(proxyUrl.port, 10) : 8080,
-                    protocol: proxyUrl.protocol.replace(":", ""),
-                },
-            };
-        }
-        return {};
     }
 
     static normalizeVariables (variable: any) {
