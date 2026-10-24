@@ -10,7 +10,7 @@ CLI tool to run GitLab CI pipelines locally. Written in TypeScript, built with B
 - **Standalone binaries**: Built with `bun build --compile` for linux-amd64, linux-arm64, macos-x64, macos-arm64, win.
 - **Version**: Hardcoded as `0.0.0` in `package.json`. CI replaces it via `sed` before build/publish. At runtime, `src/index.ts` reads it from `package.json` import.
 - **Two runtimes**: The same source ships as the Node bundle (`engines.node >=24.14.0`) and the Bun binaries, so only use a built-in that behaves identically on both. Tests cover Node only. CI's Bun coverage is just `--version`/`--help` on the compiled binary, so check Bun behaviour by running `bun run build` and `bin/gitlab-ci-local`.
-- **Proxy**: Remote includes use `fetch`. Bun reads `HTTP(S)_PROXY`/`NO_PROXY` natively. Node needs the `http.setGlobalProxyFromEnv?.()` call in `src/index.ts`; that function exists from Node 24.14.0 and never on Bun.
+- **Proxy**: Remote includes use `fetch`. Bun reads `HTTP(S)_PROXY`/`NO_PROXY` natively. Node needs `http.setGlobalProxyFromEnv()` (Node 24.14.0+). `src/index.ts` calls it with `?.` because Bun before 1.4 lacks it; calling it on Bun 1.4+ is harmless.
 
 ## Dependencies
 
