@@ -410,9 +410,9 @@ export class Utils {
     static async checksumFiles (cwd: string, files: string[]): Promise<string> {
         const result = await Promise.all(files.map(async (file) => {
             if (! fs.pathExistsSync(file)) return path.relative(cwd, file); // must use relative path here, so that checksum can be deterministic when running the unit tests
-            return createHash("sha1").update(await fs.readFile(file)).digest("hex");
+            return createHash("sha256").update(await fs.readFile(file)).digest("hex");
         }));
-        return createHash("sha1").update(result.join("")).digest("hex");
+        return createHash("sha256").update(result.join("")).digest("hex");
     }
 
     static isObject (v: any) {
@@ -431,7 +431,7 @@ export class Utils {
 
     static prettyHrtime ([seconds, nanoseconds]: [number, number]) {
         const total = seconds + nanoseconds / 1e9;
-        const [size, unit] = HRTIME_UNITS.find(([size]) => total >= size) ?? HRTIME_UNITS[HRTIME_UNITS.length - 1];
+        const [size, unit] = HRTIME_UNITS.find(([size]) => total >= size) ?? [1e-9, "ns"];
         const value = total / size;
         return `${value >= 10 ? Math.round(value) : Number(value.toFixed(2))} ${unit}`;
     }

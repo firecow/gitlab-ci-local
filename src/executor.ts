@@ -6,24 +6,21 @@ import {matrixSelectorMatches} from "./parallel.js";
 
 export class Executor {
 
-    static async runLoop (argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]) {
-        let startCandidates: Job[];
+    static async runLoop (argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]): Promise<void> {
+        const queue = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
+        if (queue.length === 0) return;
 
-        do {
-            startCandidates = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
-            if (startCandidates.length > 0) {
-                const queue = [...startCandidates];
-                const worker = async () => {
-                    for (let job = queue.shift(); job; job = queue.shift()) {
-                        await job.start().catch((e) => {
-                            queue.length = 0;
-                            throw e;
-                        });
-                    }
-                };
-                await Promise.all(Array.from({length: argv.concurrency ?? queue.length}, worker));
-            }
-        } while (startCandidates.length > 0);
+        const startNext = async (): Promise<void> => {
+            const job = queue.shift();
+            if (!job) return;
+            await job.start().catch((e) => {
+                queue.length = 0;
+                throw e;
+            });
+            return startNext();
+        };
+        await Promise.all(Array.from({length: argv.concurrency ?? queue.length}, startNext));
+        return Executor.runLoop(argv, jobs, stages, potentialStarters);
     }
 
     static getStartCandidates (jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: readonly Job[], manuals: string[]) {
