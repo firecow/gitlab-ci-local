@@ -2,7 +2,6 @@
 // https://github.com/apideck-libraries/better-ajv-errors/tree/026206038919c1fb73b4e8ef258a2e4a01813c4a
 
 import {DefinedError, ErrorObject} from "ajv";
-import pointer from "jsonpointer";
 
 export interface ValidationError {
     message: string;
@@ -30,11 +29,7 @@ const getLastSegment = (path: string): string => {
 };
 
 const safeJsonPointer = <T>({object, pnter, fallback}: {object: any; pnter: string; fallback: T}): T => {
-    try {
-        return pointer.get(object, pnter) ?? fallback;
-    } catch {
-        return fallback;
-    }
+    return pnter.split("/").slice(1).reduce((value, segment) => value?.[segment.replaceAll("~1", "/").replaceAll("~0", "~")], object) ?? fallback;
 };
 
 const filterSingleErrorPerProperty = (errors: DefinedError[]): DefinedError[] => {

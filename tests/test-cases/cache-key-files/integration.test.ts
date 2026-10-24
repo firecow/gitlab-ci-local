@@ -29,7 +29,7 @@ test.concurrent("cache-key-files <cache-key-file referencing $CI_PROJECT_DIR>", 
         stateDir: ".gitlab-ci-local-cache-key-files-ci-project-dir",
     }, writeStreams);
 
-    const expected = "cache-key-file referencing $CI_PROJECT_DIR cache created in '.gitlab-ci-local-cache-key-files-ci-project-dir/cache/0_/builds/gcl/test-project/fakepackage-8aaa60c7b3009df8ce6973111af131bbcde5636e'";
+    const expected = "cache-key-file referencing $CI_PROJECT_DIR cache created in '.gitlab-ci-local-cache-key-files-ci-project-dir/cache/0_/builds/gcl/test-project/fakepackage-509c49af578f6810ed986c60659dfe7e2a7190773951bd711c2d85e8c4008b70'";
 
     expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
 });
@@ -43,7 +43,7 @@ test.concurrent("cache-key-files <cache-key-file file dont exist>", async () => 
         stateDir: ".gitlab-ci-local-cache-key-files-file-dont-exist",
     }, writeStreams);
 
-    const expected = "cache-key-file file dont exist cache created in '.gitlab-ci-local-cache-key-files-file-dont-exist/cache/0_no-such-file-18bbe9d7603e540e28418cf4a072938ac477a2c1'";
+    const expected = "cache-key-file file dont exist cache created in '.gitlab-ci-local-cache-key-files-file-dont-exist/cache/0_no-such-file-2ace7a27ae75986b41524c69ef9100058bb3825260378784e543af1653884a2e'";
     expect(writeStreams.stdoutLines.join("\n")).toContain(expected);
 });
 

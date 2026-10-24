@@ -3,16 +3,13 @@ import {handler} from "../../../src/handler.js";
 import assert, {AssertionError} from "assert";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
-import AxiosMockAdapter from "axios-mock-adapter";
-import axios from "axios";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
 test.concurrent("include-invalid-remote", async () => {
-    const mock = new AxiosMockAdapter(axios);
-    mock.onGet("https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.itlab-http.yml").reply(404);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, {status: 404}));
     try {
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -29,6 +26,6 @@ test.concurrent("include-invalid-remote", async () => {
         ];
         expect(e.message).toBe(msg.join("\n"));
     } finally {
-        mock.restore();
+        fetchSpy.mockRestore();
     }
 });
