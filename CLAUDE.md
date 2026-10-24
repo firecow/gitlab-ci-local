@@ -4,7 +4,7 @@ CLI tool to run GitLab CI pipelines locally. Written in TypeScript, built with B
 
 ## Build & Runtime
 
-- **Runtime**: Bun (not Node.js). All scripts use `bun`/`bun run`. Tests use vitest.
+- **Tooling**: Bun, not npm or Node. All scripts use `bun`/`bun run`. Tests use vitest.
 - **npm publish**: Still uses `npm publish --provenance` because Bun doesn't support provenance.
 - **`bin` field**: Points to `dist/index.js` (Node.js-compatible bundle built by `bun run build:node`), not `src/index.ts`. This keeps `npm install -g` working without Bun.
 - **Standalone binaries**: Built with `bun build --compile` for linux-amd64, linux-arm64, macos-x64, macos-arm64, win.
@@ -30,18 +30,14 @@ CLI tool to run GitLab CI pipelines locally. Written in TypeScript, built with B
 ## Testing
 
 - **Never run the full test suite** (`bun run test`), it takes too long. Always run targeted tests: `bunx vitest run tests/test-cases/<name>/`
-- **Timeout**: Configured in `vitest.config.ts` (`testTimeout: 60_000`).
 - **Docker tests**: Tests under `dind-*` require Docker and are slow.
 - **Stale state dirs**: Test runs leave gitignored `.gitlab-ci-local-*` dirs inside `tests/test-cases/<name>/`. Cached includes and caches there can make a broken test pass. Run `git clean -fdX tests/test-cases/<name>` before trusting a result. Local `depcheck` also scans them.
 - **Stay on vitest**: The suite needs per-file worker isolation for `process.chdir` (`argv-cwd`), `process.env` mutation and module spies. `bun test` runs every file in one process.
 - **HTTP mocks**: `vi.spyOn(globalThis, "fetch")` keyed by exact URL, returning 404 for anything else.
-- **Hash assertions**: `cache-key-files` and `cache-key-prefix` assert SHA-256 cache-key hashes. Update them when `Utils.checksumFiles` changes.
-- **depcheck ignores**: `depcheck,@types/bun,@types/bun-types,vitest,@vitest/coverage-v8`
 
 ## CI
 
-- SonarCloud's quality gate fails on weak hashes (SHA-1/MD5) in new code; use SHA-256.
-- SonarCloud flags `await` inside loops in new code; prefer recursion with early returns or `Promise.all`.
+- SonarCloud judges new code only. Its quality gate fails on weak hashes (SHA-1/MD5), so use SHA-256. It also flags `await` inside loops; prefer recursion with early returns.
 - Pull-request workflows don't start while the PR has merge conflicts. Renovate merges often, so rebase first.
 
 ## Schema
