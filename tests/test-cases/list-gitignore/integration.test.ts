@@ -1,0 +1,27 @@
+import {WriteStreamsMock} from "../../../src/write-streams.js";
+import {handler} from "../../../src/handler.js";
+import {initSpawnSpy} from "../../mocks/utils.mock.js";
+import {WhenStatics} from "../../mocks/when-statics.js";
+import fs from "fs-extra";
+
+const stateDir = ".gitlab-ci-local-list-gitignore";
+const stateDirPath = `tests/test-cases/list-gitignore/${stateDir}`;
+
+beforeAll(() => {
+    initSpawnSpy(WhenStatics.all);
+});
+
+beforeEach(() => {
+    fs.rmSync(stateDirPath, {recursive: true, force: true});
+});
+
+test("list-gitignore --list writes the state dir .gitignore", async () => {
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/list-gitignore",
+        list: true,
+        stateDir,
+    }, writeStreams);
+
+    expect(fs.readFileSync(`${stateDirPath}/.gitignore`, "utf8")).toEqual("*\n!.gitignore\n");
+});
