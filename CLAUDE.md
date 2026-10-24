@@ -4,13 +4,13 @@ CLI tool to run GitLab CI pipelines locally. Written in TypeScript, built with B
 
 ## Build & Runtime
 
-- **Tooling**: Bun, not npm or Node. All scripts use `bun`/`bun run`. Tests use vitest.
-- **npm publish**: Still uses `npm publish --provenance` because Bun doesn't support provenance.
+- **Tooling**: Bun for install, scripts and builds (`bun`/`bun run`, never npm). Tests use vitest, which runs on Node because `bunx` honours its `#!/usr/bin/env node` shebang.
+- **npm publish**: Still uses `npm publish --provenance` because `bun publish` has no provenance support.
 - **`bin` field**: Points to `dist/index.js` (Node.js-compatible bundle built by `bun run build:node`), not `src/index.ts`. This keeps `npm install -g` working without Bun.
 - **Standalone binaries**: Built with `bun build --compile` for linux-amd64, linux-arm64, macos-x64, macos-arm64, win.
 - **Version**: Hardcoded as `0.0.0` in `package.json`. CI replaces it via `sed` before build/publish. At runtime, `src/index.ts` reads it from `package.json` import.
-- **Two runtimes**: The same source runs on Node (npm bundle, `engines.node >=24.14.0`) and Bun (binaries). CI smoke-tests Node 24/25 against Bun 1.2.23/1.3.10. Only use a built-in when it behaves identically on both.
-- **Proxy**: Remote includes use `fetch`. Bun reads `HTTP(S)_PROXY`/`NO_PROXY` natively; Node needs the `http.setGlobalProxyFromEnv?.()` call in `src/index.ts` (absent on Bun, added in Node 24.14.0).
+- **Two runtimes**: The same source ships as the Node bundle (`engines.node >=24.14.0`) and the Bun binaries, so only use a built-in that behaves identically on both. Tests cover Node only. CI's Bun coverage is just `--version`/`--help` on the compiled binary, so check Bun behaviour by running `bun run build` and `bin/gitlab-ci-local`.
+- **Proxy**: Remote includes use `fetch`. Bun reads `HTTP(S)_PROXY`/`NO_PROXY` natively. Node needs the `http.setGlobalProxyFromEnv?.()` call in `src/index.ts`; that function exists from Node 24.14.0 and never on Bun.
 
 ## Dependencies
 
@@ -24,8 +24,9 @@ CLI tool to run GitLab CI pipelines locally. Written in TypeScript, built with B
   - `camelcase` shapes `CI_PROJECT_TITLE`.
   - `terminal-link` is mostly terminal detection.
   - `js-yaml` handles the `!reference` custom tag.
-  - `re2js` gives GitLab's RE2 semantics.
-  - `execa`, `yargs`, `ajv`, `semver` and `chalk-template` are used too widely to replace.
+  - `re2js` gives GitLab's RE2 regex semantics.
+  - `execa`, `yargs`, `ajv`, `semver` and `chalk-template` have no built-in equivalent on both runtimes.
+- Still replaceable: `fs-extra` by `node:fs`, but it's a large mechanical diff across src and tests.
 
 ## Testing
 
