@@ -1391,7 +1391,6 @@ If you know what you're doing and would like to suppress this warning, use one o
     copyIn (source: string) {
         const safeJobName = this.safeJobName;
         if (!this.imageName(this._variables) && this.argv.shellIsolation) {
-            // Relative paths keep Windows rsync (cwRsync/Cygwin) from parsing `C:` as a remote host
             const relativeSource = path.relative(this.argv.cwd, source).split(path.sep).join("/");
             return Utils.spawn(["rsync", "-a", `${relativeSource}/.`, `${this.argv.stateDir}/builds/${safeJobName}`], this.argv.cwd);
         }
