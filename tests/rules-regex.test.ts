@@ -227,6 +227,11 @@ const tests = [
         jsExpression: '"main".matchRE2JS(RE2JS.compile("^(master|main)$", 0)) != null || false',
         evalResult: true,
     },
+    {
+        rule: '"null =~ null" == "false"',
+        jsExpression: '"null =~ null" == "false"',
+        evalResult: false,
+    },
 ];
 /* eslint-enable @stylistic/quotes */
 
