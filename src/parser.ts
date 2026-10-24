@@ -2,6 +2,7 @@ import chalk from "chalk-template";
 import path from "node:path";
 import fs from "fs-extra";
 import * as yaml from "js-yaml";
+import {RE2JS} from "re2js";
 import {Job} from "./job.js";
 import * as DataExpander from "./data-expander.js";
 import {Utils} from "./utils.js";
@@ -465,9 +466,9 @@ function validateInput (ctx: any) {
 
     const regex = inputsSpecification.spec.inputs[interpolationKey]?.regex;
     if (regex) {
-        let re: RegExp;
+        let re: RE2JS;
         try {
-            re = new RegExp(regex);
+            re = RE2JS.compile(regex);
         } catch {
             assert(false, chalk`This GitLab CI configuration is invalid: \`{blueBright ${configFilePath}}\`: \`{blueBright ${interpolationKey}}\` input: regex \`{blueBright ${regex}}\` is not a valid regular expression.`);
         }
