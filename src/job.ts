@@ -1,8 +1,8 @@
 import chalk from "chalk-template";
 import * as dotenv from "dotenv";
 import fs from "fs-extra";
-import prettyHrtime from "pretty-hrtime";
-import split2 from "split2";
+import {Readable} from "node:stream";
+import {StringDecoder} from "node:string_decoder";
 import {Utils} from "./utils.js";
 import {WriteStreams} from "./write-streams.js";
 import {GitData} from "./git-data.js";
@@ -443,11 +443,11 @@ If you know what you're doing and would like to suppress this warning, use one o
 
     get prettyDuration () {
         if (this._endTime) {
-            return prettyHrtime(this._endTime);
+            return Utils.prettyHrtime(this._endTime);
         }
 
         return this._startTime ?
-            prettyHrtime(process.hrtime(this._startTime)) :
+            Utils.prettyHrtime(process.hrtime(this._startTime)) :
             "0 ms";
     }
 
@@ -758,7 +758,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             await Utils.spawn([this.argv.containerExecutable, "start", "--attach", containerId], argv.cwd);
             await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", containerId], argv.cwd);
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to ${this.argv.containerExecutable} volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to ${this.argv.containerExecutable} volumes} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
         }
 
         if (this.services?.length) {
@@ -1198,10 +1198,24 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         const quiet = this.argv.quiet;
 
+        const onLines = (readable: Readable, onLine: (line: string) => void) => {
+            const decoder = new StringDecoder("utf8");
+            let rest = "";
+            readable.on("data", (chunk: Buffer) => {
+                const lines = (rest + decoder.write(chunk)).split(/\r?\n/);
+                rest = lines.pop() ?? "";
+                lines.forEach(onLine);
+            });
+            readable.on("end", () => {
+                rest += decoder.end();
+                if (rest) onLine(rest);
+            });
+        };
+
         return await new Promise<number>((resolve, reject) => {
             if (!quiet) {
-                cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
-                cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
+                onLines(cp.stdout, (e) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
+                onLines(cp.stderr, (e) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
             }
             // Wait for "close" rather than "exit" so all stdout/stderr data events
             // have flushed to the output log file before we resolve.
@@ -1304,7 +1318,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             const time = process.hrtime();
             await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull, ...platformArgs]);
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull}${platformSuffix} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull}${platformSuffix} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
         };
 
@@ -1372,7 +1386,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             });
             this._cacheRestored = true;
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
         }));
     }
 
@@ -1397,7 +1411,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             await this.copyIn(artifactFolder);
         }));
         const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported artifacts} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
     }
 
     copyIn (source: string) {
@@ -1464,7 +1478,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
                 writeStreams.stdout(`${_path}: found ${numOfFiles} artifact files and directories\n`);
             }
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright cache created in '${stateDir}/cache/${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright cache created in '${stateDir}/cache/${cacheName}'} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
         }));
     }
 
@@ -1534,7 +1548,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         if (readdir.length === 0) {
             writeStreams.stdout(chalk`${this.formattedJobName} {yellow !! no artifacts was copied !!}\n`);
         } else {
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright exported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright exported artifacts} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
         }
 
         if (this.artifactsToSource && (this.argv.shellIsolation || this.imageName(expanded))) {
@@ -1544,7 +1558,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 await Utils.spawn(["rsync", "-a", `${cwd}/${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.`, cwd]);
             }
             endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied artifacts to cwd} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
         }
     }
 
@@ -1727,7 +1741,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         await Utils.spawn([this.argv.containerExecutable, "start", `${containerId}`]);
 
         const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
+        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
 
         return containerId;
     }
@@ -1758,7 +1772,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                     return Utils.spawn(spawnCmd);
                 }));
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${prettyHrtime(endTime)}}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${Utils.prettyHrtime(endTime)}}}\n`);
         } catch (e: any) {
             if (!(e instanceof AggregateError)) throw e;
             e.errors.forEach((singleError: Error) => {

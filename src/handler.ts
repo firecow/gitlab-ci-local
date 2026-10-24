@@ -6,7 +6,6 @@ import yargs from "yargs";
 import {Commander} from "./commander.js";
 import {Parser} from "./parser.js";
 import * as state from "./state.js";
-import prettyHrtime from "pretty-hrtime";
 import {WriteStreams} from "./write-streams.js";
 import {cleanupJobResources, Job} from "./job.js";
 import {Utils} from "./utils.js";
@@ -86,7 +85,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         await Utils.rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
         await Commander.runJobs(argv, parser, writeStreams, reportJsonPath);
         if (argv.needs || argv.onlyNeeds) {
-            writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+            writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
         }
     } else if (argv.stage) {
         if (argv.registry) {
@@ -98,7 +97,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         await Utils.rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
         await Commander.runJobsInStage(argv, parser, writeStreams, reportJsonPath);
-        writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+        writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
     } else {
         if (argv.registry) {
             await Utils.startDockerRegistry(argv);
@@ -109,7 +108,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
         await Utils.rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
         await Commander.runPipeline(argv, parser, writeStreams, reportJsonPath);
-        if (childPipelineDepth == 0) writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
+        if (childPipelineDepth == 0) writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();
 

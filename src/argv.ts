@@ -408,9 +408,10 @@ export class Argv {
     }
 
     get concurrency (): number | null {
-        const concurrency = this.map.get("concurrency");
-        if (!concurrency) return null;
-        return Number(concurrency);
+        const concurrency = Number(this.map.get("concurrency") ?? 0);
+        if (concurrency === 0) return null;
+        assert(Number.isInteger(concurrency) && concurrency > 0, "--concurrency must be a positive integer");
+        return concurrency;
     }
 
     get containerExecutable (): string {

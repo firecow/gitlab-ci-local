@@ -2,21 +2,25 @@ import chalk from "chalk-template";
 import {Job} from "./job.js";
 import assert from "node:assert";
 import {Argv} from "./argv.js";
-import pMap from "p-map";
 import {matrixSelectorMatches} from "./parallel.js";
 
 export class Executor {
 
-    static async runLoop (argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]) {
-        let startCandidates: Job[];
+    static async runLoop (argv: Argv, jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: Job[]): Promise<void> {
+        const queue = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
+        if (queue.length === 0) return;
 
-        do {
-            startCandidates = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
-            if (startCandidates.length > 0) {
-                const mapper = async (startCandidate: Job) => startCandidate.start();
-                await pMap(startCandidates, mapper, {concurrency: argv.concurrency ?? startCandidates.length});
-            }
-        } while (startCandidates.length > 0);
+        const startNext = async (): Promise<void> => {
+            const job = queue.shift();
+            if (!job) return;
+            await job.start().catch((e) => {
+                queue.length = 0;
+                throw e;
+            });
+            return startNext();
+        };
+        await Promise.all(Array.from({length: argv.concurrency ?? queue.length}, startNext));
+        return Executor.runLoop(argv, jobs, stages, potentialStarters);
     }
 
     static getStartCandidates (jobs: ReadonlyArray<Job>, stages: readonly string[], potentialStarters: readonly Job[], manuals: string[]) {

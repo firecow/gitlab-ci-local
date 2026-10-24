@@ -1,9 +1,7 @@
 import chalk from "chalk-template";
 import path from "node:path";
-import deepExtend from "deep-extend";
 import fs from "fs-extra";
 import * as yaml from "js-yaml";
-import prettyHrtime from "pretty-hrtime";
 import {Job} from "./job.js";
 import * as DataExpander from "./data-expander.js";
 import {Utils} from "./utils.js";
@@ -70,7 +68,7 @@ export class Parser {
         const pathToExpandedGitLabCi = path.join(argv.cwd, argv.stateDir, "expanded-gitlab-ci.yml");
         fs.mkdirpSync(path.join(argv.cwd, argv.stateDir));
         fs.writeFileSync(pathToExpandedGitLabCi, yaml.dump(parser.gitlabData));
-        if (argv.childPipelineDepth == 0) writeStreams.stderr(chalk`{grey parsing and downloads finished in ${prettyHrtime(parsingTime)}.}\n`);
+        if (argv.childPipelineDepth == 0) writeStreams.stderr(chalk`{grey parsing and downloads finished in ${Utils.prettyHrtime(parsingTime)}.}\n`);
 
         for (const warning of warnings) {
             writeStreams.stderr(chalk`{yellow ${warning}}\n`);
@@ -84,7 +82,7 @@ export class Parser {
                 gitLabCiConfig: parser.gitlabData,
                 argv,
             });
-            if (argv.childPipelineDepth == 0) writeStreams.stderr(chalk`{grey json schema validated in ${prettyHrtime(process.hrtime(time))}}\n`);
+            if (argv.childPipelineDepth == 0) writeStreams.stderr(chalk`{grey json schema validated in ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
         }
         return parser;
     }
@@ -121,7 +119,7 @@ export class Parser {
         yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, {argv, cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables, maximumIncludes: argv.maximumIncludes, inputs}));
         ParserIncludes.resetCount();
 
-        const gitlabData: any = deepExtend({}, ...yamlDataList);
+        const gitlabData: any = Utils.deepMerge({}, ...yamlDataList);
 
         // Expand various fields in gitlabData
         DataExpander.jobExtends(gitlabData);

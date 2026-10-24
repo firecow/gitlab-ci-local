@@ -1,6 +1,5 @@
 import chalk from "chalk-template";
 import assert, {AssertionError} from "node:assert";
-import deepExtend from "deep-extend";
 import {Need} from "./job.js";
 
 type MatrixSelector = NonNullable<Need["parallel"]>["matrix"];
@@ -120,7 +119,7 @@ export function matrixVariablesList (jobData: any, jobName: string): {[key: stri
     }
 
     // Generate variables in while loop by expanding the matrix
-    const deep = deepExtend({}, jobData);
+    const deep = structuredClone(jobData);
     for (const m of deep.parallel.matrix) {
         let i = 0;
 
