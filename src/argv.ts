@@ -3,7 +3,7 @@ import fs from "fs-extra";
 import * as dotenv from "dotenv";
 import * as path from "node:path";
 import camelCase from "camelcase";
-import {Utils} from "./utils.js";
+import {Shell} from "./shell.js";
 import {WriteStreams} from "./write-streams.js";
 import chalkBase from "chalk";
 import chalk from "chalk-template";
@@ -21,7 +21,7 @@ export function splitSemicolonEnvVars (argv: Record<string, any>, arrayKeys: Set
 
 async function isInGitRepository () {
     try {
-        await Utils.spawn(["git", "rev-parse", "--is-inside-work-tree"]);
+        await Shell.spawn(["git", "rev-parse", "--is-inside-work-tree"]);
         return true;
     } catch {
         return false;
@@ -29,7 +29,7 @@ async function isInGitRepository () {
 }
 
 async function gitRootPath () {
-    const {stdout} = await Utils.spawn(["git", "rev-parse", "--show-toplevel"]);
+    const {stdout} = await Shell.spawn(["git", "rev-parse", "--show-toplevel"]);
     return stdout;
 }
 

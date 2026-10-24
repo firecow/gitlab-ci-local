@@ -2,7 +2,7 @@ import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
-import {Utils} from "../../../src/utils.js";
+import {Shell} from "../../../src/shell.js";
 import fs from "fs-extra";
 import chalk from "chalk-template";
 import assert, {AssertionError} from "assert";
@@ -27,7 +27,7 @@ describe("fallback cwd", () => {
 
     test("fallbacks to git root directory", async () => {
         process.chdir(currentRelativeDir);
-        await Utils.bash("cd .. && git init");
+        await Shell.bash("cd .. && git init");
 
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -49,8 +49,8 @@ job:
 
     test("won't fallback if cwd has .gitlab-ci.yml", async () => {
         process.chdir(currentRelativeDir);
-        await Utils.bash("cd .. && git init");
-        await Utils.bash("cp ../.gitlab-ci-2.yml .gitlab-ci.yml");
+        await Shell.bash("cd .. && git init");
+        await Shell.bash("cp ../.gitlab-ci-2.yml .gitlab-ci.yml");
 
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -72,7 +72,7 @@ job:
     });
 
     test("won't fallback if not inside git repository", async () => {
-        const {stdout: tmpDir} = await Utils.bash("mktemp -d");
+        const {stdout: tmpDir} = await Shell.bash("mktemp -d");
         process.chdir(tmpDir);
 
         try {
@@ -88,7 +88,7 @@ job:
 
     test("won't fallback if --file flag is set", async () => {
         process.chdir(currentRelativeDir);
-        await Utils.bash("cd .. && git init");
+        await Shell.bash("cd .. && git init");
 
         try {
             const writeStreams = new WriteStreamsMock();
@@ -104,7 +104,7 @@ job:
 
     test("won't fallback if --cwd flag is set", async () => {
         process.chdir(currentRelativeDir);
-        await Utils.bash("cd .. && git init");
+        await Shell.bash("cd .. && git init");
 
         try {
             const writeStreams = new WriteStreamsMock();
