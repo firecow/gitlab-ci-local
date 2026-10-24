@@ -10,8 +10,10 @@ beforeAll(() => {
 });
 
 test.concurrent("include-template <test-job>", async () => {
-    const body = await fs.readFile("tests/test-cases/include-template/remote-mock.yml", "utf8");
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(body));
+    const bodies: Record<string, string> = {
+        "https://gitlab.com/gitlab-org/gitlab/-/raw/HEAD/lib/gitlab/ci/templates/Workflows/MergeRequest-Pipelines.gitlab-ci.yml": await fs.readFile("tests/test-cases/include-template/remote-mock.yml", "utf8"),
+    };
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => String(url) in bodies ? new Response(bodies[String(url)]) : new Response(null, {status: 404}));
     try {
 
         const writeStreams = new WriteStreamsMock();

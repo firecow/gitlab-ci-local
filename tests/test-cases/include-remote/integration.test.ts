@@ -14,7 +14,7 @@ test.concurrent("include-remote <test-job|build-job>", async () => {
         "https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.gitlab-http.yml": await fs.readFile("tests/test-cases/include-remote/remote-mock.yml", "utf8"),
         "https://gitlab.com/firecow/gitlab-ci-local-includes/-/raw/master/.gitlab-http1.yml": await fs.readFile("tests/test-cases/include-remote/remote-mock1.yml", "utf8"),
     };
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => new Response(bodies[String(url)]));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => String(url) in bodies ? new Response(bodies[String(url)]) : new Response(null, {status: 404}));
     try {
 
         const writeStreams = new WriteStreamsMock();

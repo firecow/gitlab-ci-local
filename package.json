@@ -5,6 +5,9 @@
   "main": "dist/index.js",
   "bin": "dist/index.js",
   "version": "0.0.0",
+  "engines": {
+    "node": ">=24.14.0"
+  },
   "scripts": {
     "build": "bun build --compile --minify --sourcemap --no-compile-autoload-dotenv src/index.ts --outfile bin/gitlab-ci-local",
     "build:linux-amd64": "bun build --compile --minify --sourcemap --no-compile-autoload-dotenv --target=bun-linux-x64-baseline src/index.ts --outfile bin/linux-amd64/gitlab-ci-local",
