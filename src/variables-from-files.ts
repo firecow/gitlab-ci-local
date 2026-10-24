@@ -6,7 +6,9 @@ import chalk from "chalk-template";
 import {Argv} from "./argv.js";
 import assert from "node:assert";
 import path from "node:path";
-import {Utils} from "./utils.js";
+import {Shell, safeBashString} from "./shell.js";
+import {deepMerge, isObject} from "./data-expander.js";
+import {prettyHrtime} from "./pretty-hrtime.js";
 import dotenv from "dotenv";
 
 export interface CICDVariable {
@@ -41,16 +43,16 @@ export class VariablesFromFiles {
                 const file = match.groups?.file;
                 const ref = match.groups?.ref;
                 const time = process.hrtime();
-                const safeFile = Utils.safeBashString(file ?? "");
-                const res = await Utils.bash(`set -eou pipefail; git archive --remote=${Utils.safeBashString(url ?? "")} -- ${Utils.safeBashString(ref ?? "")} ${safeFile} | tar -xO -- ${safeFile}`, cwd);
+                const safeFile = safeBashString(file ?? "");
+                const res = await Shell.bash(`set -eou pipefail; git archive --remote=${safeBashString(url ?? "")} -- ${safeBashString(ref ?? "")} ${safeFile} | tar -xO -- ${safeFile}`, cwd);
                 return {url, file, ref, res, duration: process.hrtime(time)};
             }));
             for (const {url, file, ref, res, duration} of downloads) {
-                writeStreams.stderr(chalk`{grey downloaded ${url} ${ref} ${file} in ${Utils.prettyHrtime(duration)}}\n`);
+                writeStreams.stderr(chalk`{grey downloaded ${url} ${ref} ${file} in ${prettyHrtime(duration)}}\n`);
                 const loadedYaml = yaml.load(`${res.stdout}`);
                 // Check if loadedYaml is an object
                 if (typeof loadedYaml === "object" && loadedYaml !== null) {
-                    remoteFileData = Utils.deepMerge(remoteFileData, loadedYaml);
+                    remoteFileData = deepMerge(remoteFileData, loadedYaml);
                 }
             }
         }
@@ -108,7 +110,7 @@ export class VariablesFromFiles {
             for (const [groupKey, groupEntries] of Object.entries(fileData?.group ?? {})) {
                 if (!groupUrl.includes(this.normalizeProjectKey(groupKey, writeStreams))) continue;
                 assert(groupEntries != null, "groupEntries cannot be null/undefined");
-                assert(Utils.isObject(groupEntries), "group entries in variable files must be an object");
+                assert(isObject(groupEntries), "group entries in variable files must be an object");
                 for (const [k, v] of Object.entries(groupEntries)) {
                     addToVariables(k, v, 2 + filePriority);
                 }
@@ -118,7 +120,7 @@ export class VariablesFromFiles {
             for (const [projectKey, projectEntries] of Object.entries(fileData?.project ?? [])) {
                 if (!projectUrl.includes(this.normalizeProjectKey(projectKey, writeStreams))) continue;
                 assert(projectEntries != null, "projectEntries cannot be null/undefined");
-                assert(Utils.isObject(projectEntries), "project entries in variable files must be an object");
+                assert(isObject(projectEntries), "project entries in variable files must be an object");
                 for (const [k, v] of Object.entries(projectEntries)) {
                     addToVariables(k, v, 3 + filePriority);
                 }
@@ -147,7 +149,7 @@ export class VariablesFromFiles {
                 }
             }
             assert(projectVariablesFileData != null, "projectEntries cannot be null/undefined");
-            assert(Utils.isObject(projectVariablesFileData), `${argv.cwd}/.gitlab-ci-local-variables.yml must contain an object`);
+            assert(isObject(projectVariablesFileData), `${argv.cwd}/.gitlab-ci-local-variables.yml must contain an object`);
             for (const [k, v] of Object.entries(projectVariablesFileData)) {
                 addToVariables(k, v, 24, isDotEnvFormat);
             }
@@ -166,4 +168,27 @@ export class VariablesFromFiles {
         writeStreams.stderr(chalk`{yellow WARNING: Interpreting '${key}' as '${key.replace(":", "/")}'}\n`);
         return key.replace(":", "/");
     }
+}
+
+export function findEnvMatchedVariables (variables: {[name: string]: CICDVariable}, fileVariablesDir?: string, environment?: {name: string}) {
+    const envMatchedVariables: {[key: string]: string} = {};
+    for (const [k, v] of Object.entries(variables)) {
+        for (const entry of v.environments) {
+            if (environment?.name.match(entry.regexp) || entry.regexp.source === ".*") {
+                if (fileVariablesDir != null && v.type === "file" && !entry.fileSource) {
+                    envMatchedVariables[k] = `${fileVariablesDir}/${k}`;
+                    fs.mkdirpSync(`${fileVariablesDir}`);
+                    fs.writeFileSync(`${fileVariablesDir}/${k}`, entry.content);
+                } else if (fileVariablesDir != null && v.type === "file" && entry.fileSource) {
+                    envMatchedVariables[k] = `${fileVariablesDir}/${k}`;
+                    fs.mkdirpSync(`${fileVariablesDir}`);
+                    fs.copyFileSync(entry.fileSource, `${fileVariablesDir}/${k}`);
+                } else {
+                    envMatchedVariables[k] = entry.content;
+                }
+                break;
+            }
+        }
+    }
+    return envMatchedVariables;
 }

@@ -1,9 +1,8 @@
 import chalk from "chalk-template";
 import assert, {AssertionError} from "node:assert";
 import {Job, Need} from "./job.js";
-import {Utils} from "./utils.js";
 
-const isMergeable = (value: any) => value != null && Utils.isObject(value) && value.referenceData == null;
+const isMergeable = (value: any) => value != null && isObject(value) && value.referenceData == null;
 const extendsMerge = (target: any, source: any): any => {
     if (!isMergeable(target) || !isMergeable(source)) return structuredClone(source);
     for (const [key, value] of Object.entries(source)) {
@@ -32,14 +31,14 @@ const extendsRecurse = (gitlabData: any, jobName: string, jobData: any, parents:
 export function jobExtends (gitlabData: any) {
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName)) continue;
-        if (!Utils.isObject(jobData)) continue;
+        if (!isObject(jobData)) continue;
         const parentDatas = extendsRecurse(gitlabData, jobName, jobData, [], 0);
         gitlabData[jobName] = [...parentDatas, jobData].reduce((mergedData, data) => extendsMerge(mergedData, data), {});
     }
 
     for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
         if (Job.illegalJobNames.has(jobName)) continue;
-        if (!Utils.isObject(jobData)) continue;
+        if (!isObject(jobData)) continue;
         delete jobData.extends;
     }
 }
@@ -230,7 +229,7 @@ export function inheritDefault (gitlabData: any) {
 
 function normalizeGlobalVariables (gitlabData: any) {
     for (const [key, value] of Object.entries<any>(gitlabData.variables ?? {})) {
-        gitlabData.variables[key] = Utils.normalizeVariables(value);
+        gitlabData.variables[key] = normalizeVariables(value);
     }
 }
 
@@ -249,4 +248,31 @@ export function flattenLists (gitlabData: any) {
         }
     };
     flatten(gitlabData, "");
+}
+
+export function isObject (v: any) {
+    return v != null && Object.getPrototypeOf(v) === Object.prototype;
+}
+
+export function deepMerge (target: any, ...sources: any[]) {
+    for (const source of sources.filter(isObject)) {
+        for (const [key, value] of Object.entries(source)) {
+            if (key === "__proto__") continue;
+            target[key] = isObject(value) && isObject(target[key]) ? deepMerge(target[key], value) : structuredClone(value);
+        }
+    }
+    return target;
+}
+
+export function normalizeVariables (variable: any) {
+    if (variable === null) {
+        return ""; // variable's values are nullable
+    } else if (isObject(variable)) {
+        if (variable["expand"] === false) {
+            return String(variable["value"]).replaceAll("$", () => "$$");
+        }
+        return String(variable["value"]);
+    } else {
+        return String(variable);
+    }
 }

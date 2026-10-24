@@ -3,7 +3,7 @@ import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
-import {Utils} from "../../../src/utils.js";
+import {Shell, safeBashString} from "../../../src/shell.js";
 import fs from "fs-extra";
 import path from "node:path";
 
@@ -14,7 +14,7 @@ test("include-project-file-path-traversal", async () => {
     await fs.rm(`${cwd}/${stateDir}/`, {recursive: true, force: true});
 
     initSpawnSpy([...WhenStatics.all, WhenStatics.mockGitRemoteHttp]);
-    const bashMultiSpy = vi.spyOn(Utils, "bashMulti").mockResolvedValue({stdout: "", stderr: ""});
+    const bashMultiSpy = vi.spyOn(Shell, "bashMulti").mockResolvedValue({stdout: "", stderr: ""});
     vi.spyOn(Math, "random").mockReturnValue(0.5);
     const copySpy = vi.spyOn(fs, "copy");
 
@@ -30,5 +30,5 @@ test("include-project-file-path-traversal", async () => {
 
     const bashScripts = bashMultiSpy.mock.calls.flatMap(([scripts]) => scripts);
     expect(bashScripts).toContain(`cd '${path.resolve(tmpDir)}'`);
-    expect(bashScripts).toContain(`git sparse-checkout set --no-cone ${Utils.safeBashString(includeFile)}`);
+    expect(bashScripts).toContain(`git sparse-checkout set --no-cone ${safeBashString(includeFile)}`);
 });

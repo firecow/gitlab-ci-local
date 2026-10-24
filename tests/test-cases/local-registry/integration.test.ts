@@ -1,6 +1,6 @@
 import {WriteStreamsMock} from "../../../src/write-streams.js";
 import {handler} from "../../../src/handler.js";
-import {Utils} from "../../../src/utils.js";
+import {gclRegistryPrefix} from "../../../src/docker-registry.js";
 
 test("local-registry ci variables", async () => {
     const writeStreams = new WriteStreamsMock;
@@ -12,9 +12,9 @@ test("local-registry ci variables", async () => {
     }, writeStreams);
 
     const expected = [
-        `registry-variables > CI_REGISTRY=${Utils.gclRegistryPrefix}`,
-        `registry-variables > CI_REGISTRY_USER=${Utils.gclRegistryPrefix}.user`,
-        `registry-variables > CI_REGISTRY_PASSWORD=${Utils.gclRegistryPrefix}.password`,
+        `registry-variables > CI_REGISTRY=${gclRegistryPrefix}`,
+        `registry-variables > CI_REGISTRY_USER=${gclRegistryPrefix}.user`,
+        `registry-variables > CI_REGISTRY_PASSWORD=${gclRegistryPrefix}.password`,
     ];
 
     expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));

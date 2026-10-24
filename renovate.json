@@ -16,8 +16,8 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^src/utils\\.ts$/"],
-      "matchStrings": ["// renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+static readonly \\w+: string = \"[^:\"]+:(?<currentValue>[^\"]+)\";"]
+      "managerFilePatterns": ["/^src/docker-registry\\.ts$/"],
+      "matchStrings": ["// renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+const \\w+ = \"[^:\"]+:(?<currentValue>[^\"]+)\";"]
     }
   ]
 }

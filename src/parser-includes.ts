@@ -1,5 +1,8 @@
 import {Argv} from "./argv.js";
-import {Utils} from "./utils.js";
+import {Shell, safeBashString} from "./shell.js";
+import {expandText} from "./expand.js";
+import {getRulesResult} from "./rules.js";
+import {prettyHrtime} from "./pretty-hrtime.js";
 import fs from "fs-extra";
 import {WriteStreams} from "./write-streams.js";
 import {GitData} from "./git-data.js";
@@ -78,8 +81,8 @@ export class ParserIncludes {
         const cliGlobalInputs = inputsConfig._cliGlobal ?? {};
         const cliComponentInputs = inputsConfig._cliComponents ?? {};
 
-        const isStructured = Utils.isStructuredInputsFile(fileInputs);
-        const globalInputs = {...Utils.getGlobalFileInputs(fileInputs), ...cliGlobalInputs};
+        const isStructured = isStructuredInputsFile(fileInputs);
+        const globalInputs = {...getGlobalFileInputs(fileInputs), ...cliGlobalInputs};
         this.count++;
         assert(
             this.count <= opts.maximumIncludes + 1, // 1st init call is not counted
@@ -98,7 +101,7 @@ export class ParserIncludes {
         for (const [index, value] of include.entries()) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({argv, cwd, rules: include_rules, variables: opts.variables}, gitData);
+                const rulesResult = getRulesResult({argv, cwd, rules: include_rules, variables: opts.variables}, gitData);
                 if (rulesResult.when === "never") {
                     continue;
                 }
@@ -129,7 +132,7 @@ export class ParserIncludes {
         for (const [index, value] of include.entries()) {
             if (value["rules"]) {
                 const include_rules = value["rules"];
-                const rulesResult = Utils.getRulesResult({argv, cwd, rules: include_rules, variables: opts.variables}, gitData);
+                const rulesResult = getRulesResult({argv, cwd, rules: include_rules, variables: opts.variables}, gitData);
                 if (rulesResult.when === "never") {
                     continue;
                 }
@@ -191,14 +194,14 @@ export class ParserIncludes {
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["template"]) {
                 const {project, ref, file, domain} = this.covertTemplateToProjectFile(value["template"]);
-                const fsUrl = Utils.fsUrl(`https://${domain}/${project}/-/raw/${ref}/${file}`);
+                const fsUrl = stripUrlScheme(`https://${domain}/${project}/-/raw/${ref}/${file}`);
                 const mergedInputs = {...value.inputs, ...globalInputs};
                 const fileDoc = await Parser.loadYaml(
                     `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: mergedInputs, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams,
                 );
                 includeDatas = includeDatas.concat(await this.init(fileDoc, opts));
             } else if (value["remote"]) {
-                const fsUrl = Utils.fsUrl(value["remote"]);
+                const fsUrl = stripUrlScheme(value["remote"]);
                 const mergedInputs = {...value.inputs, ...globalInputs};
                 const fileDoc = await Parser.loadYaml(
                     `${cwd}/${stateDir}/includes/${fsUrl}`, {inputs: mergedInputs, skipInputValidation: argv.skipInputValidation}, expandVariables, writeStreams,
@@ -236,9 +239,9 @@ export class ParserIncludes {
         for (const entry of include) {
             for (const [key, value] of Object.entries(entry)) {
                 if (Array.isArray(value)) {
-                    entry[key] = value.map((v) => Utils.expandText(v, variables));
+                    entry[key] = value.map((v) => expandText(v, variables));
                 } else {
-                    entry[key] = Utils.expandText(value, variables);
+                    entry[key] = expandText(value, variables);
                 }
             }
         }
@@ -264,7 +267,7 @@ export class ParserIncludes {
         }
         const cmdStr = cmdArgs.join(" ");
         if (!(cmdStr in this.gitRemoteInfoCache)) {
-            this.gitRemoteInfoCache[cmdStr] = Utils.syncSpawn(cmdArgs).stdout;
+            this.gitRemoteInfoCache[cmdStr] = Shell.syncSpawn(cmdArgs).stdout;
         }
         return this.gitRemoteInfoCache[cmdStr];
     };
@@ -346,7 +349,7 @@ export class ParserIncludes {
         updatedIncludes.forEach((inner: any, i: number) => {
             if (!inner["local"]) return;
             if (inner["rules"]) {
-                const rulesResult = Utils.getRulesResult({argv, cwd: opts.cwd, variables: opts.variables, rules: inner["rules"]}, opts.gitData);
+                const rulesResult = getRulesResult({argv, cwd: opts.cwd, variables: opts.variables, rules: inner["rules"]}, opts.gitData);
                 if (rulesResult.when === "never") {
                     return;
                 }
@@ -362,7 +365,7 @@ export class ParserIncludes {
     }
 
     static async downloadIncludeRemote (cwd: string, stateDir: string, url: string, fetchIncludes: boolean, writeStreams: WriteStreams): Promise<void> {
-        const fsUrl = Utils.fsUrl(url);
+        const fsUrl = stripUrlScheme(url);
         try {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
             if (await fs.pathExists(target) && !fetchIncludes) return;
@@ -370,7 +373,7 @@ export class ParserIncludes {
             const res = await fetch(url, {headers: {"User-Agent": "gitlab-ci-local"}});
             if (!res.ok) throw new Error(`Request failed with status code ${res.status}`);
             await fs.outputFile(target, await res.text());
-            writeStreams.stderr(chalk`{grey downloaded ${url} in ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
+            writeStreams.stderr(chalk`{grey downloaded ${url} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});
         }
@@ -379,19 +382,19 @@ export class ParserIncludes {
     private static async gitCloneSparseCheckout (cwd: string, stateDir: string, tmpDir: string, remote: GitData["remote"], project: string, ref: string, sparsePaths: string[]): Promise<void> {
         await fs.mkdirp(`${cwd}/${stateDir}`);
         const isCommitSha = /^[0-9a-f]{40}$/i.test(ref);
-        const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${Utils.safeBashString(ref)}`;
-        await Utils.bashMulti([
-            `cd ${Utils.safeBashString(cwd)}/${Utils.safeBashString(stateDir)}`,
-            `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${Utils.safeBashString(remoteProjectUrl(remote, project))} ${Utils.safeBashString(tmpDir)}`,
-            `cd ${Utils.safeBashString(tmpDir)}`,
-            ...isCommitSha ? [`git fetch --depth=1 --filter=tree:0 origin ${Utils.safeBashString(ref)}`] : [],
-            `git sparse-checkout set --no-cone ${sparsePaths.map((p) => Utils.safeBashString(p)).join(" ")}`,
+        const gitCloneBranch = (ref === "HEAD" || isCommitSha) ? "" : `--branch ${safeBashString(ref)}`;
+        await Shell.bashMulti([
+            `cd ${safeBashString(cwd)}/${safeBashString(stateDir)}`,
+            `git clone ${gitCloneBranch} -n --depth=1 --filter=tree:0 ${safeBashString(remoteProjectUrl(remote, project))} ${safeBashString(tmpDir)}`,
+            `cd ${safeBashString(tmpDir)}`,
+            ...isCommitSha ? [`git fetch --depth=1 --filter=tree:0 origin ${safeBashString(ref)}`] : [],
+            `git sparse-checkout set --no-cone ${sparsePaths.map((p) => safeBashString(p)).join(" ")}`,
             isCommitSha ? "git checkout FETCH_HEAD" : "git checkout",
         ], cwd);
     }
 
     private static safeArchiveUrl (remote: GitData["remote"], project: string): string {
-        return Utils.safeBashString(`ssh://git@${remote.host}:${remote.port}/${project}.git`);
+        return safeBashString(`ssh://git@${remote.host}:${remote.port}/${project}.git`);
     }
 
     static async downloadIncludeProjectFile (opts: ParserIncludesInitOptions, project: string, ref: string, file: string): Promise<void> {
@@ -420,9 +423,9 @@ export class ParserIncludes {
             } else {
                 const targetDirectory = `${target}/`;
                 await fs.mkdirp(`${cwd}/${target}`);
-                await Utils.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${Utils.safeBashString(ref)} ${Utils.safeBashString(normalizedFile)} | tar -f - -xC ${Utils.safeBashString(targetDirectory)}`, cwd);
+                await Shell.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${safeBashString(ref)} ${safeBashString(normalizedFile)} | tar -f - -xC ${safeBashString(targetDirectory)}`, cwd);
             }
-            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
+            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
             throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }\n${e}`});
         } finally {
@@ -462,9 +465,9 @@ export class ParserIncludes {
                 const componentWildcard = `${componentName}*.yml`;
                 const targetDirectory = `${target}/`;
                 await fs.mkdirp(`${cwd}/${target}`);
-                await Utils.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${Utils.safeBashString(ref)} ${Utils.safeBashString(componentWildcard)} | tar -f - -xC ${Utils.safeBashString(targetDirectory)}`, cwd);
+                await Shell.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${safeBashString(ref)} ${safeBashString(componentWildcard)} | tar -f - -xC ${safeBashString(targetDirectory)}`, cwd);
             }
-            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
+            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
             throw new AssertionError({message: `Component include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
         } finally {
@@ -481,7 +484,11 @@ export class ParserIncludes {
             let result = cache.get(path);
             if (result !== undefined) return result;
 
-            result = (await Utils.getTrackedFiles(path)).map(p => `${path}/${p}`);
+            const lsFilesRes = await Shell.bash("git ls-files --deduplicate", path);
+            if (lsFilesRes.exitCode != 0) {
+                throw new Error(`Failed to list tracked files in ${path}: ${lsFilesRes.stderr}`);
+            }
+            result = lsFilesRes.stdout.split("\n").map(p => `${path}/${p}`);
             cache.set(path, result);
             return result;
         };
@@ -536,4 +543,16 @@ export function remoteProjectUrl (remote: {schema: string; host: string; port: s
     const defaultPort = remote.schema === "http" ? "80" : "443";
     const port = remote.port === defaultPort ? "" : `:${remote.port}`;
     return `${remote.schema}://${remote.host}${port}/${project}.git`;
+}
+
+function stripUrlScheme (url: string): string {
+    return url.replace(/^https:\/\//g, "").replace(/^http:\/\//g, "");
+}
+
+function isStructuredInputsFile (fileInputs: {[key: string]: any}): boolean {
+    return fileInputs._global !== undefined || Object.keys(fileInputs).some(k => !k.startsWith("_") && typeof fileInputs[k] === "object" && fileInputs[k] !== null && !Array.isArray(fileInputs[k]));
+}
+
+export function getGlobalFileInputs (fileInputs: {[key: string]: any}): {[key: string]: any} {
+    return isStructuredInputsFile(fileInputs) ? (fileInputs._global ?? {}) : {...fileInputs};
 }

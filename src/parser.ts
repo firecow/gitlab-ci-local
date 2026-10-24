@@ -3,16 +3,18 @@ import path from "node:path";
 import fs from "fs-extra";
 import * as yaml from "js-yaml";
 import {RE2JS} from "re2js";
-import {Job} from "./job.js";
+import {Job, forEachRealJob} from "./job.js";
 import * as DataExpander from "./data-expander.js";
-import {Utils} from "./utils.js";
+import {expandVariables} from "./expand.js";
+import {getRulesResult} from "./rules.js";
+import {prettyHrtime} from "./pretty-hrtime.js";
 import assert, {AssertionError} from "node:assert";
 import {Validator} from "./validator.js";
 import * as parallel from "./parallel.js";
 import {GitData} from "./git-data.js";
-import {ParserIncludes} from "./parser-includes.js";
+import {ParserIncludes, getGlobalFileInputs} from "./parser-includes.js";
 import {Producers} from "./producers.js";
-import {VariablesFromFiles} from "./variables-from-files.js";
+import {VariablesFromFiles, findEnvMatchedVariables} from "./variables-from-files.js";
 import {Argv} from "./argv.js";
 import {WriteStreams} from "./write-streams.js";
 import {init as initPredefinedVariables} from "./predefined-variables.js";
@@ -69,7 +71,7 @@ export class Parser {
         const pathToExpandedGitLabCi = path.join(argv.cwd, argv.stateDir, "expanded-gitlab-ci.yml");
         fs.mkdirpSync(path.join(argv.cwd, argv.stateDir));
         fs.writeFileSync(pathToExpandedGitLabCi, yaml.dump(parser.gitlabData));
-        if (argv.childPipelineDepth == 0) writeStreams.stderr(chalk`{grey parsing and downloads finished in ${Utils.prettyHrtime(parsingTime)}.}\n`);
+        if (argv.childPipelineDepth == 0) writeStreams.stderr(chalk`{grey parsing and downloads finished in ${prettyHrtime(parsingTime)}.}\n`);
 
         for (const warning of warnings) {
             writeStreams.stderr(chalk`{yellow ${warning}}\n`);
@@ -83,7 +85,7 @@ export class Parser {
                 gitLabCiConfig: parser.gitlabData,
                 argv,
             });
-            if (argv.childPipelineDepth == 0) writeStreams.stderr(chalk`{grey json schema validated in ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
+            if (argv.childPipelineDepth == 0) writeStreams.stderr(chalk`{grey json schema validated in ${prettyHrtime(process.hrtime(time))}}\n`);
         }
         return parser;
     }
@@ -98,17 +100,17 @@ export class Parser {
         const fetchIncludes = argv.fetchIncludes;
         const gitData = await GitData.init(cwd, writeStreams);
         const variablesFromFiles = await VariablesFromFiles.init(argv, writeStreams, gitData);
-        const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles);
+        const envMatchedVariables = findEnvMatchedVariables(variablesFromFiles);
         const predefinedVariables = initPredefinedVariables({gitData, argv, envMatchedVariables});
         const variables = {...predefinedVariables, ...envMatchedVariables, ...argv.variable};
-        const expanded = Utils.expandVariables(variables);
+        const expanded = expandVariables(variables);
 
         // Load inputs from file and merge with CLI inputs
         const inputs = await this.loadInputs(cwd, argv);
 
         // Build root-level inputs from global CLI + global file inputs
         const fileInputs = inputs._file ?? {};
-        const rootInputs = {...Utils.getGlobalFileInputs(fileInputs), ...inputs._cliGlobal};
+        const rootInputs = {...getGlobalFileInputs(fileInputs), ...inputs._cliGlobal};
 
         let yamlDataList: any[] = [{stages: [".pre", "build", "test", "deploy", ".post"]}];
         const gitlabCiData = await Parser.loadYaml(`${cwd}/${file}`, {inputs: rootInputs, skipInputValidation: argv.skipInputValidation}, this.expandVariables, writeStreams);
@@ -120,7 +122,7 @@ export class Parser {
         yamlDataList = yamlDataList.concat(await ParserIncludes.init(gitlabCiLocalData, {argv, cwd, stateDir, writeStreams, gitData, fetchIncludes, variables: expanded, expandVariables: this.expandVariables, maximumIncludes: argv.maximumIncludes, inputs}));
         ParserIncludes.resetCount();
 
-        const gitlabData: any = Utils.deepMerge({}, ...yamlDataList);
+        const gitlabData: any = DataExpander.deepMerge({}, ...yamlDataList);
 
         // Expand various fields in gitlabData
         DataExpander.jobExtends(gitlabData);
@@ -135,11 +137,11 @@ export class Parser {
         if (workflowRules) {
             const globalVars = gitlabData.variables ?? {};
             const workflowVariables = {...predefinedVariables, ...globalVars, ...envMatchedVariables, ...argv.variable};
-            const ruleResult = Utils.getRulesResult({argv, cwd, rules: workflowRules, variables: workflowVariables}, gitData, "on_success");
+            const ruleResult = getRulesResult({argv, cwd, rules: workflowRules, variables: workflowVariables}, gitData, "on_success");
             if (ruleResult.variables) {
                 const normalizedRuleVars: {[key: string]: string} = {};
                 for (const [key, value] of Object.entries(ruleResult.variables)) {
-                    normalizedRuleVars[key] = Utils.normalizeVariables(value);
+                    normalizedRuleVars[key] = DataExpander.normalizeVariables(value);
                 }
                 gitlabData.variables = {...globalVars, ...normalizedRuleVars};
             }
@@ -155,12 +157,12 @@ export class Parser {
         this._stages = gitlabData.stages;
 
         // Check job variables for invalid hash of key value pairs, and cast numbers to strings
-        Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
+        forEachRealJob(gitlabData, (jobName, jobData) => {
             assert(jobData.when !== "never",
                 chalk`This GitLab CI configuration is invalid: jobs:${jobName} when:never can only be used in a rules section or workflow:rules`,
             );
             for (const [key, value] of Object.entries(jobData.variables ?? {})) {
-                jobData.variables[key] = Utils.normalizeVariables(value);
+                jobData.variables[key] = DataExpander.normalizeVariables(value);
             }
 
             for (let i = 0; i < (jobData.services ?? []).length; i++) {
@@ -178,7 +180,7 @@ export class Parser {
         this._gitlabData = gitlabData;
 
         // Generate jobs and put them into stages
-        Utils.forEachRealJob(gitlabData, (jobName, jobData) => {
+        forEachRealJob(gitlabData, (jobName, jobData) => {
             assert(gitData != null, "gitData must be set");
             assert(variablesFromFiles != null, "homeVariables must be set");
 
@@ -401,7 +403,7 @@ export class Parser {
                                 return firstTwoChar + inputValue + lastChar;
 
                             default:
-                                Utils.switchStatementExhaustiveCheck(inputType);
+                                throw new Error(`Unhandled case ${inputType satisfies never}`);
                         }
                     })
                 .replaceAll( // https://docs.gitlab.com/ci/components/#use-component-context-in-components
