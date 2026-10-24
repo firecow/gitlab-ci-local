@@ -318,6 +318,7 @@ export class Utils {
             return `.matchRE2JS(${_rhs}) ${_operator} null`;
         });
 
+        evalStr = evalStr.replaceAll(/(?:(?<![\w"'])null|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')\s*(=~|!~)\s*null\b/g, (_, operator) => operator === "=~" ? "false" : "true");
         evalStr = evalStr.replaceAll(/null.matchRE2JS\(.+?\)\s*!=\s*null/g, "false");
         evalStr = evalStr.replaceAll(/null.matchRE2JS\(.+?\)\s*==\s*null/g, "true");
 
