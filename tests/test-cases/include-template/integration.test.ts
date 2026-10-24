@@ -3,8 +3,6 @@ import {handler} from "../../../src/handler.js";
 import chalk from "chalk-template";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
-import AxiosMockAdapter from "axios-mock-adapter";
-import axios from "axios";
 import fs from "fs-extra";
 
 beforeAll(() => {
@@ -12,10 +10,9 @@ beforeAll(() => {
 });
 
 test.concurrent("include-template <test-job>", async () => {
-    const mock = new AxiosMockAdapter(axios);
+    const body = await fs.readFile("tests/test-cases/include-template/remote-mock.yml", "utf8");
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(body));
     try {
-        const body = await fs.readFile("tests/test-cases/include-template/remote-mock.yml", "utf8");
-        mock.onGet("https://gitlab.com/gitlab-org/gitlab/-/raw/HEAD/lib/gitlab/ci/templates/Workflows/MergeRequest-Pipelines.gitlab-ci.yml").reply(200, body);
 
         const writeStreams = new WriteStreamsMock();
         await handler({
@@ -29,6 +26,6 @@ test.concurrent("include-template <test-job>", async () => {
         ];
         expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
     } finally {
-        mock.restore();
+        fetchSpy.mockRestore();
     }
 });

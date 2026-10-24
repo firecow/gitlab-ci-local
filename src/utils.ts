@@ -11,7 +11,6 @@ import {CICDVariable} from "./variables-from-files.js";
 import {GitData} from "./git-data.js";
 import {globbySync} from "globby";
 import micromatch from "micromatch";
-import {AxiosRequestConfig} from "axios";
 import path from "node:path";
 import {Argv} from "./argv.js";
 import {withFileLock} from "./pid-file-lock.js";
@@ -532,21 +531,6 @@ export class Utils {
             throw new Error(`Failed to list tracked files in ${cwd}: ${lsFilesRes.stderr}`);
         }
         return lsFilesRes.stdout.split("\n");
-    }
-
-    static getAxiosProxyConfig (): AxiosRequestConfig {
-        const proxyEnv = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
-        if (proxyEnv) {
-            const proxyUrl = new URL(proxyEnv);
-            return {
-                proxy: {
-                    host: proxyUrl.hostname,
-                    port: proxyUrl.port ? Number.parseInt(proxyUrl.port, 10) : 8080,
-                    protocol: proxyUrl.protocol.replace(":", ""),
-                },
-            };
-        }
-        return {};
     }
 
     static normalizeVariables (variable: any) {

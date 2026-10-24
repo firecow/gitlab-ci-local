@@ -6,7 +6,6 @@ import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "node:assert";
 import chalk from "chalk-template";
 import {Parser} from "./parser.js";
-import axios from "axios";
 import path from "node:path";
 import prettyHrtime from "pretty-hrtime";
 import semver from "semver";
@@ -369,11 +368,9 @@ export class ParserIncludes {
             const target = `${cwd}/${stateDir}/includes/${fsUrl}`;
             if (await fs.pathExists(target) && !fetchIncludes) return;
             const time = process.hrtime();
-            const res = await axios.get(url, {
-                headers: {"User-Agent": "gitlab-ci-local"},
-                ...Utils.getAxiosProxyConfig(),
-            });
-            await fs.outputFile(target, res.data);
+            const res = await fetch(url, {headers: {"User-Agent": "gitlab-ci-local"}});
+            if (!res.ok) throw new Error(`Request failed with status code ${res.status}`);
+            await fs.outputFile(target, await res.text());
             writeStreams.stderr(chalk`{grey downloaded ${url} in ${prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});

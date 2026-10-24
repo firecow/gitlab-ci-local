@@ -2,7 +2,8 @@ import chalk from "chalk-template";
 import * as dotenv from "dotenv";
 import fs from "fs-extra";
 import prettyHrtime from "pretty-hrtime";
-import split2 from "split2";
+import {Readable} from "node:stream";
+import {StringDecoder} from "node:string_decoder";
 import {Utils} from "./utils.js";
 import {WriteStreams} from "./write-streams.js";
 import {GitData} from "./git-data.js";
@@ -1187,10 +1188,24 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         const quiet = this.argv.quiet;
 
+        const onLines = (readable: Readable, onLine: (line: string) => void) => {
+            const decoder = new StringDecoder("utf8");
+            let rest = "";
+            readable.on("data", (chunk: Buffer) => {
+                const lines = (rest + decoder.write(chunk)).split(/\r?\n/);
+                rest = lines.pop() ?? "";
+                lines.forEach(onLine);
+            });
+            readable.on("end", () => {
+                rest += decoder.end();
+                if (rest) onLine(rest);
+            });
+        };
+
         return await new Promise<number>((resolve, reject) => {
             if (!quiet) {
-                cp.stdout?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
-                cp.stderr?.pipe(split2()).on("data", (e: string) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
+                onLines(cp.stdout, (e) => outFunc(e, writeStreams.stdout.bind(writeStreams), (s) => chalk`{greenBright ${s}}`));
+                onLines(cp.stderr, (e) => outFunc(e, writeStreams.stderr.bind(writeStreams), (s) => chalk`{redBright ${s}}`));
             }
             // Wait for "close" rather than "exit" so all stdout/stderr data events
             // have flushed to the output log file before we resolve.

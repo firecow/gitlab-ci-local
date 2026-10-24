@@ -13,6 +13,9 @@ import {AssertionError} from "assert";
 import {Job, cleanupJobResources} from "./job.js";
 import {GitlabRunnerPresetValues} from "./gitlab-preset.js";
 import packageJson from "../package.json";
+import http from "node:http";
+
+http.setGlobalProxyFromEnv?.();
 
 const jobs: Job[] = [];
 
