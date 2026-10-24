@@ -1,7 +1,6 @@
 import chalk from "chalk-template";
 import assert, {AssertionError} from "node:assert";
 import {Job, Need} from "./job.js";
-import {traverse} from "object-traversal";
 import {Utils} from "./utils.js";
 
 const isMergeable = (value: any) => value != null && Utils.isObject(value) && value.referenceData == null;
@@ -236,15 +235,18 @@ function normalizeGlobalVariables (gitlabData: any) {
 }
 
 export function flattenLists (gitlabData: any) {
-    traverse(gitlabData, ({parent, key, value, meta}) => {
-        if (parent != null && key != null && Array.isArray(value)) {
-            assert(!value.flat(9).some(Array.isArray), chalk`This Gitlab CI configuration is invalid: {blueBright ${meta.nodePath}} config should be string or a nested array of strings up to 10 level deep`);
+    const visited = new Set<any>();
+    const flatten = (node: any, nodePath: string) => {
+        if (node == null || typeof node !== "object" || visited.has(node)) return;
+        visited.add(node);
+        for (const [key, value] of Object.entries(node)) {
+            const keyPath = nodePath ? `${nodePath}.${key}` : key;
+            if (Array.isArray(value)) {
+                assert(!value.flat(9).some(Array.isArray), chalk`This Gitlab CI configuration is invalid: {blueBright ${keyPath}} config should be string or a nested array of strings up to 10 level deep`);
+                node[key] = value.flat(9);
+            }
+            flatten(node[key], keyPath);
         }
-    }, {cycleHandling: true});
-
-    traverse(gitlabData, ({parent, key, value}) => {
-        if (parent != null && key != null && Array.isArray(value)) {
-            parent[key] = value.flat(9);
-        }
-    }, {cycleHandling: false});
+    };
+    flatten(gitlabData, "");
 }

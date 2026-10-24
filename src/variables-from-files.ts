@@ -3,13 +3,11 @@ import {GitData} from "./git-data.js";
 import fs from "fs-extra";
 import * as yaml from "js-yaml";
 import chalk from "chalk-template";
-import prettyHrtime from "pretty-hrtime";
 import {Argv} from "./argv.js";
 import assert from "node:assert";
 import path from "node:path";
 import {Utils} from "./utils.js";
 import dotenv from "dotenv";
-import deepExtend from "deep-extend";
 
 export interface CICDVariable {
     type: "file" | "variable";
@@ -48,11 +46,11 @@ export class VariablesFromFiles {
                 return {url, file, ref, res, duration: process.hrtime(time)};
             }));
             for (const {url, file, ref, res, duration} of downloads) {
-                writeStreams.stderr(chalk`{grey downloaded ${url} ${ref} ${file} in ${prettyHrtime(duration)}}\n`);
+                writeStreams.stderr(chalk`{grey downloaded ${url} ${ref} ${file} in ${Utils.prettyHrtime(duration)}}\n`);
                 const loadedYaml = yaml.load(`${res.stdout}`);
                 // Check if loadedYaml is an object
                 if (typeof loadedYaml === "object" && loadedYaml !== null) {
-                    remoteFileData = deepExtend(remoteFileData, loadedYaml);
+                    remoteFileData = Utils.deepMerge(remoteFileData, loadedYaml);
                 }
             }
         }

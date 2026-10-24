@@ -16,6 +16,7 @@ import {Argv} from "./argv.js";
 import {withFileLock} from "./pid-file-lock.js";
 
 const RSYNC_LOCK_TIMEOUT_MS = 3_600_000;
+const HRTIME_UNITS: [number, string][] = [[3600, "h"], [60, "min"], [1, "s"], [1e-3, "ms"], [1e-6, "μs"], [1e-9, "ns"]];
 
 type RuleResultOpt = {
     argv: Argv;
@@ -415,7 +416,24 @@ export class Utils {
     }
 
     static isObject (v: any) {
-        return Object.getPrototypeOf(v) === Object.prototype;
+        return v != null && Object.getPrototypeOf(v) === Object.prototype;
+    }
+
+    static deepMerge (target: any, ...sources: any[]) {
+        for (const source of sources.filter(Utils.isObject)) {
+            for (const [key, value] of Object.entries(source)) {
+                if (key === "__proto__") continue;
+                target[key] = Utils.isObject(value) && Utils.isObject(target[key]) ? Utils.deepMerge(target[key], value) : structuredClone(value);
+            }
+        }
+        return target;
+    }
+
+    static prettyHrtime ([seconds, nanoseconds]: [number, number]) {
+        const total = seconds + nanoseconds / 1e9;
+        const [size, unit] = HRTIME_UNITS.find(([size]) => total >= size) ?? HRTIME_UNITS[HRTIME_UNITS.length - 1];
+        const value = total / size;
+        return `${value >= 10 ? Math.round(value) : Number(value.toFixed(2))} ${unit}`;
     }
 
     static switchStatementExhaustiveCheck (param: never): never {

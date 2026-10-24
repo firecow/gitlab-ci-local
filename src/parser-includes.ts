@@ -7,7 +7,6 @@ import assert, {AssertionError} from "node:assert";
 import chalk from "chalk-template";
 import {Parser} from "./parser.js";
 import path from "node:path";
-import prettyHrtime from "pretty-hrtime";
 import semver from "semver";
 import {RE2JS} from "re2js";
 import {globbySync} from "globby";
@@ -371,7 +370,7 @@ export class ParserIncludes {
             const res = await fetch(url, {headers: {"User-Agent": "gitlab-ci-local"}});
             if (!res.ok) throw new Error(`Request failed with status code ${res.status}`);
             await fs.outputFile(target, await res.text());
-            writeStreams.stderr(chalk`{grey downloaded ${url} in ${prettyHrtime(process.hrtime(time))}}\n`);
+            writeStreams.stderr(chalk`{grey downloaded ${url} in ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
             throw new AssertionError({message: `Remote include could not be fetched ${url}\n${e}`});
         }
@@ -423,7 +422,7 @@ export class ParserIncludes {
                 await fs.mkdirp(`${cwd}/${target}`);
                 await Utils.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${Utils.safeBashString(ref)} ${Utils.safeBashString(normalizedFile)} | tar -f - -xC ${Utils.safeBashString(targetDirectory)}`, cwd);
             }
-            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${prettyHrtime(process.hrtime(time))}}\n`);
+            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
             throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }\n${e}`});
         } finally {
@@ -465,7 +464,7 @@ export class ParserIncludes {
                 await fs.mkdirp(`${cwd}/${target}`);
                 await Utils.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${Utils.safeBashString(ref)} ${Utils.safeBashString(componentWildcard)} | tar -f - -xC ${Utils.safeBashString(targetDirectory)}`, cwd);
             }
-            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${prettyHrtime(process.hrtime(time))}}\n`);
+            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
         } catch (e) {
             throw new AssertionError({message: `Component include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
         } finally {

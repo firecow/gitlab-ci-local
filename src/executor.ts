@@ -2,7 +2,6 @@ import chalk from "chalk-template";
 import {Job} from "./job.js";
 import assert from "node:assert";
 import {Argv} from "./argv.js";
-import pMap from "p-map";
 import {matrixSelectorMatches} from "./parallel.js";
 
 export class Executor {
@@ -13,8 +12,16 @@ export class Executor {
         do {
             startCandidates = Executor.getStartCandidates(jobs, stages, potentialStarters, argv.manual);
             if (startCandidates.length > 0) {
-                const mapper = async (startCandidate: Job) => startCandidate.start();
-                await pMap(startCandidates, mapper, {concurrency: argv.concurrency ?? startCandidates.length});
+                const queue = [...startCandidates];
+                const worker = async () => {
+                    for (let job = queue.shift(); job; job = queue.shift()) {
+                        await job.start().catch((e) => {
+                            queue.length = 0;
+                            throw e;
+                        });
+                    }
+                };
+                await Promise.all(Array.from({length: argv.concurrency ?? queue.length}, worker));
             }
         } while (startCandidates.length > 0);
     }
