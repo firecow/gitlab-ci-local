@@ -1528,7 +1528,6 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         if (this.artifactsToSource && (this.argv.shellIsolation || this.imageName(expanded))) {
             time = process.hrtime();
-            // Relative paths keep Windows rsync (cwRsync/Cygwin) from parsing `C:` as a remote host
             await Utils.spawn(["rsync", "--exclude=/.gitlab-ci-reports/", "-a", `${stateDir}/artifacts/${safeJobName}/.`, "."], cwd);
             if (reportDotenv != null) {
                 await Utils.spawn(["rsync", "-a", `${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.`, "."], cwd);
