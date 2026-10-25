@@ -127,6 +127,17 @@ curl -L https://github.com/firecow/gitlab-ci-local/releases/latest/download/gitl
 
 On Windows, gitlab-ci-local disables Git Bash path conversion (`MSYS_NO_PATHCONV`) for the host bash commands it runs itself, such as container setup, rsync, and git helpers, so Linux paths like `/builds/...` are not rewritten to `C:/Program Files/Git/builds/...`.
 
+To run shell-executor jobs with Windows PowerShell or PowerShell Core instead of Git Bash:
+
+```bash
+gitlab-ci-local --shell powershell   # Windows PowerShell 5.x
+gitlab-ci-local --shell pwsh         # PowerShell Core
+```
+
+Set the same option in `.gitlab-ci-local-env` with `SHELL=powershell`, or in the environment with `GCL_SHELL=powershell`.
+
+Docker-executor jobs always use bash inside the container regardless of `--shell`.
+
 ## Convenience
 
 ### CLI options
