@@ -7,10 +7,11 @@ import {Executor} from "./executor.js";
 import fs from "fs-extra";
 import {Argv} from "./argv.js";
 import {AssertionError} from "node:assert";
+import {buildReport, writeReport} from "./report.js";
 
 export class Commander {
 
-    static async runPipeline (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
+    static async runPipeline (argv: Argv, parser: Parser, writeStreams: WriteStreams, reportJsonPath: string | null = null) {
         const jobs = parser.jobs;
         const stages = parser.stages;
 
@@ -26,10 +27,12 @@ export class Commander {
             jobs: jobs,
             stages: stages,
             jobNamePad: parser.jobNamePad,
+            pipelineIid: parser.pipelineIid,
+            reportJsonPath,
         });
     }
 
-    static async runJobsInStage (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
+    static async runJobsInStage (argv: Argv, parser: Parser, writeStreams: WriteStreams, reportJsonPath: string | null = null) {
         const jobs = parser.jobs.filter(j => j.stage === argv.stage);
         const stages = parser.stages;
 
@@ -46,10 +49,12 @@ export class Commander {
             jobs: jobs,
             stages: stages,
             jobNamePad: parser.jobNamePad,
+            pipelineIid: parser.pipelineIid,
+            reportJsonPath,
         });
     }
 
-    static async runJobs (argv: Argv, parser: Parser, writeStreams: WriteStreams) {
+    static async runJobs (argv: Argv, parser: Parser, writeStreams: WriteStreams, reportJsonPath: string | null = null) {
         const needs = argv.needs || argv.onlyNeeds;
         const jobArgs = argv.job;
         const jobs = parser.jobs;
@@ -85,10 +90,12 @@ export class Commander {
             jobs: jobs,
             stages: stages,
             jobNamePad: parser.jobNamePad,
+            pipelineIid: parser.pipelineIid,
+            reportJsonPath,
         });
     }
 
-    static async printReport ({cwd, stateDir, showTimestamps, writeStreams, jobs, stages, jobNamePad}: {
+    static async printReport ({cwd, stateDir, showTimestamps, writeStreams, jobs, stages, jobNamePad, pipelineIid, reportJsonPath}: {
         cwd: string;
         showTimestamps: boolean;
         stateDir: string;
@@ -96,6 +103,8 @@ export class Commander {
         jobs: ReadonlyArray<Job>;
         stages: readonly string[];
         jobNamePad: number;
+        pipelineIid: number;
+        reportJsonPath: string | null;
     }) {
 
         writeStreams.stdout("\n");
@@ -192,6 +201,10 @@ export class Commander {
                 writeStreams.stdout(chalk`, url: {bold ${url}}`);
             }
             writeStreams.stdout(" }\n");
+        }
+
+        if (reportJsonPath) {
+            await writeReport(reportJsonPath, buildReport({pipelineIid, jobs, cwd, stateDir}));
         }
     }
 
