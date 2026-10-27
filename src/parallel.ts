@@ -119,7 +119,7 @@ export function matrixVariablesList (jobData: any, jobName: string): {[key: stri
     }
 
     // Generate variables in while loop by expanding the matrix
-    const deep = structuredClone(jobData);
+    const deep = {parallel: {matrix: jobData.parallel.matrix.map((m: any) => ({...m}))}};
     for (const m of deep.parallel.matrix) {
         let i = 0;
 
