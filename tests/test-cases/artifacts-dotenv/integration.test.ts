@@ -50,5 +50,5 @@ test.concurrent("artifacts-dotenv <use-non-success-ref> --needs", async () => {
     const stdout = writeStreams.stdoutLines.join("\n");
     expect(stdout).toMatch(/use-non-success-ref\s+> FAILURE_REF is \[failure-value\]/);
     expect(stdout).toMatch(/use-non-success-ref\s+> WARNING_REF is \[warning-value\]/);
-    expect(writeStreams.stderrLines.join("\n")).not.toMatch(/use-non-success-ref.*FAIL/);
+    expect(stdout).not.toMatch(/FAIL.*use-non-success-ref/);
 });
