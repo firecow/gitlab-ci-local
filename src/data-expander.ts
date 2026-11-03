@@ -138,10 +138,8 @@ export function needsEach (jobName: string, gitlabData: any) {
     if (!jobData.needs) return;
     assert(Array.isArray(jobData.needs), chalk`{blueBright ${jobName}} {yellow needs:} must be an array`);
 
-    for (const [i, n] of Object.entries<any>(jobData.needs)) {
-        assert(n != null, chalk`{blueBright ${jobName}} {yellow needs:} entries cannot be empty`);
-        jobData.needs[i] = needsComplex(n);
-    }
+    // GitLab silently drops empty entries, e.g. from an anchor holding an empty list item
+    jobData.needs = jobData.needs.filter((n: any) => n != null).map(needsComplex);
 }
 
 export function cacheComplex (data: any) {

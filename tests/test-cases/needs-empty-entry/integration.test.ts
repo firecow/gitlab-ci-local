@@ -8,11 +8,18 @@ beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
 });
 
-test.concurrent("needs-empty-entry <dev-job>", async () => {
+test.concurrent("needs-empty-entry <dev-job> --needs", async () => {
     const writeStreams = new WriteStreamsMock();
-
-    await expect(handler({
+    await handler({
         cwd: "tests/test-cases/needs-empty-entry",
+        job: ["dev-job"],
+        needs: true,
         stateDir: ".gitlab-ci-local-needs-empty-entry",
-    }, writeStreams)).rejects.toThrow(chalk`{blueBright dev-job} {yellow needs:} entries cannot be empty`);
+    }, writeStreams);
+
+    const expected = [
+        chalk`{blueBright build-job} {greenBright >} build`,
+        chalk`{blueBright dev-job  } {greenBright >} dev`,
+    ];
+    expect(writeStreams.stdoutLines).toEqual(expect.arrayContaining(expected));
 });
