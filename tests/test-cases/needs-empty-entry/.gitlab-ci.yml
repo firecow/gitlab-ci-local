@@ -1,4 +1,7 @@
 ---
+.empty-needs: &empty-needs
+  -
+
 build-job:
   script:
     - echo "build"
@@ -6,5 +9,7 @@ build-job:
 dev-job:
   needs:
     - ~
+    - *empty-needs
+    - build-job
   script:
     - echo "dev"
