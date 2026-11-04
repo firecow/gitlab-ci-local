@@ -228,6 +228,26 @@ const tests = [
         evalResult: true,
     },
     {
+        rule: '"null" =~ /^$MISSING$/',
+        jsExpression: '"null".matchRE2JS(RE2JS.compile("^$MISSING$", 0)) != null',
+        evalResult: false,
+    },
+    {
+        rule: '"null" =~ "/^$MISSING$/"',
+        jsExpression: '"null".matchRE2JS(RE2JS.compile("^$MISSING$", 0)) != null',
+        evalResult: false,
+    },
+    {
+        rule: '"a/null" =~ "/a/$MISSING/"',
+        jsExpression: '"a/null".matchRE2JS(RE2JS.compile("a/$MISSING", 0)) != null',
+        evalResult: false,
+    },
+    {
+        rule: '"/x" =~ "/x" && $MISSING == null',
+        jsExpression: '"/x"?.split().some((lhs) => "/x".includes(lhs)) !== false && null == null',
+        evalResult: true,
+    },
+    {
         rule: '"null =~ null" == "false"',
         jsExpression: '"null =~ null" == "false"',
         evalResult: false,

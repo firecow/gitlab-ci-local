@@ -62,11 +62,11 @@ export function evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]
         return binary;
     };
 
-    // Expand all variables
-    evalStr = expandTextWith(evalStr, {
+    // Expand all variables outside regex literals
+    evalStr = evalStr.split(/((?:=~|!~)\s*(?:\/(?:\\.|[^/\\])+\/|"\/[^"]*\/\w*"|'\/[^']*\/\w*'))/).map((part, index) => index % 2 === 1 ? part : expandTextWith(part, {
         unescape: JSON.stringify("$"),
         variable: (name) => JSON.stringify(envs[name] ?? null).replaceAll("\\\\", "\\"),
-    });
+    })).join("");
     const expandedEvalStr = evalStr;
 
     // Scenario when RHS is a <regex>
