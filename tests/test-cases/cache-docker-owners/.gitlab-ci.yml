@@ -1,0 +1,52 @@
+---
+produce-user-cache:
+  stage: build
+  image:
+    name: busybox
+    docker:
+      user: "1001:1001"
+  cache:
+    key: user
+    paths:
+      - data
+  script:
+    - mkdir data
+    - echo "foo" > data/foo.txt
+
+produce-mixed-cache:
+  stage: build
+  image: busybox
+  cache:
+    key: mixed
+    paths:
+      - mixed
+  script:
+    - mkdir -p mixed/sub
+    - touch mixed/root.txt mixed/other.txt "mixed/with space.txt" mixed/sub/file.txt
+    - chown 1234:5678 mixed/other.txt "mixed/with space.txt"
+    - chown -R 2000:2000 mixed/sub
+
+consume-caches:
+  stage: test
+  image:
+    name: busybox
+    docker:
+      user: "1001:1001"
+  needs: [produce-user-cache, produce-mixed-cache]
+  cache:
+    - key: user
+      paths: [data]
+      policy: pull
+    - key: mixed
+      paths: [mixed]
+      policy: pull
+  script:
+    - stat -c "%u:%g %n" data data/foo.txt mixed mixed/* mixed/sub/file.txt
+    - test "$(stat -c %u:%g data)" = "1001:1001"
+    - test "$(stat -c %u:%g data/foo.txt)" = "1001:1001"
+    - echo "bar" >> data/foo.txt
+    - test "$(stat -c %u:%g mixed/root.txt)" = "0:0"
+    - test "$(stat -c %u:%g mixed/other.txt)" = "1234:5678"
+    - test "$(stat -c %u:%g "mixed/with space.txt")" = "1234:5678"
+    - test "$(stat -c %u:%g mixed/sub)" = "2000:2000"
+    - test "$(stat -c %u:%g mixed/sub/file.txt)" = "2000:2000"

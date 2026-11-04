@@ -103,6 +103,9 @@ export class Job {
         "after_script", "variables", "cache", "workflow", "page:deploy",
     ]);
 
+    // Holds, for every docker cache, one NUL separated list of paths per "uid_gid" owner
+    static readonly cacheOwnersDir = ".gitlab-ci-local-owners";
+
     readonly argv: Argv;
     readonly name: string;
     readonly baseName: string;
@@ -1386,10 +1389,28 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             await Mutex.exclusive(cacheName, async () => {
                 await this.copyIn(cacheFolder);
+                await this.restoreCacheOwners(`${cwd}/${stateDir}/cache/${Job.cacheOwnersDir}/${cacheName}`, expanded);
             });
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
         }));
+    }
+
+    // docker cp gives the restored files the uid/gid they have on the host, so give them back the owners recorded by copyCacheOut
+    private async restoreCacheOwners (ownersFolder: string, expanded: {[key: string]: string}) {
+        if (!this.imageName(expanded) || !await fs.pathExists(ownersFolder)) return;
+
+        const containerExecutable = this.argv.containerExecutable;
+        const {stdout: containerId} = await Shell.spawn([
+            containerExecutable, "create", "--user=0:0",
+            `--volume=${this.buildVolumeName}:${this.ciProjectDir}`, `--workdir=${this.ciProjectDir}`,
+            this.argv.helperImage, "bash", "-c",
+            "for f in /gcl-cache-owners/*_*; do o=\"${f##*/}\"; xargs -0 -r chown -h -- \"${o/_/:}\" < \"$f\" 2>/dev/null; done; true",
+        ]);
+        this._containersToClean.push(containerId);
+        await Shell.spawn([containerExecutable, "cp", `${ownersFolder}/.`, `${containerId}:/gcl-cache-owners`]);
+        await Shell.spawn([containerExecutable, "start", "--attach", containerId]);
+        await Shell.spawn([containerExecutable, "rm", "-vf", containerId]);
     }
 
     private async copyArtifactsIn (writeStreams: WriteStreams) {
@@ -1448,8 +1469,15 @@ If you know what you're doing and would like to suppress this warning, use one o
             let cmd = "shopt -s globstar nullglob dotglob\n";
             cmd += `mkdir -p ${safeBashString(cachePath + "/" + cacheName)}\n`;
             cmd += `rsync -Ra ${paths} ${safeBashString(cachePath + "/" + cacheName + "/.")} || true\n`;
+            if (this.imageName(expanded)) {
+                // docker cp drops the uid/gid of the cached files on the host, so record them for restoreCacheOwners
+                const ownersPath = `${cachePath}/${Job.cacheOwnersDir}/${cacheName}`;
+                cmd += `mkdir -p ${safeBashString(ownersPath)}\n`;
+                cmd += `(cd ${safeBashString(cachePath + "/" + cacheName)} && find . -mindepth 1 -printf '%U_%G\\n' | sort -u | while read -r o; do find . -mindepth 1 -uid \\\${o%_*} -gid \\\${o#*_} -print0 > ${safeBashString(ownersPath)}/\\$o; done) || true\n`;
+            }
 
             await Mutex.exclusive(cacheName, async () => {
+                await fs.rm(`${cwd}/${stateDir}/cache/${Job.cacheOwnersDir}/${cacheName}`, {recursive: true, force: true});
                 await this.copyOut(cmd, stateDir, "cache", []);
             });
             const endTime = process.hrtime(time);
