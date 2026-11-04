@@ -1,7 +1,6 @@
 import chalk from "chalk-template";
-import {Job} from "./job.js";
+import {Job, safeDockerString} from "./job.js";
 import {Parser} from "./parser.js";
-import {Utils} from "./utils.js";
 import {WriteStreams} from "./write-streams.js";
 import {Executor} from "./executor.js";
 import fs from "fs-extra";
@@ -148,7 +147,7 @@ export class Commander {
 
         if (preScripts.warned.length !== 0) {
             preScripts.warned.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            const outputLogs = await Promise.all(preScripts.warned.map(({name}) => fs.readFile(`${cwd}/${stateDir}/output/${Utils.safeDockerString(name)}.log`, "utf8")));
+            const outputLogs = await Promise.all(preScripts.warned.map(({name}) => fs.readFile(`${cwd}/${stateDir}/output/${safeDockerString(name)}.log`, "utf8")));
             for (const [index, {name, prettyDuration}] of preScripts.warned.entries()) {
                 const namePad = name.padEnd(jobNamePad);
                 writeStreams.stdout(chalk`{black.bgYellowBright  WARN }${renderDuration(prettyDuration)} {blueBright ${namePad}}  pre_script\n`);
@@ -169,7 +168,7 @@ export class Commander {
 
         if (preScripts.failed.length !== 0) {
             preScripts.failed.sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage));
-            const outputLogs = await Promise.all(preScripts.failed.map(({name}) => fs.readFile(`${cwd}/${stateDir}/output/${Utils.safeDockerString(name)}.log`, "utf8")));
+            const outputLogs = await Promise.all(preScripts.failed.map(({name}) => fs.readFile(`${cwd}/${stateDir}/output/${safeDockerString(name)}.log`, "utf8")));
             for (const [index, {name, prettyDuration}] of preScripts.failed.entries()) {
                 const namePad = name.padEnd(jobNamePad);
                 writeStreams.stdout(chalk`{black.bgRed  FAIL }${renderDuration(prettyDuration)} {blueBright ${namePad}}\n`);

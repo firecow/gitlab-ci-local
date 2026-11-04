@@ -1,4 +1,3 @@
-import {Utils} from "./utils.js";
 import {Job} from "./job.js";
 import {findMatchingNeed, matrixSelectorMatches} from "./parallel.js";
 
@@ -9,7 +8,8 @@ export class Producers {
 
         if (job.needs && job.needs.length === 0) return [];
         if (!job.needs && !job.dependencies) {
-            Utils.getJobNamesFromPreviousStages(jobs, stages, job).forEach(jobName => producerSet.add(jobName));
+            const currentStageIndex = stages.indexOf(job.stage);
+            jobs.filter(j => stages.indexOf(j.stage) < currentStageIndex).forEach(j => producerSet.add(j.name));
         }
         (job.dependencies ?? []).forEach(dependency => {
             const foundInNeeds = (job.needs ?? []).some(n => n.job === dependency);

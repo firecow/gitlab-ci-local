@@ -2,7 +2,8 @@ import {vi} from "vitest";
 import fs from "fs-extra";
 import os from "node:os";
 import path from "node:path";
-import {Utils} from "../src/utils.js";
+import {Shell} from "../src/shell.js";
+import {rsyncTrackedFiles} from "../src/rsync-tracked-files.js";
 
 const stateDir = ".gitlab-ci-local";
 
@@ -11,9 +12,9 @@ let ignoresFile: string;
 
 const recordRsyncIntervals = () => {
     const intervals: {target: string; start: number; end: number}[] = [];
-    const original = Utils.bash.bind(Utils);
+    const original = Shell.bash.bind(Shell);
     let clock = 0;
-    vi.spyOn(Utils, "bash").mockImplementation(async (shellScript: string, bashCwd?: string) => {
+    vi.spyOn(Shell, "bash").mockImplementation(async (shellScript: string, bashCwd?: string) => {
         const target = /builds\/(\S+)\/$/.exec(shellScript)?.[1];
         if (!shellScript.startsWith("rsync ") || !target) {
             return original(shellScript, bashCwd);
@@ -39,7 +40,7 @@ describe("rsyncTrackedFiles", () => {
         for (let i = 0; i < 50; i++) {
             await fs.outputFile(`${cwd}/src/file${i}.txt`, `content ${i}`);
         }
-        await Utils.bash("git init -q && git add -A", cwd);
+        await Shell.bash("git init -q && git add -A", cwd);
     });
 
     afterEach(async () => {
@@ -50,7 +51,7 @@ describe("rsyncTrackedFiles", () => {
     test("concurrent calls for the same target never overlap", async () => {
         const intervals = recordRsyncIntervals();
 
-        await Promise.all(Array.from({length: 4}, () => Utils.rsyncTrackedFiles(cwd, stateDir, ignoresFile, ".docker")));
+        await Promise.all(Array.from({length: 4}, () => rsyncTrackedFiles(cwd, stateDir, ignoresFile, ".docker")));
 
         expect(intervals).toHaveLength(4);
         expect(intervals.filter(a => intervals.some(b => a !== b && overlaps(a, b)))).toEqual([]);
@@ -64,8 +65,8 @@ describe("rsyncTrackedFiles", () => {
         const intervals = recordRsyncIntervals();
 
         await Promise.all([
-            Utils.rsyncTrackedFiles(cwd, stateDir, ignoresFile, "job-a"),
-            Utils.rsyncTrackedFiles(cwd, stateDir, ignoresFile, "job-b"),
+            rsyncTrackedFiles(cwd, stateDir, ignoresFile, "job-a"),
+            rsyncTrackedFiles(cwd, stateDir, ignoresFile, "job-b"),
         ]);
 
         expect(intervals.map(i => i.target).sort()).toEqual(["job-a", "job-b"]);

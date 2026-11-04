@@ -3,7 +3,7 @@ import {handler} from "../../../src/handler.js";
 import assert, {AssertionError} from "assert";
 import {initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
-import {Utils} from "../../../src/utils.js";
+import {Shell} from "../../../src/shell.js";
 
 beforeAll(() => {
     initSpawnSpy(WhenStatics.all);
@@ -176,7 +176,7 @@ test.concurrent("include-component component (protocol: https) (~latest semver)"
 });
 
 test.concurrent("include-component local component", async () => {
-    const sha = Utils.syncSpawn(["git", "rev-parse", "HEAD"]).stdout.trimEnd();;
+    const sha = Shell.syncSpawn(["git", "rev-parse", "HEAD"]).stdout.trimEnd();;
     const writeStreams = new WriteStreamsMock();
 
     await handler({

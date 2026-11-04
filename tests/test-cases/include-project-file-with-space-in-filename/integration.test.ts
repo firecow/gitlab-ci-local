@@ -3,7 +3,7 @@ import {handler} from "../../../src/handler.js";
 import chalk from "chalk-template";
 import {initBashSpy, initSpawnSpy} from "../../mocks/utils.mock.js";
 import {WhenStatics} from "../../mocks/when-statics.js";
-import {Utils} from "../../../src/utils.js";
+import {safeBashString} from "../../../src/shell.js";
 import fs from "fs-extra";
 
 test("include-project-file-with-space-in-filename", async () => {
@@ -36,5 +36,5 @@ test("include-project-file-with-space-in-filename", async () => {
 
     const invokedCommand = bashSpy.mock.calls.map((call) => call[0]).find((cmd) => cmd.includes("file with spaces.yml"));
     expect(invokedCommand).toBeDefined();
-    expect(invokedCommand).toContain(`-- ${Utils.safeBashString("include-string-list")} ${Utils.safeBashString("file with spaces.yml")}`);
+    expect(invokedCommand).toContain(`-- ${safeBashString("include-string-list")} ${safeBashString("file with spaces.yml")}`);
 });

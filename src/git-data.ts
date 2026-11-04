@@ -1,4 +1,4 @@
-import {Utils} from "./utils.js";
+import {Shell} from "./shell.js";
 import assert, {AssertionError} from "node:assert";
 import {WriteStreams} from "./write-streams.js";
 import chalk from "chalk-template";
@@ -47,12 +47,12 @@ export class GitData {
     private async initCommitData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         const promises = [];
 
-        const refNamePromise = Utils.spawn(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd);
+        const refNamePromise = Shell.spawn(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd);
         promises.push(refNamePromise.then(({stdout}) => {
             this.commit.REF_NAME = stdout.trimEnd();
         }));
 
-        const shaPromise = Utils.spawn(["git", "rev-parse", "HEAD"], cwd);
+        const shaPromise = Shell.spawn(["git", "rev-parse", "HEAD"], cwd);
         promises.push(shaPromise.then(({stdout}) => {
             this.commit.SHA = stdout.trimEnd();
         }));
@@ -70,7 +70,7 @@ export class GitData {
 
     private async initBranchData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         try {
-            const {stdout: gitRemoteDefaultBranch} = await Utils.spawn(["git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD"], cwd);
+            const {stdout: gitRemoteDefaultBranch} = await Shell.spawn(["git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD"], cwd);
             this.branches.default = gitRemoteDefaultBranch.replace("origin/", "");
         } catch (e: any) {
             if (e.stderr === "fatal: ref refs/remotes/origin/HEAD is not a symbolic ref") {
@@ -84,7 +84,7 @@ export class GitData {
     }
 
     static changedFiles (defaultBranch: string, cwd: string) {
-        return Utils.syncSpawn(["git", "diff", "--name-only", defaultBranch], cwd).stdout.split("\n");
+        return Shell.syncSpawn(["git", "diff", "--name-only", defaultBranch], cwd).stdout.split("\n");
     }
 
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {
@@ -93,10 +93,10 @@ export class GitData {
             let gitRemote;
             try {
                 // NOTE: For power user that wishes to customize the remote url
-                const res = await Utils.spawn(["git", "remote", "get-url", "gcl-origin"], cwd);
+                const res = await Shell.spawn(["git", "remote", "get-url", "gcl-origin"], cwd);
                 gitRemote = res.stdout;
             } catch {
-                const res = await Utils.spawn(["git", "remote", "get-url", "origin"], cwd);
+                const res = await Shell.spawn(["git", "remote", "get-url", "origin"], cwd);
                 gitRemote = res.stdout;
             }
 
@@ -133,7 +133,7 @@ export class GitData {
                 gitRemoteMatch = /(?<username>\S+)@(?<host>[^:]+):(?<group>\S+)\/(?<project>\S+)/.exec(normalizedGitRemote); // regexr.com/7vjoq
                 assert(gitRemoteMatch?.groups != null, "git remote get-url origin didn't provide valid matches");
 
-                const {stdout} = await Utils.spawn(["ssh", "-G", `${gitRemoteMatch.groups.username}@${gitRemoteMatch.groups.host}`]);
+                const {stdout} = await Shell.spawn(["ssh", "-G", `${gitRemoteMatch.groups.username}@${gitRemoteMatch.groups.host}`]);
                 const port = stdout.split("\n").find((line) => line.startsWith("port "))!.split(" ")[1];
                 this.remote.host = gitRemoteMatch.groups.host;
                 this.remote.group = gitRemoteMatch.groups.group;
@@ -154,7 +154,7 @@ export class GitData {
     async initUserData (cwd: string, writeStreams: WriteStreams): Promise<void> {
         const promises = [];
 
-        const gitUsernamePromise = Utils.spawn(["git", "config", "user.name"], cwd).then(({stdout}) => {
+        const gitUsernamePromise = Shell.spawn(["git", "config", "user.name"], cwd).then(({stdout}) => {
             this.user.GITLAB_USER_NAME = stdout.trimEnd();
         }).catch((e) => {
             writeStreams.stderr(chalk`{yellow Using fallback git user.name}\n`);
@@ -162,7 +162,7 @@ export class GitData {
         });
         promises.push(gitUsernamePromise);
 
-        const gitEmailPromise = Utils.spawn(["git", "config", "user.email"], cwd).then(({stdout}) => {
+        const gitEmailPromise = Shell.spawn(["git", "config", "user.email"], cwd).then(({stdout}) => {
             const email = stdout.trimEnd();
             this.user.GITLAB_USER_EMAIL = email;
             this.user.GITLAB_USER_LOGIN = email.replace(/@.*/, "");
@@ -178,7 +178,7 @@ export class GitData {
                 return;
             }
             try {
-                const {stdout} = await Utils.spawn(["id", "-u"], cwd);
+                const {stdout} = await Shell.spawn(["id", "-u"], cwd);
                 this.user.GITLAB_USER_ID = stdout.trimEnd();
             } catch (e: any) {
                 writeStreams.stderr(chalk`{yellow Using fallback linux user id}\n`);

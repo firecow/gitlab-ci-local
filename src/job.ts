@@ -3,14 +3,21 @@ import * as dotenv from "dotenv";
 import fs from "fs-extra";
 import {Readable} from "node:stream";
 import {StringDecoder} from "node:string_decoder";
-import {Utils} from "./utils.js";
+import "./global.js";
+import {RE2JS} from "re2js";
+import {Shell, safeBashString} from "./shell.js";
+import {expandText, expandVariables} from "./expand.js";
+import {getRulesResult} from "./rules.js";
+import {prettyHrtime} from "./pretty-hrtime.js";
+import {rsyncTrackedFiles} from "./rsync-tracked-files.js";
+import {gclRegistryPrefix} from "./docker-registry.js";
 import {WriteStreams} from "./write-streams.js";
 import {GitData} from "./git-data.js";
 import assert, {AssertionError} from "node:assert";
 import {Mutex} from "./mutex.js";
 import {Argv} from "./argv.js";
 import {execa} from "execa";
-import {CICDVariable} from "./variables-from-files.js";
+import {CICDVariable, findEnvMatchedVariables} from "./variables-from-files.js";
 import {GitlabRunnerCPUsPresetValue, GitlabRunnerMemoryPresetValue, GitlabRunnerPresetValues} from "./gitlab-preset.js";
 import {handler} from "./handler.js";
 import * as yaml from "js-yaml";
@@ -145,7 +152,7 @@ export class Job {
         const argv = opt.argv;
         const cwd = argv.cwd;
         const argvVariables = argv.variable;
-        const expandVariables = opt.expandVariables ?? true;
+        const shouldExpandVariables = opt.expandVariables ?? true;
 
         this.argv = argv;
         this.writeStreams = opt.writeStreams;
@@ -175,12 +182,12 @@ export class Job {
         }
 
         const matrixVariables = opt.matrixVariables ?? {};
-        const fileVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
+        const fileVariables = findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir);
         const predefinedVariables = this._predefinedVariables(opt);
         this._variables = {...predefinedVariables, ...this.globalVariables, ...jobVariables, ...matrixVariables, ...fileVariables, ...argvVariables};
 
-        if (this.rules && expandVariables) {
-            const expanded = Utils.expandVariables(this._variables);
+        if (this.rules && shouldExpandVariables) {
+            const expanded = expandVariables(this._variables);
 
             // Expand variables in rules:changes
             this.rules.forEach((rule, ruleIdx, rules) => {
@@ -190,7 +197,7 @@ export class Job {
                 }
 
                 changes.forEach((change, changeIdx, changes) => {
-                    changes[changeIdx] = Utils.expandText(change, expanded);
+                    changes[changeIdx] = expandText(change, expanded);
                 });
                 rules[ruleIdx].changes = changes;
             });
@@ -204,7 +211,7 @@ export class Job {
                     return;
                 }
                 exists.forEach((exist, existId, exists) => {
-                    exists[existId] = Utils.expandText(exist, expanded);
+                    exists[existId] = expandText(exist, expanded);
                 });
             });
         }
@@ -212,7 +219,7 @@ export class Job {
         let ruleVariables: {[name: string]: string} | undefined;
         // Set {when, allowFailure} based on rules result
         if (this.rules) {
-            const ruleResult = Utils.getRulesResult({argv, cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when, jobData.allow_failure);
+            const ruleResult = getRulesResult({argv, cwd, rules: this.rules, variables: this._variables}, this.gitData, this.when, jobData.allow_failure);
             this.when = ruleResult.when;
             this.allowFailure = ruleResult.allowFailure;
             ruleVariables = ruleResult.variables;
@@ -223,17 +230,17 @@ export class Job {
         }
 
         // Find environment matched variables
-        if (this.environment && expandVariables) {
-            const expanded = Utils.expandVariables(this._variables);
+        if (this.environment && shouldExpandVariables) {
+            const expanded = expandVariables(this._variables);
             const envNameBeforeExpansion = this.environment.name;
-            this.environment.name = Utils.expandText(this.environment.name, expanded);
+            this.environment.name = expandText(this.environment.name, expanded);
             if (this.environment.name !== envNameBeforeExpansion) {
                 // Regenerate CI_ENVIRONMENT_SLUG based on env name if it changed after expansion
                 predefinedVariables["CI_ENVIRONMENT_SLUG"] = this._generateEnvironmentSlug(this.environment.name);
             }
-            this.environment.url = Utils.expandText(this.environment.url, expanded);
+            this.environment.url = expandText(this.environment.url, expanded);
         }
-        const envMatchedVariables = Utils.findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
+        const envMatchedVariables = findEnvMatchedVariables(variablesFromFiles, this.fileVariablesDir, this.environment);
 
         const userDefinedVariables = {...this.globalVariables, ...jobVariables, ...matrixVariables, ...ruleVariables, ...envMatchedVariables, ...argvVariables};
         this.discourageOverridingOfPredefinedVariables(predefinedVariables, userDefinedVariables, argv.ignorePredefinedVars);
@@ -261,9 +268,9 @@ export class Job {
             throw new AssertionError({message: `${this.formattedJobName} @InjectSSHAgent can only be used with image:`});
         }
 
-        const expanded = Utils.expandVariables(this._variables);
+        const expanded = expandVariables(this._variables);
         for (const [i, c] of Object.entries<any>(this.cache)) {
-            c.policy = Utils.expandText(c.policy, expanded);
+            c.policy = expandText(c.policy, expanded);
             assert(["pull", "push", "pull-push"].includes(c.policy), chalk`{blue ${this.name}} cache[${i}].policy is not 'pull', 'push' or 'pull-push'`);
             assert(["on_success", "on_failure", "always"].includes(c.when), chalk`{blue ${this.name}} cache[${i}].when is not 'on_success', 'on_failure' or 'always'`);
             assert(Array.isArray(c.paths), chalk`{blue ${this.name}} cache[${i}].paths must be array`);
@@ -280,7 +287,7 @@ export class Job {
         if (this.imageName(this._variables) && argv.mountCache) {
             for (const c of this.cache) {
                 c.paths.forEach((p) => {
-                    const path = Utils.expandText(p, expanded);
+                    const path = expandText(p, expanded);
                     assert(!path.includes("*"), chalk`{blue ${this.name}} cannot have * in cache paths, when --mount-cache is enabled`);
                 });
             }
@@ -353,7 +360,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             predefinedVariables["CI_NODE_INDEX"] = `${opt.nodeIndex}`;
         }
         predefinedVariables["CI_NODE_TOTAL"] = `${opt.nodesTotal}`;
-        predefinedVariables["CI_REGISTRY"] = predefinedVariables["CI_REGISTRY"] = this.argv.registry ? Utils.gclRegistryPrefix : `local-registry.${this.gitData.remote.host}`;
+        predefinedVariables["CI_REGISTRY"] = predefinedVariables["CI_REGISTRY"] = this.argv.registry ? gclRegistryPrefix : `local-registry.${this.gitData.remote.host}`;
         predefinedVariables["CI_REGISTRY_IMAGE"] = `$CI_REGISTRY/${predefinedVariables["CI_PROJECT_PATH"].toLowerCase()}`;
         return predefinedVariables;
     }
@@ -442,11 +449,11 @@ If you know what you're doing and would like to suppress this warning, use one o
 
     get prettyDuration () {
         if (this._endTime) {
-            return Utils.prettyHrtime(this._endTime);
+            return prettyHrtime(this._endTime);
         }
 
         return this._startTime ?
-            Utils.prettyHrtime(process.hrtime(this._startTime)) :
+            prettyHrtime(process.hrtime(this._startTime)) :
             "0 ms";
     }
 
@@ -462,7 +469,7 @@ If you know what you're doing and would like to suppress this warning, use one o
     }
 
     get safeJobName () {
-        return Utils.safeDockerString(this.name);
+        return safeDockerString(this.name);
     }
 
     get needs (): Need[] | null {
@@ -486,8 +493,8 @@ If you know what you're doing and would like to suppress this warning, use one o
         if (!this.jobData["services"]) return [];
 
         for (const service of Object.values<any>(this.jobData["services"])) {
-            const expanded = Utils.expandVariables({...this._variables, ...this._dotenvVariables, ...service["variables"]});
-            let serviceName = Utils.expandText(service["name"], expanded);
+            const expanded = expandVariables({...this._variables, ...this._dotenvVariables, ...service["variables"]});
+            let serviceName = expandText(service["name"], expanded);
             if (serviceName == "") continue;
             serviceName = serviceName.includes(":") ? serviceName : `${serviceName}:latest`;
             services.push({
@@ -495,7 +502,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 entrypoint: service["entrypoint"] ?? null,
                 command: service["command"] ?? null,
                 variables: expanded,
-                alias: Utils.expandText(service["alias"], expanded) ?? null,
+                alias: expandText(service["alias"], expanded) ?? null,
             });
         }
         return services;
@@ -560,11 +567,11 @@ If you know what you're doing and would like to suppress this warning, use one o
         const getCachePrefix = (index: number) => {
             const prefix = this.jobData["cache"][index]["key"]["prefix"];
             if (prefix) {
-                return `${index}_${Utils.expandText(prefix, expanded)}-`;
+                return `${index}_${expandText(prefix, expanded)}-`;
             }
 
             const filenames = this.jobData["cache"][index]["key"]["files"].map((p: string) => {
-                const expandP = Utils.expandText(p, expanded);
+                const expandP = expandText(p, expanded);
                 return expandP.split(".")[0];
             }).join("_");
             return `${index}_${filenames}-`;
@@ -573,17 +580,21 @@ If you know what you're doing and would like to suppress this warning, use one o
         const key = this.jobData["cache"][cacheIndex].key;
 
         if (typeof key === "string" || key == null) {
-            return Utils.expandText(key ?? "default", expanded);
+            return expandText(key ?? "default", expanded);
         }
 
         const files = key["files"].map((f: string) => {
-            let path = Utils.expandText(f, expanded);
+            let path = expandText(f, expanded);
             if (path.startsWith(`${this.ciProjectDir}/`)) {
                 path = path.slice(`${this.ciProjectDir}/`.length);
             }
             return `${cwd}/${path}`;
         });
-        return getCachePrefix(cacheIndex) + await Utils.checksumFiles(cwd, files);
+        const checksums = await Promise.all(files.map(async (file: string) => {
+            if (! fs.pathExistsSync(file)) return path.relative(cwd, file); // must use relative path here, so that checksum can be deterministic when running the unit tests
+            return crypto.createHash("sha256").update(await fs.readFile(file)).digest("hex");
+        }));
+        return getCachePrefix(cacheIndex) + crypto.createHash("sha256").update(checksums.join("")).digest("hex");
     }
 
     get beforeScripts (): string[] {
@@ -608,7 +619,7 @@ If you know what you're doing and would like to suppress this warning, use one o
     async startTriggerPipeline () {
         this.writeStreams.memoStdout(chalk`{bgYellowBright  WARN } downstream pipeline is experimental in gitlab-ci-local\n`);
         await this.fetchTriggerInclude();
-        const expandedVariables = Utils.expandVariables(this._variables);
+        const expandedVariables = expandVariables(this._variables);
         const variablesForDownstreamPipeline = Object.keys({...this.globalVariables, ...this.jobData.variables}).map((key) => `${key}=${expandedVariables[key] ?? ""}`);
 
         const gclTriggerer = this.argv.variable["GCL_TRIGGERER"] ?
@@ -673,8 +684,8 @@ If you know what you're doing and would like to suppress this warning, use one o
         this._startTime = process.hrtime();
         this._variables["CI_JOB_STARTED_AT"] = new Date().toISOString().split(".")[0] + "Z";
         const writeStreams = this.writeStreams;
-        this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, Utils.expandVariables(this._variables));
-        const expanded = Utils.unscape$$Variables(Utils.expandVariables({...this._variables, ...this._dotenvVariables}));
+        this._dotenvVariables = await this.initProducerReportsDotenvVariables(writeStreams, expandVariables(this._variables));
+        const expanded = Object.fromEntries(Object.entries(expandVariables({...this._variables, ...this._dotenvVariables})).map(([k, v]) => [k, expandText(v, {})]));
         const imageName = this.imageName(expanded);
         const imagePlatform = this.imagePlatform(expanded);
         const helperImageName = argv.helperImage;
@@ -697,12 +708,12 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             this._containerVolumeNames.push(buildVolumeName, tmpVolumeName);
             const volumeCreatePromises = [
-                Utils.spawn([this.argv.containerExecutable, "volume", "create", `${buildVolumeName}`], argv.cwd),
-                Utils.spawn([this.argv.containerExecutable, "volume", "create", `${tmpVolumeName}`], argv.cwd),
+                Shell.spawn([this.argv.containerExecutable, "volume", "create", `${buildVolumeName}`], argv.cwd),
+                Shell.spawn([this.argv.containerExecutable, "volume", "create", `${tmpVolumeName}`], argv.cwd),
             ];
             if (this.argv.volume.some(v => v.startsWith("%gcl-cert%:"))) {
                 this._containerVolumeNames.push(this.certVolumeName);
-                volumeCreatePromises.push(Utils.spawn([this.argv.containerExecutable, "volume", "create", this.certVolumeName], argv.cwd));
+                volumeCreatePromises.push(Shell.spawn([this.argv.containerExecutable, "volume", "create", this.certVolumeName], argv.cwd));
             }
             await Promise.all(volumeCreatePromises);
 
@@ -712,7 +723,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             let chownOpt = "0:0";
             let chmodOpt = "a+rw";
             if (!this.argv.umask) {
-                const {stdout} = await Utils.spawn([this.argv.containerExecutable, "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
+                const {stdout} = await Shell.spawn([this.argv.containerExecutable, "run", "--rm", "--entrypoint", "sh", imageName, "-c", "echo \"$(id -u):$(id -g)\""]);
                 chownOpt = stdout;
                 if (chownOpt == "0:0") {
                     chmodOpt = "g-w";
@@ -737,17 +748,17 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             helperContainerArgs.push(`${helperImageName}`, "sh", "-c", `chown ${chownOpt} -R ${this.ciProjectDir} && chmod ${chmodOpt} -R ${this.ciProjectDir} && chown ${chownOpt} -R /tmp/ && chmod ${chmodOpt} -R /tmp/`);
 
-            const {stdout: containerId} = await Utils.spawn(helperContainerArgs, argv.cwd);
+            const {stdout: containerId} = await Shell.spawn(helperContainerArgs, argv.cwd);
             this._containersToClean.push(containerId);
             if (await fs.pathExists(fileVariablesDir)) {
-                await Utils.spawn([this.argv.containerExecutable, "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
+                await Shell.spawn([this.argv.containerExecutable, "cp", `${fileVariablesDir}/.`, `${containerId}:${fileVariablesDir}`], argv.cwd);
                 this.refreshLongRunningSilentTimeout(writeStreams);
             }
-            await Utils.spawn([this.argv.containerExecutable, "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:${this.ciProjectDir}`], argv.cwd);
-            await Utils.spawn([this.argv.containerExecutable, "start", "--attach", containerId], argv.cwd);
-            await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", containerId], argv.cwd);
+            await Shell.spawn([this.argv.containerExecutable, "cp", `${argv.stateDir}/builds/.docker/.`, `${containerId}:${this.ciProjectDir}`], argv.cwd);
+            await Shell.spawn([this.argv.containerExecutable, "start", "--attach", containerId], argv.cwd);
+            await Shell.spawn([this.argv.containerExecutable, "rm", "-vf", containerId], argv.cwd);
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to ${this.argv.containerExecutable} volumes} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied to ${this.argv.containerExecutable} volumes} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         if (this.services?.length) {
@@ -765,10 +776,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                 this.services.map(async (service, serviceIndex) => {
                     const serviceName = service.name;
                     await this.pullImage(writeStreams, serviceName);
-                    const serviceContainerId = await this.startService(writeStreams, Utils.expandVariables({...expanded, ...service.variables}), service);
+                    const serviceContainerId = await this.startService(writeStreams, expandVariables({...expanded, ...service.variables}), service);
                     const serviceContainerLogFile = `${argv.cwd}/${argv.stateDir}/services-output/${this.safeJobName}/${serviceName}-${serviceIndex}.log`;
                     await this.serviceHealthCheck(writeStreams, service, serviceIndex, serviceContainerLogFile);
-                    const {stdout, stderr} = await Utils.spawn([this.argv.containerExecutable, "logs", serviceContainerId]);
+                    const {stdout, stderr} = await Shell.spawn([this.argv.containerExecutable, "logs", serviceContainerId]);
                     await fs.ensureFile(serviceContainerLogFile);
                     await fs.promises.writeFile(serviceContainerLogFile, `### stdout ###\n${stdout}\n### stderr ###\n${stderr}\n`);
                 }),
@@ -788,7 +799,10 @@ If you know what you're doing and would like to suppress this warning, use one o
         await this.copyArtifactsOut(this.writeStreams, expanded);
 
         if (this.jobData["coverage"]) {
-            this._coveragePercent = await Utils.getCoveragePercent(argv.cwd, argv.stateDir, this.jobData["coverage"], safeJobName);
+            const content = await fs.readFile(`${argv.cwd}/${argv.stateDir}/output/${safeJobName}.log`, "utf8");
+            const regex = RE2JS.compile(this.jobData["coverage"].replace(/^\//, "").replace(/\/$/, ""), RE2JS.MULTILINE);
+            const lastMatch = Array.from(content.matchAllRE2JS(regex)).at(-1);
+            this._coveragePercent = /\d+(?:\.\d+)?/.exec(lastMatch?.[1] ?? lastMatch?.[0] ?? "")?.[0] ?? "0";
         }
     }
 
@@ -807,7 +821,7 @@ If you know what you're doing and would like to suppress this warning, use one o
     private async _doCleanupResources () {
         if (this._containersToClean.length > 0) {
             try {
-                await Utils.spawn([this.argv.containerExecutable, "rm", "-vf", ...this._containersToClean]);
+                await Shell.spawn([this.argv.containerExecutable, "rm", "-vf", ...this._containersToClean]);
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
             }
@@ -815,7 +829,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         if (this._serviceNetworkId) {
             try {
-                await Utils.spawn([this.argv.containerExecutable, "network", "rm", `${this._serviceNetworkId}`]);
+                await Shell.spawn([this.argv.containerExecutable, "network", "rm", `${this._serviceNetworkId}`]);
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
             }
@@ -823,7 +837,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         if (this._containerVolumeNames.length > 0) {
             try {
-                await Utils.spawn([this.argv.containerExecutable, "volume", "rm", ...this._containerVolumeNames]);
+                await Shell.spawn([this.argv.containerExecutable, "volume", "rm", ...this._containerVolumeNames]);
             } catch (e) {
                 assert(e instanceof Error, "e is not instanceof Error");
             }
@@ -879,9 +893,9 @@ If you know what you're doing and would like to suppress this warning, use one o
         for (const [index, c] of this.cache.entries()) {
             const uniqueCacheName = uniqueCacheNames[index];
             c.paths.forEach((p) => {
-                const path = Utils.expandText(p, expanded);
+                const path = expandText(p, expanded);
                 writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright mounting cache} for path ${path}\n`);
-                const cacheMount = Utils.safeDockerString(`gcl-${expanded.CI_PROJECT_PATH_SLUG}-${uniqueCacheName}`);
+                const cacheMount = safeDockerString(`gcl-${expanded.CI_PROJECT_PATH_SLUG}-${uniqueCacheName}`);
                 cmd.push("-v", `${cacheMount}:${this.ciProjectDir}/${path}`);
             });
         }
@@ -923,7 +937,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         // Copy git tracked files to build folder if shell isolation enabled.
         if (!imageName && this.argv.shellIsolation) {
-            await Utils.rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, this.argv.ignoresFile), `${safeJobName}`);
+            await rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, this.argv.ignoresFile), `${safeJobName}`);
         }
 
         if (this.interactive) {
@@ -945,8 +959,8 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
 
         if (this.argv.registry) {
-            expanded["CI_REGISTRY_USER"] = expanded["CI_REGISTRY_USER"] ?? `${Utils.gclRegistryPrefix}.user`;
-            expanded["CI_REGISTRY_PASSWORD"] = expanded["CI_REGISTRY_PASSWORD"] ?? `${Utils.gclRegistryPrefix}.password`;
+            expanded["CI_REGISTRY_USER"] = expanded["CI_REGISTRY_USER"] ?? `${gclRegistryPrefix}.user`;
+            expanded["CI_REGISTRY_PASSWORD"] = expanded["CI_REGISTRY_PASSWORD"] ?? `${gclRegistryPrefix}.password`;
         }
 
         this.refreshLongRunningSilentTimeout(writeStreams);
@@ -1031,9 +1045,9 @@ If you know what you're doing and would like to suppress this warning, use one o
             }
 
             if (this.argv.registry) {
-                dockerCmd += `--network ${Utils.gclRegistryPrefix}.net `;
-                dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
-                dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/docker/certs.d:ro `;
+                dockerCmd += `--network ${gclRegistryPrefix}.net `;
+                dockerCmd += `--volume ${gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
+                dockerCmd += `--volume ${gclRegistryPrefix}.certs:/etc/docker/certs.d:ro `;
             }
 
             dockerCmd += `--volume ${buildVolumeName}:${this.ciProjectDir} `;
@@ -1050,7 +1064,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             }
 
             if (this.argv.seccomp) {
-                dockerCmd += `--security-opt seccomp=${Utils.safeBashString(this.argv.seccomp)} `;
+                dockerCmd += `--security-opt seccomp=${safeBashString(this.argv.seccomp)} `;
             }
 
             if (this.argv.caFile) {
@@ -1071,7 +1085,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             }
 
             if (this.imageEntrypoint) {
-                dockerCmd += `--entrypoint ${Utils.safeBashString(this.imageEntrypoint[0])} `;
+                dockerCmd += `--entrypoint ${safeBashString(this.imageEntrypoint[0])} `;
             }
 
             dockerCmd += `${(await this.mountCacheCmd(writeStreams, expanded)).join(" ")} `;
@@ -1079,7 +1093,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             if (this.imageEntrypoint?.length ?? 0 > 1) {
                 this.imageEntrypoint?.slice(1).forEach((e) => {
-                    dockerCmd += `${Utils.safeBashString(e)} `;
+                    dockerCmd += `${safeBashString(e)} `;
                 });
             }
 
@@ -1103,11 +1117,11 @@ If you know what you're doing and would like to suppress this warning, use one o
             dockerCmd += "\texit 1\n";
             dockerCmd += "fi\n\"";
 
-            const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
+            const {stdout: containerId} = await Shell.bash(dockerCmd, cwd);
 
             // Special network names that do not work with `docker network connect`
             const connectableNetworks = this.argv.network.filter((network) => !["host", "none"].includes(network));
-            await Promise.all(connectableNetworks.map((network) => Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`])));
+            await Promise.all(connectableNetworks.map((network) => Shell.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`])));
 
             this._containerId = containerId;
             this._containersToClean.push(this._containerId);
@@ -1141,7 +1155,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         this._filesToRm.push(jobScriptFile);
 
         if (imageName) {
-            await Utils.spawn([this.argv.containerExecutable, "cp", `${stateDir}/scripts/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-cmd`], cwd);
+            await Shell.spawn([this.argv.containerExecutable, "cp", `${stateDir}/scripts/${safeJobName}_${this.jobId}`, `${this._containerId}:/gcl-cmd`], cwd);
         }
 
         const cp = execa(this._containerId ? `${this.argv.containerExecutable} start --attach -i ${this._containerId}` : "bash", {
@@ -1238,8 +1252,8 @@ If you know what you're doing and would like to suppress this warning, use one o
                 return this.argv.defaultImage;
             }
         }
-        const expanded = Utils.expandVariables(vars);
-        const imageName = Utils.expandText(image.name, expanded);
+        const expanded = expandVariables(vars);
+        const imageName = expandText(image.name, expanded);
         return imageName.includes(":") ? imageName : `${imageName}:latest`;
     }
 
@@ -1247,14 +1261,14 @@ If you know what you're doing and would like to suppress this warning, use one o
         const image = this.jobData["image"];
         if (!image) return null;
         if (!image["docker"]) return null;
-        return Utils.expandText(image["docker"]["user"], vars);
+        return expandText(image["docker"]["user"], vars);
     }
 
     private imagePlatform (vars: {[key: string]: string} = {}): string | null {
         const image = this.jobData["image"];
         if (!image) return null;
         if (!image["docker"]) return null;
-        return Utils.expandText(image["docker"]["platform"], vars);
+        return expandText(image["docker"]["platform"], vars);
     }
 
     get imageEntrypoint (): string[] | null {
@@ -1286,7 +1300,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             return;
         }
         try {
-            await Utils.spawn([this.argv.containerExecutable, "login", CI_DEPENDENCY_PROXY_SERVER]);
+            await Shell.spawn([this.argv.containerExecutable, "login", CI_DEPENDENCY_PROXY_SERVER]);
         } catch (e: any) {
             const errMsg = `Please authenticate to the Dependency Proxy (${CI_DEPENDENCY_PROXY_SERVER}) https://docs.gitlab.com/ee/user/packages/dependency_proxy/#authenticate-with-the-dependency-proxy`;
             if (this.argv.containerExecutable == "docker") {
@@ -1305,9 +1319,9 @@ If you know what you're doing and would like to suppress this warning, use one o
         const actualPull = async () => {
             await this.validateCiDependencyProxyServerAuthentication(imageToPull);
             const time = process.hrtime();
-            await Utils.spawn([this.argv.containerExecutable, "pull", imageToPull, ...platformArgs]);
+            await Shell.spawn([this.argv.containerExecutable, "pull", imageToPull, ...platformArgs]);
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull}${platformSuffix} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright pulled} ${imageToPull}${platformSuffix} in {magenta ${prettyHrtime(endTime)}}\n`);
             this.refreshLongRunningSilentTimeout(writeStreams);
         };
 
@@ -1326,7 +1340,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             return;
         }
         try {
-            await Utils.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
+            await Shell.spawn([this.argv.containerExecutable, "image", "inspect", imageToPull]);
         } catch {
             await actualPull();
         }
@@ -1337,17 +1351,17 @@ If you know what you're doing and would like to suppress this warning, use one o
         const stateDir = this.argv.stateDir;
         const producers = this.producers;
         const producerReportsEnvs = await Promise.all((producers ?? []).map(async (producer) => {
-            const producerDotenv = Utils.expandText(producer.dotenv, expanded);
+            const producerDotenv = expandText(producer.dotenv, expanded);
             if (producerDotenv === null) return [];
 
-            const safeProducerName = Utils.safeDockerString(producer.name);
+            const safeProducerName = safeDockerString(producer.name);
             const dotenvFolder = `${cwd}/${stateDir}/artifacts/${safeProducerName}/.gitlab-ci-reports/dotenv/`;
             if (!await fs.pathExists(dotenvFolder)) {
                 writeStreams.stderr(chalk`${this.formattedJobName} {yellow reports.dotenv produced by '${producer.name}' could not be found}\n`);
                 return [];
             }
 
-            const dotenvFiles = (await Utils.spawn(["find", ".", "-type", "f"], dotenvFolder)).stdout.split("\n").filter((dotenvFile) => dotenvFile != "");
+            const dotenvFiles = (await Shell.spawn(["find", ".", "-type", "f"], dotenvFolder)).stdout.split("\n").filter((dotenvFile) => dotenvFile != "");
             return Promise.all(dotenvFiles.map(async (dotenvFile) => dotenv.parse(await fs.readFile(`${dotenvFolder}/${dotenvFile}`))));
         }));
         return Object.assign({}, ...producerReportsEnvs.flat());
@@ -1374,7 +1388,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 await this.copyIn(cacheFolder);
             });
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
         }));
     }
 
@@ -1385,7 +1399,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         const stateDir = this.argv.stateDir;
         const time = process.hrtime();
         await Promise.all((this.producers ?? []).map(async (producer) => {
-            const producerSafeName = Utils.safeDockerString(producer.name);
+            const producerSafeName = safeDockerString(producer.name);
             const artifactFolder = `${cwd}/${stateDir}/artifacts/${producerSafeName}`;
             if (!await fs.pathExists(artifactFolder)) {
                 await fs.mkdirp(artifactFolder);
@@ -1399,16 +1413,16 @@ If you know what you're doing and would like to suppress this warning, use one o
             await this.copyIn(artifactFolder);
         }));
         const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported artifacts} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
+        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
     }
 
     copyIn (source: string) {
         const safeJobName = this.safeJobName;
         if (!this.imageName(this._variables) && this.argv.shellIsolation) {
             const relativeSource = path.relative(this.argv.cwd, source).split(path.sep).join("/");
-            return Utils.spawn(["rsync", "-a", `${relativeSource}/.`, `${this.argv.stateDir}/builds/${safeJobName}`], this.argv.cwd);
+            return Shell.spawn(["rsync", "-a", `${relativeSource}/.`, `${this.argv.stateDir}/builds/${safeJobName}`], this.argv.cwd);
         }
-        return Utils.spawn([this.argv.containerExecutable, "cp", `${source}/.`, `${this._containerId}:${this.ciProjectDir}`]);
+        return Shell.spawn([this.argv.containerExecutable, "cp", `${source}/.`, `${this._containerId}:${this.ciProjectDir}`]);
     }
 
     private async copyCacheOut (writeStreams: WriteStreams, expanded: {[key: string]: string}) {
@@ -1425,15 +1439,15 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             let paths = "";
             for (const path of c.paths) {
-                if (!Utils.isSubpath(path, this.argv.cwd, this.argv.cwd)) continue;
+                if (!isSubpath(path, this.argv.cwd, this.argv.cwd)) continue;
 
-                paths += " ./" + Utils.expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
+                paths += " ./" + expandText(path, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
             }
 
             const time = process.hrtime();
             let cmd = "shopt -s globstar nullglob dotglob\n";
-            cmd += `mkdir -p ${Utils.safeBashString(cachePath + "/" + cacheName)}\n`;
-            cmd += `rsync -Ra ${paths} ${Utils.safeBashString(cachePath + "/" + cacheName + "/.")} || true\n`;
+            cmd += `mkdir -p ${safeBashString(cachePath + "/" + cacheName)}\n`;
+            cmd += `rsync -Ra ${paths} ${safeBashString(cachePath + "/" + cacheName + "/.")} || true\n`;
 
             await Mutex.exclusive(cacheName, async () => {
                 await this.copyOut(cmd, stateDir, "cache", []);
@@ -1441,8 +1455,8 @@ If you know what you're doing and would like to suppress this warning, use one o
             const endTime = process.hrtime(time);
 
             for (const __path of c.paths) {
-                const _path = Utils.expandText(__path, expanded);
-                if (!Utils.isSubpath(_path, this.argv.cwd, this.argv.cwd)) {
+                const _path = expandText(__path, expanded);
+                if (!isSubpath(_path, this.argv.cwd, this.argv.cwd)) {
                     writeStreams.stdout(chalk`{yellow WARNING: processPath: artifact path is not a subpath of project directory: ${_path}}\n`);
                     continue;
                 }
@@ -1467,7 +1481,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
                 writeStreams.stdout(`${_path}: found ${numOfFiles} artifact files and directories\n`);
             }
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright cache created in '${stateDir}/cache/${cacheName}'} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright cache created in '${stateDir}/cache/${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
         }));
     }
 
@@ -1500,17 +1514,17 @@ If you know what you're doing and would like to suppress this warning, use one o
         cpCmd += `mkdir -p ${artifactsPath}/${safeJobName}\n`;
         cpCmd += "_gcl_files_tmp=\\$(mktemp)\n";
         for (const artifactPath of artifactsPaths) {
-            const expandedPath = Utils.expandText(artifactPath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
+            const expandedPath = expandText(artifactPath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
             cpCmd += `for _gcl_f in ./${expandedPath}; do printf '%s\\n' "\\$_gcl_f"; done >> \\$_gcl_files_tmp\n`;
         }
         cpCmd += "rsync --exclude '.gitlab-ci-local/**' -rRa ";
         for (const artifactExcludePath of this.artifacts?.exclude ?? []) {
-            const expandedPath = Utils.expandText(artifactExcludePath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
+            const expandedPath = expandText(artifactExcludePath, expanded).replace(`${expanded.CI_PROJECT_DIR}/`, "");
             cpCmd += `--exclude '${expandedPath}' `;
         }
         cpCmd += `--files-from=\\$_gcl_files_tmp . ${artifactsPath}/${safeJobName}/. || true\n`;
         cpCmd += "rm -f \\$_gcl_files_tmp\n";
-        const reportDotenv = Utils.expandText(this.artifacts.reports?.dotenv ?? null, expanded);
+        const reportDotenv = expandText(this.artifacts.reports?.dotenv ?? null, expanded);
         const reportDotenvs: string[] | null = (typeof reportDotenv === "string") ? // normalize to string[] for easier handling
             [reportDotenv] :
             reportDotenv;
@@ -1537,17 +1551,17 @@ If you know what you're doing and would like to suppress this warning, use one o
         if (readdir.length === 0) {
             writeStreams.stdout(chalk`${this.formattedJobName} {yellow !! no artifacts was copied !!}\n`);
         } else {
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright exported artifacts} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright exported artifacts} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
 
         if (this.artifactsToSource && (this.argv.shellIsolation || this.imageName(expanded))) {
             time = process.hrtime();
-            await Utils.spawn(["rsync", "--exclude=/.gitlab-ci-reports/", "-a", `${stateDir}/artifacts/${safeJobName}/.`, "."], cwd);
+            await Shell.spawn(["rsync", "--exclude=/.gitlab-ci-reports/", "-a", `${stateDir}/artifacts/${safeJobName}/.`, "."], cwd);
             if (reportDotenv != null) {
-                await Utils.spawn(["rsync", "-a", `${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.`, "."], cwd);
+                await Shell.spawn(["rsync", "-a", `${stateDir}/artifacts/${safeJobName}/.gitlab-ci-reports/dotenv/.`, "."], cwd);
             }
             endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied artifacts to cwd} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright copied artifacts to cwd} in {magenta ${prettyHrtime(endTime)}}\n`);
         }
     }
 
@@ -1563,14 +1577,14 @@ If you know what you're doing and would like to suppress this warning, use one o
             const cmdWithWritablePerms = `${cmd}\nchmod -R u+w /${type} 2>/dev/null || true`;
             // eslint-disable-next-line @stylistic/quotes
             const escapedCmd = cmdWithWritablePerms.replaceAll('"', String.raw`\"`);
-            const {stdout: containerId} = await Utils.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${escapedCmd}"`, cwd);
+            const {stdout: containerId} = await Shell.bash(`${this.argv.containerExecutable} create -i ${dockerCmdExtras.join(" ")} -v ${buildVolumeName}:${this.ciProjectDir} -w ${this.ciProjectDir} ${helperImageName} bash -c "${escapedCmd}"`, cwd);
             this._containersToClean.push(containerId);
-            await Utils.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
-            await Utils.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
+            await Shell.spawn([this.argv.containerExecutable, "start", containerId, "--attach"]);
+            await Shell.spawn([this.argv.containerExecutable, "cp", `${containerId}:/${type}/.`, `${stateDir}/${type}/.`], cwd);
         } else if (this.argv.shellIsolation) {
-            await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}/${stateDir}/builds/${safeJobName}`);
+            await Shell.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}/${stateDir}/builds/${safeJobName}`);
         } else if (!this.argv.shellIsolation) {
-            await Utils.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}`);
+            await Shell.bash(`bash -eo pipefail -c "${cmd}"`, `${cwd}`);
         }
     }
 
@@ -1619,7 +1633,7 @@ If you know what you're doing and would like to suppress this warning, use one o
     }
 
     private async createDockerNetwork (networkName: string) {
-        const {stdout: networkId} = await Utils.spawn([this.argv.containerExecutable, "network", "create", `${networkName}`]);
+        const {stdout: networkId} = await Shell.spawn([this.argv.containerExecutable, "network", "create", `${networkName}`]);
         this._serviceNetworkId = networkId;
     }
 
@@ -1662,11 +1676,11 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
 
         if (this.argv.seccomp) {
-            dockerCmd += `--security-opt seccomp=${Utils.safeBashString(this.argv.seccomp)} `;
+            dockerCmd += `--security-opt seccomp=${safeBashString(this.argv.seccomp)} `;
         }
         if (this.argv.registry) {
-            dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
-            dockerCmd += `--volume ${Utils.gclRegistryPrefix}.certs:/etc/docker/certs.d:ro `;
+            dockerCmd += `--volume ${gclRegistryPrefix}.certs:/etc/containers/certs.d:ro `;
+            dockerCmd += `--volume ${gclRegistryPrefix}.certs:/etc/docker/certs.d:ro `;
         }
 
         if (this.argv.caFile) {
@@ -1679,7 +1693,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         }
 
         const serviceName = service.name;
-        const aliases = Utils.getAllServiceAliases(service);
+        const aliases = getAllServiceAliases(service);
 
         for (const [key, val] of Object.entries(expanded)) {
             // Replacing `'` with `'\''` to correctly handle single quotes(if `val` contains `'`) in shell commands
@@ -1689,7 +1703,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         const serviceEntrypoint = service.entrypoint;
         if (serviceEntrypoint) {
-            dockerCmd += `--entrypoint ${Utils.safeBashString(serviceEntrypoint[0])} `;
+            dockerCmd += `--entrypoint ${safeBashString(serviceEntrypoint[0])} `;
         }
         dockerCmd += `--volume ${this.buildVolumeName}:${this.ciProjectDir} `;
         dockerCmd += `--volume ${this.tmpVolumeName}:${this.fileVariablesDir} `;
@@ -1708,7 +1722,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         if (serviceEntrypoint?.length ?? 0 > 1) {
             serviceEntrypoint?.slice(1).forEach((e) => {
-                dockerCmd += `${Utils.safeBashString(e)} `;
+                dockerCmd += `${safeBashString(e)} `;
             });
         }
         for (const e of service.command ?? []) {
@@ -1718,30 +1732,30 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         const time = process.hrtime();
 
-        const {stdout: containerId} = await Utils.bash(dockerCmd, cwd);
+        const {stdout: containerId} = await Shell.bash(dockerCmd, cwd);
         this._containersToClean.push(containerId);
 
-        await Promise.all(this.argv.network.map((network) => Utils.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`])));
+        await Promise.all(this.argv.network.map((network) => Shell.spawn([this.argv.containerExecutable, "network", "connect", network, `${containerId}`])));
 
         if (this.argv.registry) {
-            await Utils.spawn([this.argv.containerExecutable, "network", "connect", `${Utils.gclRegistryPrefix}.net`, `${containerId}`]);
+            await Shell.spawn([this.argv.containerExecutable, "network", "connect", `${gclRegistryPrefix}.net`, `${containerId}`]);
         }
 
-        await Utils.spawn([this.argv.containerExecutable, "start", `${containerId}`]);
+        await Shell.spawn([this.argv.containerExecutable, "start", `${containerId}`]);
 
         const endTime = process.hrtime(time);
-        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${Utils.prettyHrtime(endTime)}}\n`);
+        writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright started service image: ${serviceName} with aliases: ${Array.from(aliases).join(", ")}} in {magenta ${prettyHrtime(endTime)}}\n`);
 
         return containerId;
     }
 
     private async serviceHealthCheck (writeStreams: WriteStreams, service: Service, serviceIndex: number, serviceContainerLogFile: string) {
-        const serviceAlias = Utils.getServiceAlias(service);
+        const serviceAlias = getServiceAlias(service);
         const serviceName = service.name;
         const waitImageName = this.argv.waitImage;
         const waitForServicesTimeout = this.argv.waitForServicesTimeout;
 
-        const {stdout} = await Utils.spawn([this.argv.containerExecutable, "image", "inspect", serviceName]);
+        const {stdout} = await Shell.spawn([this.argv.containerExecutable, "image", "inspect", serviceName]);
         const imageInspect = JSON.parse(stdout);
 
         if ((imageInspect[0]?.Config?.ExposedPorts ?? null) === null) {
@@ -1758,10 +1772,10 @@ If you know what you're doing and would like to suppress this warning, use one o
                     const containerName = `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`;
                     const spawnCmd = [this.argv.containerExecutable, "run", "--rm", `--name=${containerName}`, "--network", `${this._serviceNetworkId}`, `${waitImageName}`, `${serviceAlias}:${portNum}`, "-t", `${waitForServicesTimeout}`];
                     this._containersToClean.push(containerName);
-                    return Utils.spawn(spawnCmd);
+                    return Shell.spawn(spawnCmd);
                 }));
             const endTime = process.hrtime(time);
-            writeStreams.stdout(chalk`${this.formattedJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${Utils.prettyHrtime(endTime)}}}\n`);
+            writeStreams.stdout(chalk`${this.formattedJobName} {greenBright service image: ${serviceName} healthcheck passed in {green ${prettyHrtime(endTime)}}}\n`);
         } catch (e: any) {
             if (!(e instanceof AggregateError)) throw e;
             e.errors.forEach((singleError: Error) => {
@@ -1777,7 +1791,7 @@ If you know what you're doing and would like to suppress this warning, use one o
                 .filter((port) => port.endsWith("/tcp"))
                 .map((port) => {
                     const portNum = Number.parseInt(port.replace("/tcp", ""));
-                    return Utils.spawn([this.argv.containerExecutable, "rm", "-vf", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
+                    return Shell.spawn([this.argv.containerExecutable, "rm", "-vf", `gcl-wait-for-it-${this.jobId}-${serviceIndex}-${portNum}`]);
                 }));
         }
     }
@@ -1789,7 +1803,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
         const includeContents = await Promise.all((this.jobData.trigger?.include ?? []).map(async (include: any) => {
             if (include["local"]) {
-                const expandedInclude = Utils.expandText(include["local"], this._variables);
+                const expandedInclude = expandText(include["local"], this._variables);
                 validateIncludeLocal(expandedInclude);
                 const files = await resolveIncludeLocal(expandedInclude, cwd);
                 if (files.length == 0) {
@@ -1820,4 +1834,62 @@ export async function cleanupJobResources (jobs?: Iterable<Job>) {
         promises.push(job.cleanupResources());
     }
     await Promise.all(promises);
+}
+
+export function forEachRealJob (gitlabData: any, callback: (jobName: string, jobData: any) => void) {
+    for (const [jobName, jobData] of Object.entries<any>(gitlabData)) {
+        if (Job.illegalJobNames.has(jobName) || jobName[0].startsWith(".")) {
+            continue;
+        }
+        callback(jobName, jobData);
+    }
+}
+
+// gcl-${safeJobName}-${jobId}-build → wrapper is 17 chars (jobId max 6 digits)
+export const MAX_FILENAME_LENGTH = 255 - 17; // NAME_MAX (bytes) - wrapper
+
+export function safeDockerString (jobName: string) {
+    // INVARIANT: \w without /u is ASCII-only ([A-Za-z0-9_]), so `encoded` is pure ASCII
+    // and .length === byte length. NAME_MAX is a byte limit — adding /u would break this.
+    // We hash `jobName` (not `encoded`) because base64url encoding isn't injective.
+    const encoded = jobName.replace(/[^\w-]+/g, (match) => {
+        return Buffer.from(match).toString("base64url");
+    });
+    const unambiguous = encoded === jobName ? encoded : `${encoded}.${crypto.createHash("sha256").update(jobName).digest("hex").substring(0, 8)}`;
+    if (unambiguous.length <= MAX_FILENAME_LENGTH) {
+        return unambiguous;
+    }
+    const hash = crypto.createHash("sha256").update(jobName).digest("hex").substring(0, 16);
+    const prefix = encoded.substring(0, MAX_FILENAME_LENGTH - 1 - hash.length);
+    return `${prefix}.${hash}`;
+}
+
+export function isSubpath (lhs: string, rhs: string, cwd: string = process.cwd()) {
+    const absLhs = path.isAbsolute(lhs) ? lhs : path.resolve(cwd, lhs);
+    const absRhs = path.isAbsolute(rhs) ? rhs : path.resolve(cwd, rhs);
+
+    const relative = path.relative(absRhs, absLhs);
+    return !relative.startsWith("..");
+}
+
+export function getAllServiceAliases (service: Service): Set<string> {
+    const aliases = new Set<string>();
+
+    if (service.alias) {
+        aliases.add(service.alias);
+    }
+
+    // Strip any port (:443), tag (:1.2.3), or digest (@sha256:...) suffix from each path segment
+    const serviceNameWithoutVersionAndPort = service.name.replaceAll(/[:@][^/]*/g, "");
+    aliases.add(serviceNameWithoutVersionAndPort.replaceAll("/", "-"));
+    aliases.add(serviceNameWithoutVersionAndPort.replaceAll("/", "__"));
+
+    return aliases;
+}
+
+export function getServiceAlias (service: Service): string {
+    const aliases = getAllServiceAliases(service);
+
+    // Return the first alias in the set
+    return aliases.values().next().value!;
 }

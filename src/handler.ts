@@ -8,7 +8,9 @@ import {Parser} from "./parser.js";
 import * as state from "./state.js";
 import {WriteStreams} from "./write-streams.js";
 import {cleanupJobResources, Job} from "./job.js";
-import {Utils} from "./utils.js";
+import {prettyHrtime} from "./pretty-hrtime.js";
+import {rsyncTrackedFiles} from "./rsync-tracked-files.js";
+import {startDockerRegistry, stopDockerRegistry} from "./docker-registry.js";
 import {Argv} from "./argv.js";
 import assert from "node:assert";
 
@@ -71,7 +73,7 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
     } else if (argv.job.length > 0) {
         assert(argv.stage === null, "You cannot use --stage when starting individual jobs");
         if (argv.registry) {
-            await Utils.startDockerRegistry(argv);
+            await startDockerRegistry(argv);
         }
         const time = process.hrtime();
         let pipelineIid: number;
@@ -81,36 +83,36 @@ export async function handler (args: any, writeStreams: WriteStreams, jobs: Job[
             pipelineIid = await state.getPipelineIid(cwd, stateDir);
         }
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
-        await Utils.rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
+        await rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
         await Commander.runJobs(argv, parser, writeStreams);
         if (argv.needs || argv.onlyNeeds) {
-            writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
+            writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
         }
     } else if (argv.stage) {
         if (argv.registry) {
-            await Utils.startDockerRegistry(argv);
+            await startDockerRegistry(argv);
         }
         const time = process.hrtime();
         const pipelineIid = await state.getPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
-        await Utils.rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
+        await rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
         await Commander.runJobsInStage(argv, parser, writeStreams);
-        writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
+        writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     } else {
         if (argv.registry) {
-            await Utils.startDockerRegistry(argv);
+            await startDockerRegistry(argv);
         }
         const time = process.hrtime();
         const pipelineIid = await state.incrementPipelineIid(cwd, stateDir);
         parser = await Parser.create(argv, writeStreams, pipelineIid, jobs);
-        await Utils.rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
+        await rsyncTrackedFiles(cwd, stateDir, path.resolve(cwd, argv.ignoresFile), ".docker");
         await Commander.runPipeline(argv, parser, writeStreams);
-        if (childPipelineDepth == 0) writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${Utils.prettyHrtime(process.hrtime(time))}}\n`);
+        if (childPipelineDepth == 0) writeStreams.stderr(chalk`{grey pipeline finished} in {grey ${prettyHrtime(process.hrtime(time))}}\n`);
     }
     writeStreams.flush();
 
     if (argv.registry) {
-        await Utils.stopDockerRegistry(argv.containerExecutable);
+        await stopDockerRegistry(argv.containerExecutable);
     }
     return cleanupJobResources(jobs);
 }

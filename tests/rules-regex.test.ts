@@ -1,7 +1,7 @@
 import {vi} from "vitest";
 import "../src/global.js";
 import {Argv} from "../src/argv";
-import {Utils} from "../src/utils";
+import {evaluateRuleIf, getRulesResult} from "../src/rules.js";
 import {GitData} from "../src/git-data";
 import {WriteStreamsMock} from "../src/write-streams";
 
@@ -239,12 +239,8 @@ describe("gitlab rules regex", () => {
     tests.filter(t => !t.expectedErrSubStr)
         .forEach((t) => {
             test(`- if: '${t.rule}'\n\t => ${t.evalResult}`, async () => {
-                const rules = [ {if: t.rule} ];
                 const evalSpy = vi.spyOn(global, "eval");
-                const evaluateRuleIfSpy = vi.spyOn(Utils, "evaluateRuleIf");
-
-                Utils.getRulesResult({argv, cwd: "", rules, variables: {}}, gitData);
-                expect(evaluateRuleIfSpy).toHaveReturnedWith(t.evalResult);
+                expect(evaluateRuleIf(t.rule, {})).toBe(t.evalResult);
                 expect(evalSpy).toHaveBeenCalledWith(t.jsExpression);
             });
         });
@@ -257,7 +253,7 @@ describe("gitlab rules regex [invalid]", () => {
                 const rules = [ {if: t.rule} ];
 
                 try {
-                    Utils.getRulesResult({argv, cwd: "", rules, variables: {}}, gitData);
+                    getRulesResult({argv, cwd: "", rules, variables: {}}, gitData);
                 } catch (e: any) {
                     expect(e.message).toContain(t.expectedErrSubStr);
                     return;
