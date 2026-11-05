@@ -50,7 +50,7 @@
     "re2js": "2.x",
     "semver": "7.x.x",
     "terminal-link": "5.x.x",
-    "typescript": "6.x",
+    "typescript": "7.x",
     "typescript-eslint": "8.x.x",
     "vitest": "^5.0.0",
     "yargs": "18.x"
