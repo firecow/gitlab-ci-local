@@ -73,6 +73,16 @@ export class GitData {
             const {stdout: gitRemoteDefaultBranch} = await Shell.spawn(["git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD"], cwd);
             this.branches.default = gitRemoteDefaultBranch.replace("origin/", "");
         } catch (e: any) {
+            // origin/HEAD is not set for a repo pushed from a local `git init`; use whichever of main/master exists
+            for (const branch of ["main", "master"]) {
+                try {
+                    await Shell.spawn(["git", "rev-parse", "--verify", "--quiet", `refs/remotes/origin/${branch}`], cwd);
+                    this.branches.default = branch;
+                    break;
+                } catch {
+                    // try the next one
+                }
+            }
             if (e.stderr === "fatal: ref refs/remotes/origin/HEAD is not a symbolic ref") {
                 writeStreams.stderr(chalk`{yellow Unable to retrieve default remote branch, falling back to \`${this.branches.default}\`. The default remote branch can be set via \`git remote set-head origin <default_branch>\`\n}`);
                 writeStreams.stderr(chalk`{yellow   ${e.message}\n}`);

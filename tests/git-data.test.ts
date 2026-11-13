@@ -160,3 +160,24 @@ describe("initRemoteData", () => {
         });
     });
 });
+
+describe("initBranchData", () => {
+    test("falls back to origin/master when origin/HEAD is not set", async () => {
+        const writeStreams = new WriteStreamsMock();
+        initSpawnSpy([{
+            cmdArgs: "git rev-parse --verify --quiet refs/remotes/origin/master".split(" "),
+            returnValue: {stdout: "02618988a1864b3d06cfee3bd79f8baa2dd21407\n"},
+        }]);
+        initSpawnSpyReject([{
+            cmdArgs: "git symbolic-ref --short refs/remotes/origin/HEAD".split(" "),
+            rejection: {exitCode: 128, stderr: "fatal: ref refs/remotes/origin/HEAD is not a symbolic ref"},
+        }, {
+            cmdArgs: "git rev-parse --verify --quiet refs/remotes/origin/main".split(" "),
+            rejection: {exitCode: 1, stderr: ""},
+        }]);
+
+        const {branches} = await GitData.init("tests", writeStreams);
+
+        expect(branches.default).toBe("master");
+    });
+});
