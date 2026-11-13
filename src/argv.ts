@@ -86,6 +86,9 @@ export class Argv {
         argv.injectDotenv(`${argv.home}/.gitlab-ci-local/.env`, args);
         argv.injectDotenv(`${argv.cwd}/.gitlab-ci-local-env`, args);
 
+        // Validate shell early so invalid CLI/env values fail before job execution
+        void argv.shell;
+
         if (!argv.shellExecutorNoImage && argv.shellIsolation) {
             writeStreams?.stderr(chalk`{black.bgYellowBright  WARN } --shell-isolation does not work with --no-shell-executor-no-image\n`);
         }
@@ -368,6 +371,19 @@ export class Argv {
     get shellIsolation (): boolean {
         // TODO: default to true in 5.x.x
         return this.map.get("shellIsolation") ?? false;
+    }
+
+    get shell (): "bash" | "powershell" | "pwsh" {
+        const shell = this.map.get("shell") ?? "bash";
+        assert(
+            shell === "bash" || shell === "powershell" || shell === "pwsh",
+            "--shell must be one of: bash, powershell, pwsh",
+        );
+        return shell;
+    }
+
+    get isPowerShell (): boolean {
+        return this.shell === "powershell" || this.shell === "pwsh";
     }
 
     get fetchIncludes (): boolean {
