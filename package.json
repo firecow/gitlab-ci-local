@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.x",
-    "@stylistic/eslint-plugin": "5.x",
+    "@stylistic/eslint-plugin": "6.x",
     "@types/bun": "1.x.x",
     "@types/fs-extra": "11.x.x",
     "@types/micromatch": "4.x.x",
