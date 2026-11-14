@@ -342,3 +342,30 @@ test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/1841", () => 
             .toThrow(/must be a string, but got/);
     }
 });
+
+test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/1999 variable value ending in a backslash", () => {
+    const rules = [
+        {if: "$DIR == \"x\"", when: "never"},
+        {when: "on_success"},
+    ];
+    const variables = {DIR: "C:\\builds\\"};
+    const rulesResult = getRulesResult({argv, cwd: "", rules, variables}, gitData);
+    expect(rulesResult).toEqual({when: "on_success", allowFailure: false, variables: undefined});
+    expect(evaluateRuleIf("$DIR == $SAME", {DIR: "C:\\builds\\", SAME: "C:\\builds\\"})).toBe(true);
+});
+
+test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/1999 backslashes are plain text", () => {
+    expect(evaluateRuleIf("$A == \"a\\nb\"", {A: "a\nb"})).toBe(false);
+    expect(evaluateRuleIf("$A == \"a\\nb\"", {A: "a\\nb"})).toBe(true);
+    expect(evaluateRuleIf("$A == 'a\\tb'", {A: "a\\tb"})).toBe(true);
+    expect(evaluateRuleIf("$A == $B", {A: "a\\nb", B: "a\nb"})).toBe(false);
+    expect(evaluateRuleIf("$A =~ \"a\\nb\"", {A: "\\n"})).toBe(true);
+    expect(evaluateRuleIf("$A =~ $B", {A: "v12", B: "/^v\\d+$/"})).toBe(true);
+    expect(evaluateRuleIf("$A =~ $B", {A: "x\\y", B: "/^x\\\\y$/"})).toBe(true);
+});
+
+test.concurrent("https://github.com/firecow/gitlab-ci-local/issues/1999 regex literal ending in an escaped backslash", () => {
+    expect(evaluateRuleIf("$A =~ /\\\\/", {A: "C:\\builds"})).toBe(true);
+    expect(evaluateRuleIf("$A =~ /\\\\/", {A: "C:/builds"})).toBe(false);
+    expect(evaluateRuleIf("$A !~ /\\\\/ && $B =~ /b\\\\$/i", {A: "a", B: "B\\"})).toBe(true);
+});
