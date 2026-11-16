@@ -101,6 +101,21 @@ issue-904:
   script:
     - echo "I shouldn't combust into flames"
 
+service-command-quotes:
+  services:
+    - name: docker.io/library/alpine
+      variables:
+        QUOTED_VAR: "a  b"
+      command:
+        - /bin/sh
+        - -c
+        - >
+          if [ -n "${QUOTED_VAR}" ]; then echo "value is [${QUOTED_VAR}]"; fi;
+          echo "it's done"
+  image: docker.io/library/alpine
+  script:
+    - echo "bye"
+
 service-user:
   services:
     - name: docker.io/curlimages/curl:8.8.0

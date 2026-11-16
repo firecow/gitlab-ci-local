@@ -1726,8 +1726,7 @@ If you know what you're doing and would like to suppress this warning, use one o
             });
         }
         for (const e of service.command ?? []) {
-            const escaped = e.replaceAll("$", String.raw`\$`);
-            dockerCmd += `"${escaped}" `;
+            dockerCmd += `${safeBashString(e)} `;
         }
 
         const time = process.hrtime();
