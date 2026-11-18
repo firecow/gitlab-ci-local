@@ -1,0 +1,30 @@
+---
+produce-cache:
+  stage: build
+  image: busybox
+  cache:
+    - key: chown-failure
+      paths:
+        - kept
+    - key: empty
+      paths:
+        - absent
+  script:
+    - mkdir kept
+    - touch kept/file.txt
+    - chown 1234:5678 kept/file.txt
+
+consume-cache:
+  stage: test
+  image: busybox
+  cache:
+    - key: chown-failure
+      paths:
+        - kept
+      policy: pull
+    - key: empty
+      paths:
+        - absent
+      policy: pull
+  script:
+    - test "$(stat -c %u:%g kept/file.txt)" = "1234:5678"

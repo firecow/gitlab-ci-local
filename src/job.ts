@@ -1389,7 +1389,7 @@ If you know what you're doing and would like to suppress this warning, use one o
 
             await Mutex.exclusive(cacheName, async () => {
                 await this.copyIn(cacheFolder);
-                await this.restoreCacheOwners(`${cwd}/${stateDir}/cache/${Job.cacheOwnersDir}/${cacheName}`, expanded);
+                await this.restoreCacheOwners(writeStreams, `${cwd}/${stateDir}/cache/${Job.cacheOwnersDir}/${cacheName}`, expanded);
             });
             const endTime = process.hrtime(time);
             writeStreams.stdout(chalk`${this.formattedJobName} {magentaBright imported cache '${cacheName}'} in {magenta ${prettyHrtime(endTime)}}\n`);
@@ -1397,20 +1397,26 @@ If you know what you're doing and would like to suppress this warning, use one o
     }
 
     // docker cp gives the restored files the uid/gid they have on the host, so give them back the owners recorded by copyCacheOut
-    private async restoreCacheOwners (ownersFolder: string, expanded: {[key: string]: string}) {
+    private async restoreCacheOwners (writeStreams: WriteStreams, ownersFolder: string, expanded: {[key: string]: string}) {
         if (!this.imageName(expanded) || !await fs.pathExists(ownersFolder)) return;
 
         const containerExecutable = this.argv.containerExecutable;
+        // A failed chown (e.g. a uid outside a rootless or userns-remap mapping) only warns, like GitLab Runner's cache extractor
         const {stdout: containerId} = await Shell.spawn([
             containerExecutable, "create", "--user=0:0",
             `--volume=${this.buildVolumeName}:${this.ciProjectDir}`, `--workdir=${this.ciProjectDir}`,
             this.argv.helperImage, "bash", "-c",
-            "for f in /gcl-cache-owners/*_*; do o=\"${f##*/}\"; xargs -0 -r chown -h -- \"${o/_/:}\" < \"$f\" 2>/dev/null; done; true",
+            "shopt -s nullglob; for f in /gcl-cache-owners/*_*; do o=\"${f##*/}\"; xargs -0 -r chown -h -- \"${o/_/:}\" < \"$f\"; done; true",
         ]);
         this._containersToClean.push(containerId);
         await Shell.spawn([containerExecutable, "cp", `${ownersFolder}/.`, `${containerId}:/gcl-cache-owners`]);
-        await Shell.spawn([containerExecutable, "start", "--attach", containerId]);
+        const {stderr} = await Shell.spawn([containerExecutable, "start", "--attach", containerId]);
         await Shell.spawn([containerExecutable, "rm", "-vf", containerId]);
+
+        const errors = stderr.split("\n").filter((line) => line !== "");
+        if (errors.length > 0) {
+            writeStreams.stderr(chalk`${this.formattedJobName} {yellow WARNING: could not restore the owner of ${errors.length} cached path(s), first error: ${errors[0]}}\n`);
+        }
     }
 
     private async copyArtifactsIn (writeStreams: WriteStreams) {
