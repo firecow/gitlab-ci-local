@@ -62,16 +62,26 @@ export function evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]
         return binary;
     };
 
-    // Expand all variables outside regex literals
-    evalStr = evalStr.split(/((?:=~|!~)\s*(?:\/(?:\\.|[^/\\])+\/|"\/[^"]*\/\w*"|'\/[^']*\/\w*'))/).map((part, index) => index % 2 === 1 ? part : expandTextWith(part, {
-        unescape: JSON.stringify("$"),
-        variable: (name) => JSON.stringify(envs[name] ?? null).replaceAll("\\\\", "\\"),
-    })).join("");
+    // GitLab reads quoted strings and variable values as plain text, without escape sequences.
+    // Turn every one of them into a JSON string literal, so eval sees exactly that text.
+    // Variables are expanded outside regex literals only.
+    evalStr = evalStr.split(/((?:=~|!~)\s*(?:\/(?:\\.|[^/\\])+\/|"\/[^"]*\/\w*"|'\/[^']*\/\w*'))/).map((part, index) => {
+        if (index % 2 === 1) {
+            return part.replace(/(["'])(.*)\1$/, (_, __, regex) => JSON.stringify(regex));
+        }
+        return part.replaceAll(/"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|(\$\$|\$\{[a-zA-Z_]\w*}|\$[a-zA-Z_]\w*)/g, (_, doubleQuoted, singleQuoted, variable) => {
+            if (variable === undefined) return JSON.stringify(doubleQuoted ?? singleQuoted);
+            return expandTextWith(variable, {
+                unescape: JSON.stringify("$"),
+                variable: (name) => JSON.stringify(envs[name] ?? null),
+            });
+        });
+    }).join("");
     const expandedEvalStr = evalStr;
 
     // Scenario when RHS is a <regex>
     // https://regexr.com/85sjo
-    const pattern1 = /(?:(?<!\s)|(?<=\/[igmsuy]*\s))\s*(?<operator>(?:=~)|(?:!~))\s*\/(?<rhs>.*?[^\\])\/(?<flags>[igmsuy]*)(\s|$|\))/g;
+    const pattern1 = /(?:(?<!\s)|(?<=\/[igmsuy]*\s))\s*(?<operator>(?:=~)|(?:!~))\s*\/(?<rhs>(?:\\.|[^\\])+?)\/(?<flags>[igmsuy]*)(\s|$|\))/g;
     evalStr = evalStr.replaceAll(pattern1, (_, operator, rhs, flags, remainingTokens) => {
         let _operator;
         switch (operator) {
@@ -100,7 +110,8 @@ export function evaluateRuleIf (ruleIf: string | undefined, envs: {[key: string]
     // Scenario when RHS is surrounded by single/double-quotes
     // https://regexr.com/85t0g
     const pattern2 = /(?<!\s)\s*(?<operator>=~|!~)\s*(["'])(?<rhs>(?:\\.|[^\\])*?)\2/g;
-    evalStr = evalStr.replaceAll(pattern2, (_, operator, __, rhs) => {
+    evalStr = evalStr.replaceAll(pattern2, (_, operator, __, quotedRhs) => {
+        const rhs = JSON.parse(`"${quotedRhs}"`); // strings and variable values are JSON string literals by now
         let _operator;
         switch (operator) {
             case "=~":
