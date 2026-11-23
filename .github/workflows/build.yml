@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         node-version: [24, 26]
-        bun-version: [1.4.4]
+        bun-version: [1.4.5]
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
