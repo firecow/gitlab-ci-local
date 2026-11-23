@@ -135,6 +135,24 @@ test.concurrent("services <multie-job>", async () => {
     expect(await fs.readFile(`tests/test-cases/services/${stateDir}/services-output/multie-job/docker.io/library/alpine:latest-2.log`, "utf-8")).toMatch(/Service 3/);
 });
 
+test.concurrent("services <service-command-quotes> passes command entries verbatim", async () => {
+    const stateDir = ".gitlab-ci-local-service-command-quotes";
+    const serviceLogFile = `tests/test-cases/services/${stateDir}/services-output/service-command-quotes/docker.io/library/alpine:latest-0.log`;
+    await fs.promises.rm(serviceLogFile, {force: true});
+
+    const writeStreams = new WriteStreamsMock();
+    await handler({
+        cwd: "tests/test-cases/services",
+        job: ["service-command-quotes"],
+        stateDir,
+    }, writeStreams);
+
+    const log = await fs.readFile(serviceLogFile, "utf-8");
+    expect(log).toContain("value is [a  b]");
+    expect(log).toContain("it's done");
+    expect(log).not.toMatch(/syntax error|unknown operand/);
+});
+
 test.concurrent("services <no-tmp>", async () => {
     const writeStreams = new WriteStreamsMock();
     await handler({
