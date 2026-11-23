@@ -166,7 +166,7 @@ describe("initBranchData", () => {
         const writeStreams = new WriteStreamsMock();
         initSpawnSpy([{
             cmdArgs: ["git", "for-each-ref", "--format=%(refname:lstrip=3)", "refs/remotes/origin/main", "refs/remotes/origin/master"],
-            returnValue: {stdout: "master"},
+            returnValue: {stdout: "main/foo\nmaster"},
         }]);
         initSpawnSpyReject([{
             cmdArgs: "git symbolic-ref --short refs/remotes/origin/HEAD".split(" "),
