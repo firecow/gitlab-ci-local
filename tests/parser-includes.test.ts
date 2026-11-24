@@ -134,6 +134,8 @@ describe("ParserIncludes.downloadIncludeComponent", () => {
 
         const templatesDir = path.join(cwd, target("grp/proj", "v1.0.0"), "templates");
         expect((await fs.stat(templatesDir)).isDirectory()).toBe(true);
-        expect((await fs.readdir(cwd)).filter((entry) => entry.startsWith(`${target("grp/proj", "v1.0.0")}.tmp-`))).toEqual([]);
+        // tmpDir is `${cwd}/${target}.tmp-*`, so leftovers would sit next to the ref dir
+        const refParent = path.join(cwd, stateDir, "includes", "git.example.com", "grp/proj");
+        expect((await fs.readdir(refParent)).filter((entry) => entry.startsWith("v1.0.0.tmp-"))).toEqual([]);
     });
 });
