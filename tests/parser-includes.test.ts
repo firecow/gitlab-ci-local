@@ -1,4 +1,14 @@
-import {remoteProjectUrl, resolveSemanticVersionRange} from "../src/parser-includes.js";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import {vi} from "vitest";
+import {Argv} from "../src/argv.js";
+import {GitData} from "../src/git-data.js";
+import {ParserIncludes, ParserIncludesInitOptions, remoteProjectUrl, resolveSemanticVersionRange} from "../src/parser-includes.js";
+import {WriteStreamsMock} from "../src/write-streams.js";
+
+type GitCloneSparseCheckout = (cwd: string, stateDir: string, tmpDir: string, remote: unknown, project: string, ref: string, sparsePaths: string[]) => Promise<void>;
+const parserIncludes = ParserIncludes as unknown as {gitCloneSparseCheckout: GitCloneSparseCheckout};
 
 const tests = [
     {
@@ -65,5 +75,171 @@ describe("remoteProjectUrl", () => {
     test("keeps port 80 when the schema is https", () => {
         expect(remoteProjectUrl({schema: "https", host: "git.example.com", port: "80"}, "grp/proj"))
             .toEqual("https://git.example.com:80/grp/proj.git");
+    });
+});
+
+describe("ParserIncludes.downloadIncludeComponent", () => {
+    const stateDir = ".gitlab-ci-local";
+    let cwd: string;
+    let gitCloneSpy: ReturnType<typeof vi.spyOn>;
+    let invocations: {start: number; end: number}[];
+
+    const makeOpts = (): ParserIncludesInitOptions => ({
+        argv: {} as Argv,
+        cwd,
+        stateDir,
+        gitData: {remote: {schema: "https", host: "git.example.com", port: "443"}} as GitData,
+        fetchIncludes: true,
+        writeStreams: new WriteStreamsMock(),
+        variables: {},
+        expandVariables: false,
+        maximumIncludes: 100,
+        inputs: {},
+    });
+
+    beforeEach(async () => {
+        cwd = await fs.mkdtemp(path.join(os.tmpdir(), "gcl-includes-test-"));
+        invocations = [];
+        gitCloneSpy = vi.spyOn(parserIncludes, "gitCloneSparseCheckout").mockImplementation(async () => {
+            const start = Date.now();
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            invocations.push({start, end: Date.now()});
+        });
+    });
+
+    afterEach(async () => {
+        gitCloneSpy.mockRestore();
+        await fs.rm(cwd, {recursive: true, force: true});
+    });
+
+    const target = (project: string, ref: string) =>
+        `${stateDir}/includes/git.example.com/${project}/${ref}`;
+
+    test("serializes concurrent downloads of the same project/ref", async () => {
+        await Promise.all([
+            ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj", "v1.0.0", "component-a"),
+            ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj", "v1.0.0", "component-b"),
+        ]);
+
+        expect(invocations).toHaveLength(2);
+        const [first, second] = [...invocations].sort((a, b) => a.start - b.start);
+        expect(first.end).toBeLessThanOrEqual(second.start);
+    });
+
+    test("downloads different projects concurrently", async () => {
+        await Promise.all([
+            ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj-a", "v1.0.0", "component"),
+            ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj-b", "v1.0.0", "component"),
+        ]);
+
+        expect(invocations).toHaveLength(2);
+        const [first, second] = [...invocations].sort((a, b) => a.start - b.start);
+        expect(first.start).toBeLessThan(second.end);
+        expect(second.start).toBeLessThan(first.end);
+    });
+
+    test("creates the templates directory and cleans up the temporary directory", async () => {
+        await ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj", "v1.0.0", "component");
+
+        const templatesDir = path.join(cwd, target("grp/proj", "v1.0.0"), "templates");
+        expect((await fs.stat(templatesDir)).isDirectory()).toBe(true);
+        // tmpDir is `${cwd}/${target}.tmp-*`, so leftovers would sit next to the ref dir
+        const refParent = path.join(cwd, stateDir, "includes", "git.example.com", "grp/proj");
+        expect((await fs.readdir(refParent)).filter((entry) => entry.startsWith("v1.0.0.tmp-"))).toEqual([]);
+    });
+});
+
+describe("ParserIncludes.downloadIncludeProjectFile", () => {
+    const stateDir = ".gitlab-ci-local";
+    let cwd: string;
+    let gitCloneSpy: ReturnType<typeof vi.spyOn>;
+    let invocations: {start: number; end: number}[];
+
+    const makeOpts = (): ParserIncludesInitOptions => ({
+        argv: {} as Argv,
+        cwd,
+        stateDir,
+        gitData: {remote: {schema: "https", host: "git.example.com", port: "443"}} as GitData,
+        fetchIncludes: true,
+        writeStreams: new WriteStreamsMock(),
+        variables: {},
+        expandVariables: false,
+        maximumIncludes: 100,
+        inputs: {},
+    });
+
+    beforeEach(async () => {
+        cwd = await fs.mkdtemp(path.join(os.tmpdir(), "gcl-includes-test-"));
+        invocations = [];
+        gitCloneSpy = vi.spyOn(parserIncludes, "gitCloneSparseCheckout").mockImplementation(
+            async (_cwd: string, _stateDir: string, tmpDir: string, _remote: unknown, _project: string, _ref: string, sparsePaths: string[]) => {
+                const start = Date.now();
+                for (const sparsePath of sparsePaths) {
+                    const sparseFile = path.join(tmpDir, sparsePath);
+                    await fs.mkdir(path.dirname(sparseFile), {recursive: true});
+                    await fs.writeFile(sparseFile, "");
+                }
+                await new Promise((resolve) => setTimeout(resolve, 50));
+                invocations.push({start, end: Date.now()});
+            },
+        );
+    });
+
+    afterEach(async () => {
+        gitCloneSpy.mockRestore();
+        await fs.rm(cwd, {recursive: true, force: true});
+    });
+
+    test("serializes concurrent downloads of the same project/ref", async () => {
+        await Promise.all([
+            ParserIncludes.downloadIncludeProjectFile(makeOpts(), "grp/proj", "v1.0.0", "job-a.yml"),
+            ParserIncludes.downloadIncludeProjectFile(makeOpts(), "grp/proj", "v1.0.0", "job-b.yml"),
+        ]);
+
+        expect(invocations).toHaveLength(2);
+        const [first, second] = [...invocations].sort((a, b) => a.start - b.start);
+        expect(first.end).toBeLessThanOrEqual(second.start);
+        const refDir = path.join(cwd, stateDir, "includes", "git.example.com", "grp/proj", "v1.0.0");
+        expect((await fs.stat(path.join(refDir, "job-a.yml"))).isFile()).toBe(true);
+        expect((await fs.stat(path.join(refDir, "job-b.yml"))).isFile()).toBe(true);
+    });
+
+    test("is mutually exclusive with a component download of the same project/ref", async () => {
+        await Promise.all([
+            ParserIncludes.downloadIncludeProjectFile(makeOpts(), "grp/proj", "v1.0.0", "job.yml"),
+            ParserIncludes.downloadIncludeComponent(makeOpts(), "grp/proj", "v1.0.0", "component"),
+        ]);
+
+        expect(invocations).toHaveLength(2);
+        const [first, second] = [...invocations].sort((a, b) => a.start - b.start);
+        expect(first.end).toBeLessThanOrEqual(second.start);
+        const refDir = path.join(cwd, stateDir, "includes", "git.example.com", "grp/proj", "v1.0.0");
+        expect((await fs.stat(path.join(refDir, "job.yml"))).isFile()).toBe(true);
+        expect((await fs.stat(path.join(refDir, "templates"))).isDirectory()).toBe(true);
+    });
+
+    test("downloads a duplicate project file include only once", async () => {
+        const opts = {...makeOpts(), fetchIncludes: false};
+        await Promise.all([
+            ParserIncludes.downloadIncludeProjectFile(opts, "grp/proj", "v1.0.0", "job.yml"),
+            ParserIncludes.downloadIncludeProjectFile(opts, "grp/proj", "v1.0.0", "job.yml"),
+        ]);
+
+        expect(invocations).toHaveLength(1);
+        const refDir = path.join(cwd, stateDir, "includes", "git.example.com", "grp/proj", "v1.0.0");
+        expect((await fs.stat(path.join(refDir, "job.yml"))).isFile()).toBe(true);
+    });
+
+    test("downloads a duplicate component include only once", async () => {
+        const opts = {...makeOpts(), fetchIncludes: false};
+        // call sites pass component.componentPath, i.e. templates/<name>
+        await Promise.all([
+            ParserIncludes.downloadIncludeComponent(opts, "grp/proj", "v1.0.0", "templates/component"),
+            ParserIncludes.downloadIncludeComponent(opts, "grp/proj", "v1.0.0", "templates/component"),
+        ]);
+
+        expect(invocations).toHaveLength(1);
+        const refDir = path.join(cwd, stateDir, "includes", "git.example.com", "grp/proj", "v1.0.0");
+        expect((await fs.stat(path.join(refDir, "templates", "component", "template.yml"))).isFile()).toBe(true);
     });
 });

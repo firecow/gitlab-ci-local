@@ -13,8 +13,9 @@ import path from "node:path";
 import semver from "semver";
 import {RE2JS} from "re2js";
 import {globbySync} from "globby";
+import {Mutex} from "./mutex.js";
 
-type ParserIncludesInitOptions = {
+export type ParserIncludesInitOptions = {
     argv: Argv;
     cwd: string;
     stateDir: string;
@@ -405,27 +406,34 @@ export class ParserIncludes {
         try {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
             if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
-            const time = process.hrtime();
 
-            if (remote.schema.startsWith("http")) {
-                const ext = "tmp-" + Math.random();
-                tmpDir = `${cwd}/${target}.${ext}`;
+            // Use the same mutex as component downloads, since both write into the shared target dir
+            const mutexKey = `${remote.host}/${project}/${ref}`;
+            await Mutex.exclusive(mutexKey, async () => {
+                // Recheck inside the critical section: a duplicate include may have satisfied the target while this call waited for the lock
+                if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
+                const time = process.hrtime();
 
-                await this.gitCloneSparseCheckout(cwd, stateDir, tmpDir, remote, project, ref, [normalizedFile]);
+                if (remote.schema.startsWith("http")) {
+                    const ext = "tmp-" + Math.random();
+                    tmpDir = `${cwd}/${target}.${ext}`;
 
-                const matches = globbySync(normalizedFile, {cwd: tmpDir, absolute: true});
-                const filesToCopy = matches.length > 0 ? matches : [`${tmpDir}/${normalizedFile}`];
-                for (const matchedFile of filesToCopy) {
-                    const relativePath = path.relative(tmpDir, matchedFile);
-                    assert(!relativePath.startsWith("..") && !path.isAbsolute(relativePath), `Include file path escapes the fetched project: ${normalizedFile}`);
-                    await fs.copy(matchedFile, `${cwd}/${target}/${relativePath}`);
+                    await this.gitCloneSparseCheckout(cwd, stateDir, tmpDir, remote, project, ref, [normalizedFile]);
+
+                    const matches = globbySync(normalizedFile, {cwd: tmpDir, absolute: true});
+                    const filesToCopy = matches.length > 0 ? matches : [`${tmpDir}/${normalizedFile}`];
+                    for (const matchedFile of filesToCopy) {
+                        const relativePath = path.relative(tmpDir, matchedFile);
+                        assert(!relativePath.startsWith("..") && !path.isAbsolute(relativePath), `Include file path escapes the fetched project: ${normalizedFile}`);
+                        await fs.copy(matchedFile, `${cwd}/${target}/${relativePath}`);
+                    }
+                } else {
+                    const targetDirectory = `${target}/`;
+                    await fs.mkdirp(`${cwd}/${target}`);
+                    await Shell.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${safeBashString(ref)} ${safeBashString(normalizedFile)} | tar -f - -xC ${safeBashString(targetDirectory)}`, cwd);
                 }
-            } else {
-                const targetDirectory = `${target}/`;
-                await fs.mkdirp(`${cwd}/${target}`);
-                await Shell.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${safeBashString(ref)} ${safeBashString(normalizedFile)} | tar -f - -xC ${safeBashString(targetDirectory)}`, cwd);
-            }
-            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${prettyHrtime(process.hrtime(time))}}\n`);
+                writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${prettyHrtime(process.hrtime(time))}}\n`);
+            });
         } catch (e) {
             throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }\n${e}`});
         } finally {
@@ -445,29 +453,37 @@ export class ParserIncludes {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
 
             if (!fetchIncludes && (await fs.pathExists(`${cwd}/${target}/${files[0]}`) || await fs.pathExists(`${cwd}/${target}/${files[1]}`))) return;
-            const time = process.hrtime();
 
-            if (remote.schema.startsWith("http")) {
-                const ext = "tmp-" + Math.random();
-                await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`));
-                tmpDir = `${cwd}/${target}.${ext}`;
+            // Use mutex keyed on target path to prevent EEXIST races when multiple
+            // components from the same project/ref are downloaded concurrently
+            const mutexKey = `${remote.host}/${project}/${ref}`;
+            await Mutex.exclusive(mutexKey, async () => {
+                // Recheck inside the critical section: a duplicate include may have satisfied the target while this call waited for the lock
+                if (!fetchIncludes && (await fs.pathExists(`${cwd}/${target}/${files[0]}`) || await fs.pathExists(`${cwd}/${target}/${files[1]}`))) return;
+                const time = process.hrtime();
 
-                await this.gitCloneSparseCheckout(cwd, stateDir, tmpDir, remote, project, ref, files);
+                if (remote.schema.startsWith("http")) {
+                    const ext = "tmp-" + Math.random();
+                    await fs.mkdirp(path.dirname(`${cwd}/${target}/templates`));
+                    tmpDir = `${cwd}/${target}.${ext}`;
 
-                // create templates subdir (if it doesn't exist), as the check out may not create it
-                await fs.mkdirp(`${tmpDir}/templates`);
-                await fs.copy(`${tmpDir}/templates`, `${cwd}/${target}/templates`);
-            } else {
-                // git archive fails if the paths do not exist, to work around this we use a wildcard "templates/component*.yml"
-                // this resolves to either "templates/component.yml" or "templates/component/template.yml"
-                // if both exist "templates/component.yml" will be pulled
-                // Drawback: also pulls all other .yml files from templates/component/ directory
-                const componentWildcard = `${componentName}*.yml`;
-                const targetDirectory = `${target}/`;
-                await fs.mkdirp(`${cwd}/${target}`);
-                await Shell.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${safeBashString(ref)} ${safeBashString(componentWildcard)} | tar -f - -xC ${safeBashString(targetDirectory)}`, cwd);
-            }
-            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${prettyHrtime(process.hrtime(time))}}\n`);
+                    await this.gitCloneSparseCheckout(cwd, stateDir, tmpDir, remote, project, ref, files);
+
+                    // create templates subdir (if it doesn't exist), as the check out may not create it
+                    await fs.mkdirp(`${tmpDir}/templates`);
+                    await fs.copy(`${tmpDir}/templates`, `${cwd}/${target}/templates`);
+                } else {
+                    // git archive fails if the paths do not exist, to work around this we use a wildcard "templates/component*.yml"
+                    // this resolves to either "templates/component.yml" or "templates/component/template.yml"
+                    // if both exist "templates/component.yml" will be pulled
+                    // Drawback: also pulls all other .yml files from templates/component/ directory
+                    const componentWildcard = `${componentName}*.yml`;
+                    const targetDirectory = `${target}/`;
+                    await fs.mkdirp(`${cwd}/${target}`);
+                    await Shell.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${safeBashString(ref)} ${safeBashString(componentWildcard)} | tar -f - -xC ${safeBashString(targetDirectory)}`, cwd);
+                }
+                writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${componentName} in ${prettyHrtime(process.hrtime(time))}}\n`);
+            });
         } catch (e) {
             throw new AssertionError({message: `Component include could not be fetched { project: ${project}, ref: ${ref}, file: ${files} }\n${e}`});
         } finally {
