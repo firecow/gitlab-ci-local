@@ -2,9 +2,13 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {vi} from "vitest";
+import {Argv} from "../src/argv.js";
 import {GitData} from "../src/git-data.js";
-import {ParserIncludes, remoteProjectUrl, resolveSemanticVersionRange} from "../src/parser-includes.js";
+import {ParserIncludes, ParserIncludesInitOptions, remoteProjectUrl, resolveSemanticVersionRange} from "../src/parser-includes.js";
 import {WriteStreamsMock} from "../src/write-streams.js";
+
+type GitCloneSparseCheckout = (cwd: string, stateDir: string, tmpDir: string, remote: unknown, project: string, ref: string, sparsePaths: string[]) => Promise<void>;
+const parserIncludes = ParserIncludes as unknown as {gitCloneSparseCheckout: GitCloneSparseCheckout};
 
 const tests = [
     {
@@ -80,18 +84,23 @@ describe("ParserIncludes.downloadIncludeComponent", () => {
     let gitCloneSpy: ReturnType<typeof vi.spyOn>;
     let invocations: {start: number; end: number}[];
 
-    const makeOpts = () => ({
+    const makeOpts = (): ParserIncludesInitOptions => ({
+        argv: {} as Argv,
         cwd,
         stateDir,
         gitData: {remote: {schema: "https", host: "git.example.com", port: "443"}} as GitData,
         fetchIncludes: true,
         writeStreams: new WriteStreamsMock(),
+        variables: {},
+        expandVariables: false,
+        maximumIncludes: 100,
+        inputs: {},
     });
 
     beforeEach(async () => {
         cwd = await fs.mkdtemp(path.join(os.tmpdir(), "gcl-includes-test-"));
         invocations = [];
-        gitCloneSpy = vi.spyOn(ParserIncludes as any, "gitCloneSparseCheckout").mockImplementation(async () => {
+        gitCloneSpy = vi.spyOn(parserIncludes, "gitCloneSparseCheckout").mockImplementation(async () => {
             const start = Date.now();
             await new Promise((resolve) => setTimeout(resolve, 50));
             invocations.push({start, end: Date.now()});
@@ -146,18 +155,23 @@ describe("ParserIncludes.downloadIncludeProjectFile", () => {
     let gitCloneSpy: ReturnType<typeof vi.spyOn>;
     let invocations: {start: number; end: number}[];
 
-    const makeOpts = () => ({
+    const makeOpts = (): ParserIncludesInitOptions => ({
+        argv: {} as Argv,
         cwd,
         stateDir,
         gitData: {remote: {schema: "https", host: "git.example.com", port: "443"}} as GitData,
         fetchIncludes: true,
         writeStreams: new WriteStreamsMock(),
+        variables: {},
+        expandVariables: false,
+        maximumIncludes: 100,
+        inputs: {},
     });
 
     beforeEach(async () => {
         cwd = await fs.mkdtemp(path.join(os.tmpdir(), "gcl-includes-test-"));
         invocations = [];
-        gitCloneSpy = vi.spyOn(ParserIncludes as any, "gitCloneSparseCheckout").mockImplementation(
+        gitCloneSpy = vi.spyOn(parserIncludes, "gitCloneSparseCheckout").mockImplementation(
             async (_cwd: string, _stateDir: string, tmpDir: string, _remote: unknown, _project: string, _ref: string, sparsePaths: string[]) => {
                 const start = Date.now();
                 for (const sparsePath of sparsePaths) {

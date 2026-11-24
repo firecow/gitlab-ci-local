@@ -15,7 +15,7 @@ import {RE2JS} from "re2js";
 import {globbySync} from "globby";
 import {Mutex} from "./mutex.js";
 
-type ParserIncludesInitOptions = {
+export type ParserIncludesInitOptions = {
     argv: Argv;
     cwd: string;
     stateDir: string;
