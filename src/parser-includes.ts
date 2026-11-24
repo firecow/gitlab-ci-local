@@ -406,27 +406,32 @@ export class ParserIncludes {
         try {
             const target = `${stateDir}/includes/${remote.host}/${project}/${ref}`;
             if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
-            const time = process.hrtime();
 
-            if (remote.schema.startsWith("http")) {
-                const ext = "tmp-" + Math.random();
-                tmpDir = `${cwd}/${target}.${ext}`;
+            // Use the same mutex as component downloads, since both write into the shared target dir
+            const mutexKey = `${remote.host}/${project}/${ref}`;
+            await Mutex.exclusive(mutexKey, async () => {
+                const time = process.hrtime();
 
-                await this.gitCloneSparseCheckout(cwd, stateDir, tmpDir, remote, project, ref, [normalizedFile]);
+                if (remote.schema.startsWith("http")) {
+                    const ext = "tmp-" + Math.random();
+                    tmpDir = `${cwd}/${target}.${ext}`;
 
-                const matches = globbySync(normalizedFile, {cwd: tmpDir, absolute: true});
-                const filesToCopy = matches.length > 0 ? matches : [`${tmpDir}/${normalizedFile}`];
-                for (const matchedFile of filesToCopy) {
-                    const relativePath = path.relative(tmpDir, matchedFile);
-                    assert(!relativePath.startsWith("..") && !path.isAbsolute(relativePath), `Include file path escapes the fetched project: ${normalizedFile}`);
-                    await fs.copy(matchedFile, `${cwd}/${target}/${relativePath}`);
+                    await this.gitCloneSparseCheckout(cwd, stateDir, tmpDir, remote, project, ref, [normalizedFile]);
+
+                    const matches = globbySync(normalizedFile, {cwd: tmpDir, absolute: true});
+                    const filesToCopy = matches.length > 0 ? matches : [`${tmpDir}/${normalizedFile}`];
+                    for (const matchedFile of filesToCopy) {
+                        const relativePath = path.relative(tmpDir, matchedFile);
+                        assert(!relativePath.startsWith("..") && !path.isAbsolute(relativePath), `Include file path escapes the fetched project: ${normalizedFile}`);
+                        await fs.copy(matchedFile, `${cwd}/${target}/${relativePath}`);
+                    }
+                } else {
+                    const targetDirectory = `${target}/`;
+                    await fs.mkdirp(`${cwd}/${target}`);
+                    await Shell.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${safeBashString(ref)} ${safeBashString(normalizedFile)} | tar -f - -xC ${safeBashString(targetDirectory)}`, cwd);
                 }
-            } else {
-                const targetDirectory = `${target}/`;
-                await fs.mkdirp(`${cwd}/${target}`);
-                await Shell.bash(`set -eou pipefail; git archive --remote=${this.safeArchiveUrl(remote, project)} -- ${safeBashString(ref)} ${safeBashString(normalizedFile)} | tar -f - -xC ${safeBashString(targetDirectory)}`, cwd);
-            }
-            writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${prettyHrtime(process.hrtime(time))}}\n`);
+                writeStreams.stderr(chalk`{grey downloaded ${project} ${ref} ${normalizedFile} in ${prettyHrtime(process.hrtime(time))}}\n`);
+            });
         } catch (e) {
             throw new AssertionError({message: `Project include could not be fetched { project: ${project}, ref: ${ref}, file: ${normalizedFile} }\n${e}`});
         } finally {
