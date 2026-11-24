@@ -203,4 +203,29 @@ describe("ParserIncludes.downloadIncludeProjectFile", () => {
         expect((await fs.stat(path.join(refDir, "job.yml"))).isFile()).toBe(true);
         expect((await fs.stat(path.join(refDir, "templates"))).isDirectory()).toBe(true);
     });
+
+    test("downloads a duplicate project file include only once", async () => {
+        const opts = {...makeOpts(), fetchIncludes: false};
+        await Promise.all([
+            ParserIncludes.downloadIncludeProjectFile(opts, "grp/proj", "v1.0.0", "job.yml"),
+            ParserIncludes.downloadIncludeProjectFile(opts, "grp/proj", "v1.0.0", "job.yml"),
+        ]);
+
+        expect(invocations).toHaveLength(1);
+        const refDir = path.join(cwd, stateDir, "includes", "git.example.com", "grp/proj", "v1.0.0");
+        expect((await fs.stat(path.join(refDir, "job.yml"))).isFile()).toBe(true);
+    });
+
+    test("downloads a duplicate component include only once", async () => {
+        const opts = {...makeOpts(), fetchIncludes: false};
+        // call sites pass component.componentPath, i.e. templates/<name>
+        await Promise.all([
+            ParserIncludes.downloadIncludeComponent(opts, "grp/proj", "v1.0.0", "templates/component"),
+            ParserIncludes.downloadIncludeComponent(opts, "grp/proj", "v1.0.0", "templates/component"),
+        ]);
+
+        expect(invocations).toHaveLength(1);
+        const refDir = path.join(cwd, stateDir, "includes", "git.example.com", "grp/proj", "v1.0.0");
+        expect((await fs.stat(path.join(refDir, "templates", "component", "template.yml"))).isFile()).toBe(true);
+    });
 });

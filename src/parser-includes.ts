@@ -410,6 +410,8 @@ export class ParserIncludes {
             // Use the same mutex as component downloads, since both write into the shared target dir
             const mutexKey = `${remote.host}/${project}/${ref}`;
             await Mutex.exclusive(mutexKey, async () => {
+                // Recheck inside the critical section: a duplicate include may have satisfied the target while this call waited for the lock
+                if (await fs.pathExists(`${cwd}/${target}/${normalizedFile}`) && !fetchIncludes) return;
                 const time = process.hrtime();
 
                 if (remote.schema.startsWith("http")) {
@@ -456,6 +458,8 @@ export class ParserIncludes {
             // components from the same project/ref are downloaded concurrently
             const mutexKey = `${remote.host}/${project}/${ref}`;
             await Mutex.exclusive(mutexKey, async () => {
+                // Recheck inside the critical section: a duplicate include may have satisfied the target while this call waited for the lock
+                if (!fetchIncludes && (await fs.pathExists(`${cwd}/${target}/${files[0]}`) || await fs.pathExists(`${cwd}/${target}/${files[1]}`))) return;
                 const time = process.hrtime();
 
                 if (remote.schema.startsWith("http")) {
