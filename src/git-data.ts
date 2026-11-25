@@ -85,8 +85,18 @@ export class GitData {
         }
     }
 
-    static changedFiles (defaultBranch: string, cwd: string) {
-        return Shell.syncSpawn(["git", "diff", "--name-only", defaultBranch], cwd).stdout.split("\n");
+    // null when the branch to compare against does not exist (no remote yet, or not named origin)
+    static changedFiles (defaultBranch: string, cwd: string): string[] | null {
+        try {
+            return Shell.syncSpawn(["git", "diff", "--name-only", defaultBranch], cwd).stdout.split("\n");
+        } catch (e) {
+            try {
+                Shell.syncSpawn(["git", "rev-parse", "--verify", "--quiet", `${defaultBranch}^{commit}`], cwd);
+            } catch {
+                return null;
+            }
+            throw e;
+        }
     }
 
     private async initRemoteData (cwd: string, writeStreams: WriteStreams): Promise<void> {

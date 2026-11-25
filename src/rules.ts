@@ -195,7 +195,11 @@ export function evaluateRuleChanges (defaultBranch: string, ruleChanges: string[
     // NOTE: https://docs.gitlab.com/ee/ci/yaml/#ruleschanges
     //   Glob patterns are interpreted with Ruby's [File.fnmatch](https://docs.ruby-lang.org/en/master/File.html#method-c-fnmatch)
     //   with the flags File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB.
-    return micromatch.some(GitData.changedFiles(`origin/${defaultBranch}`, cwd), ruleChanges, {
+    // Like GitLab, a pipeline with nothing to compare against counts as changed.
+    const changedFiles = GitData.changedFiles(`origin/${defaultBranch}`, cwd);
+    if (changedFiles === null) return true;
+
+    return micromatch.some(changedFiles, ruleChanges, {
         nonegate: true,
         noextglob: true,
         posix: false,
