@@ -1,4 +1,8 @@
 import {vi} from "vitest";
+import {execa} from "execa";
+import fs from "fs-extra";
+import os from "node:os";
+import path from "node:path";
 import {GitData} from "../src/git-data.js";
 import {evaluateRuleChanges} from "../src/rules.js";
 import {MAX_FILENAME_LENGTH, getAllServiceAliases, getServiceAlias, isSubpath, safeDockerString} from "../src/job.js";
@@ -135,6 +139,13 @@ describe("evaluateRuleChanges", () => {
             spy.mockRestore();
         });
     });
+});
+
+test("evaluateRuleChanges counts as changed when there is no remote branch to compare against", async () => {
+    const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "gcl-no-remote-"));
+    await execa("git", ["init", "-b", "main"], {cwd});
+    expect(evaluateRuleChanges("main", ["src/**/*"], cwd)).toBe(true);
+    await fs.rm(cwd, {recursive: true, force: true});
 });
 
 describe("isSubPath where process.cwd() have been mocked to return /home/user/gitlab-ci-local", () => {
