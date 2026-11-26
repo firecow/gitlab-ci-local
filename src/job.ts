@@ -8,6 +8,7 @@ import {RE2JS} from "re2js";
 import {Shell, safeBashString} from "./shell.js";
 import {expandText, expandVariables} from "./expand.js";
 import {getRulesResult} from "./rules.js";
+import {slugify} from "./predefined-variables.js";
 import {prettyHrtime} from "./pretty-hrtime.js";
 import {rsyncTrackedFiles} from "./rsync-tracked-files.js";
 import {gclRegistryPrefix} from "./docker-registry.js";
@@ -344,7 +345,7 @@ If you know what you're doing and would like to suppress this warning, use one o
         predefinedVariables["CI_PIPELINE_ID"] = `${this.pipelineIid + 1000}`;
         predefinedVariables["CI_PIPELINE_IID"] = `${this.pipelineIid}`;
         predefinedVariables["CI_JOB_NAME"] = `${this.name}`;
-        predefinedVariables["CI_JOB_NAME_SLUG"] = `${this.name.replaceAll(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase()}`;
+        predefinedVariables["CI_JOB_NAME_SLUG"] = slugify(this.name);
         predefinedVariables["CI_JOB_STAGE"] = `${this.stage}`;
         predefinedVariables["CI_BUILDS_DIR"] = ciBuildsDir;
         predefinedVariables["CI_PROJECT_DIR"] = this.ciProjectDir;
