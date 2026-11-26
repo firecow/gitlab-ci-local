@@ -8,6 +8,13 @@ type PredefinedVariablesOpts = {
     envMatchedVariables: {[key: string]: string};
 };
 
+// Same as GitLab's Gitlab::Utils.slugify: every character outside [a-z0-9] becomes its own "-",
+// runs are not squeezed, the result is cut to 63 characters and leading/trailing "-" are trimmed.
+// https://gitlab.com/gitlab-org/gitlab/-/blob/master/gems/gitlab-utils/lib/gitlab/utils.rb
+export function slugify (str: string) {
+    return str.toLowerCase().replaceAll(/[^a-z0-9]/gu, "-").slice(0, 63).replaceAll(/^-+|-+$/g, "");
+}
+
 export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesOpts): {[name: string]: string} {
 
     const _variables = {...envMatchedVariables, ...argv.variable};
@@ -39,7 +46,7 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
         CI_PROJECT_NAME: gitData.remote.project,
         CI_PROJECT_TITLE: `${camelCase(gitData.remote.project)}`,
         CI_PROJECT_PATH: `${gitData.remote.group}/${gitData.remote.project}`,
-        CI_PROJECT_PATH_SLUG: `${gitData.remote.group.replaceAll("/", "-")}-${gitData.remote.project}`.toLowerCase(),
+        CI_PROJECT_PATH_SLUG: slugify(`${gitData.remote.group}/${gitData.remote.project}`),
         CI_PROJECT_ROOT_NAMESPACE: CI_PROJECT_ROOT_NAMESPACE,
         CI_PROJECT_NAMESPACE: CI_PROJECT_NAMESPACE,
         CI_PROJECT_VISIBILITY: "internal",
@@ -47,7 +54,7 @@ export function init ({gitData, argv, envMatchedVariables}: PredefinedVariablesO
         CI_COMMIT_REF_PROTECTED: "false",
         CI_COMMIT_BRANCH: gitData.commit.REF_NAME, // Not available in merge request or tag pipelines
         CI_COMMIT_REF_NAME: gitData.commit.REF_NAME, // Tag or branch name
-        CI_COMMIT_REF_SLUG: gitData.commit.REF_NAME.replaceAll(/[^a-z\d]+/ig, "-").replace(/^-/, "").slice(0, 63).replace(/-$/, "").toLowerCase(),
+        CI_COMMIT_REF_SLUG: slugify(gitData.commit.REF_NAME),
         CI_COMMIT_TIMESTAMP: gitData.commit.TIMESTAMP,
         CI_PIPELINE_CREATED_AT: new Date().toISOString().split(".")[0] + "Z",
         CI_COMMIT_TITLE: "Commit Title", // First line of commit message.
