@@ -7,3 +7,5 @@ artifacts/log.txt
 !component-inputs-cli/.gitlab-ci-local-inputs.yml
 !component-inputs-multiple/.gitlab-ci-local-inputs.yml
 !component-inputs-edge-cases/.gitlab-ci-local-inputs.yml
+!shell-powershell/.gitlab-ci-local-env
+!argv-dotenv-ignore-predefined-vars/.gitlab-ci-local-env
